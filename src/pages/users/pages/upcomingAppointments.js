@@ -1,8 +1,7 @@
-import more from "../assets/svg-icons/more.svg";
-// import blackIco from "../assets/svg-icons/black-appointment-icon.svg";
-import close from "../assets/svg-icons/closeBlack.svg";
+import more from "../../../assets/svg-icons/more.svg";
+import close from "../../../assets/svg-icons/closeBlack.svg";
 import React, { useState } from "react";
-import Rating from "../components/rating";
+import Rating from "../../../components/rating";
 
 const Appointments = () => {
   const [menuVisible, setMenuVisible] = useState(false);

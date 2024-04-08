@@ -17,7 +17,7 @@ import canada from "../assets/images/canada.png";
 import canada2 from "../assets/images/signup.jpg";
 // import React, { useState } from 'react';
 import { Link } from "react-router-dom";
-import Hero from "../components/heroSection";
+import Hero from "./generalPages/heroSection";
 import rapidGIF from "../assets/Videos/stylers.gif";
 import stylistImg1 from "../assets/images/stylist 1.png"
 import stylistImg2 from "../assets/images/stylist 2.png"

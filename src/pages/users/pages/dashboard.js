@@ -1,8 +1,18 @@
-import brandIco from "../assets/svg-icons/brand-appointment-icon.svg";
+import brandIco from "../../../assets/svg-icons/brand-appointment-icon.svg";
+import Appointments from "./upcomingAppointments";
 
-const History = () => {
+const Dashboard = () => {
+  document.title = "Dashboard - TrimTech";
   return (
-    <div className="grid gap-3 mt-4">
+    <div className="bg-white border rounded-lg">
+      <div className="border-b p-4 text-[15px] font-bold bg-[#1d1d1d08] rounded-t-lg">Dashboard</div>
+      <div className="p-4">
+        <p className="text-sm font-semibold">Upcoming appointments:</p>
+        <Appointments />
+      </div>
+      <div className="p-4">
+        <p className="text-sm font-semibold">Appointment history:</p>
+        <div className="grid gap-3 mt-4">
       <div className="grid grid-cols-10 gap-4 items-start pb-3 border-b last:border-0">
         <div className="grid grid-cols-10 items-center col-span-8">
           <div className="col-span-2 md:col-span-1">
@@ -46,7 +56,9 @@ const History = () => {
         </div>
       </div>
     </div>
+      </div>
+    </div>
   );
 };
 
-export default History;
+export default Dashboard;

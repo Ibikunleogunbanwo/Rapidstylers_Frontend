@@ -1,4 +1,4 @@
-import arrow from "../assets/svg-icons/black-arrow.svg"
+import arrow from "../../../assets/svg-icons/black-arrow.svg"
 import { Link } from "react-router-dom";
 
 const AccountSettings = () => {

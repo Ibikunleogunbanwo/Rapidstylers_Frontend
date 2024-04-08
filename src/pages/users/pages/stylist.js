@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 // import arrow from "../assets/svg-icons/black-arrow.svg"
-import ServiceCard from "../components/serviceCard";
-import Back from "../components/goBack";
+import ServiceCard from "../../../components/serviceCard";
+import Back from "../../../components/goBack";
 
 const Hairstylist = () => {
   document.title="Select a stylist - TrimTech"

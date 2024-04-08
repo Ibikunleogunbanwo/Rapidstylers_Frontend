@@ -1,28 +1,27 @@
 import './App.css';
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import LandingPage from './pages/landing';
-import ElevateLooks from './pages/elevateYourLooks';
-import Dashboard from './pages/dashboard';
-import Layout from './pages/layout';
-import BookAppointment from './pages/bookAnAppointment';
-import Hairstylist from './pages/hairstylist';
+import ElevateLooks from './pages/generalPages/elevateYourLooks';
+import Dashboard from './pages/users/pages/dashboard';
+import Layout from './pages/users/userLayout/layout';
+import BookAppointment from './pages/users/pages/bookAnAppointment';
+import Hairstylist from './pages/users/pages/stylist';
 import Error from './pages/error';
 import StylistProfile from './pages/stylistProfile';
-import AccountSettings from './pages/accountsettings';
-import UpdateInformation from './pages/updatePersonal';
-import ChangePassword from './pages/changePassword';
-import SavedStylist from './pages/savedStylists';
-import NotificationSettings from './pages/notificationSettings';
-import PaymentDetails from './pages/paymentDetails';
-import Feedback from './pages/feedback';
-import CreateAccount from './pages/createAcct';
+import AccountSettings from './pages/users/pages/accountsettings';
+import UpdateInformation from './pages/users/pages/updatePersonal';
+import ChangePassword from './pages/users/pages/changePassword';
+import SavedStylist from './pages/users/pages/savedStylists';
+import NotificationSettings from './pages/users/pages/notificationSettings';
+import PaymentDetails from './pages/users/pages/paymentDetails';
+import Feedback from './pages/users/pages/feedback';
 import CreateAccountAdmin from './admin/create-account';
 import AdminLayout from './admin/admin-layout';
 import AdminDashboard from './admin/dashboard';
-import Verify from './pages/verifyOTP';
-import AboutUs from './pages/aboutUs';
-import Personaldetails from './pages/personalDetails';
-import SecureAccount from './pages/secureAccount';
+import Verify from './pages/users/auth/verifyOTP';
+import AboutUs from './pages/generalPages/aboutUs';
+import Personaldetails from './pages/users/auth/personalDetails';
+import SecureAccount from './pages/users/auth/secureAccount';
 
 function App() {
   return (

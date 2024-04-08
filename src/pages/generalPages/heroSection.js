@@ -1,16 +1,13 @@
-// import profile from "../assets/svg-icons/profile.svg";
-import logo from "../assets/svg-icons/logo.svg";
-import search from "../assets/svg-icons/search.svg";
-import menu from "../assets/svg-icons/menu-icon.svg";
-import close from "../assets/svg-icons/close.svg";
-import closeBlack from "../assets/svg-icons/closeBlack.svg";
-import Input from "../components/input";
+// import profile from "../../assets/svg-icons/profile.svg";
+import logo from "../../assets/svg-icons/logo.svg";
+import search from "../../assets/svg-icons/search.svg";
+import menu from "../../assets/svg-icons/menu-icon.svg";
+import close from "../../assets/svg-icons/close.svg";
+import closeBlack from "../../assets/svg-icons/closeBlack.svg";
+import Input from "../../components/input";
 import React, { useState} from "react";
-import info from "../assets/svg-icons/info.svg";
+import info from "../../assets/svg-icons/info.svg";
 import { Link } from "react-router-dom";
-import video1 from "../assets/Videos/large video.mp4";
-import video2 from "../assets/Videos/small video.mp4";
-import image from "../assets/images/hero.png";
 
 const Hero = ({ height, landingTitle, elevateLooksTitle, caption, heroimg, landingHeroImg, titleAddOn}) => {
   const [menuVisible, setMenuVisible] = useState(false);

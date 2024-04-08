@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
-import Advert from "../components/advert";
-import Humour from "../components/trimTechHumour";
-// import logo from "../assets/svg-icons/colouredLogo.svg";
-import logo from "../assets/svg-icons/colouredLogo.svg";
-import menu from "../assets/svg-icons/menu-brand.svg";
-import NavItems from "../components/navItems";
-import close from "../assets/svg-icons/closeBlack.svg";
+import Advert from "../../../components/advert";
+import Humour from "../../../components/trimTechHumour";
+import logo from "../../../assets/svg-icons/colouredLogo.svg";
+import menu from "../../../assets/svg-icons/menu-brand.svg";
+import NavItems from "../../../components/navItems";
+import close from "../../../assets/svg-icons/closeBlack.svg";
 
 const Layout = () => {
   const location = useLocation();
@@ -44,7 +43,7 @@ const Layout = () => {
 
   return (
     <div className="relative bg-white pb-10">
-      <div className="h-[70px] flex items-center justify-between bg-[#1d1d1d] border-b fixed w-full px-3 md:px-4">
+      <div className="h-[70px] flex items-center justify-between bg-[#1d1d1d] border-b fixed w-full px-3 md:px-4 z-50">
         <div className="flex items-center gap-6">
           <img
             src={menu}

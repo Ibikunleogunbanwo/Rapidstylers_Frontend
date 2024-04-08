@@ -1,6 +1,6 @@
 // import arrow from "../assets/svg-icons/black-arrow.svg"
 // import { Link } from "react-router-dom";
-import Input from "../components/input";
+import Input from "../../../components/input";
 
 const Feedback = () => {
   document.title = "User feedback - TrimTech";

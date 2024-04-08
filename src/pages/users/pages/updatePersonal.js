@@ -1,6 +1,6 @@
 // import arrow from "../assets/svg-icons/black-arrow-back.svg"
-import Back from "../components/goBack";
-import Input from "../components/input";
+import Back from "../../../components/goBack";
+import Input from "../../../components/input";
 
 const UpdateInformation = () => {
   document.title = "Update personal information - TrimTech";

@@ -1,6 +1,6 @@
-import Hero from "../components/heroSection";
-import heroimg from "../assets/images/elevate.png";
-import Footer from "../components/footer";
+import Hero from "./heroSection";
+import heroimg from "../../assets/images/elevate.png";
+import Footer from "../../components/footer";
 
 import React from 'react';
 

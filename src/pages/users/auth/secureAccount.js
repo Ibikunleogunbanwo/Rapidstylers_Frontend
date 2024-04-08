@@ -1,14 +1,10 @@
-import Input from "../components/input";
-// import OtpInputs from "../components/otpInputs";
+import Input from "../../../components/input";
 import { Link } from "react-router-dom";
-import logo from "../assets/svg-icons/colouredLogo.svg";
-import sideImage from "../assets/images/signup.jpg";
+import logo from "../../../assets/svg-icons/colouredLogo.svg";
+import sideImage from "../../../assets/images/signup.jpg";
 
-const SecureAccount = () => {
+const secureAccount = () => {
   document.title = "Registration - RapidStylers";
-  const country = ['Canada']
-  const province = ['Alberta', 'British Columbia', 'Manitoba', 'New Brunswick', 'Newfoundland and Labrador', 'Nova Scotia', 'Ontario', 'Prince Edward Island', 'Quebec', 'Saskatchewan'];
-
   return (
     <div className="lg:h-screen grid grid-cols-1 lg:grid-cols-12">
       <div className="m-1 rounded-md overflow-hidden col-span-1 lg:col-span-3">
@@ -62,4 +58,4 @@ const SecureAccount = () => {
   );
 };
 
-export default SecureAccount;
+export default secureAccount;

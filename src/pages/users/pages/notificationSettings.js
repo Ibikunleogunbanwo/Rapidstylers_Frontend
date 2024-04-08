@@ -1,4 +1,4 @@
-import Back from "../components/goBack";
+import Back from "../../../components/goBack";
 
 const NotificationSettings = () => {
   document.title = "Notification settings - TrimTech";

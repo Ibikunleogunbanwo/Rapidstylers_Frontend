@@ -1,8 +1,7 @@
-import Input from "../components/input";
-// import OtpInputs from "../components/otpInputs";
+import Input from "../../../components/input";
 import { Link } from "react-router-dom";
-import logo from "../assets/svg-icons/colouredLogo.svg";
-import sideImage from "../assets/images/signup.jpg";
+import logo from "../../../assets/svg-icons/colouredLogo.svg";
+import sideImage from "../../../assets/images/signup.jpg";
 
 const Verify = () => {
   document.title = "Verify OTP - RapidStylers";

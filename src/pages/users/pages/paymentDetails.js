@@ -1,6 +1,6 @@
-import Back from "../components/goBack";
+import Back from "../../../components/goBack";
 // import { Link } from "react-router-dom";
-import Input from "../components/input";
+import Input from "../../../components/input";
 
 const PaymentDetails = () => {
     document.title="Payment details - TrimTech"

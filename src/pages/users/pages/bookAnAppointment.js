@@ -1,8 +1,8 @@
 import { Link } from "react-router-dom";
-import barber from "../assets/images/barbers.jpg";
-import haidresser from "../assets/images/hairdresser.jpg";
-import arrow from "../assets/svg-icons/arrow.svg";
-import search from "../assets/svg-icons/search.svg";
+import barber from "../../../assets/images/barbers.jpg";
+import haidresser from "../../../assets/images/hairdresser.jpg";
+import arrow from "../../../assets/svg-icons/arrow.svg";
+import search from "../../../assets/svg-icons/search.svg";
 
 const BookAppointment = () => {
   document.title = "Book an appointment - TrimTech";

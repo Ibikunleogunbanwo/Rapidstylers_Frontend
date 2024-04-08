@@ -1,7 +1,7 @@
-import Hero from "../components/heroSection";
-import about1 from "../assets/images/about-1.jpg";
-import about2 from "../assets/images/about-2.jpg"
-import Footer from "../components/footer";
+import Hero from "./heroSection";
+import about1 from "../../assets/images/about-1.jpg";
+import about2 from "../../assets/images/about-2.jpg"
+import Footer from "../../components/footer";
 
 const AboutUs = () => {
   document.title="About us - RapidStylers"

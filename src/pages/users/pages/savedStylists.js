@@ -1,5 +1,5 @@
-import Back from "../components/goBack";
-import ServiceCard from "../components/serviceCard";
+import Back from "../../../components/goBack";
+import ServiceCard from "../../../components/serviceCard";
 
 const SavedStylist = () => {
   document.title = "Saved stylists - TrimTech";
