@@ -1,6 +1,6 @@
-import bookmark from "../assets/svg-icons/bookmark.svg";
-import SelectService from "../components/selectService";
-import Back from "../components/goBack"
+import bookmark from "../../../assets/svg-icons/bookmark.svg";
+import SelectService from "../../../components/selectService";
+import Back from "../../../components/goBack"
 
 const StylistProfile = () => {
   document.title = "Book a service - TrimTech";

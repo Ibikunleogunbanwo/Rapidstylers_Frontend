@@ -1,8 +1,12 @@
+import { useEffect } from "react";
 import brandIco from "../../../assets/svg-icons/brand-appointment-icon.svg";
 import Appointments from "./upcomingAppointments";
 
-const Dashboard = () => {
-  document.title = "Dashboard - TrimTech";
+const Dashboard = ({setPageTile}) => {
+  useEffect((() => {
+    setPageTile("Dashboard");
+    document.title = "Dashboard - TrimTech";
+  }));
   return (
     <div className="bg-white border rounded-lg">
       <div className="border-b p-4 text-[15px] font-bold bg-[#1d1d1d08] rounded-t-lg">Dashboard</div>

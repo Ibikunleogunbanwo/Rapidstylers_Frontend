@@ -1,27 +1,17 @@
 
-import Featured from "../components/featuredStylists";
-import elevateLook from "../assets/images/elevateLook.png";
-// import store from "../assets/svg-icons/store.svg";
-// import stylist from "../assets/images/stylistRegister.svg";
-// import appointment from "../assets/images/bookAppointment.svg";
-import scissors from "../assets/svg-icons/scissors.svg";
-import Footer from "../components/footer";
-import heroimg from "../assets/images/hero.png";
-// import arrow from "../assets/svg-icons/black-arrow.svg";
-// import heart from "../assets/svg-icons/heart.svg";
-// import community from "../assets/svg-icons/community.svg";
-// import smileStar from "../assets/svg-icons/smiling-star.svg";
-// import luxury from "../assets/svg-icons/luxury.svg";
-// import happy from "../assets/svg-icons/happy.svg";
-import canada from "../assets/images/canada.png";
-import canada2 from "../assets/images/signup.jpg";
-// import React, { useState } from 'react';
+import Featured from "../../components/featuredStylists";
+import elevateLook from "../../assets/images/elevateLook.png";
+import scissors from "../../assets/svg-icons/scissors.svg";
+import Footer from "../../components/footer";
+import heroImg from "../../assets/images/hero.png";
+import canada from "../../assets/images/canada.png";
+import canada2 from "../../assets/images/signup.jpg";
 import { Link } from "react-router-dom";
-import Hero from "./generalPages/heroSection";
-import rapidGIF from "../assets/Videos/stylers.gif";
-import stylistImg1 from "../assets/images/stylist 1.png"
-import stylistImg2 from "../assets/images/stylist 2.png"
-import ScrollContainer from "../components/img-slider";
+import Hero from "./heroSection";
+import rapidGIF from "../../assets/Videos/stylers.gif";
+import stylistImg1 from "../../assets/images/stylist 1.png"
+import stylistImg2 from "../../assets/images/stylist 2.png"
+import ScrollContainer from "../../components/img-slider";
 
 const LandingPage = () => {
   document.title="Welcome - RapidStylers";
@@ -33,7 +23,7 @@ const LandingPage = () => {
           height="85vh"
           landingTitle="Get convenient, high-quality hair services without leaving your home."
           titleAddOn="Our platform connects you with top-rated local barbers and stylists for in-home appointments."
-          landingHeroImg={heroimg}
+          landingHeroImg={heroImg}
         />
 
         {/* About us*/}
@@ -80,70 +70,6 @@ const LandingPage = () => {
           </div>
           <div className="">
             <p className="text-3xl mb-4 text-white">Why choose RapidStylers?</p>
-            {/* <div className="text-white">
-              <ul className="gap-6 grid">
-                <li className="grid md:flex gap-3">
-                  <img src={luxury} alt="" className="h-5 mt-0 md:mt-1" />
-                  <div>
-                    <span>Salon Luxury, Delivered:</span>
-                    <div className=" text-white/60">
-                      Escape the salon wait and enjoy premium haircare in the
-                      comfort of your own home. Our skilled professionals bring
-                      the luxury spa experience directly to you, saving you time
-                      and stress.
-                    </div>
-                  </div>
-                </li>
-                <li className="grid md:flex gap-3">
-                  <img src={heart} alt="" className="h-5 mt-0 md:mt-1" />
-                  <div>
-                    <span>Your Perfect Match, Every Time:</span>
-                    <div className=" text-white/60">
-                      Tired of salon roulette? Our AI-powered matching algorithm
-                      connects you with the ideal stylist based on your unique
-                      needs, preferences, and style goals. No more settling for
-                      anything less than perfect.
-                    </div>
-                  </div>
-                </li>
-                <li className="grid md:flex gap-3">
-                  <img src={happy} alt="" className="h-5 mt-0 md:mt-1" />
-                  <div>
-                    <span>Convinience Redefined:</span>
-                    <div className=" text-white/60">
-                      Book appointments, manage payments, and leave feedback –
-                      all at your fingertips. Our user-friendly app empowers you
-                      to control your haircare experience with ease and
-                      flexibility.
-                    </div>
-                  </div>
-                </li>
-                <li className="grid md:flex gap-3">
-                  <img src={community} alt="" className="h-5 mt-0 md:mt-1" />
-                  <div>
-                    <span> Community, Not Just a Service:</span>
-                    <div className=" text-white/60">
-                      More than just appointments, RapidStylers fosters a
-                      vibrant community of clients and professionals. Connect,
-                      share experiences, and build lasting relationships – all
-                      within our supportive network.
-                    </div>
-                  </div>
-                </li>
-                <li className="grid md:flex gap-3">
-                  <img src={smileStar} alt="" className="h-5 mt-0 md:mt-1" />
-                  <div>
-                    <span>Beyond Haircuts:</span>
-                    <div className=" text-white/60">
-                      Our services extend beyond basic cuts and styles. Explore
-                      a wide range of options, from coloring and treatments to
-                      beard grooming and specialty styles, all delivered with
-                      the same exceptional quality and convenience.
-                    </div>
-                  </div>
-                </li>
-              </ul>
-            </div> */}
             <div className="gap-6 grid">
               <div className="text-white">
                 <div className="flex gap-5">

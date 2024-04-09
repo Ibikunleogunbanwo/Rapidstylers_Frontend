@@ -48,7 +48,7 @@ const NavItems = () => {
               : "cursor-pointer"
           }`}
         >
-          User feedback
+          User feedbacks
         </Link>
       </div>
     </div>
