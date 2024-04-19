@@ -1,7 +1,8 @@
-import Input from "../../../components/input";
 import { Link } from "react-router-dom";
 import logo from "../../../assets/svg-icons/colouredLogo.svg";
 import sideImage from "../../../assets/images/signup.jpg";
+import Buttons from "../../../components/button";
+import InputWithLabel from "../../../components/inputWithLabel";
 
 const secureAccount = () => {
   document.title = "Registration - RapidStylers";
@@ -41,15 +42,12 @@ const secureAccount = () => {
             Create a password
           </p>
           <div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-8">
-            <Input label={"Password:"} type={"password"}/>
-            <Input label={"Confirm password:"} type={"password"}/>
+            <InputWithLabel labelName={"Password"} inputType={"password"}/>
+            <InputWithLabel labelName={"Confirm Password"} inputType={"password"}/>
           </div>
           <div className="mt-8">
-            <Link
-              to={"/"}
-              className="py-4 px-8 bg-brand rounded-md text-sm text-white font-semibold"
-            >
-              Verify
+            <Link to={"/"} >
+              <Buttons btnText={"Verify"} btnType={"primary"}/>
             </Link>
           </div>
         </div>

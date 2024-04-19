@@ -4,10 +4,11 @@ import search from "../../assets/svg-icons/search.svg";
 import menu from "../../assets/svg-icons/menu-icon.svg";
 import close from "../../assets/svg-icons/close.svg";
 import closeBlack from "../../assets/svg-icons/closeBlack.svg";
-import Input from "../../components/input";
 import React, { useState} from "react";
 import info from "../../assets/svg-icons/info.svg";
 import { Link } from "react-router-dom";
+import Buttons from "../../components/button";
+import InputWithLabel from "../../components/inputWithLabel";
 
 const Hero = ({ height, landingTitle, elevateLooksTitle, caption, heroimg, landingHeroImg, titleAddOn}) => {
   const [menuVisible, setMenuVisible] = useState(false);
@@ -116,17 +117,7 @@ const Hero = ({ height, landingTitle, elevateLooksTitle, caption, heroimg, landi
             onClick={closeMenu}
             className="h-6 justify-self-end cursor-pointer"
           />
-          {/* <div className="mt-20 text-center grid gap-8">
-            <div
-              className="py-4 px-8 bg-white text-brand rounded-md font-semibold"
-              onClick={toggleSignIn}
-            >
-              Login / Sign up
-            </div>
-            <Link to={"/admin-create-account"} className="py-4 px-8 bg-white text-brand rounded-md font-semibold">
-              Register as a stylist
-            </Link>
-          </div> */}
+    
           <div className="mt-10 grid gap-4">
           <div className="py-4 text-white rounded-md font-semibold flex justify-between items-center" onClick={toggleSignIn}>
             <span>Login</span>
@@ -145,24 +136,6 @@ const Hero = ({ height, landingTitle, elevateLooksTitle, caption, heroimg, landi
         <span className="text-white/60">
               © {currentYear} TrimTech All rights reserved
         </span>
-        {/* <div className="grid gap-12 text-center">
-          <div className="grid px-10 text-slate-50">
-            <img src={scissors} alt="" className="h-6 justify-self-center mb-3" />
-            <p className="text-center">
-              “I didn’t want to go out, but my hair looked too good to stay in.”
-            </p>
-            <p className="text-center">
-              {" "}
-              - <br /> Unknown
-            </p>
-          </div>
-          <div className="gap-2 grid grid-cols-1">
-            <img src={logo} alt="" className="justify-self-center h-16" />
-            <span className="text-white/60">
-              © {currentYear} TrimTech All rights reserved
-            </span>
-          </div>
-        </div> */}
       </div>
       {/* Sign in modal */}
       <div
@@ -181,13 +154,11 @@ const Hero = ({ height, landingTitle, elevateLooksTitle, caption, heroimg, landi
             />
           </div>
           <div className="px-6 py-8 grid gap-6">
-            <Input label={"Email address:"} type={"email"} />
-            <Input label={"Password:"} type={"password"} />
+            <InputWithLabel labelName={"Email address"} inputType={"email"} />
+            <InputWithLabel labelName={"Password"} inputType={"password"} />
 
             <div className="flex justify-between items-center">
-              <button className="py-4 px-8 bg-brand rounded-md text-white font-semibold">
-                Continue
-              </button>
+              <Buttons btnText={"Continue"} btnType={"primary"}/>
               <p className="text-sm font-medium text-brand underline">
                 Forgot password?
               </p>
@@ -217,13 +188,13 @@ const Hero = ({ height, landingTitle, elevateLooksTitle, caption, heroimg, landi
             />
           </div>
           <div className="px-6 py-8 grid gap-4">
-            <Input label={"Email address:"} type={"email"} />
+            <InputWithLabel labelName={"Email address"} inputType={"email"} />
             <div className="text-[13px] text-black/80 flex items-center gap-3">
               <img src={info} alt="" className="h-5"/>
               <span>Please ensure you provide a valid email address. A verification code will be sent to this email for you to complete the signup process.</span>
             </div>
             <div className="flex justify-between items-center mt-8">
-              <Link to={"/verify-otp"}><button className="py-4 px-8 bg-brand rounded-md text-white font-semibold">Verify email</button></Link>
+              <Link to={"/verify-otp"}><Buttons btnType={"primary"} btnText={"Verify Email"} type={"button"}/></Link>
               <p className="text-sm" onClick={toggleSignIn}> Return to {""} <span className="text-brand underline cursor-pointer">Sign in</span></p>
             </div>
           </div>

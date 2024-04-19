@@ -23,14 +23,13 @@ const Input = ({
     <div>
       <div className="grid gap-1 ">
         <span className="font-medium text-sm">{label}</span>
-        <div className="px-4 rounded-md border border-[#c4c4c440] bg-[#c4c4c410]">
         <select
           placeholder={placeholder}
           name={name}
           value={value}
           onChange={onChange}
           onBlur={onBlur}
-          className="w-full py-[17px] text-sm bg-transparent active:outline-0 focus:outline-0"
+          className="w-full py-[13px] px-3 text-sm  rounded-md border border-[#c4c4c440] bg-[#c4c4c410] active:outline-0 focus:outline-brand "
         >
           <option value="" selected disabled>
             Select an option
@@ -39,7 +38,6 @@ const Input = ({
             <option key={index}>{option}</option>
           ))}
         </select>
-        </div>
       </div>
       <span className="text-xs">{onError}</span>
     </div>
@@ -61,7 +59,7 @@ const Input = ({
         <div onClick={() => fileInputRef.current.click()} className="w-full overflow-hidden text-sm">
         {selectedFile ? 
         (<div className="w-full truncate p-4 rounded-md border bg-[#c4c4c410] cursor-pointer">{selectedFile.name}</div>) :
-        (<div className="p-4 rounded-md border border-dashed border-brand/50 bg-[#c4c4c410] cursor-pointer">Choose file...</div>)
+        (<div className="p-3 rounded-md border border-dashed border-brand/50 bg-[#c4c4c410] cursor-pointer">Choose file...</div>)
         }
         </div>
       </div>
@@ -78,7 +76,7 @@ const Input = ({
           value={value}
           onChange={onChange}
           onBlur={onBlur}
-          className="w-full p-4 text-sm rounded-md border border-[#c4c4c440] bg-[#c4c4c410] placeholder:text-xs placeholder:font-extralight active:outline-0 focus:outline-0"
+          className="w-full p-3 text-sm rounded-md border border-[#c4c4c440] bg-[#c4c4c410] placeholder:text-xs placeholder:font-extralight active:outline-0 focus:outline-brand"
         />
       </div>
       <span className="text-xs">{onError}</span>
