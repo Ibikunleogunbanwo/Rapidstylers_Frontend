@@ -7,10 +7,12 @@ import AboutUs from './pages/generalPages/aboutUs';
 import PersonalDetails from './pages/users/auth/personalDetails';
 import SecureAccount from './pages/users/auth/secureAccount';
 import UserLayout from './pages/users/userLayout';
+import { ToastContainer } from 'react-toastify';
 
 function App() {
   return (
     <div className='bg-[#f5f5f5] min-h-screen'>
+      <ToastContainer position='top-center' theme='colored' newestOnTop={true} bodyClassName={() => 'toastBody flex items-center text-sm'}/>
       <BrowserRouter>
       <Routes>
         <Route path="/" element={<LandingPage />} />

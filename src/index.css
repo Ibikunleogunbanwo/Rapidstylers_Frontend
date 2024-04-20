@@ -10,7 +10,9 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
-
+.toastBody{
+  font-family: 'Crimson Pro', serif;
+}
 /* CUSTOM SCROLLBAR */
 
 /* width */
