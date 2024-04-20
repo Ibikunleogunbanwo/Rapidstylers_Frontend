@@ -1,17 +1,24 @@
-// import profile from "../../assets/svg-icons/profile.svg";
+
 import logo from "../../assets/svg-icons/logo.svg";
 import search from "../../assets/svg-icons/search.svg";
 import menu from "../../assets/svg-icons/menu-icon.svg";
 import close from "../../assets/svg-icons/close.svg";
-import closeBlack from "../../assets/svg-icons/closeBlack.svg";
-import React, { useState} from "react";
+import React, { useState } from "react";
 import info from "../../assets/svg-icons/info.svg";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Buttons from "../../components/button";
 import InputWithLabel from "../../components/inputWithLabel";
+import Modal from "../../components/modals";
+import { useFormik } from "formik";
+import * as Yup from "yup"; 
+import Spinner from "../../components/spinner";
+import { useDispatch, useSelector } from "react-redux";
+import { verifySignUpEmailAddress } from "../../hooks/local/userReducer";
 
-const Hero = ({ height, landingTitle, elevateLooksTitle, caption, heroimg, landingHeroImg, titleAddOn}) => {
+const Hero = ({ height, landingTitle, elevateLooksTitle, caption, heroimg, landingHeroImg, titleAddOn }) => {
   const [menuVisible, setMenuVisible] = useState(false);
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   // Function to toggle the menu visibility
   const toggleMenu = () => {
@@ -33,10 +40,6 @@ const Hero = ({ height, landingTitle, elevateLooksTitle, caption, heroimg, landi
     setSignUpVisible(false);
   };
 
-  // Function to close the sign in modal
-  const closeSignIn = () => {
-    setSignInVisible(false);
-  };
 
   // Function to toggle the sign up modal
   const toggleSignUp = () => {
@@ -45,15 +48,27 @@ const Hero = ({ height, landingTitle, elevateLooksTitle, caption, heroimg, landi
     setMenuVisible(false);
   };
 
-  // Function to close the sign up modal
-  const closeSignUp = () => {
-    setSignUpVisible(false);
-  };
-
+  const userSignUp = useFormik({
+    initialValues: {
+      emailAddress : ""
+    },
+    validationSchema : Yup.object({
+      emailAddress : Yup.string().required("Email is required").email("Invalid Email Address")
+    }),
+    onSubmit: async (values) => {
+       const {emailAddress} = values;
+       let verifyUserEmailData = {emailAddress};
+       const { payload } = await dispatch(verifySignUpEmailAddress(verifyUserEmailData));
+       if(payload.statusCode === "200") {
+          navigate("/verifyEmailAddress", {state : {emailAddress}});
+       }
+    }
+  });
   const currentYear = new Date().getFullYear()
 
   return (
     <div style={{ height }} className="relative z-10">
+      <Spinner loading={useSelector((state)=>state.user).loading}/>
       <div className="h-[100%] absolute w-full flex items-center overflow-hidden">
         <div className="w-full h-full relative">
           <div className="absolute w-full h-full flex top-0 items-center justify-center px-4  pt-[80px]">
@@ -67,9 +82,8 @@ const Hero = ({ height, landingTitle, elevateLooksTitle, caption, heroimg, landi
                 {caption}
               </p>
               <span
-                className={`w-full md:w-[50%] lg:w-[30%] justify-self-center mt-4 p-5 md:p-3 rounded-[4px] bg-white flex items-center gap-3 ${
-                  document.title !== "Welcome - TrimTech" ? "hidden" : "block"
-                }`}
+                className={`w-full md:w-[50%] lg:w-[30%] justify-self-center mt-4 p-5 md:p-3 rounded-[4px] bg-white flex items-center gap-3 ${document.title !== "Welcome - TrimTech" ? "hidden" : "block"
+                  }`}
               >
                 <img src={search} alt="" className="h-5" />
                 <input
@@ -82,7 +96,7 @@ const Hero = ({ height, landingTitle, elevateLooksTitle, caption, heroimg, landi
           </div>
           <div className="h-full">
             <img src={landingHeroImg} alt="" className={`w-full h-full object-cover ${document.title === "Welcome - RapidStylers" ? "block" : "hidden"}`} />
-            <img src={heroimg} alt="" className="w-full h-full object-cover"/>
+            <img src={heroimg} alt="" className="w-full h-full object-cover" />
           </div>
         </div>
       </div>
@@ -106,8 +120,7 @@ const Hero = ({ height, landingTitle, elevateLooksTitle, caption, heroimg, landi
         </div>
       </div>
       {/* small screen menu */}
-      <div className={`fixed w-full h-lvh pt-10 pb-40 px-4 grid content-between bg-[#1e1e1e] lg:hidden ${
-          menuVisible ? "block" : "hidden"
+      <div className={`fixed w-full h-lvh pt-10 pb-40 px-4 grid content-between bg-[#1e1e1e] lg:hidden ${menuVisible ? "block" : "hidden"
         }`}
       >
         <div className="grid">
@@ -117,89 +130,70 @@ const Hero = ({ height, landingTitle, elevateLooksTitle, caption, heroimg, landi
             onClick={closeMenu}
             className="h-6 justify-self-end cursor-pointer"
           />
-    
+
           <div className="mt-10 grid gap-4">
-          <div className="py-4 text-white rounded-md font-semibold flex justify-between items-center" onClick={toggleSignIn}>
-            <span>Login</span>
-            <span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="rgba(255,255,255,1)"><path d="M12.1717 12.0005L9.34326 9.17203L10.7575 7.75781L15.0001 12.0005L10.7575 16.2431L9.34326 14.8289L12.1717 12.0005Z"></path></svg></span>
-          </div>
-          <div className="py-4 text-white rounded-md font-semibold flex justify-between items-center" onClick={toggleSignIn}>
-            <span>Create an account</span>
-            <span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="rgba(255,255,255,1)"><path d="M12.1717 12.0005L9.34326 9.17203L10.7575 7.75781L15.0001 12.0005L10.7575 16.2431L9.34326 14.8289L12.1717 12.0005Z"></path></svg></span>
-          </div>
-          <div className="py-4 text-white rounded-md font-semibold flex justify-between items-center" onClick={toggleSignIn}>
-            <span>Register as a stylist</span>
-            <span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="rgba(255,255,255,1)"><path d="M12.1717 12.0005L9.34326 9.17203L10.7575 7.75781L15.0001 12.0005L10.7575 16.2431L9.34326 14.8289L12.1717 12.0005Z"></path></svg></span>
-          </div>
+            <div className="py-4 text-white rounded-md font-semibold flex justify-between items-center" onClick={toggleSignIn}>
+              <span>Login</span>
+              <span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="rgba(255,255,255,1)"><path d="M12.1717 12.0005L9.34326 9.17203L10.7575 7.75781L15.0001 12.0005L10.7575 16.2431L9.34326 14.8289L12.1717 12.0005Z"></path></svg></span>
+            </div>
+            <div className="py-4 text-white rounded-md font-semibold flex justify-between items-center" onClick={toggleSignIn}>
+              <span>Create an account</span>
+              <span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="rgba(255,255,255,1)"><path d="M12.1717 12.0005L9.34326 9.17203L10.7575 7.75781L15.0001 12.0005L10.7575 16.2431L9.34326 14.8289L12.1717 12.0005Z"></path></svg></span>
+            </div>
+            <div className="py-4 text-white rounded-md font-semibold flex justify-between items-center" onClick={toggleSignIn}>
+              <span>Register as a stylist</span>
+              <span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="rgba(255,255,255,1)"><path d="M12.1717 12.0005L9.34326 9.17203L10.7575 7.75781L15.0001 12.0005L10.7575 16.2431L9.34326 14.8289L12.1717 12.0005Z"></path></svg></span>
+            </div>
           </div>
         </div>
         <span className="text-white/60">
-              © {currentYear} TrimTech All rights reserved
+          © {currentYear} TrimTech All rights reserved
         </span>
       </div>
       {/* Sign in modal */}
-      <div
-        className={`fixed bg-black/60 h-screen w-full px-4 flex items-center justify-center ${
-          signInVisible ? "block" : "hidden"
-        }`}
-      >
-        <div className="bg-white rounded-md w-full md:w-[40%] lg:w-[35%]">
-          <div className="flex justify-between items-center py-4 px-6 border-b ">
-            <span className="text-lg font-semibold">Login</span>
-            <img
-              src={closeBlack}
-              onClick={closeSignIn}
-              alt=""
-              className="h-5 cursor-pointer"
-            />
-          </div>
-          <div className="px-6 py-8 grid gap-6">
+      <Modal modalTitle={'Login'} 
+            isVisible={signInVisible}
+            onClose={()=>setSignInVisible(false)}
+            width={"md:w-[40%] lg:w-[35%]"}>
             <InputWithLabel labelName={"Email address"} inputType={"email"} />
             <InputWithLabel labelName={"Password"} inputType={"password"} />
 
             <div className="flex justify-between items-center">
-              <Buttons btnText={"Continue"} btnType={"primary"}/>
+              <Buttons btnText={"Continue"} btnType={"primary"} />
               <p className="text-sm font-medium text-brand underline">
                 Forgot password?
               </p>
             </div>
 
             <p className="text-sm">
-              Dont have an account?{" "}
+              Don't have an account?{" "}
               <span className="text-brand underline cursor-pointer" onClick={toggleSignUp}>Sign up</span>
             </p>
-          </div>
-        </div>
-      </div>
+      </Modal>
+
       {/* Sign Up modal */}
-      <div
-        className={`fixed bg-black/60 h-screen w-full px-4 flex items-center justify-center ${
-          signUpVisible ? "block" : "hidden"
-        }`}
-      >
-        <div className="bg-white rounded-md w-full md:w-[40%]">
-          <div className="flex justify-between items-center py-4 px-6 border-b ">
-            <span className="text-lg font-semibold">Sign up</span>
-            <img
-              src={closeBlack}
-              onClick={closeSignUp}
-              alt=""
-              className="h-5 cursor-pointer"
-            />
+      <Modal isVisible={signUpVisible} 
+             onClose={()=>setSignUpVisible(false)} 
+             modalTitle={"Sign Up"}
+             width={"md:w-[40%]"}>
+        <form onSubmit={userSignUp.handleSubmit}>
+          <InputWithLabel labelName={"Email address"} 
+                          inputType={"email"}
+                          inputName={"emailAddress"}
+                          inputValue={userSignUp.values.emailAddress}
+                          inputOnBlur={userSignUp.handleBlur}
+                          inputOnChange={userSignUp.handleChange}
+                          inputError={userSignUp.touched.emailAddress && userSignUp.errors.emailAddress ? userSignUp.errors.emailAddress : null} />
+          <div className="text-[13px] text-black/80 flex items-center gap-3 pt-2">
+            <img src={info} alt="" className="h-5" />
+            <span>Please ensure you provide a valid email address. A verification code will be sent to this email for you to complete the signup process.</span>
           </div>
-          <div className="px-6 py-8 grid gap-4">
-            <InputWithLabel labelName={"Email address"} inputType={"email"} />
-            <div className="text-[13px] text-black/80 flex items-center gap-3">
-              <img src={info} alt="" className="h-5"/>
-              <span>Please ensure you provide a valid email address. A verification code will be sent to this email for you to complete the signup process.</span>
-            </div>
-            <div className="flex justify-between items-center mt-8">
-              <Link to={"/verify-otp"}><Buttons btnType={"primary"} btnText={"Verify Email"} type={"button"}/></Link>
-              <p className="text-sm" onClick={toggleSignIn}> Return to {""} <span className="text-brand underline cursor-pointer">Sign in</span></p>
-            </div>
+          <div className="flex justify-between items-center mt-8">
+            <Buttons btnType={"primary"} btnText={"Verify Email"} type={"submit"} />
+            <p className="text-sm" onClick={toggleSignIn}> Return to {""} <span className="text-brand underline cursor-pointer">Sign in</span></p>
           </div>
-        </div>
-      </div>
+        </form>
+      </Modal>
     </div>
   );
 };

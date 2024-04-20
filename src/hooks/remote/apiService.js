@@ -1,4 +1,5 @@
 import { showErrorToastMessage } from "../../utils/constant";
+import { ApiClient } from "./apiClient";
 
 export class APIService {
     static extractError(error){
@@ -18,5 +19,25 @@ export class APIService {
             extracted = [error.response.message || "An Unexpected Error occurred"];
         }
         extracted.forEach((error)=>showErrorToastMessage(error));
+    }
+
+    static async  generateSignUpOtpCode(userData){
+        try{
+            return ApiClient.post("/generate_sign_up_otp_code", userData)
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+
+    static async verifyOtpCode(otpCode){
+        try{
+            return ApiClient.get(`/verify_otp_code?otpCode=${otpCode}`)
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
     }
 }

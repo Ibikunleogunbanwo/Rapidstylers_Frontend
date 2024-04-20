@@ -1,16 +1,16 @@
-import { Axios } from "axios";
+import Axios  from "axios";
 import { API_BASE_URL, API_HEADER, FORM_DATA_HEADER } from "../../utils/constant";
 
-export const ApiCLient = Axios.create(
+export const ApiClient = Axios.create(
     {
         baseURL : API_BASE_URL,
-        Headers : API_HEADER
+        headers : API_HEADER
     }
 )
 
 export const ApiFormDataClient = Axios.create(
     {
         baseURL : API_BASE_URL,
-        Headers : FORM_DATA_HEADER
+        headers : FORM_DATA_HEADER
     }
 )

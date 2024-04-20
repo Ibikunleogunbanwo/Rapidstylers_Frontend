@@ -1,12 +1,22 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import logo from "../../../assets/svg-icons/colouredLogo.svg";
 import sideImage from "../../../assets/images/signup.jpg";
 import InputWithLabel from "../../../components/inputWithLabel";
 import SelectInput from "../../../components/selectInput";
 import Buttons from "../../../components/button";
+import { useDispatch } from "react-redux";
+import { useEffect } from "react";
 
 const PersonalDetails = () => {
-  document.title = "Registration - RapidStylers";
+  useEffect(() => {
+    document.title = "Personal Details | Rapid Stylers";
+    document.querySelector('meta[name="description"]').content = "Complete the form to create your personalized profile.";
+}, []);
+
+  const location  = useLocation();
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const emailAddress = location.state?.userEmailAddress || '';
   const country = [{ value: 'Canada', label: 'Canada' }]
   const province = [
     { value: 'Alberta', label: 'Alberta' },

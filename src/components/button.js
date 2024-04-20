@@ -4,7 +4,7 @@ const Buttons = ({ btnType, btnText, type, onClick }) => {
             {
                 btnType === "primary" ?
                     (
-                        <button className="py-3 px-8 bg-brand rounded-md text-white font-semibold" type={type} onClick={onClick}>{btnText}</button>
+                        <button className="py-3 px-7 bg-brand rounded-md text-white font-semibold" type={type} onClick={onClick}>{btnText}</button>
                     )
                     :
                     ""

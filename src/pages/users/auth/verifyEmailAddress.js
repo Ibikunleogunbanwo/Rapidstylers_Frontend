@@ -1,12 +1,27 @@
-import { Link } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import logo from "../../../assets/svg-icons/colouredLogo.svg";
 import sideImage from "../../../assets/images/signup.jpg";
 import OtpInputs from "../../../components/otpInputs";
 import { clearOTP, handleInput } from "../../../utils/utility";
 import { useFormik } from "formik";
+import React, { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import Buttons from "../../../components/button";
+import { verifyOtpCode } from "../../../hooks/local/userReducer";
+import Spinner from "../../../components/spinner";
 
-const Verify = () => {
-  document.title = "Verify OTP - RapidStylers";
+const VerifyUserEmailAddress = () => {
+  useEffect(() => {
+    document.title = "Verify Email Address | Rapid Stylers";
+    document.querySelector('meta[name="description"]').content = "Verify Email Address to validate your account for your beautification";
+}, []);
+
+const location  = useLocation();
+const navigate = useNavigate();
+const dispatch = useDispatch();
+
+const userEmailAddress = location.state?.emailAddress || '';
+
   const handleOTPCodeChange = (currentInput)=>{
     const userInput = handleInput(currentInput);
     verifyUserEmail.setFieldValue('otpCode', userInput);
@@ -19,11 +34,17 @@ const Verify = () => {
     initialValues: {
       otpCode: "",
     },
-    onSubmit: (values) => {
-      console.log(values);
+    onSubmit: async (values) => {
+      const {otpCode} = values
+      const {payload} = await dispatch(verifyOtpCode(otpCode));
+      if(payload.statusCode === "200") {
+        navigate("/personalDetails", {state : {userEmailAddress}});
+      }
     },
   })
   return (
+    <React.Fragment>
+       <Spinner loading={useSelector((state)=>state.user).loading}/>
     <div className="lg:h-screen grid grid-cols-1 lg:grid-cols-12">
       <div className="m-1 rounded-md overflow-hidden col-span-1 lg:col-span-3">
         <div className="relative h-52 lg:h-full">
@@ -56,7 +77,7 @@ const Verify = () => {
         <div className="py-6 w-full">
           <img src={logo} alt="" className="h-10 mb-6"/>
           <p className="text-xl">Verify your email address.</p>
-          <p className="text-black/60">A verification code was sent to your email address. Please provide the code and click on verify.</p>
+          <p className="text-black/60">A verification code was sent to your email address({userEmailAddress}). Please provide the code and click on verify.</p>
           <div className="flex justify-between items-center">
                         <p className="text-sm font-semibold text-primary/50 cursor-pointer" onClick={clearUserOTP}>Clear code</p>
                     </div>
@@ -68,16 +89,16 @@ const Verify = () => {
             <OtpInputs id={'digit5'} onChange={handleOTPCodeChange}/>
           </div>
           <div className="mt-6">
-        
+        <form onSubmit={verifyUserEmail.handleSubmit}>
           <input name="otpCode" type="text" id="userInput" hidden  value={verifyUserEmail.values.otpCode} onChange={verifyUserEmail.handleChange} onBlur={verifyUserEmail.handleBlur} />
-            <Link to={"/personal-details"} className="py-4 px-8 bg-brand rounded-md text-sm text-white font-semibold">
-              Verify
-            </Link>
+            <Buttons btnType={"primary"} type={"submit"} btnText={"Verify"} />
+        </form>
           </div>
         </div>
       </div>
     </div>
+    </React.Fragment>
   );
 };
 
-export default Verify;
+export default VerifyUserEmailAddress;
