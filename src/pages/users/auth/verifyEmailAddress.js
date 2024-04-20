@@ -81,12 +81,13 @@ const userEmailAddress = location.state?.emailAddress || '';
           <div className="flex justify-between items-center">
                         <p className="text-sm font-semibold text-primary/50 cursor-pointer" onClick={clearUserOTP}>Clear code</p>
                     </div>
-          <div className="w-full grid grid-cols-5 md:grid-cols-10 gap-4 mt-8">
+          <div className="w-full grid grid-cols-6 md:grid-cols-10 gap-4 mt-8">
             <OtpInputs id={'digit1'} onChange={handleOTPCodeChange}/>
             <OtpInputs id={'digit2'} onChange={handleOTPCodeChange}/>
             <OtpInputs id={'digit3'} onChange={handleOTPCodeChange}/>
             <OtpInputs id={'digit4'} onChange={handleOTPCodeChange}/>
             <OtpInputs id={'digit5'} onChange={handleOTPCodeChange}/>
+            <OtpInputs id={'digit6'} onChange={handleOTPCodeChange}/>
           </div>
           <div className="mt-6">
         <form onSubmit={verifyUserEmail.handleSubmit}>

@@ -28,6 +28,11 @@ const UserSideBar = ({ sideBarVisibility, sideBarTitle, closeSideBar }) => {
                                 ? "bg-brand text-white cursor-default"
                                 : "cursor-pointer"}`}>UserFeedbacks</Link>
                 </div>
+                <div> 
+                    <Link to="/signOut" className={`py-4 px-4 rounded-md ${sideBarTitle === "/dashboard"
+                                ? "bg-brand text-white cursor-default"
+                                : "cursor-pointer"}`}>Sign Out</Link>
+                </div>
            </div>
             </div>
     
@@ -58,6 +63,11 @@ const UserSideBar = ({ sideBarVisibility, sideBarTitle, closeSideBar }) => {
                             <Link to="/dashboard/feedback" className={`py-4 rounded-md ${sideBarTitle === "/dashboard/feedback"
                                 ? "text-brand cursor-default font-medium"
                                 : "cursor-pointer text-black/50"}`}> Feedback</Link>
+                        </div>
+                        <div onClick={closeSideBar}>
+                            <Link to="/dashboard/feedback" className={`py-4 rounded-md ${sideBarTitle === "/dashboard/feedback"
+                                ? "text-brand cursor-default font-medium"
+                                : "cursor-pointer text-black/50"}`}> Sign Out</Link>
                         </div>
                     </div>
                 </div>

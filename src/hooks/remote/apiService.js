@@ -30,10 +30,27 @@ export class APIService {
             throw(error);
         }
     }
-
     static async verifyOtpCode(otpCode){
         try{
             return ApiClient.get(`/verify_otp_code?otpCode=${otpCode}`)
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+    static async createUserAccount(data){
+        try{
+            return ApiClient.post("/create_user_account", data);
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+    static async userSignIn(data){
+        try{
+            return ApiClient.post("/user_sign_in", data);
         }
         catch(error){
             APIService.extractError(error);

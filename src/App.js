@@ -17,9 +17,9 @@ function App() {
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/elevate-your-looks" element={<ElevateLooks />} />
-        <Route path="/secure-account" element={<SecureAccount />} />
         <Route path="/verifyEmailAddress" element={<VerifyUserEmailAddress />} />
         <Route path="/personalDetails" element={<PersonalDetails />} />
+        <Route path="/secureAccount" element={<SecureAccount />} />
         <Route path="/about" element={<AboutUs />} />
         <Route path='*' element={<UserLayout/>}/>
       </Routes>
