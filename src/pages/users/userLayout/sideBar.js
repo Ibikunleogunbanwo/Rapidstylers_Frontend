@@ -65,7 +65,7 @@ const UserSideBar = ({ sideBarVisibility, sideBarTitle, closeSideBar }) => {
                                 : "cursor-pointer text-black/50"}`}> Feedback</Link>
                         </div>
                         <div onClick={closeSideBar}>
-                            <Link to="/dashboard/feedback" className={`py-4 rounded-md ${sideBarTitle === "/dashboard/feedback"
+                            <Link to="/signOut" className={`py-4 rounded-md ${sideBarTitle === "signOut"
                                 ? "text-brand cursor-default font-medium"
                                 : "cursor-pointer text-black/50"}`}> Sign Out</Link>
                         </div>

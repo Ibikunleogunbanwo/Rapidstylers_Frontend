@@ -9,7 +9,7 @@ const initialState = {
     error : null,
     isActionEnabled : false,
     ...retrieveFromLocalStorage([
-
+        "userSessionData"
     ])
 }
 
@@ -52,6 +52,17 @@ export const userAuthenticate = createAsyncThunk(
         const response = await apiUserLogin.data;
         saveToLocalStorage("userSessionData", JSON.stringify(response.data));
         return response;
+    }
+)
+
+const logOutSession = () =>{
+    sessionStorage.removeItem("userSessionData"); 
+}
+
+export const userLogOut = createAsyncThunk(
+    "user/LogOut",
+    async()=>{
+        logOutSession();
     }
 )
 
