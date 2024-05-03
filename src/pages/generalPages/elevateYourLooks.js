@@ -9,12 +9,7 @@ const ElevateLooks = () => {
 
   return (
     <div className="grid gap-12">
-      <Hero
-        height="75vh"
-        elevateLooksTitle="Elevate your style"
-        caption="Explore Our Exclusive Collection of Trendsetting Hairstyles for Men and Women"
-        heroimg={heroimg}
-      />
+      <Hero height="75vh" />
 
       <div className="grid grid-cols-1 md:grid-cols-8 lg:grid-cols-12 gap-4 px-4 md:px-[50px]">
         <div className="col-span-12 lg:col-span-2">

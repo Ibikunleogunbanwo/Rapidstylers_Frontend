@@ -8,7 +8,8 @@ import canada from "../../assets/images/canada.png";
 import canada2 from "../../assets/images/signup.jpg";
 import { Link } from "react-router-dom";
 import Hero from "./heroSection";
-import rapidGIF from "../../assets/Videos/stylers.gif";
+// import rapidGIF from "../../assets/Videos/stylers.gif";
+import about from "../../assets/images/about_landing.png"
 import stylistImg1 from "../../assets/images/stylist 1.png"
 import stylistImg2 from "../../assets/images/stylist 2.png"
 import ScrollContainer from "../../components/img-slider";
@@ -19,42 +20,41 @@ const LandingPage = () => {
     return (
       <div className="grid">
         {/* Hero section */}
-        <Hero
-          height="85vh"
-          landingTitle="Get convenient, high-quality hair services without leaving your home."
-          titleAddOn="Our platform connects you with top-rated local barbers and stylists for in-home appointments."
-          landingHeroImg={heroImg}
-        />
+        <Hero height="85vh" />
 
         {/* About us*/}
-        <div className="px-4 md:px-[50px] mt-14">
-          <div className=" grid grid-cols-1 md:grid-cols-5 gap-10 py-16 bg-black text-white rounded-lg items-center">
-            <div className="col-span-1 md:col-span-3 px-10 order-2 md:order-1">
-              <p className="text-3xl">Our brand story.</p>
-              <p className="font-medium mt-3">
-                Tired of the Salon Struggle? Escape to RapidStylers!
-              </p>
-              <p className="text-white/60">
-                Imagine this: the clock races by, your schedule's crammed, and
-                that essential haircut slips further out of reach. Sound
-                familiar? You're not alone. Between juggling commitments and
-                battling inconvenient salon hours, finding time for yourself
-                feels like a luxury. But what if there was a better way?
-              </p>
-              <div className="mt-8">
-                <Link to={"/about"} className="py-4 px-8 bg-brand rounded-md text-sm text-white font-semibold">
-                  Read more...
-                </Link>
+        <div className="bg-black">
+            <div className="grid grid-cols-1 md:grid-cols-2 py-16 px-4 md:px-[50px] lg:px-[100px] gap-10 bg-white text-black rounded-none md:rounded-t-3xl items-center">
+              <div className="order-2 md:order-1">
+                <p className="text-3xl text-black col-span-1 md:col-span-2 hidden md:block">Our <span className="text-brand">Brand Story</span></p>
+                <p className="font-semibold mt-2 text-lg">
+                  Tired of the Salon Struggle?<span className="text-brand"> Escape to RapidStylers!</span>
+                </p>
+                <p>
+                  Imagine this: the clock races by, your schedule's crammed, and
+                  that essential haircut slips further out of reach. Sound
+                  familiar? You're not alone. Between juggling commitments and
+                  battling inconvenient salon hours, finding time for yourself
+                  feels like a luxury. But what if there was a better way?
+                </p>
+                <div className="mt-8">
+                  <Link
+                    to={"/about"}
+                    className="py-4 px-8 bg-brand rounded-md text-sm text-white font-semibold"
+                  >
+                    Read more...
+                  </Link>
+                </div>
+              </div>
+              <div className="order-1 md:order-2">
+              <p className="text-3xl text-black col-span-1 md:col-span-2 mb-6 md:hidden">Our <span className="text-brand">Brand Story</span></p>
+                <img
+                src={about}
+                alt="About image"
+                className="w-full object-cover rounded-3xl"
+                />
               </div>
             </div>
-            <div className="rounded-lg col-span-1 md:col-span-2 order-1 md:order-2">
-              <img
-                src={rapidGIF}
-                alt="My GIF"
-                className=" w-full object-cover"
-              />
-            </div>
-          </div>
         </div>
 
         {/* Featured stylists */}
@@ -214,14 +214,20 @@ const LandingPage = () => {
               </span>
             </p>
           </div>
-          <div className="z-0"><ScrollContainer /></div>
+          <div className="z-0">
+            <ScrollContainer />
+          </div>
         </div>
 
         {/* Book appointment / register */}
         <div className="px-4 md:px-[50px] grid grid-cols-1 lg:grid-cols-2 gap-4 my-16">
           <div className="rounded-lg overflow-hidden">
             <div className="overflow-hidden">
-              <img src={stylistImg1} alt="" className="w-full object-cover object-top hover:scale-110 transition-all"/>
+              <img
+                src={stylistImg1}
+                alt=""
+                className="w-full object-cover object-top hover:scale-110 transition-all"
+              />
             </div>
             <div className="bg-[#1e1e1e] p-4 md:p-6 text-white">
               <p className="text-lg">Transform your style!</p>
