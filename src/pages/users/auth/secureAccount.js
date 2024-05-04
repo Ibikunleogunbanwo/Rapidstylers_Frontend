@@ -3,6 +3,8 @@ import sideImage from "../../../assets/images/signup.jpg";
 import Buttons from "../../../components/button";
 import { useEffect, useState } from "react";
 import { useFormik } from "formik";
+import Lottie from "lottie-react";
+import successAnim from "../../../assets/svg-icons/successAnim.json";
 import * as Yup from "yup";
 import PasswordInput from "../../../components/passwordInput";
 import { useDispatch } from "react-redux";
@@ -115,14 +117,18 @@ const SecureAccount = () => {
         </div>
       </div>
       {dashboardModal && (
-        <div className="fixed bg-black/60 h-screen w-full px-4 flex items-center justify-center">
-          <div className="bg-white rounded-md w-full md:w-[40%] flex flex-col items-center justify-center">
-          <p className="">Account Created Successful, Proceed to Dashboard </p>
-            <div className="px-6 py-8 grid gap-4">
-              <Buttons btnText={"Go to Dashboard"} btnType={"primary"} type={"button"} onClick={()=>proceedToDashboard()} />
-            </div>
-          </div>
-        </div>
+    
+    <div className="fixed bg-black/60 h-screen w-full px-4 flex items-center justify-center">
+    <div className="bg-white rounded-md w-full md:w-[35%] flex flex-col items-center justify-center">
+      <div className="">
+        <Lottie animationData={successAnim} className="h-48"/>
+      </div>
+    <p className="-mt-8 text-center px-4">Account Created Successful, Proceed to Dashboard </p>
+      <div className="px-6 py-8 grid gap-4">
+        <Buttons btnText={"Go to Dashboard"} btnType={"primary"} type={"button"} onClick={()=>proceedToDashboard()}  />
+      </div>
+    </div>
+  </div>
       )}
 
 

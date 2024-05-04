@@ -14,7 +14,7 @@ const UserSideBar = ({ sideBarVisibility, sideBarTitle, closeSideBar }) => {
                                 : "cursor-pointer"}`}>Dashboard</Link>
                 </div>
                 <div> 
-                    <Link to="/dashboard" className={`py-4 px-4 rounded-md ${sideBarTitle === "/dashboard"
+                    <Link to="/bookAppointment" className={`py-4 px-4 rounded-md ${sideBarTitle === "Book Appointment"
                                 ? "bg-brand text-white cursor-default"
                                 : "cursor-pointer"}`}>Book an Appointment</Link>
                 </div>

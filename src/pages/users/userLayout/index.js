@@ -7,6 +7,7 @@ import Advert from "../../../components/advert";
 import { useState } from "react";
 import { useSelector } from "react-redux";
 import LogOut from "../auth/logout";
+import BookAppointment from "../pages/bookAnAppointment";
 const UserLayout = () => {
     const userSession = useSelector((state)=>state.user.userSessionData);
     const [sideBarVisibility, setSideBarVisibility] = useState(false);
@@ -32,6 +33,7 @@ const UserLayout = () => {
                         <div className="col-span-1 lg:col-span-7">
                             <Routes>
                                 <Route path="/dashboard" element={<Dashboard setPageTile={setPageTitle} />} />
+                                <Route path="/bookAppointment" element={<BookAppointment setPageTile={setPageTitle}/>}/>
                                 <Route path="/signOut" element={<LogOut/>}/>
                             </Routes>
                         </div>
