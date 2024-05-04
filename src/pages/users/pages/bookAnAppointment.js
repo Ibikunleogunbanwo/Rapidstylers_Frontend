@@ -3,9 +3,13 @@ import barber from "../../../assets/images/barbers.jpg";
 import haidresser from "../../../assets/images/hairdresser.jpg";
 import arrow from "../../../assets/svg-icons/arrow.svg";
 import search from "../../../assets/svg-icons/search.svg";
+import { useEffect } from "react";
 
-const BookAppointment = () => {
-  document.title = "Book an appointment - TrimTech";
+const BookAppointment =  ({setPageTile}) => {
+  useEffect((() => {
+    setPageTile("Book Appointment");
+    document.title = "Book an appointment - TrimTech";
+  }));
   return (
     <div className="bg-white border rounded-lg">
       <div className="border-b p-4 text-[15px] font-bold bg-[#1d1d1d08] rounded-t-lg">Book an appointment.</div>

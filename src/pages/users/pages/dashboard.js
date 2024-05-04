@@ -5,7 +5,7 @@ import Appointments from "./upcomingAppointments";
 const Dashboard = ({setPageTile}) => {
   useEffect((() => {
     setPageTile("Dashboard");
-    document.title = "Dashboard - TrimTech";
+    document.title = "Dashboard - RapidStyler";
   }));
   return (
     <div className="bg-white border rounded-lg">
