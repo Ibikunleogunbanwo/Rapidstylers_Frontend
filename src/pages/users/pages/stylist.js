@@ -2,20 +2,24 @@ import { Link } from "react-router-dom";
 // import arrow from "../assets/svg-icons/black-arrow.svg"
 import ServiceCard from "../../../components/serviceCard";
 import Back from "../../../components/goBack";
+import { useEffect } from "react";
 
-const Hairstylist = () => {
-  document.title="Select a stylist - TrimTech"
+const Stylist = ({setPageTitle}) => {
+  useEffect((() => {
+    setPageTitle("Book Appointment");
+    document.title = "Select a stylist - Rapid Styler";
+  }));
   return (
     <div className="bg-white border rounded-lg">
       <div className="flex gap-1 items-center border-b p-4 text-[15px] font-bold bg-[#1d1d1d08] rounded-t-lg">
         <Back />
-        <span>Hairstylists.</span>
+        <span>Stylists.</span>
       </div>
       <div className="p-4">
         <p className="text-black/50 mb-4 text-sm font-medium">Suggested stylists based on your location:</p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Link to={"/dashboard/stylist-profile"}>
+          <Link to={"/stylistProfile"}>
           <ServiceCard 
             coverImg={"https://img.freepik.com/free-photo/stylist-woman-taking-care-her-client-afro-hair_23-2149259367.jpg?w=900&t=st=1704030929~exp=1704031529~hmac=7861cebf8cf782ab846ca8f5ffb75aa6e54176927081386eed4e5e18020a05cc"}
             name={"Cutting Edge Saloon"}
@@ -32,7 +36,7 @@ const Hairstylist = () => {
             reviews={"200"}
           />
           <ServiceCard 
-            coverImg={"https://img.freepik.com/premium-photo/female-beautiful-hairstylist_63106-680.jpg?w=740"}
+            coverImg={"https://img.freepik.com/premium-photo/female-beautiful-Stylist_63106-680.jpg?w=740"}
             name={"Glamour Locks Salon"}
             distance={"24km"}
             rating={"5.0"}
@@ -54,4 +58,4 @@ const Hairstylist = () => {
   );
 };
 
-export default Hairstylist;
+export default Stylist;

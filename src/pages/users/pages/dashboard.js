@@ -2,9 +2,9 @@ import { useEffect } from "react";
 import brandIco from "../../../assets/svg-icons/brand-appointment-icon.svg";
 import Appointments from "./upcomingAppointments";
 
-const Dashboard = ({setPageTile}) => {
+const Dashboard = ({setPageTitle}) => {
   useEffect((() => {
-    setPageTile("Dashboard");
+    setPageTitle("Dashboard");
     document.title = "Dashboard - RapidStyler";
   }));
   return (

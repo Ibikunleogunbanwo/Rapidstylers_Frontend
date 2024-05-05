@@ -1,10 +1,13 @@
 import bookmark from "../../../assets/svg-icons/bookmark.svg";
 import SelectService from "../../../components/selectService";
 import Back from "../../../components/goBack"
+import { useEffect } from "react";
 
-const StylistProfile = () => {
-  document.title = "Book a service - TrimTech";
-
+const StylistProfile = ({setPageTitle}) => {
+  useEffect((() => {
+    setPageTitle("Book Appointment");
+    document.title = "Book an appointment - Rapid Styler";
+  }));
   return (
     <div className="bg-white border rounded-lg">
       <div className="flex items-center justify-between border-b p-4 text-[15px] font-bold bg-[#1d1d1d08] rounded-t-lg">

@@ -1,8 +1,12 @@
+import { useEffect } from "react";
 import Back from "../../../components/goBack";
 import ServiceCard from "../../../components/serviceCard";
 
-const SavedStylist = () => {
-  document.title = "Saved stylists - TrimTech";
+const SavedStylist = ({setPageTitle}) => {
+  useEffect((() => {
+    setPageTitle("Account Settings");
+    document.title = "Saved Stylist - Rapid Styler";
+  }));
   return (
     <div className="bg-white rounded-lg border">
       <div className="flex gap-1 items-center border-b p-4 text-[15px] font-bold bg-[#1d1d1d08] rounded-t-lg">
