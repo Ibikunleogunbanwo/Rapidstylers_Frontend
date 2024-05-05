@@ -19,12 +19,12 @@ const UserSideBar = ({ sideBarVisibility, sideBarTitle, closeSideBar }) => {
                                 : "cursor-pointer"}`}>Book an Appointment</Link>
                 </div>
                 <div> 
-                    <Link to="/dashboard" className={`py-4 px-4 rounded-md ${sideBarTitle === "/dashboard"
+                    <Link to="/accountSettings" className={`py-4 px-4 rounded-md ${sideBarTitle === "Account Settings"
                                 ? "bg-brand text-white cursor-default"
                                 : "cursor-pointer"}`}>Account Settings</Link>
                 </div>
                 <div> 
-                    <Link to="/dashboard" className={`py-4 px-4 rounded-md ${sideBarTitle === "/dashboard"
+                    <Link to="/feedback" className={`py-4 px-4 rounded-md ${sideBarTitle === "Feedback"
                                 ? "bg-brand text-white cursor-default"
                                 : "cursor-pointer"}`}>UserFeedbacks</Link>
                 </div>
@@ -50,17 +50,17 @@ const UserSideBar = ({ sideBarVisibility, sideBarTitle, closeSideBar }) => {
                                 : "cursor-pointer text-black/50"}`}> Dashboard</Link>
                         </div>
                         <div onClick={closeSideBar}>
-                            <Link to="/dashboard/book-appointment" className={`py-4 rounded-md ${sideBarTitle === "/dashboard/book-appointment"
+                            <Link to="/bookAppointment" className={`py-4 rounded-md ${sideBarTitle === "Book Appointment"
                                 ? "text-brand cursor-default font-medium"
                                 : "cursor-pointer text-black/50"}`}>Book an appointment</Link>
                         </div>
                         <div onClick={closeSideBar}>
-                            <Link to="/dashboard/account-settings" className={`py-4 rounded-md ${sideBarTitle === "/dashboard/account-settings"
+                            <Link to="/accountSettings" className={`py-4 rounded-md ${sideBarTitle === "Account Settings"
                                 ? "text-brand cursor-default font-medium"
                                 : "cursor-pointer text-black/50"}`}>Account settings</Link>
                         </div>
                         <div onClick={closeSideBar}>
-                            <Link to="/dashboard/feedback" className={`py-4 rounded-md ${sideBarTitle === "/dashboard/feedback"
+                            <Link to="/feedback" className={`py-4 rounded-md ${sideBarTitle === "Feedback"
                                 ? "text-brand cursor-default font-medium"
                                 : "cursor-pointer text-black/50"}`}> Feedback</Link>
                         </div>

@@ -5,9 +5,9 @@ import arrow from "../../../assets/svg-icons/arrow.svg";
 import search from "../../../assets/svg-icons/search.svg";
 import { useEffect } from "react";
 
-const BookAppointment =  ({setPageTile}) => {
+const BookAppointment =  ({setPageTitle}) => {
   useEffect((() => {
-    setPageTile("Book Appointment");
+    setPageTitle("Book Appointment");
     document.title = "Book an appointment - TrimTech";
   }));
   return (
@@ -29,16 +29,19 @@ const BookAppointment =  ({setPageTile}) => {
               className="w-full active:border-0 active:outline-0 focus:border-0 focus:outline-0 placeholder:text-sm"
               placeholder="Search for a stylist"
             />
-            <button className="bg-brand text-sm h-full flex gap-2 items-center text-white py-4 md:py-3 px-5 rounded">
+            <Link to={"/stylist"}>
+            <button className="bg-brand text-sm h-full flex gap-2 items-center text-white py-4 md:py-3 px-5 rounded" >
             <span>Search!</span>
           </button>
+            </Link>
           </span>
         </div>
         <div className="mb-6">
           <p className="text-center text-slate-400">Or <br /> let the system decide</p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
+        <Link to={"/stylist"}>
+        <div>
             <div className="h-48 w-full rounded-t-md flex justify-center overflow-hidden">
               <img src={barber} alt="" className="w-full h-full object-cover"/>
             </div>
@@ -54,8 +57,9 @@ const BookAppointment =  ({setPageTile}) => {
               </p>
             </div>
           </div>
+        </Link>
           <div>
-            <Link to={"/dashboard/choose-stylist"}>
+            <Link to={"/stylist"}>
             <div className="h-48 w-full rounded-t-md flex justify-center overflow-hidden">
               <img src={haidresser} alt="" className="w-full h-full object-cover"/>
             </div>

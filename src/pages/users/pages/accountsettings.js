@@ -1,15 +1,19 @@
+import { useEffect } from "react";
 import arrow from "../../../assets/svg-icons/black-arrow.svg"
 import { Link } from "react-router-dom";
 
-const AccountSettings = () => {
-    document.title="Account settings - TrimTech"
+const AccountSettings = ({setPageTitle}) => {
+    useEffect((() => {
+      setPageTitle("Account Settings");
+      document.title = "Account settings - Rapid Styler";
+    }));
     return ( 
         <div className="bg-white border rounded-lg">
       <div className="flex gap-1 items-center border-b p-4 text-[15px] font-bold bg-[#1d1d1d08] rounded-t-lg">
         Account settings
       </div>
       <div className="p-4 grid gap-4">
-        <Link to={"/dashboard/update-personal-information"}>
+        <Link to={"/updatePersonalInformation"}>
         <div className="flex items-center justify-between py-3">
           <span className="">Update personal information</span>
           <div>
@@ -17,7 +21,7 @@ const AccountSettings = () => {
           </div>
         </div>
         </Link>
-        <Link to={"/dashboard/saved-stylists"}>
+        <Link to={"/savedStylist"}>
         <div className="flex items-center justify-between py-3">
           <span className="">Saved stylists</span>
           <div>
@@ -25,7 +29,7 @@ const AccountSettings = () => {
           </div>
         </div>
         </Link>
-        <Link to={"/dashboard/change-password"}>
+        <Link to={"/changePassword"}>
         <div className="flex items-center justify-between py-3">
           <span className="">Change password</span>
           <div>
@@ -33,7 +37,7 @@ const AccountSettings = () => {
           </div>
         </div>
         </Link>
-        <Link to={"/dashboard/payment-details"}>
+        <Link to={"/PaymentDetails"}>
         <div className="flex items-center justify-between py-3">
           <span className="">Add payment details</span>
           <div>
@@ -41,7 +45,7 @@ const AccountSettings = () => {
           </div>
         </div>
         </Link>
-        <Link to={"/dashboard/notification-settings"}>
+        <Link to={"/notificationSettings"}>
         <div className="flex items-center justify-between py-3">
           <span className="">Manage notification preferences</span>
           <div>

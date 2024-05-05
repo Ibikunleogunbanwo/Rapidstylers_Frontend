@@ -8,6 +8,15 @@ import { useState } from "react";
 import { useSelector } from "react-redux";
 import LogOut from "../auth/logout";
 import BookAppointment from "../pages/bookAnAppointment";
+import Stylist from "../pages/stylist";
+import StylistProfile from "../pages/stylistProfile";
+import AccountSettings from "../pages/accountsettings";
+import UpdateInformation from "../pages/updatePersonal";
+import SavedStylist from "../pages/savedStylists";
+import ChangePassword from "../pages/changePassword";
+import PaymentDetails from "../pages/paymentDetails";
+import NotificationSettings from "../pages/notificationSettings";
+import Feedback from "../pages/feedback";
 const UserLayout = () => {
     const userSession = useSelector((state)=>state.user.userSessionData);
     const [sideBarVisibility, setSideBarVisibility] = useState(false);
@@ -32,8 +41,17 @@ const UserLayout = () => {
                     <div className="grid grid-cols-1 lg:grid-cols-10 gap-4">
                         <div className="col-span-1 lg:col-span-7">
                             <Routes>
-                                <Route path="/dashboard" element={<Dashboard setPageTile={setPageTitle} />} />
-                                <Route path="/bookAppointment" element={<BookAppointment setPageTile={setPageTitle}/>}/>
+                                <Route path="/dashboard" element={<Dashboard setPageTitle={setPageTitle} />} />
+                                <Route path="/bookAppointment" element={<BookAppointment setPageTitle={setPageTitle}/>}/>
+                                <Route path="/stylist" element={<Stylist setPageTitle={setPageTitle}/>}/>
+                                <Route path="/stylistProfile" element={<StylistProfile setPageTitle={setPageTitle}/>}/>
+                                <Route path="/accountSettings" element={<AccountSettings setPageTitle={setPageTitle}/>}/>
+                                <Route path="/updatePersonalInformation" element={<UpdateInformation setPageTitle={setPageTitle}/>}/>
+                                <Route path="/savedStylist" element={<SavedStylist setPageTitle={setPageTitle}/>}/>
+                                <Route path="/changePassword" element={<ChangePassword setPageTitle={setPageTitle}/>}/>
+                                <Route path="/paymentDetails" element={<PaymentDetails setPageTitle={setPageTitle}/>}/>
+                                <Route path="/notificationSettings" element={<NotificationSettings setPageTitle={setPageTitle}/>}/>
+                                <Route path="/feedback" element={<Feedback setPageTitle={setPageTitle}/>}/>
                                 <Route path="/signOut" element={<LogOut/>}/>
                             </Routes>
                         </div>

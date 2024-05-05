@@ -1,9 +1,13 @@
 // import arrow from "../assets/svg-icons/black-arrow.svg"
 // import { Link } from "react-router-dom";
+import { useEffect } from "react";
 import Input from "../../../components/input";
 
-const Feedback = () => {
-  document.title = "User feedback - TrimTech";
+const Feedback = ({setPageTitle}) => {
+  useEffect((() => {
+    setPageTitle("Feedback");
+    document.title = "User Feedback - Rapid Styler";
+  }));
   return (
     <div className="bg-white border rounded-lg">
       <div className="flex gap-1 items-center border-b p-4 text-[15px] font-bold bg-[#1d1d1d08] rounded-t-lg">
