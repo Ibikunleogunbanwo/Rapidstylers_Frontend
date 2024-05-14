@@ -1,5 +1,5 @@
 import close from "../assets/svg-icons/closeBlack.svg";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Input from "../components/input"
 
 const SelectService = ({serviceName, servicePrice, stylerId, subServiceId}) => {
@@ -72,6 +72,16 @@ const SelectService = ({serviceName, servicePrice, stylerId, subServiceId}) => {
     const days = generateDaysInMonth(currentYear, months.indexOf(selected));
     setDaysInMonth(days);
   };
+
+  const [numberOfPeople, setNumberOfPeople] = useState(1);
+  const [tipAmount, setTipAmount] = useState("0");
+  const [totalPrice, setTotalPrice] = useState(0);
+  useEffect(()=>{
+    const parsedServicePrice = parseFloat(servicePrice.replace(/,/g, ''));
+    const parseTipAmount = parseFloat(tipAmount.replace(/,/g, ''));
+    const newTotalPrice = (numberOfPeople * parsedServicePrice) + parseTipAmount;
+    setTotalPrice(newTotalPrice);
+  },[numberOfPeople,servicePrice,tipAmount])
 
   return (
     <div className="">
@@ -234,15 +244,15 @@ const SelectService = ({serviceName, servicePrice, stylerId, subServiceId}) => {
             <div className="px-6">
               <p className="font-semibold mb-2 text-[15px]">Additional information</p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <Input label={"Number of people:"} type={"number"}/>
-                <Input label={"Tip stylist: "} type={"number"} placeholder={"Optional"}/>
+                <Input label={"Number of people:"} value={numberOfPeople} type={"number"} onChange={(e)=>setNumberOfPeople(e.target.value)}/>
+                <Input label={"Tip stylist: "} type={"number"} value={tipAmount} placeholder={"Optional"} onChange={(e)=>setTipAmount(e.target.value)}/>
               </div>
             </div>
             </div>
             <div className="border-t sticky w-full bottom-0 bg-white flex justify-between items-center px-6 py-4">
              <div>
               <p className="text-sm text-slate-400">Total:</p>
-              <p className="text-brand font-bold text-xl">${servicePrice}</p>
+              <p className="text-brand font-bold text-xl">${isNaN(totalPrice) ? 0 : totalPrice.toLocaleString()}</p>
               </div>
              <button className="text-sm bg-brand text-white rounded-md px-6 py-4">Book appointment</button>
             </div>

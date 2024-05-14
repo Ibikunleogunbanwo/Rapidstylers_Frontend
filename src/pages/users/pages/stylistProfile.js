@@ -13,7 +13,8 @@ const StylistProfile = ({ setPageTitle }) => {
     document.title = "Book an appointment - Rapid Styler";
   }));
   let { stylerId, stylerName } = useParams();
-  const stylerProfile = useSingleStylerProfile(atob(stylerId));
+  stylerId = atob(stylerId);
+  const stylerProfile = useSingleStylerProfile(stylerId);
 
   return (
     <div className="bg-white border rounded-lg">
@@ -72,7 +73,7 @@ const StylistProfile = ({ setPageTitle }) => {
               stylerProfile.stylerSubService.map((val, key) => {
                 return (
                   <div key={key}>
-                    <SelectService serviceName={val.name} servicePrice={val.price} />
+                    <SelectService serviceName={val.name} servicePrice={val.price}  subServiceId={val.id} stylerId={stylerId}/>
                   </div>
                 )
               })

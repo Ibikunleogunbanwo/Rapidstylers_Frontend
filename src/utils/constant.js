@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { toast } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -46,3 +47,24 @@ export const retrieveFromLocalStorage = (keys) =>{
     });
     return data;
 }
+export function useDigitInput() {
+    useEffect(() => {
+      const handleDigitInput = (event) => {
+        const removeString = event.target.value.replace(/[^0-9.]/g, '');
+        const convertToDigit = parseFloat(removeString);
+        if (!isNaN(convertToDigit)) {
+          event.target.value = convertToDigit;
+        } else {
+          event.target.value = '';
+        }
+      };
+  
+      document.querySelectorAll('.digitFormat').forEach((input) => {
+        input.addEventListener('keyup', handleDigitInput);
+  
+        return () => {
+          input.removeEventListener('keyup', handleDigitInput);
+        };
+      });
+    }, []);
+  }
