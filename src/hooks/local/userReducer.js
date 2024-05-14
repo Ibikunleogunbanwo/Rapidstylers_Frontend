@@ -71,6 +71,14 @@ export const stylerByService = createAsyncThunk(
         return response;
     }
 )
+export const singleStylerProfile = createAsyncThunk(
+    "user/StylerProfile",
+    async(serviceId)=>{
+        const apiStylerProfileAPI = await APIService.singleStylerData(serviceId);
+        const response = await apiStylerProfileAPI.data; 
+        return response;
+    }
+)
 
 const logOutSession = () =>{
     sessionStorage.removeItem("userSessionData"); 
@@ -131,22 +139,20 @@ const userSlice = createSlice({
             }
             state.loading= false;
         })
-        .addCase(getStylerTypeList.fulfilled, (state,action)=>{
-            if(action.payload.statusCode === "200"){
-                state.users = action.payload;
-            }
-            state.loading = false;
-        })
-        .addCase(stylerByService.fulfilled,(state,action)=>{
-            if(action.payload.statusCode === "200"){
-                state.users = action.payload;
-            }
-            state.loading = false;
-        })
         .addCase(userAuthenticate.rejected, (state,action)=>{
             state.loading = false;
             state.isAuthenticated = false;
             state.error = showErrorToastMessage("Server Down, Contact Admin");
+        })
+        .addMatcher(isAnyOf(
+            getStylerTypeList.fulfilled,
+            stylerByService.fulfilled,
+            singleStylerProfile.fulfilled
+        ),(state,action)=>{
+            if(action.payload.statusCode === "200"){
+                state.users = action.payload;
+            }
+            state.loading = false;
         })
         .addMatcher(isAnyOf(
             verifySignUpEmailAddress.pending,
@@ -154,7 +160,8 @@ const userSlice = createSlice({
             createUserAccount.pending,
             userAuthenticate.pending,
             getStylerTypeList.pending,
-            stylerByService.pending
+            stylerByService.pending,
+            singleStylerProfile.pending
         ), (state)=>{
             state.loading = true;
             state.users = null;
@@ -165,7 +172,8 @@ const userSlice = createSlice({
             verifyOtpCode.rejected,
             createUserAccount.rejected,
             getStylerTypeList.rejected,
-            stylerByService.rejected
+            stylerByService.rejected,
+            singleStylerProfile.rejected
         ), (state,action)=>{
             state.loading = false;
             state.users = null;

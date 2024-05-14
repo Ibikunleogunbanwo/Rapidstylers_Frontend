@@ -76,4 +76,13 @@ export class APIService {
             throw(error);
         }
     }
+    static async singleStylerData(stylerId){
+        try{
+            return ApiClient.get(`/single_styler?stylerId=${stylerId}`)
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
 }

@@ -32,7 +32,7 @@ const Stylist = ({ setPageTitle }) => {
               stylerList.map((val, key) => {
                 return (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Link to={"/stylistProfile"}>
+                    <Link to={`/stylistProfile/${btoa(val.stylerId)}/${btoa(val.businessName)}`}>
                       <ServiceCard
                         coverImg={val.profileImageUrl}
                         name={val.businessName}

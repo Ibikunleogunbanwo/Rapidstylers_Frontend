@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
-import { getStylerTypeList, stylerByService } from "../../../hooks/local/userReducer";
+import { getStylerTypeList, singleStylerProfile, stylerByService } from "../../../hooks/local/userReducer";
 
 export function useStylerList(){
     const [stylerList, setStylerList] = useState([]);
@@ -31,4 +31,20 @@ export function useStylerByCategoryList(serviceId){
         fetchStylerByCategoryList();
     }, [dispatch, serviceId]);
     return stylerCategoryList;
+}
+
+export function useSingleStylerProfile(stylerId){
+    const [stylerProfile, setStylerProfile] = useState([]);
+    const dispatch = useDispatch();
+    useEffect(()=>{
+        const fetchStylerProfile = async()=>{
+            try{
+                const {payload} = await dispatch(singleStylerProfile(stylerId));
+                setStylerProfile(payload.data);
+            }
+            catch(e){}
+        }
+        fetchStylerProfile();
+    }, [dispatch,stylerId]);
+    return stylerProfile;
 }
