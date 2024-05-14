@@ -10,7 +10,7 @@ import LogOut from "../auth/logout";
 import BookAppointment from "../pages/bookAnAppointment";
 import Stylist from "../pages/stylist";
 import StylistProfile from "../pages/stylistProfile";
-import AccountSettings from "../pages/accountsettings";
+import AccountSettings from "../pages/accountSettings";
 import UpdateInformation from "../pages/updatePersonal";
 import SavedStylist from "../pages/savedStylists";
 import ChangePassword from "../pages/changePassword";
@@ -44,7 +44,7 @@ const UserLayout = () => {
                                 <Route path="/dashboard" element={<Dashboard setPageTitle={setPageTitle} />} />
                                 <Route path="/bookAppointment" element={<BookAppointment setPageTitle={setPageTitle}/>}/>
                                 <Route path="/stylist/:stylerTypeId/:stylerTypeName" element={<Stylist setPageTitle={setPageTitle}/>}/>
-                                <Route path="/stylistProfile" element={<StylistProfile setPageTitle={setPageTitle}/>}/>
+                                <Route path="/stylistProfile/:stylerId/:stylerName" element={<StylistProfile setPageTitle={setPageTitle}/>}/>
                                 <Route path="/accountSettings" element={<AccountSettings setPageTitle={setPageTitle}/>}/>
                                 <Route path="/updatePersonalInformation" element={<UpdateInformation setPageTitle={setPageTitle}/>}/>
                                 <Route path="/savedStylist" element={<SavedStylist setPageTitle={setPageTitle}/>}/>

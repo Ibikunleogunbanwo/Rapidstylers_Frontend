@@ -2,7 +2,7 @@ import close from "../assets/svg-icons/closeBlack.svg";
 import React, { useState } from "react";
 import Input from "../components/input"
 
-const SelectService = () => {
+const SelectService = ({serviceName, servicePrice, stylerId, subServiceId}) => {
   const [bookAppointmentForm, setBookAppointmentForm] = useState(false);
 
   // Function to toggle booking form
@@ -77,31 +77,12 @@ const SelectService = () => {
     <div className="">
       <div className="grid gap-3 mt-3">
         <div className="grid gap-3 pb-4 border-b">
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-1">
-            <div className="md:col-span-4 text-black/50">
-              Special haircut - (skin fade, blow out, mohawk)
+          <div className="grid grid-cols-12 gap-1">
+            <div className="col-span-8 md:col-span-10 text-black/50">
+              {serviceName}
             </div>
-            <div className="md:col-span-1 text-start md:text-end text-brand">
-              $32.00
-            </div>
-          </div>
-          <div>
-            <button
-              className="px-4 py-2 rounded-md bg-brand text-white text-sm"
-              onClick={toggleBookingForm}
-            >
-              Book service
-            </button>
-          </div>
-        </div>
-        <div className="grid gap-3 pb-4 border-b">
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-1">
-            <div className="md:col-span-4 text-black/50">
-              Haircut and beard - Guaranteed perfection (if e no fine, i will
-              refund your money 💯)
-            </div>
-            <div className="md:col-span-1 text-start md:text-end text-brand">
-              $32.00
+            <div className="col-span-4 md:col-span-2 text-end text-brand">
+              ${servicePrice}
             </div>
           </div>
           <div>
@@ -113,24 +94,7 @@ const SelectService = () => {
             </button>
           </div>
         </div>
-        <div className="grid gap-3 pb-4 border-b">
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-1">
-            <div className="md:col-span-4 text-black/50">
-              Apprentice hair - (anything that happens, hold apprentice️)
-            </div>
-            <div className="md:col-span-1 text-start md:text-end text-brand">
-              $32.00
-            </div>
-          </div>
-          <div>
-            <button
-              className="px-4 py-2 rounded-md bg-brand text-white text-sm"
-              onClick={toggleBookingForm}
-            >
-              Book service
-            </button>
-          </div>
-        </div>
+
       </div>
       {/* book appointment form */}
       <div
@@ -246,7 +210,7 @@ const SelectService = () => {
               <p className="mt-2 hidden">Selected Time: {selectedTime}</p>
             </div>
             <div className="px-6">
-              <p className="font-semibold mb-2 text-[15px]">Service type:</p>
+              <p className="font-semibold mb-2 text-[15px]">Select Service type:</p>
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div
                   className={`py-4 rounded-md text-center cursor-pointer ${
@@ -278,7 +242,7 @@ const SelectService = () => {
             <div className="border-t sticky w-full bottom-0 bg-white flex justify-between items-center px-6 py-4">
              <div>
               <p className="text-sm text-slate-400">Total:</p>
-              <p className="text-brand font-bold text-xl">$1,200.00</p>
+              <p className="text-brand font-bold text-xl">${servicePrice}</p>
               </div>
              <button className="text-sm bg-brand text-white rounded-md px-6 py-4">Book appointment</button>
             </div>
