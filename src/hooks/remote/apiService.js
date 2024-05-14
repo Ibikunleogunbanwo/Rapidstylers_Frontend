@@ -85,4 +85,14 @@ export class APIService {
             throw(error);
         }
     }
+
+    static async searchForStyler(businessName){
+        try{
+            return ApiClient.get(`/search_styler?businessName=${businessName}`)
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
 }

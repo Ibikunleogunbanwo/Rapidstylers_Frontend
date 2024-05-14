@@ -1,18 +1,23 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import arrow from "../../../assets/svg-icons/arrow.svg";
 import search from "../../../assets/svg-icons/search.svg";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Spinner from "../../../components/spinner";
 import { useSelector } from "react-redux";
 import { useStylerList } from "../userLayout/functionalEffects";
 
-const BookAppointment = ({ setPageTitle }) => {
+const BookAppointment = ({ setPageTitle, setStylerSearchName }) => {
   useEffect((() => {
     setPageTitle("Book Appointment");
     document.title = "Book an appointment - TrimTech";
   }));
-
   const stylerList = useStylerList();
+  const [stylerName, setStylerName] = useState("");
+  const navigate = useNavigate()
+  const searchStyler = () => {
+    setStylerSearchName(stylerName);
+    navigate("/searchAStyler")
+  }
 
   return (
     <div className="bg-white border rounded-lg">
@@ -31,14 +36,14 @@ const BookAppointment = ({ setPageTitle }) => {
             <img src={search} alt="" className="h-5 ps-4" />
             <input
               type="search"
+              value={stylerName}
+              onChange={(e)=>setStylerName(e.target.value)}
               className="w-full active:border-0 active:outline-0 focus:border-0 focus:outline-0 placeholder:text-sm"
               placeholder="Search for a stylist"
             />
-            <Link to={"/stylist"}>
-              <button className="bg-brand text-sm h-full flex gap-2 items-center text-white py-4 md:py-3 px-5 rounded" >
+              <button onClick={searchStyler} className="bg-brand text-sm h-full flex gap-2 items-center text-white py-4 md:py-3 px-5 rounded" >
                 <span>Search!</span>
               </button>
-            </Link>
           </span>
         </div>
         <div className="mb-6">

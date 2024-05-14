@@ -17,10 +17,15 @@ import ChangePassword from "../pages/changePassword";
 import PaymentDetails from "../pages/paymentDetails";
 import NotificationSettings from "../pages/notificationSettings";
 import Feedback from "../pages/feedback";
+import SearchStyler from "../pages/searchStylers";
 const UserLayout = () => {
     const userSession = useSelector((state)=>state.user.userSessionData);
     const [sideBarVisibility, setSideBarVisibility] = useState(false);
     const [pageTitle, setPageTitle] = useState("");
+    const [stylerSearchName, setStylerSearchName] = useState("");
+    const changeStylerSearchName = (e)=>{
+        setStylerSearchName(e.target.value);
+    }
     const toggleSideBar = () => {
         setSideBarVisibility(!sideBarVisibility);
     }
@@ -42,7 +47,7 @@ const UserLayout = () => {
                         <div className="col-span-1 lg:col-span-7">
                             <Routes>
                                 <Route path="/dashboard" element={<Dashboard setPageTitle={setPageTitle} />} />
-                                <Route path="/bookAppointment" element={<BookAppointment setPageTitle={setPageTitle}/>}/>
+                                <Route path="/bookAppointment" element={<BookAppointment setPageTitle={setPageTitle} setStylerSearchName={setStylerSearchName}/>}/>
                                 <Route path="/stylist/:stylerTypeId/:stylerTypeName" element={<Stylist setPageTitle={setPageTitle}/>}/>
                                 <Route path="/stylistProfile/:stylerId/:stylerName" element={<StylistProfile setPageTitle={setPageTitle}/>}/>
                                 <Route path="/accountSettings" element={<AccountSettings setPageTitle={setPageTitle}/>}/>
@@ -52,6 +57,7 @@ const UserLayout = () => {
                                 <Route path="/paymentDetails" element={<PaymentDetails setPageTitle={setPageTitle}/>}/>
                                 <Route path="/notificationSettings" element={<NotificationSettings setPageTitle={setPageTitle}/>}/>
                                 <Route path="/feedback" element={<Feedback setPageTitle={setPageTitle}/>}/>
+                                <Route path="/searchAStyler" element={<SearchStyler setPageTitle={setPageTitle} stylerSearchName={stylerSearchName}/>}/>
                                 <Route path="/signOut" element={<LogOut/>}/>
                             </Routes>
                         </div>
