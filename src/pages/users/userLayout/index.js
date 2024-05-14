@@ -43,7 +43,7 @@ const UserLayout = () => {
                             <Routes>
                                 <Route path="/dashboard" element={<Dashboard setPageTitle={setPageTitle} />} />
                                 <Route path="/bookAppointment" element={<BookAppointment setPageTitle={setPageTitle}/>}/>
-                                <Route path="/stylist" element={<Stylist setPageTitle={setPageTitle}/>}/>
+                                <Route path="/stylist/:stylerTypeId/:stylerTypeName" element={<Stylist setPageTitle={setPageTitle}/>}/>
                                 <Route path="/stylistProfile" element={<StylistProfile setPageTitle={setPageTitle}/>}/>
                                 <Route path="/accountSettings" element={<AccountSettings setPageTitle={setPageTitle}/>}/>
                                 <Route path="/updatePersonalInformation" element={<UpdateInformation setPageTitle={setPageTitle}/>}/>

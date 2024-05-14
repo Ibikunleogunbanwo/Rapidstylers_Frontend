@@ -57,4 +57,23 @@ export class APIService {
             throw(error);
         }
     }
+    static async getStylerType(){
+        try{
+            return ApiClient.get(`/list_service`)
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+
+    static async stylersBaseOnCategory(categoryId){
+        try{
+            return ApiClient.get(`/search_by_service?serviceTypeId=${categoryId}`)
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
 }

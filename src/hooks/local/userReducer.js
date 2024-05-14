@@ -55,6 +55,23 @@ export const userAuthenticate = createAsyncThunk(
     }
 )
 
+export const getStylerTypeList = createAsyncThunk(
+    "user/stylerList",
+    async()=>{
+        const stylerListApi = await APIService.getStylerType();
+        const response = await stylerListApi.data;
+        return response;
+    }
+)
+export const stylerByService = createAsyncThunk(
+    "user/StylerByService",
+    async(serviceId)=>{
+        const apiStylerCategoryAPI = await APIService.stylersBaseOnCategory(serviceId);
+        const response = await apiStylerCategoryAPI.data; 
+        return response;
+    }
+)
+
 const logOutSession = () =>{
     sessionStorage.removeItem("userSessionData"); 
 }
@@ -114,6 +131,18 @@ const userSlice = createSlice({
             }
             state.loading= false;
         })
+        .addCase(getStylerTypeList.fulfilled, (state,action)=>{
+            if(action.payload.statusCode === "200"){
+                state.users = action.payload;
+            }
+            state.loading = false;
+        })
+        .addCase(stylerByService.fulfilled,(state,action)=>{
+            if(action.payload.statusCode === "200"){
+                state.users = action.payload;
+            }
+            state.loading = false;
+        })
         .addCase(userAuthenticate.rejected, (state,action)=>{
             state.loading = false;
             state.isAuthenticated = false;
@@ -123,7 +152,9 @@ const userSlice = createSlice({
             verifySignUpEmailAddress.pending,
             verifyOtpCode.pending,
             createUserAccount.pending,
-            userAuthenticate.pending
+            userAuthenticate.pending,
+            getStylerTypeList.pending,
+            stylerByService.pending
         ), (state)=>{
             state.loading = true;
             state.users = null;
@@ -132,7 +163,9 @@ const userSlice = createSlice({
         .addMatcher(isAnyOf(
             verifySignUpEmailAddress.rejected,
             verifyOtpCode.rejected,
-            createUserAccount.rejected
+            createUserAccount.rejected,
+            getStylerTypeList.rejected,
+            stylerByService.rejected
         ), (state,action)=>{
             state.loading = false;
             state.users = null;
