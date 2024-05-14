@@ -73,9 +73,18 @@ export const stylerByService = createAsyncThunk(
 )
 export const singleStylerProfile = createAsyncThunk(
     "user/StylerProfile",
-    async(serviceId)=>{
-        const apiStylerProfileAPI = await APIService.singleStylerData(serviceId);
+    async(stylerId)=>{
+        const apiStylerProfileAPI = await APIService.singleStylerData(stylerId);
         const response = await apiStylerProfileAPI.data; 
+        return response;
+    }
+)
+
+export const searchStyler = createAsyncThunk(
+    "user/SearchStyler",
+    async(businessName)=>{
+        const apiSearchStylerAPI = await APIService.searchForStyler(businessName);
+        const response = await apiSearchStylerAPI.data; 
         return response;
     }
 )
@@ -147,7 +156,8 @@ const userSlice = createSlice({
         .addMatcher(isAnyOf(
             getStylerTypeList.fulfilled,
             stylerByService.fulfilled,
-            singleStylerProfile.fulfilled
+            singleStylerProfile.fulfilled,
+            searchStyler.fulfilled
         ),(state,action)=>{
             if(action.payload.statusCode === "200"){
                 state.users = action.payload;
@@ -161,7 +171,8 @@ const userSlice = createSlice({
             userAuthenticate.pending,
             getStylerTypeList.pending,
             stylerByService.pending,
-            singleStylerProfile.pending
+            singleStylerProfile.pending,
+            searchStyler.pending
         ), (state)=>{
             state.loading = true;
             state.users = null;
@@ -173,7 +184,8 @@ const userSlice = createSlice({
             createUserAccount.rejected,
             getStylerTypeList.rejected,
             stylerByService.rejected,
-            singleStylerProfile.rejected
+            singleStylerProfile.rejected,
+            searchStyler.rejected
         ), (state,action)=>{
             state.loading = false;
             state.users = null;
