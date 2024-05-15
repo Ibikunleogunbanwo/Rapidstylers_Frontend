@@ -14,7 +14,7 @@ const initialState = {
 }
 
 const saveToLocalStorage = (key,data)=>{
-    sessionStorage.setItem(key, data);
+    localStorage.setItem(key, data);
 }
 const periodOfTheDay = getPeriodOfDay();
 
@@ -89,8 +89,26 @@ export const searchStyler = createAsyncThunk(
     }
 )
 
+export const userPendingAppointments = createAsyncThunk(
+    "user/PendingAppointment",
+    async(userId)=>{
+        const userPendingAppointmentAPI = await APIService.userPendingAppointment(userId);
+        const response = await userPendingAppointmentAPI.data;
+        return response;
+    }
+)
+
+export const allUserAppointments = createAsyncThunk(
+    "user/AllAppointment",
+    async(userId)=>{
+        const allUserAppointmentAPI = await APIService.allUserAppointment(userId);
+        const response = await allUserAppointmentAPI.data;
+        return response;
+    }
+)
+
 const logOutSession = () =>{
-    sessionStorage.removeItem("userSessionData"); 
+    localStorage.removeItem("userSessionData"); 
 }
 
 export const userLogOut = createAsyncThunk(
@@ -157,7 +175,9 @@ const userSlice = createSlice({
             getStylerTypeList.fulfilled,
             stylerByService.fulfilled,
             singleStylerProfile.fulfilled,
-            searchStyler.fulfilled
+            searchStyler.fulfilled,
+            userPendingAppointments.fulfilled,
+            allUserAppointments.fulfilled
         ),(state,action)=>{
             if(action.payload.statusCode === "200"){
                 state.users = action.payload;
@@ -172,7 +192,9 @@ const userSlice = createSlice({
             getStylerTypeList.pending,
             stylerByService.pending,
             singleStylerProfile.pending,
-            searchStyler.pending
+            searchStyler.pending,
+            userPendingAppointments.pending,
+            allUserAppointments.pending,
         ), (state)=>{
             state.loading = true;
             state.users = null;
@@ -185,7 +207,9 @@ const userSlice = createSlice({
             getStylerTypeList.rejected,
             stylerByService.rejected,
             singleStylerProfile.rejected,
-            searchStyler.rejected
+            searchStyler.rejected,
+            userPendingAppointments.rejected,
+            allUserAppointments.rejected
         ), (state,action)=>{
             state.loading = false;
             state.users = null;

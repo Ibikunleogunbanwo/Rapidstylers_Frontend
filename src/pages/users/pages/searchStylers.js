@@ -27,7 +27,6 @@ const SearchStyler = ({ setPageTitle, stylerSearchName }) => {
     searchForAStyler();
   },[stylerSearchName]);
 
-console.log(setStylerProfileData)
   return (
     <div className="bg-white border rounded-lg">
       <Spinner loading={useSelector((state) => state.user).loading} />

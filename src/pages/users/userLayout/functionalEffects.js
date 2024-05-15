@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { useDispatch } from "react-redux";
-import { getStylerTypeList, singleStylerProfile, stylerByService } from "../../../hooks/local/userReducer";
+import { useDispatch, useSelector } from "react-redux";
+import { allUserAppointments, getStylerTypeList, singleStylerProfile, stylerByService, userPendingAppointments } from "../../../hooks/local/userReducer";
 
 export function useStylerList(){
     const [stylerList, setStylerList] = useState([]);
@@ -47,4 +47,38 @@ export function useSingleStylerProfile(stylerId){
         fetchStylerProfile();
     }, [dispatch,stylerId]);
     return stylerProfile;
+}
+
+export function useUserPendingAppointments(){
+    const userId = useSelector((state)=>state.user.userSessionData).userId;
+    const [appointment, setAppointment] = useState([]);
+    const dispatch = useDispatch();
+    useEffect(()=>{
+        const fetchAllPendingAppointment = async()=>{
+            try{
+                const {payload} = await dispatch(userPendingAppointments(userId));
+                setAppointment(payload.data);
+            }
+            catch(e){}
+        }
+        fetchAllPendingAppointment();
+    },[dispatch, userId])
+    return appointment;
+}
+
+export function useAllUserAppointments(){
+    const userId = useSelector((state)=>state.user.userSessionData).userId;
+    const [appointment, setAppointment] = useState([]);
+    const dispatch = useDispatch();
+    useEffect(()=>{
+        const fetchAllAppointment = async()=>{
+            try{
+                const {payload} = await dispatch(allUserAppointments(userId));
+                setAppointment(payload.data);
+            }
+            catch(e){}
+        }
+        fetchAllAppointment();
+    },[dispatch, userId])
+    return appointment;
 }
