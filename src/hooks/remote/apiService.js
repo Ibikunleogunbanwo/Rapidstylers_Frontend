@@ -95,4 +95,23 @@ export class APIService {
             throw(error);
         }
     }
+
+    static async userPendingAppointment(userId){
+        try{
+            return ApiClient.get(`/user_pending_appointments?userId=${userId}`)
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+    static async allUserAppointment(userId){
+        try{
+            return ApiClient.get(`/user_appointments?userId=${userId}`)
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
 }

@@ -42,7 +42,7 @@ export const showSuccessMessageReload = (successMessage)=>{
 export const retrieveFromLocalStorage = (keys) =>{
     const data = {};
     keys.forEach((key)=>{
-        const persistedState = sessionStorage.getItem(key);
+        const persistedState = localStorage.getItem(key);
         data[key] = persistedState ? JSON.parse(persistedState) : null;
     });
     return data;

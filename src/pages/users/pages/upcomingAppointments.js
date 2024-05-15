@@ -3,7 +3,7 @@ import close from "../../../assets/svg-icons/closeBlack.svg";
 import React, { useState } from "react";
 import Rating from "../../../components/rating";
 
-const Appointments = () => {
+const Appointments = ({appointmentDate, serviceTime, serviceProvider, serviceType, businessAddress,serviceName, numberOfPeople, appointmentStatus, appointmentPrice}) => {
   const [menuVisible, setMenuVisible] = useState(false);
 
   // Function to toggle the menu visibility
@@ -26,41 +26,21 @@ const Appointments = () => {
   return (
     <div className="">
       <div className="grid gap-3 mt-4">
-        {/* <div className="flex gap-4 items-center pb-3 border-b last:border-0">
-        <img src={blackIco} alt="" className="h-12" />
-        <div className="flex gap-4 justify-between items-center w-full">
-          <div className="grid">
-            <span className="truncate">Iya Bimbo Hairdresser</span>
-            <span className="text-sm text-black/50">24 December, 20:00</span>
-          </div>
-          <img src={more} alt="" onClick={toggleMenu} className="cursor-pointer h-7"/>
-        </div>
-      </div> */}
-        {/* <div className="flex gap-4 items-center pb-3 border-b last:border-0">
-        <img src={blackIco} alt="" className="h-12" />
-        <div className="flex gap-4 justify-between items-center w-full">
-          <div className="grid">
-            <span className="truncate">Charity Salon </span>
-            <span className="text-sm text-black/50">24 December, 20:00</span>
-          </div>
-          <img src={more} alt="" onClick={toggleMenu} className="cursor-pointer h-7"/>
-        </div>
-      </div> */}
         <div className="border rounded-lg text-sm py-4 divide-x grid grid-cols-12 gap-6">
           <div className=" flex items-center px-4 col-span-12 md:col-span-3 order-2 md:order-1">
             <div className="flex items-end md:items-center gap-4 md:gap-0 md:grid">
               <div className="grid">
                 <span className="text-black/50">Date:</span>
-                <span>24 December, 2024</span>
+                <span>{appointmentDate}</span>
               </div>
-              <p className="mt-2">8:00 pm</p>
+              <p className="mt-2">{serviceTime}</p>
             </div>
           </div>
           <div className="px-4 col-span-12 md:col-span-9 order-1 md:order-2">
             <div className="flex justify-between">
               <div className="text-xs flex items-center gap-1">
                 <div className="bg-[#c4c4c4] rounded-full border h-[8px] w-[8px]"></div>
-                <div className="text-[#c4c4c4]">Waiting for confirmation</div>
+                <div className="text-[#c4c4c4]">{appointmentStatus}</div>
               </div>
               <div>
                 <img
@@ -74,56 +54,15 @@ const Appointments = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4 md:mt-1">
               <div className="grid">
                 <span className="text-black/50">Service provider:</span>
-                <span className="truncate text-[15px]">The Cutting Edge Barbershop</span>
+                <span className="truncate text-[15px]">{serviceProvider}</span>
               </div>
               <div className="grid">
                 <span className="text-black/50">Amount:</span>
                 <div className="flex gap-1 items-center">
-                  <span className="truncate font-bold text-[15px]">32.00</span>
+                  <span className="truncate font-bold text-[15px]">{appointmentPrice}</span>
                   <span className="text-gray-400">CAD</span>
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
-        <div className="border rounded-lg text-sm py-4 divide-x grid grid-cols-12 gap-6">
-          <div className="flex items-center px-4 col-span-12 md:col-span-3 order-2 md:order-1">
-            <div className="flex items-end md:items-center gap-4 md:gap-0 md:grid ">
-              <div className="grid">
-                <span className="text-black/50">Date:</span>
-                <span>28 December, 2024</span>
-              </div>
-              <p className="mt-2">9:00 am</p>
-            </div>
-          </div>
-          <div className="px-4 col-span-12 md:col-span-9 order-1 md:order-2">
-            <div className="flex justify-between">
-              <div className="text-xs flex items-center gap-1">
-                <div className="bg-emerald-500 rounded-full border h-[8px] w-[8px]"></div>
-                <div className="text-emerald-500">Appointment confirmed</div>
-              </div>
-              <div>
-                <img
-                  src={more}
-                  alt=""
-                  onClick={toggleMenu}
-                  className="cursor-pointer h-7"
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4 md:mt-1">
-              <div className="grid">
-                <span className="text-black/50">Service provider:</span>
-                <span className="truncate text-[15px]">Shear Elegance Salon</span>
-              </div>
-              <div className="grid">
-                <span className="text-black/50">Amount:</span>
-                <div className="flex gap-1 items-center">
-                  <span className="truncate font-bold text-[15px]">200.00</span>
-                  <span className="text-gray-400">CAD</span>
-                </div>
-              </div>
-              <div className="py-4"><span className="bg-brand text-white text-xs p-3 rounded-md">Make payment</span></div>
             </div>
           </div>
         </div>
@@ -149,27 +88,31 @@ const Appointments = () => {
             <div className="px-6 py-5 grid grid-cols-2 gap-4 text-sm">
               <div className="grid">
                 <span className="text-black/50">Service provider:</span>
-                <span className="truncate">The Cutting Edge Barbershop</span>
+                <span className="truncate">{serviceProvider}</span>
               </div>
               <div className="grid">
                 <span className="text-black/50">Service type:</span>
-                <span className="">Visit the barber</span>
+                <span className="">{serviceType}</span>
               </div>
               <div className="col-span-2 grid">
                 <div className="flex gap-2"><span className="text-black/50">Address:</span><span className="text-brand">[ Get directions ]</span></div>
-                <span>19 Osadebe Street, Ogui New Layout/43 Street, Achara Layout</span>
+                <span>{businessAddress}</span>
               </div>
-              <div className="col-span-2 grid">
+              <div className="grid">
                 <span className="text-black/50">Service name:</span>
-                <span>Haircut and beard - Guaranteed perfection (if e no fine, i will refund your money 💯)</span>
+                <span>{serviceName}</span>
+              </div>
+              <div className="grid">
+                <span className="text-black/50">Price:</span>
+                <span>{appointmentPrice} CAD</span>
               </div>
               <div className="grid">
                 <span className="text-black/50">Number of people:</span>
-                <span className="">5</span>
+                <span className="">{numberOfPeople}</span>
               </div>
               <div className="grid">
                 <span className="text-black/50">Appointment status:</span>
-                <span className="">Waiting for confirmation</span>
+                <span className="">{appointmentStatus}</span>
               </div>
               <div className="col-span-2 mt-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
