@@ -79,7 +79,7 @@ const Input = ({
           className="w-full p-3 text-sm rounded-md border border-[#c4c4c440] bg-[#c4c4c410] placeholder:text-xs placeholder:font-extralight active:outline-0 focus:outline-brand"
         />
       </div>
-      <span className="text-xs">{onError}</span>
+      <span className="text-xs text-red-500">{onError}</span>
     </div>
   );
 };

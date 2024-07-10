@@ -13,7 +13,7 @@ import { useFormik } from "formik";
 import * as Yup from "yup";
 import Spinner from "../../components/spinner";
 import { useDispatch, useSelector } from "react-redux";
-import { userAuthenticate, verifySignUpEmailAddress } from "../../hooks/local/userReducer";
+import { getUserDetails, userAuthenticate, verifySignUpEmailAddress } from "../../hooks/local/userReducer";
 import PasswordInput from "../../components/passwordInput";
 import SearchForStyler from "../../components/searchForStyler";
 import arrow from "../../assets/images/roundArrow.svg";
@@ -83,6 +83,7 @@ const Hero = ({ height }) => {
       let authData = { emailAddress, password };
       const { payload } = await dispatch(userAuthenticate(authData))
       if (payload.statusCode === "200") {
+        dispatch(getUserDetails(payload.data.userId));
         navigate('/dashboard');
       }
     }
