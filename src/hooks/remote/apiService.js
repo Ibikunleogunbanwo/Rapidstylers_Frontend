@@ -114,4 +114,23 @@ export class APIService {
             throw(error);
         }
     }
+    static async getUserDetails(userId){
+        try{
+            return ApiClient.get(`/user_data?userId=${userId}`)
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+
+    static async updateUserDetails(data){
+        try{
+            return ApiClient.post("/update_user_data", data)
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
 }

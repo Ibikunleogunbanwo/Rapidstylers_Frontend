@@ -9,7 +9,8 @@ const initialState = {
     error : null,
     isActionEnabled : false,
     ...retrieveFromLocalStorage([
-        "userSessionData"
+        "userSessionData",
+        "userDetailsData"
     ])
 }
 
@@ -106,6 +107,24 @@ export const allUserAppointments = createAsyncThunk(
         return response;
     }
 )
+export const getUserDetails = createAsyncThunk(
+    "user/Details",
+    async(userId)=>{
+        const userDetailsAPI = await APIService.getUserDetails(userId);
+        const response = await userDetailsAPI.data;
+        saveToLocalStorage("userDetailsData", JSON.stringify(response.data));
+        return response;
+    }
+)
+
+export const updateUserDetails = createAsyncThunk(
+    "user/updateUserDetails",
+    async(data)=>{
+        const updateUserDetailsAPI = await APIService.updateUserDetails(data);
+        const response = await updateUserDetailsAPI.data;
+        return response;
+    }
+)
 
 const logOutSession = () =>{
     localStorage.removeItem("userSessionData"); 
@@ -123,37 +142,7 @@ const userSlice = createSlice({
     reducers : {},
     initialState : initialState,
     extraReducers : (builder) => {
-        builder.addCase(verifySignUpEmailAddress.fulfilled, (state,action) =>{
-            if(action.payload.statusCode === "200"){
-                state.users = action.payload;
-                showSuccessToastMessage(action.payload.message)
-            } 
-            else{
-                showErrorToastMessage(action.payload.message);
-            }
-            state.loading = false;
-        })
-        .addCase(verifyOtpCode.fulfilled, (state,action)=>{
-            if(action.payload.statusCode === "200"){
-                state.users = action.payload;
-                showSuccessToastMessage(action.payload.message)
-            }
-            else{
-                showErrorToastMessage(action.payload.message);
-            }
-            state.loading = false;
-        })  
-        .addCase(createUserAccount.fulfilled, (state,action)=>{
-            if(action.payload.statusCode === "200"){
-                state.users = action.payload;
-                showSuccessToastMessage(action.payload.message)
-            }
-            else{
-                showErrorToastMessage(action.payload.message);
-            }
-            state.loading = false;
-        })
-        .addCase(userAuthenticate.fulfilled, (state,action)=>{
+        builder.addCase(userAuthenticate.fulfilled, (state,action)=>{
             if(action.payload.statusCode === "200"){
                 state.users = action.payload;
                 state.isAuthenticated = true;
@@ -171,19 +160,48 @@ const userSlice = createSlice({
             state.isAuthenticated = false;
             state.error = showErrorToastMessage("Server Down, Contact Admin");
         })
+        .addCase(getUserDetails.fulfilled, (state,action)=>{
+            if(action.payload.statusCode === "200"){
+                state.users = action.payload;
+                state.userDetailsData = action.payload.data;
+            }
+            state.loading = false;
+        })
+
+        //Fulfilled with notification message
+        .addMatcher(isAnyOf(
+            createUserAccount.fulfilled,
+            verifyOtpCode.fulfilled,
+            verifySignUpEmailAddress.fulfilled,
+            updateUserDetails.fulfilled,
+        ),(state,action)=>{
+            if(action.payload.statusCode === "200"){
+                state.users = action.payload;
+                showSuccessToastMessage(action.payload.message)
+            }
+            else{
+                showErrorToastMessage(action.payload.message);
+            }
+            state.loading = false;
+        })
+
+
+        //Fulfilled without notification message
         .addMatcher(isAnyOf(
             getStylerTypeList.fulfilled,
             stylerByService.fulfilled,
             singleStylerProfile.fulfilled,
             searchStyler.fulfilled,
             userPendingAppointments.fulfilled,
-            allUserAppointments.fulfilled
+            allUserAppointments.fulfilled,
         ),(state,action)=>{
             if(action.payload.statusCode === "200"){
                 state.users = action.payload;
             }
             state.loading = false;
         })
+
+        //General Pending matcher
         .addMatcher(isAnyOf(
             verifySignUpEmailAddress.pending,
             verifyOtpCode.pending,
@@ -195,11 +213,15 @@ const userSlice = createSlice({
             searchStyler.pending,
             userPendingAppointments.pending,
             allUserAppointments.pending,
+            getUserDetails.pending,
+            updateUserDetails.pending
         ), (state)=>{
             state.loading = true;
             state.users = null;
             state.error = null;
         })
+
+        //General rejected matcher
         .addMatcher(isAnyOf(
             verifySignUpEmailAddress.rejected,
             verifyOtpCode.rejected,
@@ -209,7 +231,9 @@ const userSlice = createSlice({
             singleStylerProfile.rejected,
             searchStyler.rejected,
             userPendingAppointments.rejected,
-            allUserAppointments.rejected
+            allUserAppointments.rejected,
+            getUserDetails.rejected,
+            updateUserDetails.rejected
         ), (state,action)=>{
             state.loading = false;
             state.users = null;

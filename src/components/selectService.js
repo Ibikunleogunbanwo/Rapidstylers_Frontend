@@ -228,7 +228,7 @@ const SelectService = ({serviceName, servicePrice, stylerId, subServiceId}) => {
                   }`}
                   onClick={() => handleOptionChange("visitBarber")}
                 >
-                  Visit the barber
+                  Visit the stylist
                 </div>
                 <div
                   className={`py-4 rounded-md text-center cursor-pointer ${
