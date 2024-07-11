@@ -17,7 +17,8 @@ import PaymentDetails from "../pages/paymentDetails";
 import NotificationSettings from "../pages/notificationSettings";
 import Feedback from "../pages/feedback";
 import SearchStyler from "../pages/searchStylers";
-import AccountSettings from "../pages/accountsettings";
+import AccountSettings from "../pages/accountSettings";
+
 const UserLayout = () => {
     const userSession = useSelector((state)=>state.user.userSessionData);
     const [sideBarVisibility, setSideBarVisibility] = useState(false);
