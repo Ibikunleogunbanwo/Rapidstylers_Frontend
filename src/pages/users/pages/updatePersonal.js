@@ -97,7 +97,7 @@ const UpdateInformation = ({ setPageTitle }) => {
             onChange={updatePersonalInformation.handleChange}
             onError={updatePersonalInformation.errors.country && updatePersonalInformation.touched.country ? updatePersonalInformation.errors.country : null} />
           <div>
-            <Buttons btnType={"primary"} btnText={"Update Information"} type={"submit"} /></div>
+            <Buttons btnType={"light"} btnText={"Update Information"} type={"submit"} /></div>
         </div>
       </form>
     </div>

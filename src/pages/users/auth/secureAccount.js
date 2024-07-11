@@ -30,7 +30,7 @@ const SecureAccount = () => {
       },
       validationSchema: Yup.object({
         password: Yup.string().required("Password cannot be empty").matches(
-          /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?.&])[A-Za-z\d@$!%*#.?&]{6,}$/,
+          /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*#?.&])[A-Za-z\d@$!%*#?.&]{6,}$/,
           "Password Criteria does't match"
         ),
         confirmPassword: Yup.string()

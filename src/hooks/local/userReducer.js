@@ -125,9 +125,19 @@ export const updateUserDetails = createAsyncThunk(
         return response;
     }
 )
+export const changeUserPassword = createAsyncThunk(
+    "user/updateUserPassword",
+    async(data)=>{
+        const updateUserPasswordApi = await APIService.updateUserPassword(data);
+        const response = await updateUserPasswordApi.data;
+        return response;
+    }
+)
 
 const logOutSession = () =>{
+    localStorage.removeItem("users");
     localStorage.removeItem("userSessionData"); 
+    localStorage.removeItem("userDetailsData");
 }
 
 export const userLogOut = createAsyncThunk(
@@ -167,6 +177,11 @@ const userSlice = createSlice({
             }
             state.loading = false;
         })
+        .addCase(userLogOut.fulfilled, (state,action)=>{
+            state.isAuthenticated = false;
+            state.loading = false;
+            state.users = null;
+        })
 
         //Fulfilled with notification message
         .addMatcher(isAnyOf(
@@ -174,6 +189,7 @@ const userSlice = createSlice({
             verifyOtpCode.fulfilled,
             verifySignUpEmailAddress.fulfilled,
             updateUserDetails.fulfilled,
+            changeUserPassword.fulfilled,
         ),(state,action)=>{
             if(action.payload.statusCode === "200"){
                 state.users = action.payload;
@@ -214,7 +230,8 @@ const userSlice = createSlice({
             userPendingAppointments.pending,
             allUserAppointments.pending,
             getUserDetails.pending,
-            updateUserDetails.pending
+            updateUserDetails.pending,
+            changeUserPassword.pending
         ), (state)=>{
             state.loading = true;
             state.users = null;
@@ -233,7 +250,8 @@ const userSlice = createSlice({
             userPendingAppointments.rejected,
             allUserAppointments.rejected,
             getUserDetails.rejected,
-            updateUserDetails.rejected
+            updateUserDetails.rejected,
+            changeUserPassword.rejected
         ), (state,action)=>{
             state.loading = false;
             state.users = null;

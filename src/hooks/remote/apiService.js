@@ -133,4 +133,14 @@ export class APIService {
             throw(error);
         }
     }
+
+    static async updateUserPassword(data){
+        try{
+            return ApiClient.post("/update_user_password", data);
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
 }
