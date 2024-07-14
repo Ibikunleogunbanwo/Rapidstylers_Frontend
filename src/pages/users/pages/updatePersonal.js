@@ -16,7 +16,7 @@ const UpdateInformation = ({ setPageTitle }) => {
   }));
 
   const dispatch = useDispatch();
-  const userDetails = useSelector((state)=>state.user.userDetailsData);
+  const userDetails = useSelector((state)=>state.user.userDetailsData).userData;
   const updatePersonalInformation = useFormik({
     initialValues: {
       emailAddress: userDetails.emailAddress,
