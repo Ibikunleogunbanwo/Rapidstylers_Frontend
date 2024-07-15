@@ -154,4 +154,13 @@ export class APIService {
             throw(error);
         }
     }
+    static async submitUserFeedBack(data){
+        try{
+            return ApiClient.post("/add_feedback", data);
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
 }
