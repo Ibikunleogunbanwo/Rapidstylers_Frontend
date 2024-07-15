@@ -11,6 +11,7 @@ const Input = ({
   onChange,
   onError,
   onBlur,
+  disabled
 }) => {
   const fileInputRef = useRef(null);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -76,6 +77,7 @@ const Input = ({
           value={value}
           onChange={onChange}
           onBlur={onBlur}
+          disabled = {disabled}
           className="w-full p-3 text-sm rounded-md border border-[#c4c4c440] bg-[#c4c4c410] placeholder:text-xs placeholder:font-extralight active:outline-0 focus:outline-brand"
         />
       </div>
