@@ -11,6 +11,7 @@ import close from "../../../assets/svg-icons/closeBlack.svg";
 import GeneralModal from "../../../components/generalModal";
 import InputWithLabel from "../../../components/inputWithLabel";
 import PasswordInput from "../../../components/passwordInput";
+import Spinner from "../../../components/spinner";
 
 const CardDetails = ({ setPageTitle }) => {
   useEffect((() => {
@@ -87,6 +88,7 @@ const CardDetails = ({ setPageTitle }) => {
 
   return (
     <div className="bg-white rounded-lg border">
+          <Spinner loading={useSelector((state) => state.user).loading} />
       <div className="flex gap-1 items-center border-b p-4 text-[15px] font-bold bg-[#1d1d1d08] rounded-t-lg">
         <Back />
         <span>{userCardName === null ? "Add" : "Update"} Card Details.</span>
