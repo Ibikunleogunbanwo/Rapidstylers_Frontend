@@ -8,7 +8,7 @@ import successAnim from "../../../assets/svg-icons/successAnim.json";
 import * as Yup from "yup";
 import PasswordInput from "../../../components/passwordInput";
 import { useDispatch } from "react-redux";
-import { createUserAccount, userAuthenticate } from "../../../hooks/local/userReducer";
+import { createUserAccount, getUserDetails, userAuthenticate } from "../../../hooks/local/userReducer";
 import { useNavigate } from "react-router-dom";
 const SecureAccount = () => {
   useEffect(() => {
@@ -54,6 +54,7 @@ const SecureAccount = () => {
       let userSignInData = {emailAddress: userEmailAddress, password: userPassword}
       const { payload} = await dispatch(userAuthenticate(userSignInData));
       if(payload.statusCode === "200"){
+        dispatch(getUserDetails(payload.data.userId));
         setDashboardModal(false);
         navigate("/dashboard")
       }

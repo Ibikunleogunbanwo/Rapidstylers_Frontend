@@ -13,11 +13,11 @@ import StylistProfile from "../pages/stylistProfile";
 import UpdateInformation from "../pages/updatePersonal";
 import SavedStylist from "../pages/savedStylists";
 import ChangePassword from "../pages/changePassword";
-import PaymentDetails from "../pages/paymentDetails";
 import NotificationSettings from "../pages/notificationSettings";
 import Feedback from "../pages/feedback";
 import SearchStyler from "../pages/searchStylers";
 import AccountSettings from "../pages/accountSettings";
+import CardDetails from "../pages/cardDetails";
 
 const UserLayout = () => {
     const userSession = useSelector((state)=>state.user.userSessionData);
@@ -55,7 +55,7 @@ const UserLayout = () => {
                                 <Route path="/updatePersonalInformation" element={<UpdateInformation setPageTitle={setPageTitle}/>}/>
                                 <Route path="/savedStylist" element={<SavedStylist setPageTitle={setPageTitle}/>}/>
                                 <Route path="/changePassword" element={<ChangePassword setPageTitle={setPageTitle}/>}/>
-                                <Route path="/paymentDetails" element={<PaymentDetails setPageTitle={setPageTitle}/>}/>
+                                <Route path="/CardDetails" element={<CardDetails setPageTitle={setPageTitle}/>}/>
                                 <Route path="/notificationSettings" element={<NotificationSettings setPageTitle={setPageTitle}/>}/>
                                 <Route path="/feedback" element={<Feedback setPageTitle={setPageTitle}/>}/>
                                 <Route path="/searchAStyler" element={<SearchStyler setPageTitle={setPageTitle} stylerSearchName={stylerSearchName}/>}/>
