@@ -1,7 +1,6 @@
 import { createAsyncThunk, createSlice, isAnyOf } from "@reduxjs/toolkit";
 import { retrieveFromLocalStorage, showErrorToastMessage, showSuccessToastMessage } from "../../utils/constant";
 import { APIService } from "../remote/apiService";
-import { getPeriodOfDay } from "../../utils/utility";
 
 const initialState = {
     users : null,
@@ -17,7 +16,6 @@ const initialState = {
 const saveToLocalStorage = (key,data)=>{
     localStorage.setItem(key, data);
 }
-const periodOfTheDay = getPeriodOfDay();
 
 export const verifySignUpEmailAddress = createAsyncThunk(
     "user/verifySignUpEmailAddress",
@@ -144,7 +142,7 @@ export const updateCardDetail = createAsyncThunk(
 )
 
 const logOutSession = () =>{
-    localStorage.removeItem("users");
+    localStorage.removeItem("user");
     localStorage.removeItem("userSessionData"); 
     localStorage.removeItem("userDetailsData");
 }
@@ -166,7 +164,6 @@ const userSlice = createSlice({
                 state.users = action.payload;
                 state.isAuthenticated = true;
                 state.userSessionData = action.payload.data;
-                showSuccessToastMessage(`Good ${periodOfTheDay} `+action.payload.data.firstname);
             }
             else{
                 state.error = action.payload.message;

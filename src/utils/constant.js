@@ -1,10 +1,12 @@
 import { useEffect } from "react";
 import { toast } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
+import CryptoJS from 'crypto-js';
 
 export const API_KEY = "14022024";
 export const JSON_CONTENT_TYPE = "application/json";
 export const API_BASE_URL = "http://localhost:9090/rapid_stylers";
+export const DECRYPT_KEY = "D0n!T'T&mp3r@w1Th^&()";
 
 export const API_HEADER = {
     'Content-Type' : JSON_CONTENT_TYPE,
@@ -68,3 +70,19 @@ export function useDigitInput() {
       });
     }, []);
   }
+
+  export const generateSecretKey = (keyString) => {
+    let key = CryptoJS.enc.Utf8.parse(keyString);
+    key = CryptoJS.SHA256(key);
+    key = key.toString(CryptoJS.enc.Hex).substr(0, 32); 
+    return CryptoJS.enc.Hex.parse(key);
+  };
+
+  export const decryptData = (encryptedString) => {
+    const key = generateSecretKey(DECRYPT_KEY);
+    const bytes = CryptoJS.AES.decrypt(encryptedString, key, {
+      mode: CryptoJS.mode.ECB,
+      padding: CryptoJS.pad.Pkcs7
+    });
+    return bytes.toString(CryptoJS.enc.Utf8);
+  };

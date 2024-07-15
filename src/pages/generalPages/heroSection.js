@@ -18,6 +18,8 @@ import PasswordInput from "../../components/passwordInput";
 import SearchForStyler from "../../components/searchForStyler";
 import arrow from "../../assets/images/roundArrow.svg";
 import elevate from "../../assets/images/elevate.png"
+import { showSuccessToastMessage } from "../../utils/constant";
+import { getPeriodOfDay } from "../../utils/utility";
 
 const Hero = ({ height }) => {
   const [menuVisible, setMenuVisible] = useState(false);
@@ -51,7 +53,7 @@ const Hero = ({ height }) => {
     setSignInVisible(false);
     setMenuVisible(false);
   };
-
+  const periodOfTheDay = getPeriodOfDay();
   const userSignUp = useFormik({
     initialValues: {
       emailAddress: ""
@@ -83,6 +85,7 @@ const Hero = ({ height }) => {
       let authData = { emailAddress, password };
       const { payload } = await dispatch(userAuthenticate(authData))
       if (payload.statusCode === "200") {
+        showSuccessToastMessage(`Good ${periodOfTheDay} `+payload.data.firstname);
         dispatch(getUserDetails(payload.data.userId));
         navigate('/dashboard');
       }
