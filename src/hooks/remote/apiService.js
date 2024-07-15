@@ -143,4 +143,15 @@ export class APIService {
             throw(error);
         }
     }
+
+    
+    static async updateUserCardDetails(data){
+        try{
+            return ApiClient.post("/update_card_details", data);
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
 }

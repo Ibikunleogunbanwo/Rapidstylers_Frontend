@@ -37,9 +37,9 @@ const AccountSettings = ({setPageTitle}) => {
           </div>
         </div>
         </Link>
-        <Link to={"/PaymentDetails"}>
+        <Link to={"/cardDetails"}>
         <div className="flex items-center justify-between py-3">
-          <span className="">Add card details</span>
+          <span className="">Add Card details</span>
           <div>
             <img src={arrow} alt="" className="h-5"/>
           </div>
