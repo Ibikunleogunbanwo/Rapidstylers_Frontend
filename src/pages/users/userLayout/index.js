@@ -16,8 +16,8 @@ import ChangePassword from "../pages/changePassword";
 import NotificationSettings from "../pages/notificationSettings";
 import Feedback from "../pages/feedback";
 import SearchStyler from "../pages/searchStylers";
-import AccountSettings from "../pages/accountSettings";
 import CardDetails from "../pages/cardDetails";
+import AccountSettings from "../pages/accountsettings";
 
 const UserLayout = () => {
     const userSession = useSelector((state)=>state.user.userSessionData);
