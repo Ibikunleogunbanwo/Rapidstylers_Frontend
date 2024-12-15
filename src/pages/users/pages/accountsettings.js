@@ -8,52 +8,52 @@ const AccountSettings = ({setPageTitle}) => {
       document.title = "Account settings - Rapid Styler";
     }));
     return ( 
-        <div className="bg-white border rounded-lg">
-      <div className="flex gap-1 items-center border-b p-4 text-[15px] font-bold bg-[#1d1d1d08] rounded-t-lg">
-        Account settings
-      </div>
-      <div className="p-4 grid gap-4">
-        <Link to={"/updatePersonalInformation"}>
-        <div className="flex items-center justify-between py-3">
-          <span className="">Update personal information</span>
-          <div>
-            <img src={arrow} alt="" className="h-5"/>
-          </div>
+      <div className="bg-white border rounded-lg">
+        <div className="flex gap-1 items-center border-b p-4 text-[15px] font-bold bg-[#1d1d1d08] rounded-t-lg">
+          Account settings
         </div>
-        </Link>
-        <Link to={"/savedStylist"}>
-        <div className="flex items-center justify-between py-3">
-          <span className="">Saved stylists</span>
-          <div>
-            <img src={arrow} alt="" className="h-5"/>
+        <div className="p-4 grid gap-4">
+          <Link to={"/updatePersonalInformation"}>
+          <div className="flex items-center justify-between py-3">
+            <span className="">Update personal information</span>
+            <div>
+              <img src={arrow} alt="" className="h-5"/>
+            </div>
           </div>
-        </div>
-        </Link>
-        <Link to={"/changePassword"}>
-        <div className="flex items-center justify-between py-3">
-          <span className="">Change password</span>
-          <div>
-            <img src={arrow} alt="" className="h-5"/>
+          </Link>
+          <Link to={"/savedStylist"}>
+          <div className="flex items-center justify-between py-3">
+            <span className="">Saved stylists</span>
+            <div>
+              <img src={arrow} alt="" className="h-5"/>
+            </div>
           </div>
-        </div>
-        </Link>
-        <Link to={"/cardDetails"}>
-        <div className="flex items-center justify-between py-3">
-          <span className="">Add Card details</span>
-          <div>
-            <img src={arrow} alt="" className="h-5"/>
+          </Link>
+          <Link to={"/changePassword"}>
+          <div className="flex items-center justify-between py-3">
+            <span className="">Change password</span>
+            <div>
+              <img src={arrow} alt="" className="h-5"/>
+            </div>
           </div>
-        </div>
-        </Link>
-        <Link to={"/notificationSettings"}>
-        <div className="flex items-center justify-between py-3">
-          <span className="">Manage notification preferences</span>
-          <div>
-            <img src={arrow} alt="" className="h-5"/>
+          </Link>
+          <Link to={"/cardDetails"}>
+          <div className="flex items-center justify-between py-3">
+            <span className="">Add Card details</span>
+            <div>
+              <img src={arrow} alt="" className="h-5"/>
+            </div>
           </div>
+          </Link>
+          <Link to={"/notificationSettings"}>
+          <div className="flex items-center justify-between py-3">
+            <span className="">Manage notification preferences</span>
+            <div>
+              <img src={arrow} alt="" className="h-5"/>
+            </div>
+          </div>
+          </Link>
         </div>
-        </Link>
-      </div>
     </div>
      );
 }

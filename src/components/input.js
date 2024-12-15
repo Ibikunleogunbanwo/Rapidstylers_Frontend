@@ -30,7 +30,7 @@ const Input = ({
           value={value}
           onChange={onChange}
           onBlur={onBlur}
-          className="w-full py-[13px] px-3 text-sm  rounded-md border border-[#c4c4c440] bg-[#c4c4c410] active:outline-0 focus:outline-brand "
+          className="w-full py-[13px] px-3 text-sm  rounded-md border border-[#c4c4c440] bg-[#c4c4c410] active:outline-0 focus:outline-brand/10 "
         >
           <option value="" selected disabled>
             Select an option

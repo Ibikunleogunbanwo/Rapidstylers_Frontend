@@ -7,6 +7,9 @@ module.exports = {
     extend: {
       colors: {
         'brand': '#9381FF', 
+      },
+      backgroundImage:{
+        'stylerDoodle': "url('/src/assets/images/stylerDoodle.svg')"
       }
     },
   },
