@@ -14,6 +14,7 @@ const StylistProfile = ({ setPageTitle }) => {
   }));
   let { stylerId, stylerName } = useParams();
   stylerId = atob(stylerId);
+  
   const stylerProfile = useSingleStylerProfile(stylerId);
 
   return (

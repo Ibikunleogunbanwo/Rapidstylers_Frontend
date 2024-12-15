@@ -58,7 +58,7 @@ const Layout = () => {
         </div>
       </div>
       {/* Small screen menu */}
-      <div className={`w-full fixed rounded-md lg:hidden ${  menuVisible ? "block" : "hidden"}`}>
+      <div className={`w-full fixed rounded-md lg:hidden ${ menuVisible ? "block" : "hidden"}`}>
         <div className="bg-white p-8 m-2 rounded-md h-full shadow-md">
           <div className="flex justify-between">
             <img src={logo} alt="" className="h-10"/>
