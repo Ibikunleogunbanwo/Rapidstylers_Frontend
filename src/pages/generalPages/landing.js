@@ -3,11 +3,10 @@ import Featured from "../../components/featuredStylists";
 import elevateLook from "../../assets/images/elevateLook.png";
 import scissors from "../../assets/svg-icons/scissors.svg";
 import Footer from "../../components/footer";
-import heroImg from "../../assets/images/hero.png";
 import canada from "../../assets/images/canada.png";
 import canada2 from "../../assets/images/signup.jpg";
 import { Link } from "react-router-dom";
-import Hero from "./heroSection";
+import Hero from "./newHeroSection";
 // import rapidGIF from "../../assets/Videos/stylers.gif";
 import about from "../../assets/images/about_landing.png"
 import stylistImg1 from "../../assets/images/stylist 1.png"
@@ -20,13 +19,13 @@ const LandingPage = () => {
     return (
       <div className="grid">
         {/* Hero section */}
-        <Hero height="85vh" />
+        <Hero height="90vh" />
 
         {/* About us*/}
         <div className="bg-black">
-            <div className="grid grid-cols-1 md:grid-cols-2 py-16 px-4 md:px-[50px] lg:px-[100px] gap-10 bg-white text-black rounded-none md:rounded-t-3xl items-center">
+            <div className="grid grid-cols-1 md:grid-cols-2 py-16 px-4 md:px-[50px] lg:px-[100px] gap-10 bg-white text-black items-center">
               <div className="order-2 md:order-1">
-                <p className="text-3xl text-black col-span-1 md:col-span-2 hidden md:block">Our <span className="text-brand">Brand Story</span></p>
+                <p className="text-2xl font-bold text-black col-span-1 md:col-span-2 hidden md:block">Our <span className="text-brand">Brand Story</span></p>
                 <p className="font-semibold mt-2 text-lg">
                   Tired of the Salon Struggle?<span className="text-brand"> Escape to RapidStylers!</span>
                 </p>
@@ -47,12 +46,8 @@ const LandingPage = () => {
                 </div>
               </div>
               <div className="order-1 md:order-2">
-              <p className="text-3xl text-black col-span-1 md:col-span-2 mb-6 md:hidden">Our <span className="text-brand">Brand Story</span></p>
-                <img
-                src={about}
-                alt="About image"
-                className="w-full object-cover rounded-3xl"
-                />
+                <p className="text-2xl font-bold text-black col-span-1 md:col-span-2 mb-6 md:hidden">Our <span className="text-brand">Brand Story</span></p>
+                <img src={about} alt="About_image" className="w-full object-cover rounded-lg"/>
               </div>
             </div>
         </div>

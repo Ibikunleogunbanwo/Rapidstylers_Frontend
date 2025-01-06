@@ -1,5 +1,4 @@
-import Hero from "./heroSection";
-import heroimg from "../../assets/images/elevate.png";
+import Hero from "./newHeroSection";
 import Footer from "../../components/footer";
 
 import React from 'react';
@@ -9,7 +8,7 @@ const ElevateLooks = () => {
 
   return (
     <div className="grid gap-12">
-      <Hero height="75vh" />
+      <Hero height="60vh" />
 
       <div className="grid grid-cols-1 md:grid-cols-8 lg:grid-cols-12 gap-4 px-4 md:px-[50px]">
         <div className="col-span-12 lg:col-span-2">
