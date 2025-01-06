@@ -9,7 +9,8 @@ module.exports = {
         'brand': '#9381FF', 
       },
       backgroundImage:{
-        'stylerDoodle': "url('/src/assets/images/stylerDoodle.svg')"
+        'stylerDoodle': "url('/src/assets/images/stylerDoodle.svg')",
+        'saloonDoodle': "url('/src/assets/images/saloon_doodle.svg')"
       }
     },
   },
