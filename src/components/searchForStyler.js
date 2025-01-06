@@ -11,7 +11,7 @@ const SearchForStyler = () => {
 
     return (
       <div className="text-white mt-10 justify-center flex">
-        <div className="bg-white p-5 md:p-1 rounded-md w-full grid md:flex items-center gap-4 md:gap-3">
+        <div className="bg-white p-5 md:p-1 rounded-md w-full grid md:flex items-center gap-4 md:gap-2">
           <HeroInput
             inputType={"search"}
             placeholder={"Search for stylist..."}
