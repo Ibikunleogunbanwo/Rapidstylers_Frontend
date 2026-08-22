@@ -1,15 +1,25 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import close from "../assets/svg-icons/closeBlack.svg";
 import Input from "../components/input";
 import { Link } from "react-router-dom";
+import { APIService } from "../hooks/remote/apiService";
 
 const CreateAccountAdmin = () => {
   document.title = "Trimtech - Stylist Portal";
 
   const validID = ['Drivers license', 'Health card', 'Permanent residents card'];
-  const serviceType = ['Barber', 'Hairdresser'];
+  const [serviceTypes, setServiceTypes] = useState([]);
   const country = ['Canada',];
   const province = ['Alberta', 'British Columbia', 'Manitoba', 'New Brunswick', 'Newfoundland and Labrador', 'Nova Scotia', 'Ontario', 'Prince Edward Island', 'Quebec', 'Saskatchewan'];
+
+  useEffect(() => {
+    APIService.getStylerType()
+      .then((res) => {
+        const items = res.data?.data || [];
+        setServiceTypes(items.map(c => c.serviceTypeName || c.name || c.serviceType));
+      })
+      .catch(() => setServiceTypes([]));
+  }, []);
 
 
   return (
@@ -73,7 +83,7 @@ const CreateAccountAdmin = () => {
             <Input 
               label={"Select service type"}
               variant={"select"}
-              options={serviceType}
+              options={serviceTypes.length > 0 ? serviceTypes : ['Loading...']}
             />
           </div>
           <div>
