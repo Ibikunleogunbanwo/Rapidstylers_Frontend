@@ -275,7 +275,9 @@ const userSlice = createSlice({
         ), (state,action)=>{
             state.loading = false;
             state.users = null;
-            state.error = showErrorToastMessage(action.error.message);
+            // No toast here: APIService.extractError already surfaced the error
+            // before the thunk rejected — toasting again duplicates the message.
+            state.error = action.error?.message || "An error occurred";
         })
     },
 })

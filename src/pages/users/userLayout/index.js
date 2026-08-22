@@ -24,9 +24,6 @@ const UserLayout = () => {
     const [sideBarVisibility, setSideBarVisibility] = useState(false);
     const [pageTitle, setPageTitle] = useState("");
     const [stylerSearchName, setStylerSearchName] = useState("");
-    const changeStylerSearchName = (e)=>{
-        setStylerSearchName(e.target.value);
-    }
     const toggleSideBar = () => {
         setSideBarVisibility(!sideBarVisibility);
     }

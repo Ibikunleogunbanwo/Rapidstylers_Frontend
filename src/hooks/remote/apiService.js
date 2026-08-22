@@ -5,20 +5,24 @@ export class APIService {
     static extractError(error){
         let extracted;
         if(error.isAxiosError){
-            if(error.request){
-                extracted = ["Network Error Occurred"];
+            // NOTE: error.response must be checked before error.request — an axios
+            // error that received a response always also has a request attached, so
+            // the old order made every server error toast as a network error.
+            if(error.response){
+                const data = error.response.data;
+                extracted = [data?.message || `Request failed (${error.response.status})`];
             }
-            else if(error.response){
-                extracted = [error.response.message];
+            else if(error.request){
+                extracted = ["Network Error Occurred"];
             }
             else{
                 extracted = ["An Unexpected Error occurred"];
             }
         }
         else{
-            extracted = [error.response.message || "An Unexpected Error occurred"];
+            extracted = [error.message || "An Unexpected Error occurred"];
         }
-        extracted.forEach((error)=>showErrorToastMessage(error));
+        extracted.forEach((err)=>showErrorToastMessage(err));
     }
 
     static async  generateSignUpOtpCode(userData){

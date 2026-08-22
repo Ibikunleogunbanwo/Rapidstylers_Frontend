@@ -1,6 +1,5 @@
 
 import logo from "../../assets/svg-icons/logo.svg";
-import search from "../../assets/svg-icons/search.svg";
 import menu from "../../assets/svg-icons/menu-icon.svg";
 import close from "../../assets/svg-icons/close.svg";
 import React, { useState } from "react";
@@ -16,7 +15,6 @@ import { useDispatch, useSelector } from "react-redux";
 import { getUserDetails, userAuthenticate, verifySignUpEmailAddress } from "../../hooks/local/userReducer";
 import PasswordInput from "../../components/passwordInput";
 import SearchForStyler from "../../components/searchForStyler";
-import doodle from "../../assets/images/saloon_doodle.svg"
 import { showSuccessToastMessage } from "../../utils/constant";
 import { getPeriodOfDay } from "../../utils/utility";
 import largeVideo from "../../assets/Videos/large video.mp4";

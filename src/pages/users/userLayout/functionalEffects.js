@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { allUserAppointments, getStylerTypeList, getUserDetails, singleStylerProfile, stylerByService, userPendingAppointments } from "../../../hooks/local/userReducer";
+import { allUserAppointments, getStylerTypeList, singleStylerProfile, stylerByService, userPendingAppointments } from "../../../hooks/local/userReducer";
 
 export function useStylerList(){
     const [stylerList, setStylerList] = useState([]);
