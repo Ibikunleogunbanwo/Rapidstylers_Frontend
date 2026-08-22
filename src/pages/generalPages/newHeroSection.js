@@ -130,11 +130,11 @@ const Hero = ({ height }) => {
                 : "hidden"
             }`}
           >
-            <div className="bg-saloonDoodle h-[60vh] w-full bg-[length:45%] md:bg-[length:20%] bg-repeat">kk</div>
+            <div className="bg-saloonDoodle h-[60vh] w-full bg-[length:45%] md:bg-[length:20%] bg-repeat"></div>
             <div className="h-full w-full flex items-center justify-center absolute top-0 pt-[80px] text-white bg-black/80 text-center px-10">
               <div className="md:w-1/3">
                 <p className="text-2xl font-bold mb-3">
-                  Elevate your stye
+                  Elevate your style
                 </p>
                 <p>
                   Explore Our Exclusive Collection of Trendsetting Hairstyles
@@ -204,7 +204,7 @@ const Hero = ({ height }) => {
             </div>
             <div
               className="py-4 text-white rounded-md font-semibold flex justify-between items-center"
-              onClick={toggleSignIn}
+              onClick={toggleSignUp}
             >
               <span>Create an account</span>
               <span>
@@ -221,7 +221,7 @@ const Hero = ({ height }) => {
             </div>
             <div
               className="py-4 text-white rounded-md font-semibold flex justify-between items-center"
-              onClick={toggleSignIn}
+              onClick={() => navigate('/styler-signup')}
             >
               <span>Register as a stylist</span>
               <span>

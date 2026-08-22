@@ -196,7 +196,7 @@ const LandingPage = () => {
         </div>
 
         {/* benefits for stylists*/}
-        <div className="px-4 md:px-[50px] grid gap-6 my-16">
+        <div className="px-4 md:px-[50px] grid gap-6 my-16 min-w-0">
           <div>
             <p className="w-full lg:w-1/2 mt-4">
               <span className="text-3xl">
@@ -209,7 +209,7 @@ const LandingPage = () => {
               </span>
             </p>
           </div>
-          <div className="z-0">
+          <div className="z-0 min-w-0">
             <ScrollContainer />
           </div>
         </div>
@@ -277,23 +277,24 @@ const LandingPage = () => {
           <div className="rounded-lg overflow-hidden border px-1 pt-1 pb-3 bg-white">
             <div className="h-[250px] md:h-[170px] overflow-hidden rounded-t-lg">
               <img
-                src="https://img.freepik.com/free-photo/ai-generated-cute-girl-pic_23-2150649874.jpg?w=360"
+                src="https://img.freepik.com/free-photo/ai-generated-cute-girl-pic_23-2150649874.jpg?w=826"
                 alt=""
                 className="object-cover w-full hover:scale-125 transition-all"
+                loading="lazy"
               />
             </div>
             <p className="font-semibold text-sm my-3 px-3">
-              The Ultimate Guide to Braiding: From Basic to Intricate Styles g:
-              From Basic to Intricate Styles
+              The Ultimate Guide to Braiding: From Basic to Intricate Styles
             </p>
             <p className="text-sm text-slate-400 px-3">29.05.2024</p>
           </div>
           <div className="rounded-lg overflow-hidden border px-1 pt-1 pb-3 bg-white">
             <div className="h-[250px] md:h-[170px] overflow-hidden rounded-t-lg">
               <img
-                src="https://img.freepik.com/free-photo/side-view-woman-styling-hair_23-2149659566.jpg?t=st=1708868604~exp=1708872204~hmac=a724d6651959e05a587b791dba7dbab024b8dc529d20566c14741d134583e345&w=740"
+                src="https://img.freepik.com/free-photo/side-view-woman-styling-hair_23-2149659566.jpg?t=st=1708868604~exp=1708872204~hmac=a724d6651959e05a587b791dba7dbab024b8dc529d20566c14741d134583e345&w=826"
                 alt=""
                 className="object-cover w-full hover:scale-125 transition-all"
+                loading="lazy"
               />
             </div>
             <p className="font-semibold text-sm my-3 px-3">
@@ -307,6 +308,7 @@ const LandingPage = () => {
                 src="https://img.freepik.com/free-photo/medium-shot-woman-arranging-hair_23-2149634993.jpg?t=st=1708868767~exp=1708872367~hmac=44c9b42f97f98a74588368862e364a6e2f7938b61e1563dcc8fd3ef51b42be57&w=826"
                 alt=""
                 className="object-cover w-full hover:scale-125 transition-all"
+                loading="lazy"
               />
             </div>
             <p className="font-semibold text-sm my-3 px-3">
@@ -320,6 +322,7 @@ const LandingPage = () => {
                 src="https://img.freepik.com/free-photo/cool-girl-with-short-hair-looking-into-camera-background-white-backdrop-brunette-lady-with-glass-beige-outside-posing-backdrop-wall_197531-29357.jpg?t=st=1708868867~exp=1708872467~hmac=8acc269316521de8d8e9ca7cf302d3ef600de561bee3350a281a67bd7644845a&w=826"
                 alt=""
                 className="object-cover w-full hover:scale-125 transition-all"
+                loading="lazy"
               />
             </div>
             <p className="font-semibold text-sm my-3 px-3">
@@ -331,9 +334,8 @@ const LandingPage = () => {
 
         {/* Stylist by location */}
         <div className="px-4 md:px-[50px] mt-16">
-          <p className="text-3xl">Find your stylists anywhere in canada.</p>
+          <p className="text-3xl">Find beauty professionals anywhere in Canada.</p>
           <div className="grid gap-3 mt-3">
-            <p className="font-bold">Hairdressers</p>
             <ul className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               <li className="truncate">Alberta</li>
               <li className="truncate">British Columbia</li>
@@ -345,21 +347,6 @@ const LandingPage = () => {
               <li className="truncate">Prince Edward Island</li>
               <li className="truncate">Quebec</li>
               <li className="truncate">Saskatchewan</li>
-            </ul>
-          </div>
-          <div className="grid gap-3 mt-12">
-            <p className="font-bold">Barbers</p>
-            <ul className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              <li className=" truncate">Alberta</li>
-              <li className=" truncate">British Columbia</li>
-              <li className=" truncate">Manitoba</li>
-              <li className=" truncate">New Brunswick</li>
-              <li className=" truncate">Newfoundland and Labrador</li>
-              <li className=" truncate">Nova Scotia</li>
-              <li className=" truncate">Ontario</li>
-              <li className=" truncate">Prince Edward Island</li>
-              <li className=" truncate">Quebec</li>
-              <li className=" truncate">Saskatchewan</li>
             </ul>
           </div>
         </div>
