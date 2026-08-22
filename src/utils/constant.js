@@ -59,15 +59,16 @@ export function useDigitInput() {
         } else {
           event.target.value = '';
         }
-      };
-  
-      document.querySelectorAll('.digitFormat').forEach((input) => {
+      };      const inputs = document.querySelectorAll('.digitFormat');
+      inputs.forEach((input) => {
         input.addEventListener('keyup', handleDigitInput);
-  
-        return () => {
-          input.removeEventListener('keyup', handleDigitInput);
-        };
       });
+
+      return () => {
+        inputs.forEach((input) => {
+          input.removeEventListener('keyup', handleDigitInput);
+        });
+      };
     }, []);
   }
 

@@ -1,33 +1,36 @@
+import React, { lazy, Suspense } from 'react';
 import './App.css';
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import LandingPage from './pages/generalPages/landing';
-import ElevateLooks from './pages/generalPages/elevateYourLooks';
-import AboutUs from './pages/generalPages/aboutUs';
-import PersonalDetails from './pages/users/auth/personalDetails';
-import SecureAccount from './pages/users/auth/secureAccount';
-import UserLayout from './pages/users/userLayout';
 import { ToastContainer } from 'react-toastify';
-import VerifyUserEmailAddress from './pages/users/auth/verifyEmailAddress';
-import StylerSignUp from './pages/styler/stylerSignUp/stylerSignUp';
-import StylerPersonalDetails from './pages/styler/stylerSignUp/personalDetails';
-import BusinessDetails from './pages/styler/stylerSignUp/businessDetails';
-import CreatePassword from './pages/styler/stylerSignUp/createPassword';
-import StylerLayout from './pages/styler/stylerLayout/stylerLayout';
-import StylerDashboard from './pages/styler/stylerDashboard';
-import StylerAppointments from './pages/styler/stylerAppointments';
-import Services from './pages/styler/stylerServices';
-import StylerProfile from './pages/styler/stylerProfile';
-import UpdateCoverPhoto from './pages/styler/updateCoverPhoto';
-import BusinessInformation from './pages/styler/updateBusinessInformation';
-import PersonalInformation from './pages/styler/updatePersonalInformation';
-import ChangePassword from './pages/styler/changePassword';
-import Reviews from './pages/styler/reviews';
+
+const LandingPage = lazy(() => import('./pages/generalPages/landing'));
+const ElevateLooks = lazy(() => import('./pages/generalPages/elevateYourLooks'));
+const AboutUs = lazy(() => import('./pages/generalPages/aboutUs'));
+const PersonalDetails = lazy(() => import('./pages/users/auth/personalDetails'));
+const SecureAccount = lazy(() => import('./pages/users/auth/secureAccount'));
+const UserLayout = lazy(() => import('./pages/users/userLayout'));
+const VerifyUserEmailAddress = lazy(() => import('./pages/users/auth/verifyEmailAddress'));
+const StylerSignUp = lazy(() => import('./pages/styler/stylerSignUp/stylerSignUp'));
+const StylerPersonalDetails = lazy(() => import('./pages/styler/stylerSignUp/personalDetails'));
+const BusinessDetails = lazy(() => import('./pages/styler/stylerSignUp/businessDetails'));
+const CreatePassword = lazy(() => import('./pages/styler/stylerSignUp/createPassword'));
+const StylerLayout = lazy(() => import('./pages/styler/stylerLayout/stylerLayout'));
+const StylerDashboard = lazy(() => import('./pages/styler/stylerDashboard'));
+const StylerAppointments = lazy(() => import('./pages/styler/stylerAppointments'));
+const Services = lazy(() => import('./pages/styler/stylerServices'));
+const StylerProfile = lazy(() => import('./pages/styler/stylerProfile'));
+const UpdateCoverPhoto = lazy(() => import('./pages/styler/updateCoverPhoto'));
+const BusinessInformation = lazy(() => import('./pages/styler/updateBusinessInformation'));
+const PersonalInformation = lazy(() => import('./pages/styler/updatePersonalInformation'));
+const ChangePassword = lazy(() => import('./pages/styler/changePassword'));
+const Reviews = lazy(() => import('./pages/styler/reviews'));
 
 function App() {
   return (
     <div className='bg-[#f5f5f5] min-h-screen'>
       <ToastContainer position='top-center' theme='colored' newestOnTop={true} bodyClassName={() => 'toastBody flex items-center text-sm'}/>
       <BrowserRouter>
+      <Suspense fallback={<div className="min-h-screen" />}>
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/elevate-your-looks" element={<ElevateLooks />} />
@@ -53,6 +56,7 @@ function App() {
         </Route>
         <Route path='*' element={<UserLayout/>}/>
       </Routes>
+      </Suspense>
     </BrowserRouter>
     </div>
   );

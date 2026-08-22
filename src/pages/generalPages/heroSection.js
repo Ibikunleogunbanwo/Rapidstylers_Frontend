@@ -1,6 +1,5 @@
 
 import logo from "../../assets/svg-icons/logo.svg";
-import search from "../../assets/svg-icons/search.svg";
 import menu from "../../assets/svg-icons/menu-icon.svg";
 import close from "../../assets/svg-icons/close.svg";
 import React, { useState } from "react";

@@ -7,9 +7,7 @@ import * as Yup from "yup";
 import Buttons from "../../../components/button";
 import { getUserDetails, updateCardDetail, userAuthenticate } from "../../../hooks/local/userReducer";
 import { decryptData } from "../../../utils/constant";
-import close from "../../../assets/svg-icons/closeBlack.svg";
 import GeneralModal from "../../../components/generalModal";
-import InputWithLabel from "../../../components/inputWithLabel";
 import PasswordInput from "../../../components/passwordInput";
 import Spinner from "../../../components/spinner";
 

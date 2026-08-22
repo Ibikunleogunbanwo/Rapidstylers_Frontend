@@ -25,6 +25,11 @@ const SearchStyler = ({ setPageTitle, stylerSearchName }) => {
   }
   useEffect(()=>{
     searchForAStyler();
+    // Intentionally runs only when the parent's search term changes (or on mount).
+    // Manual searches go through the Search button, so searchForAStyler is not a
+    // dependency — including it (or memoizing it on userSearchWord) would fire a
+    // network request on every keystroke.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   },[stylerSearchName]);
 
   return (

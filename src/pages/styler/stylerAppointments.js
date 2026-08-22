@@ -1,5 +1,4 @@
 import { useState } from "react";
-import brandIco from "../../assets/svg-icons/brand-appointment-icon.svg";
 import more from "../../assets/svg-icons/more.svg";
 import PendingAppointments from "./stylerComponents/pendingAppointments";
 
