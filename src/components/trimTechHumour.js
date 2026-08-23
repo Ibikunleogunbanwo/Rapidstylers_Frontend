@@ -6,8 +6,7 @@ const Humour = () => {
           <div className="grid gap-4 text-center">
           <img src={icon} alt="" className="justify-self-center" />
             <p className="mb-0 pb-0">
-              <span className="text-white text-sm">The barber just opened a restaurant, but the only thing on the menu is haircuts</span> <br />
-              <span className="text-sm text-white/60">- <br />punpress.com/barbers-puns/</span>
+              <span className="text-white text-sm">They say you can't buy happiness, but a fresh style comes pretty close</span>
             </p>
           </div>
         </div>

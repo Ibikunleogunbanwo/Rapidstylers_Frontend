@@ -2,9 +2,14 @@ import React, { lazy, Suspense } from 'react';
 import './App.css';
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ToastContainer } from 'react-toastify';
+import { LocationProvider } from './context/LocationContext';
 
 const LandingPage = lazy(() => import('./pages/generalPages/landing'));
+const Login = lazy(() => import('./pages/generalPages/login'));
+const SearchResults = lazy(() => import('./pages/generalPages/searchResults'));
 const ElevateLooks = lazy(() => import('./pages/generalPages/elevateYourLooks'));
+const Blog = lazy(() => import('./pages/generalPages/blog'));
+const BlogPost = lazy(() => import('./pages/generalPages/blogPost'));
 const AboutUs = lazy(() => import('./pages/generalPages/aboutUs'));
 const PersonalDetails = lazy(() => import('./pages/users/auth/personalDetails'));
 const SecureAccount = lazy(() => import('./pages/users/auth/secureAccount'));
@@ -14,6 +19,8 @@ const StylerSignUp = lazy(() => import('./pages/styler/stylerSignUp/stylerSignUp
 const StylerPersonalDetails = lazy(() => import('./pages/styler/stylerSignUp/personalDetails'));
 const BusinessDetails = lazy(() => import('./pages/styler/stylerSignUp/businessDetails'));
 const CreatePassword = lazy(() => import('./pages/styler/stylerSignUp/createPassword'));
+const ImagesStep = lazy(() => import('./pages/styler/stylerSignUp/imagesStep'));
+const StylerVerifyEmail = lazy(() => import('./pages/styler/stylerSignUp/stylerVerifyEmail'));
 const StylerLayout = lazy(() => import('./pages/styler/stylerLayout/stylerLayout'));
 const StylerDashboard = lazy(() => import('./pages/styler/stylerDashboard'));
 const StylerAppointments = lazy(() => import('./pages/styler/stylerAppointments'));
@@ -24,23 +31,34 @@ const BusinessInformation = lazy(() => import('./pages/styler/updateBusinessInfo
 const PersonalInformation = lazy(() => import('./pages/styler/updatePersonalInformation'));
 const ChangePassword = lazy(() => import('./pages/styler/changePassword'));
 const Reviews = lazy(() => import('./pages/styler/reviews'));
+const AdminLogin = lazy(() => import('./pages/admin/adminLogin'));
+const ManageCategories = lazy(() => import('./pages/admin/manageCategories'));
+const ManageBlog = lazy(() => import('./pages/admin/manageBlog'));
+const NotFound = lazy(() => import('./pages/generalPages/notFound'));
 
 function App() {
   return (
     <div className='bg-[#f5f5f5] min-h-screen'>
       <ToastContainer position='top-center' theme='colored' newestOnTop={true} bodyClassName={() => 'toastBody flex items-center text-sm'}/>
+      <LocationProvider>
       <BrowserRouter>
       <Suspense fallback={<div className="min-h-screen" />}>
       <Routes>
         <Route path="/" element={<LandingPage />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/search" element={<SearchResults />} />
         <Route path="/elevate-your-looks" element={<ElevateLooks />} />
+        <Route path="/blog" element={<Blog />} />
+        <Route path="/blog/:id" element={<BlogPost />} />
         <Route path="/verifyEmailAddress" element={<VerifyUserEmailAddress />} />
         <Route path="/personalDetails" element={<PersonalDetails />} />
         <Route path="/secureAccount" element={<SecureAccount />} />
         <Route path="/about" element={<AboutUs />} />
         <Route path='/styler-signup' element={<StylerSignUp />}>
           <Route index element={<StylerPersonalDetails />}/>
+          <Route path='verify-email' element={<StylerVerifyEmail />}/>
           <Route path='business-details' element={<BusinessDetails />}/>
+          <Route path='photos' element={<ImagesStep />}/>
           <Route path='secure-account' element={<CreatePassword />}/>
         </Route>
         <Route path='/styler-dashboard' element={<StylerLayout />} >
@@ -54,10 +72,28 @@ function App() {
           <Route path='update-password' element={<ChangePassword />} />
           <Route path='reviews' element={<Reviews />} />
         </Route>
-        <Route path='*' element={<UserLayout/>}/>
+        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/admin/categories" element={<ManageCategories />} />
+        <Route path="/admin/blog" element={<ManageBlog />} />
+        {/* Customer dashboard routes — UserLayout renders its own nested routes */}
+        <Route path="/dashboard" element={<UserLayout />} />
+        <Route path="/bookAppointment" element={<UserLayout />} />
+        <Route path="/stylist/:stylerTypeId/:stylerTypeName" element={<UserLayout />} />
+        <Route path="/stylistProfile/:stylerId/:stylerName" element={<UserLayout />} />
+        <Route path="/accountSettings" element={<UserLayout />} />
+        <Route path="/updatePersonalInformation" element={<UserLayout />} />
+        <Route path="/savedStylist" element={<UserLayout />} />
+        <Route path="/changePassword" element={<UserLayout />} />
+        <Route path="/CardDetails" element={<UserLayout />} />
+        <Route path="/notificationSettings" element={<UserLayout />} />
+        <Route path="/feedback" element={<UserLayout />} />
+        <Route path="/searchAStyler" element={<UserLayout />} />
+        <Route path="/signOut" element={<UserLayout />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
       </Suspense>
     </BrowserRouter>
+    </LocationProvider>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 // import star from "../assets/svg-icons/star.svg"
 
-const ServiceCard = ({coverImg, name, rating, reviews, status }) => {
+const ServiceCard = ({coverImg, name, rating, reviews, status, distance }) => {
     return ( 
         <div className="rounded-lg overflow-hidden border px-1 pt-1 pb-3 bg-white">
           <div className="h-[250px] md:h-[170px] overflow-hidden rounded-t-lg">
@@ -17,6 +17,11 @@ const ServiceCard = ({coverImg, name, rating, reviews, status }) => {
               <p className="text-xs"><span className="font-bold">{rating} <span className="text-black/50">({reviews} reviews)</span></span></p>
             </div>
           </div>
+          {distance != null && (
+            <div className="px-3 mt-2">
+              <span className="text-[11px] text-brand font-medium">📍 {distance} km away</span>
+            </div>
+          )}
         </div>
      );
 }

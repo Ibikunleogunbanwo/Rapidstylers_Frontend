@@ -12,7 +12,7 @@ import { changeUserPassword } from "../../../hooks/local/userReducer";
 const ChangePassword = ({setPageTitle}) => {
   useEffect((() => {
     setPageTitle("Account Settings");
-    document.title = "Change Password - Rapid Styler";
+    document.title = "Change password | RapidStylers";
   }));
 
   const dispatch = useDispatch();
@@ -27,7 +27,7 @@ const ChangePassword = ({setPageTitle}) => {
       oldPassword: Yup.string().required("Old Password is required"),
       password: Yup.string().required("New Password cannot be empty").matches(
         /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*#?.&])[A-Za-z\d@$!%*#?.&]{6,}$/,
-        "Password Criteria does't match"
+        "Password criteria doesn't match"
       ),
       confirmPassword: Yup.string()
         .required('Confirm Password cannot be empty')

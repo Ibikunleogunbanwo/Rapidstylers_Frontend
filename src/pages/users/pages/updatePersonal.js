@@ -12,7 +12,7 @@ import { getUserDetails, updateUserDetails } from "../../../hooks/local/userRedu
 const UpdateInformation = ({ setPageTitle }) => {
   useEffect((() => {
     setPageTitle("Account Settings");
-    document.title = "Update Personal information - Rapid Styler";
+    document.title = "Update personal information | RapidStylers";
   }));
 
   const dispatch = useDispatch();

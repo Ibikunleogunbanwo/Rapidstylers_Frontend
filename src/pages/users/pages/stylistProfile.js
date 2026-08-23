@@ -10,7 +10,7 @@ import { useSelector } from "react-redux";
 const StylistProfile = ({ setPageTitle }) => {
   useEffect((() => {
     setPageTitle("Book Appointment");
-    document.title = "Book an appointment - Rapid Styler";
+    document.title = "Professional profile | RapidStylers";
   }));
   let { stylerId, stylerName } = useParams();
   stylerId = atob(stylerId);
