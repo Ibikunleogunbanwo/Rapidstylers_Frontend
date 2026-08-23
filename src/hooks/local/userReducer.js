@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice, isAnyOf } from "@reduxjs/toolkit";
-import { retrieveFromLocalStorage, showErrorToastMessage, showSuccessToastMessage } from "../../utils/constant";
+import { retrieveFromLocalStorage, showErrorToastMessage, showSuccessToastMessage, setAuthToken, clearAuthToken } from "../../utils/constant";
 import { APIService } from "../remote/apiService";
 
 const initialState = {
@@ -50,6 +50,9 @@ export const userAuthenticate = createAsyncThunk(
         const apiUserLogin = await APIService.userSignIn(userData);
         const response = await apiUserLogin.data;
         saveToLocalStorage("userSessionData", JSON.stringify(response.data));
+        if (response.token) {
+            setAuthToken(response.token);
+        }
         return response;
     }
 )
@@ -153,6 +156,7 @@ const logOutSession = () =>{
     localStorage.removeItem("user");
     localStorage.removeItem("userSessionData"); 
     localStorage.removeItem("userDetailsData");
+    clearAuthToken();
 }
 
 export const userLogOut = createAsyncThunk(

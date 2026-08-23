@@ -10,7 +10,7 @@ import ServiceCard from "../../../components/serviceCard";
 const SearchStyler = ({ setPageTitle, stylerSearchName }) => {
   useEffect((() => {
     setPageTitle("Book Appointment");
-    document.title = "Book an appointment - TrimTech";
+    document.title = "Search | RapidStylers";
   }));
   const dispatch = useDispatch();
   const [userSearchWord, setUserSearchWord] = useState(stylerSearchName);
@@ -38,7 +38,7 @@ const SearchStyler = ({ setPageTitle, stylerSearchName }) => {
       <div className="flex items-center justify-between border-b p-4 text-[15px] font-bold bg-[#1d1d1d08] rounded-t-lg">
         <div className="flex gap-2 items-center">
           <Back />
-          <span>Search for Styler.</span>
+          <span>Search for a professional.</span>
         </div>
       
       </div>
@@ -46,7 +46,7 @@ const SearchStyler = ({ setPageTitle, stylerSearchName }) => {
         <div className="text-sm grid gap-4 md:flex md:justify-between ">
           <p>
             Current location:{" "}
-            <span className="font-medium text-brand">Los Santos</span>
+            <span className="font-medium text-brand">Edmonton, Canada</span>
           </p>
           <p className="text-brand">[ Change location ]</p>
         </div>
@@ -58,10 +58,10 @@ const SearchStyler = ({ setPageTitle, stylerSearchName }) => {
               value={userSearchWord}
               onChange={(e)=>setUserSearchWord(e.target.value)}
               className="w-full active:border-0 active:outline-0 focus:border-0 focus:outline-0 placeholder:text-sm"
-              placeholder="Search for a stylist"
+              placeholder="Search for a professional"
             />
               <button onClick={searchForAStyler} className="bg-brand text-sm h-full flex gap-2 items-center text-white py-4 md:py-3 px-5 rounded" >
-                <span>Search!</span>
+                <span>Search</span>
               </button>
            
           </span>
@@ -91,7 +91,7 @@ const SearchStyler = ({ setPageTitle, stylerSearchName }) => {
             :
             (
               <div>
-                No Stylers Available with such business name
+                No professionals found with that name.
               </div>
             )
         }

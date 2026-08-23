@@ -12,9 +12,104 @@ import about from "../../assets/images/about_landing.png"
 import stylistImg1 from "../../assets/images/stylist 1.png"
 import stylistImg2 from "../../assets/images/stylist 2.png"
 import ScrollContainer from "../../components/img-slider";
+import { useEffect, useState } from "react";
+import { APIService } from "../../hooks/remote/apiService";
+
+const PROVINCES = [
+  "Alberta",
+  "British Columbia",
+  "Manitoba",
+  "New Brunswick",
+  "Newfoundland and Labrador",
+  "Nova Scotia",
+  "Ontario",
+  "Prince Edward Island",
+  "Quebec",
+  "Saskatchewan",
+];
+
+const FALLBACK_BLOGS = [
+  { img: "https://img.freepik.com/free-photo/ai-generated-cute-girl-pic_23-2150649874.jpg?w=826", cat: "Braiding", title: "The Ultimate Guide to Braiding: From Basic to Intricate Styles", date: "May 29, 2024" },
+  { img: "https://img.freepik.com/free-photo/side-view-woman-styling-hair_23-2149659566.jpg?t=st=1708868604~exp=1708872204~hmac=a724d6651959e05a587b791dba7dbab024b8dc529d20566c14741d134583e345&w=826", cat: "Styling", title: "Quick and Easy Hairstyles for Busy Mornings", date: "May 29, 2024" },
+  { img: "https://img.freepik.com/free-photo/medium-shot-woman-arranging-hair_23-2149634993.jpg?t=st=1708868767~exp=1708872367~hmac=44c9b42f97f98a74588368862e364a6e2f7938b61e1563dcc8fd3ef51b42be57&w=826", cat: "Hair Care", title: "Healthy Hair Tips: Essential Care and Maintenance Guide", date: "May 29, 2024" },
+  { img: "https://img.freepik.com/free-photo/cool-girl-with-short-hair-looking-into-camera-background-white-backdrop-brunette-lady-with-glass-beige-outside-posing-backdrop-wall_197531-29357.jpg?t=st=1708868867~exp=1708872467~hmac=8acc269316521de8d8e9ca7cf302d3ef600de561bee3350a281a67bd7644845a&w=826", cat: "Trends", title: "Short and Chic: Modern Hairstyles for Short Haircuts", date: "May 29, 2024" },
+];
+
+const normalizeBlog = (p) => ({
+  img: p.imageUrl || p.img || "",
+  cat: p.category || p.cat || "Article",
+  title: p.title || "Untitled",
+  date: p.dateCreated || p.date || "",
+});
+
+const BlogSection = () => {
+  const [posts, setPosts] = useState(null);
+
+  useEffect(() => {
+    let mounted = true;
+    APIService.listBlog()
+      .then((res) => {
+        if (mounted && Array.isArray(res.data?.data)) {
+          setPosts(res.data.data.slice(0, 4).map(normalizeBlog));
+        }
+      })
+      .catch(() => {});
+    return () => { mounted = false; };
+  }, []);
+
+  const visible = posts || FALLBACK_BLOGS;
+
+  return (
+    <div id="blog" className="px-4 md:px-[50px] py-20 max-w-7xl mx-auto">
+      <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+        <div>
+          <p className="text-xs uppercase tracking-[0.25em] text-brand font-bold">From the blog</p>
+          <p className="text-3xl md:text-4xl font-bold mt-2 font-serif">Get inspired with RapidStylers</p>
+          <p className="mt-2 text-black/60">Helpful articles written by beauty professionals.</p>
+        </div>
+        <Link
+          to="/blog"
+          className="text-sm font-semibold text-black/50 hover:text-brand transition-colors w-fit"
+        >
+          Read all articles →
+        </Link>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mt-10">
+        {visible.map((post, i) => (
+          <Link
+            key={post.title + i}
+            to="/blog"
+            className="group rounded-2xl overflow-hidden border border-gray-100 bg-white shadow-[0_2px_20px_rgba(147,129,255,0.08)] hover:shadow-[0_10px_30px_rgba(147,129,255,0.2)] hover:-translate-y-1 transition-all duration-300"
+          >
+            <div className="h-48 overflow-hidden">
+              <img
+                src={post.img}
+                alt=""
+                className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-500"
+                loading="lazy"
+              />
+            </div>
+            <div className="p-4">
+              <span className="text-xs font-semibold uppercase tracking-wide text-brand">{post.cat}</span>
+              <p className="font-semibold text-sm leading-snug mt-2">{post.title}</p>
+              <p className="text-xs text-slate-400 mt-3">{post.date}</p>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+};
 
 const LandingPage = () => {
   document.title="Welcome - RapidStylers";
+
+  useEffect(() => {
+    if (window.location.hash === "#blog") {
+      const el = document.getElementById("blog");
+      if (el) setTimeout(() => el.scrollIntoView({ behavior: "smooth" }), 300);
+    }
+  }, []);
 
     return (
       <div className="grid">
@@ -22,34 +117,48 @@ const LandingPage = () => {
         <Hero height="90vh" />
 
         {/* About us*/}
-        <div className="bg-black">
-            <div className="grid grid-cols-1 md:grid-cols-2 py-16 px-4 md:px-[50px] lg:px-[100px] gap-10 bg-white text-black items-center">
-              <div className="order-2 md:order-1">
-                <p className="text-2xl font-bold text-black col-span-1 md:col-span-2 hidden md:block">Our <span className="text-brand">Brand Story</span></p>
-                <p className="font-semibold mt-2 text-lg">
-                  Tired of the Salon Struggle?<span className="text-brand"> Escape to RapidStylers!</span>
-                </p>
-                <p>
-                  Imagine this: the clock races by, your schedule's crammed, and
-                  that essential haircut slips further out of reach. Sound
-                  familiar? You're not alone. Between juggling commitments and
-                  battling inconvenient salon hours, finding time for yourself
-                  feels like a luxury. But what if there was a better way?
-                </p>
-                <div className="mt-8">
-                  <Link
-                    to={"/about"}
-                    className="py-4 px-8 bg-brand rounded-md text-sm text-white font-semibold"
-                  >
-                    Read more...
-                  </Link>
+        <div className="bg-white">
+          <div className="grid grid-cols-1 lg:grid-cols-2 py-20 px-4 md:px-[50px] lg:px-[100px] gap-12 items-center max-w-7xl mx-auto">
+            <div className="relative">
+              <div className="absolute -inset-3 bg-brand/15 rounded-3xl -rotate-2"></div>
+              <img
+                src={about}
+                alt="About RapidStylers"
+                className="relative w-full object-cover rounded-3xl shadow-xl"
+              />
+              <div className="absolute -bottom-6 right-4 md:right-8 bg-black text-white rounded-2xl px-5 py-4 shadow-xl flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-brand flex items-center justify-center shrink-0">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 text-white">
+                    <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-sm font-bold">In-home appointments</p>
+                  <p className="text-xs text-white/60">On your schedule</p>
                 </div>
               </div>
-              <div className="order-1 md:order-2">
-                <p className="text-2xl font-bold text-black col-span-1 md:col-span-2 mb-6 md:hidden">Our <span className="text-brand">Brand Story</span></p>
-                <img src={about} alt="About_image" className="w-full object-cover rounded-lg"/>
-              </div>
             </div>
+            <div>
+              <p className="text-xs uppercase tracking-[0.25em] text-brand font-bold">Our brand story</p>
+              <h2 className="text-3xl md:text-5xl font-bold mt-3 leading-tight font-serif">
+                Tired of the salon struggle?{" "}
+                <span className="text-brand">Meet RapidStylers.</span>
+              </h2>
+              <p className="mt-5 text-black/60 leading-relaxed">
+                The clock races by, your schedule is packed, and booking the
+                appointment you need keeps slipping out of reach. Sound
+                familiar? You're not alone. Between work, errands and
+                inconvenient salon hours, finding time for yourself feels
+                like a luxury. But what if there was a better way?
+              </p>
+              <Link
+                to={"/about"}
+                className="inline-block mt-8 py-4 px-8 bg-brand rounded-md text-sm text-white font-semibold hover:opacity-90 transition"
+              >
+                Read our story
+              </Link>
+            </div>
+          </div>
         </div>
 
         {/* Featured stylists */}
@@ -70,17 +179,17 @@ const LandingPage = () => {
                 <div className="flex gap-5">
                   <div className="">01</div>
                   <div>
-                    <span>Salon Luxury, Delivered</span>
+                    <span>Salon Quality, At Home</span>
                   </div>
                 </div>
                 <div className="flex gap-5">
                   <div className="border-l ms-2 mt-2"></div>
                   <div className="text-white/60 ps-2">
                     <span>
-                      Escape the salon wait and enjoy premium haircare in the
-                      comfort of your own home. Our skilled professionals bring
-                      the luxury spa experience directly to you, saving you time
-                      and stress.
+                      Skip the wait and enjoy premium beauty services in the
+                      comfort of your own home. Our vetted professionals bring
+                      the salon experience directly to you, saving you time and
+                      stress.
                     </span>
                   </div>
                 </div>
@@ -96,10 +205,10 @@ const LandingPage = () => {
                   <div className="border-l ms-2 mt-2"></div>
                   <div className="text-white/60 ps-2">
                     <span>
-                      Tired of salon roulette? Our AI-powered matching algorithm
-                      connects you with the ideal stylist based on your unique
-                      needs, preferences, and style goals. No more settling for
-                      anything less than perfect.
+                      Tired of guessing who to book? Our smart matching connects
+                      you with the ideal professional based on your needs,
+                      preferences and style goals. No more settling for anything
+                      less than perfect.
                     </span>
                   </div>
                 </div>
@@ -108,17 +217,16 @@ const LandingPage = () => {
                 <div className="flex gap-5">
                   <div className="">03</div>
                   <div>
-                    <span>Convinience Redefined</span>
+                    <span>Convenience, Redefined</span>
                   </div>
                 </div>
                 <div className="flex gap-5">
                   <div className="border-l ms-2 mt-2"></div>
                   <div className="text-white/60 ps-2">
                     <span>
-                      Book appointments, manage payments, and leave feedback –
-                      all at your fingertips. Our user-friendly app empowers you
-                      to control your haircare experience with ease and
-                      flexibility.
+                      Book appointments, manage payments and leave feedback, all
+                      at your fingertips. Our easy to use app puts your beauty
+                      routine in your control, with the flexibility you deserve.
                     </span>
                   </div>
                 </div>
@@ -134,10 +242,10 @@ const LandingPage = () => {
                   <div className="border-l ms-2 mt-2"></div>
                   <div className="text-white/60 ps-2">
                     <span>
-                      More than just appointments, RapidStylers fosters a
-                      vibrant community of clients and professionals. Connect,
-                      share experiences, and build lasting relationships – all
-                      within our supportive network.
+                      RapidStylers is more than appointments. It is a thriving
+                      community of clients and professionals. Connect, share
+                      experiences and build lasting relationships within our
+                      supportive network.
                     </span>
                   </div>
                 </div>
@@ -146,17 +254,17 @@ const LandingPage = () => {
                 <div className="flex gap-5">
                   <div className="">05</div>
                   <div>
-                    <span>Beyond Haircuts</span>
+                    <span>Beyond the Basics</span>
                   </div>
                 </div>
                 <div className="flex gap-5">
                   <div className="border-l ms-2 mt-2"></div>
                   <div className="text-white/60 ps-2">
                     <span>
-                      Our services extend beyond basic cuts and styles. Explore
-                      a wide range of options, from coloring and treatments to
-                      beard grooming and specialty styles, all delivered with
-                      the same exceptional quality and convenience.
+                      Our services go beyond cuts and styles. Explore a wide
+                      range of options, from coloring and treatments to nails,
+                      lashes and more, all delivered with the same exceptional
+                      quality and convenience.
                     </span>
                   </div>
                 </div>
@@ -164,50 +272,69 @@ const LandingPage = () => {
             </div>
 
             <div className="mt-6 md:ms-8">
-              <button className="py-4 px-8 bg-brand rounded-md text-sm text-white font-semibold">
+              <Link
+                to={"/login"}
+                className="inline-block py-4 px-8 bg-brand rounded-md text-sm text-white font-semibold hover:opacity-90 transition"
+              >
                 Book your appointment today!
-              </button>
+              </Link>
             </div>
           </div>
         </div>
 
         {/* Elevate your looks */}
-        <div className="bg-[#F0EBF6] px-4 md:px-[50px] grid grid-cols-1 lg:grid-cols-5 py-[50px] items-center space-y-10 lg:space-y-0">
-          <div className="col-span-2 lg:px-10">
-            <div className="text-center lg:text-start ">
-              <p className="text-3xl mb-4 text-brand">Elevate your style.</p>
-              <p className="">
-                Explore Our Exclusive Collection of Trendsetting Hairstyles for
-                Men and Women
+        <div className="relative overflow-hidden bg-[#F0EBF6]">
+          <div className="absolute -top-24 -right-24 h-80 w-80 rounded-full bg-brand/10 blur-3xl"></div>
+          <div className="relative px-4 md:px-[50px] py-20 lg:py-24 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center max-w-7xl mx-auto">
+            <div className="text-center lg:text-start">
+              <p className="text-xs uppercase tracking-[0.25em] text-brand font-bold">The gallery</p>
+              <h2 className="text-3xl md:text-5xl font-bold mt-3 leading-tight font-serif">
+                Elevate your <span className="text-brand">style.</span>
+              </h2>
+              <p className="mt-4 text-black/60 text-lg">
+                Explore our exclusive collection of trendsetting styles for
+                men and women.
               </p>
+              <div className="mt-8 flex justify-center lg:justify-start">
+                <Link
+                  to={"/elevate-your-looks"}
+                  className="inline-block py-4 px-8 bg-brand rounded-md text-sm text-white font-semibold hover:opacity-90 transition"
+                >
+                  Browse gallery
+                </Link>
+              </div>
             </div>
-            <div className="mt-3 flex justify-center lg:justify-start">
-              <Link
-                to={"/elevate-your-looks"}
-                className="py-4 px-8 bg-brand rounded-md text-sm text-white font-semibold"
-              >
-                Browse gallery
-              </Link>
+            <div className="relative">
+              <img
+                src={elevateLook}
+                alt="Style gallery"
+                className="w-full rounded-2xl shadow-[0_20px_60px_rgba(147,129,255,0.3)]"
+              />
             </div>
-          </div>
-          <div className="col-span-3">
-            <img src={elevateLook} alt="" className="w-full" />
           </div>
         </div>
 
         {/* benefits for stylists*/}
-        <div className="px-4 md:px-[50px] grid gap-6 my-16 min-w-0">
-          <div>
-            <p className="w-full lg:w-1/2 mt-4">
-              <span className="text-3xl">
-                Calling all beauty professionals!
-              </span>{" "}
-              <br />
-              <span>
+        <div className="px-4 md:px-[50px] grid gap-8 my-20 min-w-0">
+          <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5">
+            <div className="lg:w-1/2">
+              <p className="text-xs uppercase tracking-[0.25em] text-brand font-bold">
+                For professionals
+              </p>
+              <p className="text-4xl md:text-5xl font-bold mt-2 leading-tight font-serif">
+                Calling all <span className="text-brand">beauty professionals!</span>
+              </p>
+              <p className="mt-3 text-lg text-black/60">
                 Join now to start receiving online booking appointments
                 effortlessly.
-              </span>
-            </p>
+              </p>
+            </div>
+            <Link
+              to={"/styler-signup"}
+              className="shrink-0 w-fit py-4 px-8 bg-brand rounded-md text-sm text-white font-semibold hover:opacity-90 transition"
+            >
+              Join us
+            </Link>
           </div>
           <div className="z-0 min-w-0">
             <ScrollContainer />
@@ -227,13 +354,16 @@ const LandingPage = () => {
             <div className="bg-[#1e1e1e] p-4 md:p-6 text-white">
               <p className="text-lg">Transform your style!</p>
               <p className="text-white/60">
-                Save time and effort with in-home haircuts, coloring, styling,
-                and more.
+                Save time and effort with in-home beauty services, from cuts
+                and color to nails and lashes.
               </p>
               <div className="flex">
-                <span className="bg-white rounded-md text-sm text-[#1e1e1e] font-semibold mt-6 py-4 px-8">
+                <Link
+                  to={"/login"}
+                  className="bg-white rounded-md text-sm text-[#1e1e1e] font-semibold mt-6 py-4 px-8 inline-block hover:opacity-90 transition"
+                >
                   Book an appointment
-                </span>
+                </Link>
               </div>
             </div>
           </div>
@@ -260,93 +390,27 @@ const LandingPage = () => {
           </div>
         </div>
 
-        {/* Blog section */}
-        <div className="px-4 md:px-[50px] grid grid-cols-1 md:grid-cols-2 gap-4 lg:grid-cols-4">
-          <div className="col-span-1 md:col-span-2 lg:col-span-4 grid">
-            <span className="text-3xl">Blog</span>
-            <div className="grid gap-4 lg:flex justify-between items-center">
-              <span>
-                Get inspired with RapidStylers. Read helpful articles written by
-                professionals.
-              </span>
-              <span className="text-sm text-black/50">
-                [Read all articles here]
-              </span>
-            </div>
-          </div>
-          <div className="rounded-lg overflow-hidden border px-1 pt-1 pb-3 bg-white">
-            <div className="h-[250px] md:h-[170px] overflow-hidden rounded-t-lg">
-              <img
-                src="https://img.freepik.com/free-photo/ai-generated-cute-girl-pic_23-2150649874.jpg?w=826"
-                alt=""
-                className="object-cover w-full hover:scale-125 transition-all"
-                loading="lazy"
-              />
-            </div>
-            <p className="font-semibold text-sm my-3 px-3">
-              The Ultimate Guide to Braiding: From Basic to Intricate Styles
-            </p>
-            <p className="text-sm text-slate-400 px-3">29.05.2024</p>
-          </div>
-          <div className="rounded-lg overflow-hidden border px-1 pt-1 pb-3 bg-white">
-            <div className="h-[250px] md:h-[170px] overflow-hidden rounded-t-lg">
-              <img
-                src="https://img.freepik.com/free-photo/side-view-woman-styling-hair_23-2149659566.jpg?t=st=1708868604~exp=1708872204~hmac=a724d6651959e05a587b791dba7dbab024b8dc529d20566c14741d134583e345&w=826"
-                alt=""
-                className="object-cover w-full hover:scale-125 transition-all"
-                loading="lazy"
-              />
-            </div>
-            <p className="font-semibold text-sm my-3 px-3">
-              Quick and Easy Hairstyles for Busy Mornings
-            </p>
-            <p className="text-sm text-slate-400 px-3">29.05.2024</p>
-          </div>
-          <div className="rounded-lg overflow-hidden border px-1 pt-1 pb-3 bg-white">
-            <div className="h-[250px] md:h-[170px] overflow-hidden rounded-t-lg">
-              <img
-                src="https://img.freepik.com/free-photo/medium-shot-woman-arranging-hair_23-2149634993.jpg?t=st=1708868767~exp=1708872367~hmac=44c9b42f97f98a74588368862e364a6e2f7938b61e1563dcc8fd3ef51b42be57&w=826"
-                alt=""
-                className="object-cover w-full hover:scale-125 transition-all"
-                loading="lazy"
-              />
-            </div>
-            <p className="font-semibold text-sm my-3 px-3">
-              Healthy Hair Tips: Essential Care and Maintenance Guide
-            </p>
-            <p className="text-sm text-slate-400 px-3">29.05.2024</p>
-          </div>
-          <div className="rounded-lg overflow-hidden border px-1 pt-1 pb-3 bg-white">
-            <div className="h-[250px] md:h-[170px] overflow-hidden rounded-t-lg">
-              <img
-                src="https://img.freepik.com/free-photo/cool-girl-with-short-hair-looking-into-camera-background-white-backdrop-brunette-lady-with-glass-beige-outside-posing-backdrop-wall_197531-29357.jpg?t=st=1708868867~exp=1708872467~hmac=8acc269316521de8d8e9ca7cf302d3ef600de561bee3350a281a67bd7644845a&w=826"
-                alt=""
-                className="object-cover w-full hover:scale-125 transition-all"
-                loading="lazy"
-              />
-            </div>
-            <p className="font-semibold text-sm my-3 px-3">
-              Short and Chic: Modern Hairstyles for Short Haircuts
-            </p>
-            <p className="text-sm text-slate-400 px-3">29.05.2024</p>
-          </div>
-        </div>
+        {/* Blog section — fetched from API, 4 fallback posts if backend is down */}
+        <BlogSection />
 
         {/* Stylist by location */}
         <div className="px-4 md:px-[50px] mt-16">
           <p className="text-3xl">Find beauty professionals anywhere in Canada.</p>
-          <div className="grid gap-3 mt-3">
+          <p className="text-sm text-black/50 mt-1">
+            Choose a province to browse professionals near you.
+          </p>
+          <div className="grid gap-3 mt-4">
             <ul className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              <li className="truncate">Alberta</li>
-              <li className="truncate">British Columbia</li>
-              <li className="truncate">Manitoba</li>
-              <li className="truncate">New Brunswick</li>
-              <li className="truncate">Newfoundland and Labrador</li>
-              <li className="truncate">Nova Scotia</li>
-              <li className="truncate">Ontario</li>
-              <li className="truncate">Prince Edward Island</li>
-              <li className="truncate">Quebec</li>
-              <li className="truncate">Saskatchewan</li>
+              {PROVINCES.map((province) => (
+                <li key={province}>
+                  <Link
+                    to={`/search?province=${encodeURIComponent(province)}`}
+                    className="inline-block w-full truncate text-gray-700 hover:text-brand hover:underline underline-offset-4 transition-colors"
+                  >
+                    {province}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
         </div>
@@ -357,8 +421,7 @@ const LandingPage = () => {
             <img src={scissors} alt="" className="h-5" />
           </div>
           <p className="text-[#c4c4c4]">
-            The barber just opened a restaurant, but the only thing on the menu
-            is haircuts
+            Style is a way to say who you are without having to speak
           </p>
         </div>
 

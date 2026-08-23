@@ -42,7 +42,7 @@ const Featured = () => {
       <div className="flex gap-2 mb-4 text-sm font-medium flex-wrap">
         {categories.map((cat) => {
           const catId = cat.serviceTypeId || cat.id;
-          const catName = cat.serviceTypeName || cat.name || cat.serviceType;
+          const catName = cat.serviceTypeName || cat.serviceName || cat.name || cat.serviceType;
           return (
             <span
               key={catId}

@@ -8,7 +8,7 @@ import { useSelector } from "react-redux";
 const Dashboard = ({ setPageTitle }) => {
   useEffect((() => {
     setPageTitle("Dashboard");
-    document.title = "Dashboard - RapidStyler";
+    document.title = "Dashboard | RapidStylers";
   }));
 
   const pendingAppointment = useUserPendingAppointments();
@@ -24,10 +24,10 @@ const Dashboard = ({ setPageTitle }) => {
             <Appointments appointmentDate={val?.appointmentDate}
                           serviceTime={val?.arrivalTime} 
                           serviceProvider={val.stylerData?.businessName}
-                          serviceType={"Fix from backend"}
+                          serviceType={val.subServiceData?.serviceTypeName || "Service"}
                           businessAddress={val.stylerData?.businessAddress}
                           serviceName={val.subServiceData?.name}
-                          numberOfPeople={"666"}
+                          numberOfPeople={"1"}
                           appointmentStatus={val?.status}
                           appointmentPrice={val.subServiceData?.price}
                           key={key}
@@ -65,7 +65,7 @@ const Dashboard = ({ setPageTitle }) => {
               :
               (
                 <div>
-                  No Appointments available yet, Kindly book an appointment
+                  No appointments yet. Book one to get started.
                 </div>
               )
           }

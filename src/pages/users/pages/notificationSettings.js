@@ -4,7 +4,7 @@ import Back from "../../../components/goBack";
 const NotificationSettings = ({setPageTitle}) => {
   useEffect((() => {
     setPageTitle("Account Settings");
-    document.title = "Notification Settings - Rapid Styler";
+    document.title = "Notification settings | RapidStylers";
   }));
   return (
     <div className="bg-white rounded-lg border">
@@ -27,7 +27,7 @@ const NotificationSettings = ({setPageTitle}) => {
           </div>
           <div className="flex items-center gap-2">
             <input type="checkbox" name="" id=""/>
-            <span className="mb-[2px]">There is a new stylist in my location</span>
+            <span className="mb-[2px]">There is a new professional in my area</span>
           </div>
         </div>
       </div>

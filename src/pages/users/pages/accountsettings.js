@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 const AccountSettings = ({setPageTitle}) => {
     useEffect((() => {
       setPageTitle("Account Settings");
-      document.title = "Account settings - Rapid Styler";
+      document.title = "Account settings | RapidStylers";
     }));
     return ( 
       <div className="bg-white border rounded-lg">

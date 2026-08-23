@@ -1,10 +1,8 @@
 
 import logo from "../../assets/svg-icons/logo.svg";
-import menu from "../../assets/svg-icons/menu-icon.svg";
-import close from "../../assets/svg-icons/close.svg";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import info from "../../assets/svg-icons/info.svg";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import Buttons from "../../components/button";
 import InputWithLabel from "../../components/inputWithLabel";
 import Modal from "../../components/modals";
@@ -12,47 +10,42 @@ import { useFormik } from "formik";
 import * as Yup from "yup";
 import Spinner from "../../components/spinner";
 import { useDispatch, useSelector } from "react-redux";
-import { getUserDetails, userAuthenticate, verifySignUpEmailAddress } from "../../hooks/local/userReducer";
-import PasswordInput from "../../components/passwordInput";
+import { verifySignUpEmailAddress } from "../../hooks/local/userReducer";
 import SearchForStyler from "../../components/searchForStyler";
-import { showSuccessToastMessage } from "../../utils/constant";
-import { getPeriodOfDay } from "../../utils/utility";
+import { APIService } from "../../hooks/remote/apiService";
+import { useUserLocation } from "../../context/LocationContext";
 import largeVideo from "../../assets/Videos/large video.mp4";
 import smallVideo from "../../assets/Videos/small video.mp4";
 
 const Hero = ({ height }) => {
-  const [menuVisible, setMenuVisible] = useState(false);
+  const [services, setServices] = useState([]);
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  // Function to toggle the menu visibility
-  const toggleMenu = () => {
-    setMenuVisible(!menuVisible);
-  };
+  useEffect(() => {
+    APIService.getStylerType()
+      .then((res) => {
+        const items = res.data?.data || [];
+        setServices(items.map((c) => c.serviceTypeName || c.serviceName || c.name || c.serviceType));
+      })
+      .catch(() => {});
+  }, []);
 
-  // Function to close the menu
-  const closeMenu = () => {
-    setMenuVisible(false);
-  };
-
-  const [signInVisible, setSignInVisible] = useState(false);
   const [signUpVisible, setSignUpVisible] = useState(false);
+  const [signUpRole, setSignUpRole] = useState("customer"); // customer | stylist | admin
+  const [searchParams] = useSearchParams();
 
-  // Function to toggle the sign in modal
-  const toggleSignIn = () => {
-    setSignInVisible(!signInVisible);
-    setMenuVisible(false);
-    setSignUpVisible(false);
-  };
-
+  // Auto-open the signup modal when arriving with ?signup=1 (e.g. from the login page)
+  useEffect(() => {
+    if (searchParams.get("signup")) {
+      setSignUpVisible(true);
+    }
+  }, [searchParams]);
 
   // Function to toggle the sign up modal
   const toggleSignUp = () => {
     setSignUpVisible(!signUpVisible);
-    setSignInVisible(false);
-    setMenuVisible(false);
   };
-  const periodOfTheDay = getPeriodOfDay();
   const userSignUp = useFormik({
     initialValues: {
       emailAddress: ""
@@ -69,28 +62,6 @@ const Hero = ({ height }) => {
       }
     }
   });
-
-  const userSignIn = useFormik({
-    initialValues: {
-      emailAddress: "",
-      password: ""
-    },
-    validationSchema: Yup.object({
-      emailAddress: Yup.string().email("Invalid Email Address").required("Email is required"),
-      password: Yup.string().required("Password cannot be empty"),
-    }),
-    onSubmit: async (values) => {
-      const { emailAddress, password } = values;
-      let authData = { emailAddress, password };
-      const { payload } = await dispatch(userAuthenticate(authData))
-      if (payload.statusCode === "200") {
-        showSuccessToastMessage(`Good ${periodOfTheDay} `+payload.data.firstname);
-        dispatch(getUserDetails(payload.data.userId));
-        navigate('/dashboard');
-      }
-    }
-  })
-  const currentYear = new Date().getFullYear()
 
   return (
     <div style={{ height }} className="relative z-10">
@@ -109,14 +80,25 @@ const Hero = ({ height }) => {
               Your browser does not support the video tag.
             </video>
             <div className="absolute top-0 w-full h-full bg-black/70 flex items-end justify-center md:justify-start">
-              <div className="w-full md:w-[70%] lg:w-[50%] p-6 md:ps-20 md:pb-20">
-                <div className="text-2xl font-bold text-white text-center md:text-start mb-2">
-                  Get convenient, <span className="text-brand">high-quality hair services</span> without leaving your home
+              <div className="w-full md:w-[70%] lg:w-[50%] px-4 pb-6 pt-8 sm:px-6 sm:pb-10 md:ps-20 md:pb-20">
+                <div className="text-[22px] sm:text-xl md:text-2xl lg:text-[28px] font-bold text-white text-center md:text-start mb-2 leading-snug">
+                  Get convenient, <span className="text-brand">high-quality beauty services</span> without leaving your home
                 </div>
-                <div className="text-white text-center md:text-start"> 
-                  Our platform connects you with top-rated local barbers and
-                  stylists for in-home appointments.
+                <div className="text-white/70 text-xs sm:text-sm md:text-base text-center md:text-start max-w-md mx-auto md:mx-0">
+                  Our platform connects you with top-rated local beauty professionals for in-home appointments.
                 </div>
+                {services.length > 0 && (
+                  <div className="mt-3 flex flex-wrap justify-center md:justify-start gap-1.5 sm:gap-2">
+                    {services.map((service) => (
+                      <span
+                        key={service}
+                        className="text-[10px] sm:text-[11px] md:text-xs font-medium bg-white/10 border border-white/30 text-white rounded-full px-2.5 sm:px-3 py-1"
+                      >
+                        {service}
+                      </span>
+                    ))}
+                  </div>
+                )}
                 <SearchForStyler />
               </div>
             </div>
@@ -125,7 +107,7 @@ const Hero = ({ height }) => {
           {/* Elevate your looks */}
           <div
             className={`relative ${
-              document.title === "Elevate your looks - TrimTech"
+              document.title === "Elevate your looks | RapidStylers"
                 ? "block"
                 : "hidden"
             }`}
@@ -137,7 +119,7 @@ const Hero = ({ height }) => {
                   Elevate your style
                 </p>
                 <p>
-                  Explore Our Exclusive Collection of Trendsetting Hairstyles
+                  Explore our exclusive collection of trendsetting styles
                   for Men and Women.
                 </p>
               </div>
@@ -147,158 +129,27 @@ const Hero = ({ height }) => {
       </div>
 
       {/* Navbar */}
-      <div className="fixed w-full flex items-center border-b border-[#ffffff16] bg-[#00000060] backdrop-blur-xl px-4 md:px-[50px] text-white py-5">
+      <div className="fixed w-full flex items-center border-b border-[#ffffff16] bg-[#00000060] backdrop-blur-xl px-3 sm:px-4 md:px-[50px] text-white py-3 sm:py-4 md:py-5 z-20">
         <div className="w-full flex justify-between items-center">
-          <Link to={"/"}>
-            <img src={logo} alt="" className="h-12 md:h-10" />
+          <Link to={"/"} onClick={(e) => { e.preventDefault(); window.location.href = "/"; }}>
+            <img src={logo} alt="RapidStylers" className="h-8 sm:h-10" />
           </Link>
-          <div className="hidden md:block">
-            <div className="flex items-center gap-8">
-              <div className="flex items-center divide-x text-sm">
-                <span className="pe-4 cursor-pointer" onClick={toggleSignIn}>
-                  Login
-                </span>
-                <span className="ps-4 cursor-pointer" onClick={toggleSignUp}>
-                  Create an account
-                </span>
-              </div>
-            </div>
-          </div>
-          <div className="block md:hidden">
-            <img src={menu} alt="" className="h-6" onClick={toggleMenu} />
-          </div>
-        </div>
-      </div>
-
-      {/* small screen menu */}
-      <div
-        className={`fixed w-full h-lvh pt-10 pb-40 px-4 grid content-between bg-[#1e1e1e] lg:hidden ${
-          menuVisible ? "block" : "hidden"
-        }`}
-      >
-        <div className="grid">
-          <img
-            src={close}
-            alt=""
-            onClick={closeMenu}
-            className="h-6 justify-self-end cursor-pointer"
-          />
-
-          <div className="mt-10 grid gap-4">
-            <div
-              className="py-4 text-white rounded-md font-semibold flex justify-between items-center"
-              onClick={toggleSignIn}
-            >
-              <span>Login</span>
-              <span>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  width="24"
-                  height="24"
-                  fill="rgba(255,255,255,1)"
-                >
-                  <path d="M12.1717 12.0005L9.34326 9.17203L10.7575 7.75781L15.0001 12.0005L10.7575 16.2431L9.34326 14.8289L12.1717 12.0005Z"></path>
-                </svg>
+          <div className="flex items-center gap-2 sm:gap-4 md:gap-8">
+            <LocationBadge />
+            <div className="flex items-center gap-2 sm:gap-3 md:divide-x md:text-sm text-[11px] sm:text-xs">
+              <span className="md:pe-3 cursor-pointer hover:text-white/80 transition" onClick={() => navigate('/login')}>
+                Login
               </span>
-            </div>
-            <div
-              className="py-4 text-white rounded-md font-semibold flex justify-between items-center"
-              onClick={toggleSignUp}
-            >
-              <span>Create an account</span>
-              <span>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  width="24"
-                  height="24"
-                  fill="rgba(255,255,255,1)"
-                >
-                  <path d="M12.1717 12.0005L9.34326 9.17203L10.7575 7.75781L15.0001 12.0005L10.7575 16.2431L9.34326 14.8289L12.1717 12.0005Z"></path>
-                </svg>
+              <span className="px-2 sm:px-3 md:ps-3 cursor-pointer hover:text-white/80 transition" onClick={toggleSignUp}>
+                Sign up
               </span>
-            </div>
-            <div
-              className="py-4 text-white rounded-md font-semibold flex justify-between items-center"
-              onClick={() => navigate('/styler-signup')}
-            >
-              <span>Register as a stylist</span>
-              <span>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  width="24"
-                  height="24"
-                  fill="rgba(255,255,255,1)"
-                >
-                  <path d="M12.1717 12.0005L9.34326 9.17203L10.7575 7.75781L15.0001 12.0005L10.7575 16.2431L9.34326 14.8289L12.1717 12.0005Z"></path>
-                </svg>
+              <span className="hidden sm:inline md:ps-3 cursor-pointer hover:text-white/80 transition" onClick={() => navigate('/styler-signup')}>
+                For pros
               </span>
             </div>
           </div>
         </div>
-        <span className="text-white/60">
-          © {currentYear} TrimTech All rights reserved
-        </span>
       </div>
-
-      {/* Sign in modal */}
-      <Modal
-        modalTitle={"Login"}
-        isVisible={signInVisible}
-        onClose={() => setSignInVisible(false)}
-        width={"md:w-[40%] lg:w-[35%]"}
-      >
-        <form onSubmit={userSignIn.handleSubmit}>
-          <div className="flex gap-3 flex-col">
-            <InputWithLabel
-              labelName={"Email address"}
-              inputType={"email"}
-              inputName={"emailAddress"}
-              inputValue={userSignIn.values.emailAddress}
-              inputOnBlur={userSignIn.handleBlur}
-              inputOnChange={userSignIn.handleChange}
-              inputError={
-                userSignIn.touched.emailAddress &&
-                userSignIn.errors.emailAddress
-                  ? userSignIn.errors.emailAddress
-                  : null
-              }
-            />
-            <PasswordInput
-              labelName={"Password"}
-              inputType={"password"}
-              inputName={"password"}
-              inputValue={userSignIn.values.password}
-              inputOnBlur={userSignIn.handleBlur}
-              inputOnChange={userSignIn.handleChange}
-              inputError={
-                userSignIn.touched.password && userSignIn.errors.password
-                  ? userSignIn.errors.password
-                  : null
-              }
-            />
-          </div>
-
-          <div className="flex justify-between items-center pt-4">
-            <Buttons btnText={"Continue"} btnType={"primary"} type={"submit"} />
-            <p className="text-sm font-medium text-brand underline">
-              Forgot password?
-            </p>
-          </div>
-        </form>
-
-        <p className="text-sm">
-          Don't have an account?{" "}
-          <span
-            className="text-brand underline cursor-pointer"
-            onClick={toggleSignUp}
-          >
-            Sign up
-          </span>
-        </p>
-      </Modal>
 
       {/* Sign Up modal */}
       <Modal
@@ -308,19 +159,55 @@ const Hero = ({ height }) => {
         width={"md:w-[40%]"}
       >
         <form onSubmit={userSignUp.handleSubmit}>
-          <InputWithLabel
-            labelName={"Email address"}
-            inputType={"email"}
-            inputName={"emailAddress"}
-            inputValue={userSignUp.values.emailAddress}
-            inputOnBlur={userSignUp.handleBlur}
-            inputOnChange={userSignUp.handleChange}
-            inputError={
-              userSignUp.touched.emailAddress && userSignUp.errors.emailAddress
-                ? userSignUp.errors.emailAddress
-                : null
-            }
-          />
+          <p className="text-sm font-semibold text-gray-700 mb-2">I want to join as a</p>
+          <div className="flex gap-2 mb-4">
+            {[
+              { value: "customer", label: "Customer" },
+              { value: "stylist", label: "Stylist" },
+            ].map((role) => (
+              <button
+                key={role.value}
+                type="button"
+                onClick={() => {
+                  if (role.value === "stylist") {
+                    navigate("/styler-signup");
+                    return;
+                  }
+                  setSignUpRole("customer");
+                }}
+                className={`flex-1 py-2 rounded-md text-xs font-semibold border transition-colors ${
+                  signUpRole === role.value
+                    ? "bg-brand text-white border-brand"
+                    : "bg-white text-gray-600 border-gray-300 hover:border-brand"
+                }`}
+              >
+                {role.label}
+              </button>
+            ))}
+          </div>
+
+          {signUpRole === "customer" && (
+            <InputWithLabel
+              labelName={"Email address"}
+              inputType={"email"}
+              inputName={"emailAddress"}
+              inputValue={userSignUp.values.emailAddress}
+              inputOnBlur={userSignUp.handleBlur}
+              inputOnChange={userSignUp.handleChange}
+              inputError={
+                userSignUp.touched.emailAddress && userSignUp.errors.emailAddress
+                  ? userSignUp.errors.emailAddress
+                  : null
+              }
+            />
+          )}
+          {signUpRole === "stylist" && (
+            <p className="text-[13px] text-black/80">
+              You'll create your stylist profile with business details, services
+              and pricing in the next steps.
+            </p>
+          )}
+
           <div className="text-[13px] text-black/80 flex items-center gap-3 pt-2">
             <img src={info} alt="" className="h-5" />
             <span>
@@ -332,10 +219,10 @@ const Hero = ({ height }) => {
           <div className="flex justify-between items-center mt-8">
             <Buttons
               btnType={"primary"}
-              btnText={"Verify Email"}
+              btnText={signUpRole === "customer" ? "Verify Email" : "Continue"}
               type={"submit"}
             />
-            <p className="text-sm" onClick={toggleSignIn}>
+            <p className="text-sm" onClick={() => navigate('/login')}>
               {" "}
               Return to {""}{" "}
               <span className="text-brand underline cursor-pointer">
@@ -346,6 +233,32 @@ const Hero = ({ height }) => {
         </form>
       </Modal>
     </div>
+  );
+};
+
+/** Shows the user's detected location in the navbar. */
+const LocationBadge = () => {
+  const { location } = useUserLocation();
+
+  if (!location || location.loading) return null;
+
+  const display = location.city
+    ? `${location.city}${location.province ? ", " + location.province : ""}`
+    : location.province || "";
+
+  if (!display) return null;
+
+  return (
+    <span
+      className="flex items-center gap-1 text-white/80 hover:text-white transition-colors shrink-0"
+      title="Detected location"
+    >
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4 shrink-0">
+        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+        <circle cx="12" cy="10" r="3" />
+      </svg>
+      <span className="hidden md:inline text-[11px] sm:text-xs truncate max-w-[140px]">{display}</span>
+    </span>
   );
 };
 

@@ -10,7 +10,7 @@ import { useSelector } from "react-redux";
 const Stylist = ({ setPageTitle }) => {
   useEffect((() => {
     setPageTitle("Book Appointment");
-    document.title = "Select a stylist - Rapid Styler";
+    document.title = "Select a professional | RapidStylers";
   }));
   let { stylerTypeId, stylerTypeName } = useParams();
   stylerTypeId = atob(stylerTypeId);
@@ -49,13 +49,13 @@ const Stylist = ({ setPageTitle }) => {
             :
             (
               <div>
-                No Stylers Available
+                No professionals available in this category yet.
               </div>
             )
         }
 
 
-        <button className="bg-brand text-white py-3 px-6 rounded-md mt-6 md:text-sm">Load more stylists</button>
+        <button className="bg-brand text-white py-3 px-6 rounded-md mt-6 md:text-sm">Load more professionals</button>
 
       </div>
     </div>

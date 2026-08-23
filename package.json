@@ -24,7 +24,8 @@
     "react-webcam": "^7.2.0",
     "redux": "^5.0.1",
     "web-vitals": "^2.1.4",
-    "yup": "^1.4.0"
+    "yup": "^1.4.0",
+    "zod": "^4.4.3"
   },
   "scripts": {
     "start": "react-scripts start",

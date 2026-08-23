@@ -14,7 +14,7 @@ import Spinner from "../../../components/spinner";
 const CardDetails = ({ setPageTitle }) => {
   useEffect((() => {
     setPageTitle("Account Settings");
-    document.title = "Update Card Details - Rapid Styler";
+    document.title = "Card details | RapidStylers";
   }));
 
   const dispatch = useDispatch();

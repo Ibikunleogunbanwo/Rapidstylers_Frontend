@@ -9,7 +9,7 @@ import { useStylerList } from "../userLayout/functionalEffects";
 const BookAppointment = ({ setPageTitle, setStylerSearchName }) => {
   useEffect((() => {
     setPageTitle("Book Appointment");
-    document.title = "Book an appointment - TrimTech";
+    document.title = "Book an appointment | RapidStylers";
   }));
   const stylerList = useStylerList();
   const [stylerName, setStylerName] = useState("");
@@ -27,7 +27,7 @@ const BookAppointment = ({ setPageTitle, setStylerSearchName }) => {
         <div className="text-sm grid gap-4 md:flex md:justify-between ">
           <p>
             Current location:{" "}
-            <span className="font-medium text-brand">Los Santos</span>
+            <span className="font-medium text-brand">Edmonton, Canada</span>
           </p>
           <p className="text-brand">[ Change location ]</p>
         </div>
@@ -39,10 +39,10 @@ const BookAppointment = ({ setPageTitle, setStylerSearchName }) => {
               value={stylerName}
               onChange={(e)=>setStylerName(e.target.value)}
               className="w-full active:border-0 active:outline-0 focus:border-0 focus:outline-0 placeholder:text-sm"
-              placeholder="Search for a stylist"
+              placeholder="Search for a professional"
             />
               <button onClick={searchStyler} className="bg-brand text-sm h-full flex gap-2 items-center text-white py-4 md:py-3 px-5 rounded" >
-                <span>Search!</span>
+                <span>Search</span>
               </button>
           </span>
         </div>
@@ -79,7 +79,7 @@ const BookAppointment = ({ setPageTitle, setStylerSearchName }) => {
               :
               (
                 <div>
-                 <p className="text-lg font-bold"> No Stylist Available, Check back later</p>
+                 <p className="text-lg font-bold"> No professionals available yet. Check back later.</p>
                 </div>
               )
           }
