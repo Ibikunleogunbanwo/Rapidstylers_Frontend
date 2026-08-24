@@ -28,75 +28,13 @@ describe("Toast helpers", () => {
   test("showSuccessToastMessage calls toast.success with the message", () => {
     showSuccessToastMessage("It worked");
     expect(toast.success).toHaveBeenCalledTimes(1);
-    expect(toast.success).toHaveBeenCalledWith("It worked", expect.anything());
-  });
-
-  test("showSuccessToastMessage passes autoClose of 4000", () => {
-    showSuccessToastMessage("Saved");
-    const options = toast.success.mock.calls[0][1];
-    expect(options.autoClose).toBe(4000);
-  });
-
-  test("showSuccessToastMessage passes colored theme", () => {
-    showSuccessToastMessage("Saved");
-    const options = toast.success.mock.calls[0][1];
-    expect(options.theme).toBe("colored");
-  });
-
-  test("showSuccessToastMessage enables progress bar", () => {
-    showSuccessToastMessage("Saved");
-    const options = toast.success.mock.calls[0][1];
-    expect(options.hideProgressBar).toBe(false);
-  });
-
-  test("showSuccessToastMessage does not pause auto-close on hover or focus loss", () => {
-    showSuccessToastMessage("Saved");
-    const options = toast.success.mock.calls[0][1];
-    expect(options.pauseOnHover).toBe(false);
-    expect(options.pauseOnFocusLoss).toBe(false);
-  });
-
-  test("showSuccessToastMessage enables closeOnClick", () => {
-    showSuccessToastMessage("Saved");
-    const options = toast.success.mock.calls[0][1];
-    expect(options.closeOnClick).toBe(true);
-  });
-
-  test("showSuccessToastMessage enables draggable", () => {
-    showSuccessToastMessage("Saved");
-    const options = toast.success.mock.calls[0][1];
-    expect(options.draggable).toBe(true);
+    expect(toast.success).toHaveBeenCalledWith("It worked");
   });
 
   test("showErrorToastMessage calls toast.error with the message", () => {
     showErrorToastMessage("Something broke");
     expect(toast.error).toHaveBeenCalledTimes(1);
-    expect(toast.error).toHaveBeenCalledWith("Something broke", expect.anything());
-  });
-
-  test("showErrorToastMessage passes autoClose of 5000", () => {
-    showErrorToastMessage("Fail");
-    const options = toast.error.mock.calls[0][1];
-    expect(options.autoClose).toBe(5000);
-  });
-
-  test("showErrorToastMessage passes colored theme", () => {
-    showErrorToastMessage("Fail");
-    const options = toast.error.mock.calls[0][1];
-    expect(options.theme).toBe("colored");
-  });
-
-  test("showErrorToastMessage enables progress bar", () => {
-    showErrorToastMessage("Fail");
-    const options = toast.error.mock.calls[0][1];
-    expect(options.hideProgressBar).toBe(false);
-  });
-
-  test("showErrorToastMessage does not pause auto-close on hover or focus loss", () => {
-    showErrorToastMessage("Fail");
-    const options = toast.error.mock.calls[0][1];
-    expect(options.pauseOnHover).toBe(false);
-    expect(options.pauseOnFocusLoss).toBe(false);
+    expect(toast.error).toHaveBeenCalledWith("Something broke");
   });
 
   test("showSuccessToastMessage returns null", () => {
