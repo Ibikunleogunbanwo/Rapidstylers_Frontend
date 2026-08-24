@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 const AccountSettings = ({setPageTitle}) => {
     useEffect((() => {
       setPageTitle("Account Settings");
-      document.title = "Account settings - Rapid Styler";
+      document.title = "Account settings | RapidStylers";
     }));
     return ( 
       <div className="bg-white border rounded-lg">
@@ -40,6 +40,30 @@ const AccountSettings = ({setPageTitle}) => {
           <Link to={"/cardDetails"}>
           <div className="flex items-center justify-between py-3">
             <span className="">Add Card details</span>
+            <div>
+              <img src={arrow} alt="" className="h-5"/>
+            </div>
+          </div>
+          </Link>
+          <Link to={"/support"}>
+          <div className="flex items-center justify-between py-3">
+            <span className="">Support</span>
+            <div>
+              <img src={arrow} alt="" className="h-5"/>
+            </div>
+          </div>
+          </Link>
+          <Link to={"/loyalty"}>
+          <div className="flex items-center justify-between py-3">
+            <span className="">Loyalty and referrals</span>
+            <div>
+              <img src={arrow} alt="" className="h-5"/>
+            </div>
+          </div>
+          </Link>
+          <Link to={"/notifications"}>
+          <div className="flex items-center justify-between py-3">
+            <span className="">Notifications</span>
             <div>
               <img src={arrow} alt="" className="h-5"/>
             </div>

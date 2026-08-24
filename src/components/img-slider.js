@@ -24,10 +24,11 @@ const benefits = [
 ];
 
 const Card = ({ title, body }) => (
-  <div className="w-80 md:w-96 lg:w-[500px] p-8 rounded border hover:border-brand hover:text-brand transition-colors cursor-default shrink-0 mr-4">
-    <div className="grid gap-1">
-      <span className="text-lg">{title}</span>
-      <span>{body}</span>
+  <div className="w-80 md:w-96 lg:w-[500px] p-8 rounded-2xl bg-white border border-gray-100 shadow-[0_2px_20px_rgba(147,129,255,0.08)] hover:shadow-[0_10px_34px_rgba(147,129,255,0.22)] hover:-translate-y-1 transition-all duration-300 cursor-default shrink-0 mr-6">
+    <div className="grid gap-3">
+      <span className="h-1 w-12 rounded-full bg-brand"></span>
+      <span className="text-lg font-bold leading-snug">{title}</span>
+      <span className="text-[15px] leading-relaxed text-black/60">{body}</span>
     </div>
   </div>
 );

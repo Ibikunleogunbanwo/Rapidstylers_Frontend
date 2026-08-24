@@ -1,8 +1,9 @@
 import { Routes, Route } from "react-router-dom";
+import NotFound from "../../generalPages/notFound";
 import Dashboard from "../pages/dashboard";
 import UserTopBar from "./topBar";
 import UserSideBar from "./sideBar";
-import Humour from "../../../components/trimTechHumour";
+import Humour from "../../../components/rapidStylerHumour";
 import Advert from "../../../components/advert";
 import { useState } from "react";
 import { useSelector } from "react-redux";
@@ -18,6 +19,9 @@ import Feedback from "../pages/feedback";
 import SearchStyler from "../pages/searchStylers";
 import CardDetails from "../pages/cardDetails";
 import AccountSettings from "../pages/accountsettings";
+import Notifications from "../pages/notifications";
+import Support from "../pages/support";
+import Loyalty from "../pages/loyalty";
 
 const UserLayout = () => {
     const userSession = useSelector((state)=>state.user.userSessionData);
@@ -54,9 +58,13 @@ const UserLayout = () => {
                                 <Route path="/changePassword" element={<ChangePassword setPageTitle={setPageTitle}/>}/>
                                 <Route path="/CardDetails" element={<CardDetails setPageTitle={setPageTitle}/>}/>
                                 <Route path="/notificationSettings" element={<NotificationSettings setPageTitle={setPageTitle}/>}/>
+                                <Route path="/notifications" element={<Notifications setPageTitle={setPageTitle}/>}/>
+                                <Route path="/support" element={<Support setPageTitle={setPageTitle}/>}/>
+                                <Route path="/loyalty" element={<Loyalty setPageTitle={setPageTitle}/>}/>
                                 <Route path="/feedback" element={<Feedback setPageTitle={setPageTitle}/>}/>
                                 <Route path="/searchAStyler" element={<SearchStyler setPageTitle={setPageTitle} stylerSearchName={stylerSearchName}/>}/>
                                 <Route path="/signOut" element={<LogOut/>}/>
+                                <Route path="*" element={<NotFound />} />
                             </Routes>
                         </div>
                         <div className="col-span-1 lg:col-span-3">

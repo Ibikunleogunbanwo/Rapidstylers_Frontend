@@ -31,7 +31,7 @@ const Footer = () => {
               <div className="col-span-1 lg:col-span-2">
                 <div className="grid text-start">
                   <span className="text-lg font-semibold tracking-tight">Join our newsletter</span>
-                  <span className="mt-2 text-white/60 leading-relaxed">Get access to resources on exchange rate, new features and more</span>
+                  <span className="mt-2 text-white/60 leading-relaxed">Get access to styling tips, new features and more</span>
                   <div className="flex gap-3 mt-4 items-center">
                     <div className="flex-1"><Input placeholder="Email address" /></div>
                     <button className="shrink-0 px-6 py-[13px] text-sm font-medium bg-brand rounded-md text-white hover:opacity-90 transition">Join!</button>
@@ -58,7 +58,7 @@ const Footer = () => {
                   <div className="grid">
                     <p className="text-[15px] font-semibold">Company</p>
                     <div className="grid gap-2 mt-3 text-sm text-white/60">
-                      <span className="cursor-pointer hover:text-white transition">About Rapid Stylers</span>
+                      <span className="cursor-pointer hover:text-white transition">About RapidStylers</span>
                       <span className="cursor-pointer hover:text-white transition">Register as a stylist</span>
                     </div>
                   </div>
