@@ -3,28 +3,46 @@ import { toast } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
 import CryptoJS from 'crypto-js';
 
-export const API_KEY = "14022024";
+// Secrets come from the local .env file (gitignored) via CRA's REACT_APP_ vars.
+// Copy .env.example to .env and fill in real values.
+export const API_KEY = process.env.REACT_APP_API_KEY || "";
 export const JSON_CONTENT_TYPE = "application/json";
-export const API_BASE_URL = "http://localhost:9090/rapid_stylers";
-export const DECRYPT_KEY = "D0n!T'T&mp3r@w1Th^&()";
+export const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "http://localhost:9090/rapid_stylers";
+export const DECRYPT_KEY = process.env.REACT_APP_DECRYPT_KEY || "";
 
 export const API_HEADER = {
     'Content-Type' : JSON_CONTENT_TYPE,
     'x-api-key' : API_KEY
 }
 
+// JWT issued by user_sign_in / styler_sign_in / admin_sign_in — attached as
+// Authorization: Bearer <token> by the ApiClient interceptor.
+export const AUTH_TOKEN_STORAGE_KEY = "rapidstylers_auth_token";
+export const getAuthToken = () => sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY) || "";
+export const setAuthToken = (token) => sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, token);
+export const clearAuthToken = () => sessionStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
+
 export const FORM_DATA_HEADER = {
     'x-api-key' : API_KEY,
     'Content-Type': 'multipart/form-data',
 }
 
+const TOAST_OPTIONS = {
+    autoClose: 4000,
+    hideProgressBar: false,
+    closeOnClick: true,
+    pauseOnHover: true,
+    draggable: true,
+    theme: "colored",
+};
+
 export const showSuccessToastMessage  = (successMessage)=>{
-    toast.success(successMessage);
+    toast.success(successMessage, TOAST_OPTIONS);
     return null;
 }
 
 export const showErrorToastMessage  = (errorMessage)=>{
-    toast.error(errorMessage);
+    toast.error(errorMessage, { ...TOAST_OPTIONS, autoClose: 5000 });
     return null;
 }
 

@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice, isAnyOf } from "@reduxjs/toolkit";
-import { retrieveFromLocalStorage, showErrorToastMessage, showSuccessToastMessage } from "../../utils/constant";
+import { retrieveFromLocalStorage, showErrorToastMessage, showSuccessToastMessage, setAuthToken, clearAuthToken } from "../../utils/constant";
 import { APIService } from "../remote/apiService";
 
 const initialState = {
@@ -50,6 +50,9 @@ export const userAuthenticate = createAsyncThunk(
         const apiUserLogin = await APIService.userSignIn(userData);
         const response = await apiUserLogin.data;
         saveToLocalStorage("userSessionData", JSON.stringify(response.data));
+        if (response.token) {
+            setAuthToken(response.token);
+        }
         return response;
     }
 )
@@ -153,6 +156,7 @@ const logOutSession = () =>{
     localStorage.removeItem("user");
     localStorage.removeItem("userSessionData"); 
     localStorage.removeItem("userDetailsData");
+    clearAuthToken();
 }
 
 export const userLogOut = createAsyncThunk(
@@ -164,7 +168,20 @@ export const userLogOut = createAsyncThunk(
 
 const userSlice = createSlice({
     name : "user",
-    reducers : {},
+    reducers : {
+        // Used by the unified /login page (APIService.signIn) to persist the
+        // customer session exactly like userAuthenticate does, so the dashboard
+        // guard (userSessionData) passes without a reload.
+        setUserSession : (state, action) => {
+            const payload = action.payload;
+            state.isAuthenticated = true;
+            state.users = payload;
+            state.userSessionData = payload?.data?.account || payload?.data || null;
+            if (state.userSessionData) {
+                saveToLocalStorage("userSessionData", JSON.stringify(state.userSessionData));
+            }
+        },
+    },
     initialState : initialState,
     extraReducers : (builder) => {
         builder.addCase(userAuthenticate.fulfilled, (state,action)=>{
@@ -195,6 +212,11 @@ const userSlice = createSlice({
             state.isAuthenticated = false;
             state.loading = false;
             state.users = null;
+            // Clear the in-memory session too — otherwise the layout guard
+            // (which checks userSessionData) shows the previous account's
+            // dashboard until a reload.
+            state.userSessionData = null;
+            state.userDetailsData = null;
         })
 
         //Fulfilled with notification message
@@ -281,4 +303,5 @@ const userSlice = createSlice({
         })
     },
 })
+export const { setUserSession } = userSlice.actions;
 export const userReducer = userSlice.reducer;

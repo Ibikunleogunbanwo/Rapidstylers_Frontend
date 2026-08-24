@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
 import close from "../assets/svg-icons/closeBlack.svg";
 import Input from "../components/input";
+import AddressAutocomplete from "../../components/AddressAutocomplete";
 import { Link } from "react-router-dom";
 import { APIService } from "../hooks/remote/apiService";
 
 const CreateAccountAdmin = () => {
-  document.title = "Trimtech - Stylist Portal";
+  document.title = "Stylist Portal | RapidStylers";
 
   const validID = ['Drivers license', 'Health card', 'Permanent residents card'];
   const [serviceTypes, setServiceTypes] = useState([]);
@@ -16,7 +17,7 @@ const CreateAccountAdmin = () => {
     APIService.getStylerType()
       .then((res) => {
         const items = res.data?.data || [];
-        setServiceTypes(items.map(c => c.serviceTypeName || c.name || c.serviceType));
+        setServiceTypes(items.map(c => c.serviceTypeName || c.serviceName || c.name || c.serviceType));
       })
       .catch(() => setServiceTypes([]));
   }, []);
@@ -31,8 +32,8 @@ const CreateAccountAdmin = () => {
         </div>
 
         <p className="text-xl font-bold">
-          Welcome To <span className="text-brand">Trimtech</span> Stylists
-          Portal!
+          Welcome to the <span className="text-brand">RapidStylers</span>
+          stylist portal!
         </p>
         <p>Create your account and start connecting with clients.</p>
         <form className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-8">
@@ -40,7 +41,7 @@ const CreateAccountAdmin = () => {
             <p className="text-brand font-semibold">1. Personal information</p>
           </div>
           <div>
-            <Input label={"Fisrt name"} type={"text"} />
+            <Input label={"First name"} type={"text"} />
           </div>
           <div>
             <Input label={"Last name"} type={"text"} />
@@ -101,7 +102,7 @@ const CreateAccountAdmin = () => {
             />
           </div>
           <div className="col-span-1 md:col-span-2">
-            <Input label={"Business address"} type={"text"} />
+            <AddressAutocomplete placeholder="Start typing the business address…" onChange={(data) => {}} />
           </div>
           <div className="mt-8 flex justify-center md:justify-start">
                 <Link to={"/admin/dashboard"} className="py-4 px-8 bg-brand rounded-md text-sm text-white font-semibold">Create account</Link>

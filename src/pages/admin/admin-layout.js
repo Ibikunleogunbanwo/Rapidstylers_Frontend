@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import Advert from "../components/advert";
-import Humour from "../components/trimTechHumour";
+import Humour from "../components/rapidStylerHumour";
 import logo from "../assets/svg-icons/colouredLogo.svg";
 import menu from "../assets/svg-icons/menu-brand.svg";
 import NavItems from "../components/navItems";

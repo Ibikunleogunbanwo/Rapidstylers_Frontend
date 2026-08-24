@@ -1,7 +1,5 @@
 
 import logo from "../../assets/svg-icons/logo.svg";
-import menu from "../../assets/svg-icons/menu-icon.svg";
-import close from "../../assets/svg-icons/close.svg";
 import React, { useState } from "react";
 import info from "../../assets/svg-icons/info.svg";
 import { Link, useNavigate } from "react-router-dom";
@@ -15,42 +13,26 @@ import { useDispatch, useSelector } from "react-redux";
 import { getUserDetails, userAuthenticate, verifySignUpEmailAddress } from "../../hooks/local/userReducer";
 import PasswordInput from "../../components/passwordInput";
 import SearchForStyler from "../../components/searchForStyler";
-import arrow from "../../assets/images/roundArrow.svg";
 import elevate from "../../assets/images/elevate.png"
 import { showSuccessToastMessage } from "../../utils/constant";
 import { getPeriodOfDay } from "../../utils/utility";
 
 const Hero = ({ height }) => {
-  const [menuVisible, setMenuVisible] = useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
-
-  // Function to toggle the menu visibility
-  const toggleMenu = () => {
-    setMenuVisible(!menuVisible);
-  };
-
-  // Function to close the menu
-  const closeMenu = () => {
-    setMenuVisible(false);
-  };
+  const userError = useSelector((state) => state.user?.error);
 
   const [signInVisible, setSignInVisible] = useState(false);
   const [signUpVisible, setSignUpVisible] = useState(false);
 
-  // Function to toggle the sign in modal
   const toggleSignIn = () => {
     setSignInVisible(!signInVisible);
-    setMenuVisible(false);
     setSignUpVisible(false);
   };
 
-
-  // Function to toggle the sign up modal
   const toggleSignUp = () => {
     setSignUpVisible(!signUpVisible);
     setSignInVisible(false);
-    setMenuVisible(false);
   };
   const periodOfTheDay = getPeriodOfDay();
   const userSignUp = useFormik({
@@ -65,6 +47,8 @@ const Hero = ({ height }) => {
       let verifyUserEmailData = { emailAddress };
       const { payload } = await dispatch(verifySignUpEmailAddress(verifyUserEmailData));
       if (payload.statusCode === "200") {
+        // Persist the signup email so a refresh mid-flow doesn't lose it.
+        sessionStorage.setItem("signupEmail", emailAddress);
         navigate("/verifyEmailAddress", { state: { emailAddress } });
       }
     }
@@ -90,8 +74,6 @@ const Hero = ({ height }) => {
       }
     }
   })
-  const currentYear = new Date().getFullYear()
-
   return (
     <div style={{ height }} className="relative z-10">
       <Spinner loading={useSelector((state) => state.user).loading} />
@@ -99,27 +81,42 @@ const Hero = ({ height }) => {
       <div className="h-[100%] absolute w-full flex items-center overflow-hidden">
         <div className="w-full h-full relative">
           {/* Landing */}
-          <div className={`absolute w-full h-full flex top-0 items-center justify-center px-4 pt-[80px] bg-black ${document.title === "Welcome - RapidStylers" ? "block" : "hidden"}`}>
+          <div className={`absolute w-full h-full flex top-0 items-center justify-center px-4 pt-[60px] sm:pt-[80px] bg-black ${document.title === "Welcome - RapidStylers" ? "block" : "hidden"}`}>
             <div className="w-full md:w-[50%] lg:w-[40%]">
-                <div className="text-2xl md:text-3xl font-medium text-white justify-self-center text-center mb-4">
-                  Get convenient,<span className="text-brand"> high-quality hair services </span>without leaving
-                  <div className="ps-2 inline-block relative">
-                    <span>your home.</span>
-                    <div className="h-full w-full absolute top-0 flex items-end justify-center lg:justify-end 2xl:hidden"><img src={arrow} alt="" className=""/></div>
-                  </div>
+                <div className="text-[22px] sm:text-xl md:text-2xl lg:text-[28px] font-bold text-white justify-self-center text-center mb-2 leading-snug">
+                  Get convenient,<span className="text-brand"> high-quality beauty services </span>without leaving your home.
                 </div>
-              <p className="text-white text-center justify-self-center"> Our platform connects you with top-rated local barbers and stylists for in-home appointments.</p>
+              <p className="text-white/70 text-xs sm:text-sm md:text-base text-center justify-self-center max-w-md mx-auto">Our platform connects you with top-rated local beauty professionals for in-home appointments.</p>
               <SearchForStyler />
             </div>
           </div>
 
+          {/* About */}
+          <div className={`relative w-full h-full ${document.title === "About us | RapidStylers" ? "block" : "hidden"}`}>
+            <div className="h-full w-full bg-black relative flex items-center justify-center overflow-hidden">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_30%,rgba(147,129,255,0.4),transparent_55%)]"></div>
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_80%,rgba(147,129,255,0.2),transparent_50%)]"></div>
+              <div className="relative text-white text-center px-4 sm:px-6 pt-[60px] sm:pt-[80px] max-w-3xl">
+                <p className="text-[10px] sm:text-xs uppercase tracking-[0.25em] text-brand font-bold">About RapidStylers</p>
+                <h1 className="text-2xl sm:text-3xl md:text-5xl font-bold mt-4 leading-tight font-serif">
+                  Say goodbye to the <span className="text-brand">salon struggle.</span>
+                </h1>
+                <p className="mt-5 text-white/75 text-sm md:text-lg leading-relaxed">
+                  The clock races by, your schedule is packed, and booking the
+                  appointment you need keeps slipping out of reach. RapidStylers
+                  makes it simple.
+                </p>
+              </div>
+            </div>
+          </div>
+
           {/* Elevate your looks */}
-          <div className={`relative ${document.title === "Elevate your looks - TrimTech" ? "block" : "hidden"}`}>
+          <div className={`relative ${document.title === "Elevate your looks | RapidStylers" ? "block" : "hidden"}`}>
             <img src={elevate} alt=""  className="h-[75vh] object-cover"/>
             <div className="h-full w-full flex items-center justify-center absolute top-0 pt-[80px] text-white text-center px-10">
               <div>
-                <p className="text-2xl md:text-3xl font-medium mb-3">Elevate your stye</p>
-                <p>Explore Our Exclusive Collection of Trendsetting Hairstyles for Men and Women</p>
+                <p className="text-2xl md:text-3xl font-medium mb-3">Elevate your style</p>
+                <p>Explore our exclusive collection of trendsetting styles for men and women</p>
               </div>
             </div>
           </div>
@@ -127,100 +124,25 @@ const Hero = ({ height }) => {
       </div>
 
       {/* Navbar */}
-      <div className="fixed w-full flex items-center border-b border-[#ffffff16] bg-[#00000040] backdrop-blur-xl px-4 md:px-[50px] text-white py-5">
+      <div className="fixed w-full flex items-center border-b border-[#ffffff16] bg-[#00000060] backdrop-blur-xl px-3 sm:px-4 md:px-[50px] text-white py-3 sm:py-4 md:py-5 z-20">
         <div className="w-full flex justify-between items-center">
-          <Link to={"/"}>
-            <img src={logo} alt="" className="h-12 md:h-10" />
+          <Link to={"/"} onClick={(e) => { e.preventDefault(); window.location.href = "/"; }}>
+            <img src={logo} alt="RapidStylers" className="h-8 sm:h-10" />
           </Link>
-          <div className="hidden md:block">
-            <div className="flex items-center gap-8">
-              <div className="flex items-center divide-x">
-                <span className="pe-4 cursor-pointer" onClick={toggleSignIn}>
-                  Login
-                </span>
-                <span className="ps-4 cursor-pointer" onClick={toggleSignUp}>
-                  Create an account
-                </span>
-              </div>
-            </div>
-          </div>
-          <div className="block md:hidden">
-            <img src={menu} alt="" className="h-6" onClick={toggleMenu} />
-          </div>
-        </div>
-      </div>
-
-      {/* small screen menu */}
-      <div
-        className={`fixed w-full h-lvh pt-10 pb-40 px-4 grid content-between bg-[#1e1e1e] lg:hidden ${
-          menuVisible ? "block" : "hidden"
-        }`}
-      >
-        <div className="grid">
-          <img
-            src={close}
-            alt=""
-            onClick={closeMenu}
-            className="h-6 justify-self-end cursor-pointer"
-          />
-
-          <div className="mt-10 grid gap-4">
-            <div
-              className="py-4 text-white rounded-md font-semibold flex justify-between items-center"
-              onClick={toggleSignIn}
-            >
-              <span>Login</span>
-              <span>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  width="24"
-                  height="24"
-                  fill="rgba(255,255,255,1)"
-                >
-                  <path d="M12.1717 12.0005L9.34326 9.17203L10.7575 7.75781L15.0001 12.0005L10.7575 16.2431L9.34326 14.8289L12.1717 12.0005Z"></path>
-                </svg>
+          <div className="flex items-center gap-2 sm:gap-4 md:gap-8">
+            <div className="flex items-center gap-2 sm:gap-3 md:divide-x md:text-sm text-[11px] sm:text-xs">
+              <span className="md:pe-3 cursor-pointer hover:text-white/80 transition" onClick={toggleSignIn}>
+                Login
               </span>
-            </div>
-            <div
-              className="py-4 text-white rounded-md font-semibold flex justify-between items-center"
-              onClick={toggleSignIn}
-            >
-              <span>Create an account</span>
-              <span>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  width="24"
-                  height="24"
-                  fill="rgba(255,255,255,1)"
-                >
-                  <path d="M12.1717 12.0005L9.34326 9.17203L10.7575 7.75781L15.0001 12.0005L10.7575 16.2431L9.34326 14.8289L12.1717 12.0005Z"></path>
-                </svg>
+              <span className="px-2 sm:px-3 md:ps-3 cursor-pointer hover:text-white/80 transition" onClick={toggleSignUp}>
+                Sign up
               </span>
-            </div>
-            <div
-              className="py-4 text-white rounded-md font-semibold flex justify-between items-center"
-              onClick={toggleSignIn}
-            >
-              <span>Register as a stylist</span>
-              <span>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  width="24"
-                  height="24"
-                  fill="rgba(255,255,255,1)"
-                >
-                  <path d="M12.1717 12.0005L9.34326 9.17203L10.7575 7.75781L15.0001 12.0005L10.7575 16.2431L9.34326 14.8289L12.1717 12.0005Z"></path>
-                </svg>
+              <span className="hidden sm:inline md:ps-3 cursor-pointer hover:text-white/80 transition" onClick={() => navigate('/styler-signup')}>
+                For pros
               </span>
             </div>
           </div>
         </div>
-        <span className="text-white/60">
-          © {currentYear} TrimTech All rights reserved
-        </span>
       </div>
 
       {/* Sign in modal */}
@@ -261,9 +183,15 @@ const Hero = ({ height }) => {
             />
           </div>
 
+          {userError && (
+            <div className="mt-3 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700 flex items-start gap-2">
+              <svg className="w-4 h-4 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
+              <span>{userError}</span>
+            </div>
+          )}
           <div className="flex justify-between items-center pt-4">
             <Buttons btnText={"Continue"} btnType={"primary"} type={"submit"} />
-            <p className="text-sm font-medium text-brand underline">
+            <p className="text-sm font-medium text-brand underline cursor-pointer" onClick={() => { setSignInVisible(false); navigate('/login'); }}>
               Forgot password?
             </p>
           </div>

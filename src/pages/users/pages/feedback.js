@@ -12,11 +12,11 @@ import { addUserFeedBack } from "../../../hooks/local/userReducer";
 const Feedback = ({setPageTitle}) => {
   useEffect((() => {
     setPageTitle("Feedback");
-    document.title = "User Feedback - Rapid Styler";
+    document.title = "Feedback | RapidStylers";
   }));
   const dispatch = useDispatch();
-  const feedbackType = [{value:'', label:'...select'},
-                        { value: 'Improve suggestion', label: 'Improve suggestion' },
+  const feedbackType = [{value:'', label:'Select...'},
+                        { value: 'Improvement suggestion', label: 'Improvement suggestion' },
                         {value: 'Report a bug', label: 'Report a bug'}]
 
   const userEmailAddress = useSelector((state)=>state.user.userSessionData).emailAddress;
