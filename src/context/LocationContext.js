@@ -3,15 +3,35 @@ import { APIService } from "../hooks/remote/apiService";
 
 const LocationContext = createContext(null);
 
+const SAVED_LOCATION_KEY = "userLocation";
+
+// A manually chosen location (via the Change-location picker) is persisted so
+// it survives navigation and reloads — auto-detection only runs when there is
+// no saved override yet.
+function loadSavedLocation() {
+  try {
+    const raw = localStorage.getItem(SAVED_LOCATION_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+const savedLocation = loadSavedLocation();
+
 /**
- * Provides the user's detected location (lat/lng/city/province) globally.
- * Auto-detects from IP on mount; the user can override it.
+ * Provides the user's location (lat/lng/city/province) globally.
+ * Auto-detects from GPS/IP on first mount; the user can override it and the
+ * choice persists.
  */
 export function LocationProvider({ children }) {
-  const [location, setLocation] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [location, setLocation] = useState(savedLocation);
+  const [loading, setLoading] = useState(!savedLocation);
 
   useEffect(() => {
+    // A saved override (manual choice) takes precedence — skip detection.
+    if (savedLocation) return;
+
     // Try browser geolocation first (precise GPS), reverse-geocode it to a
     // city/province, and fall back to IP detection if that fails.
     if (navigator.geolocation) {
@@ -72,10 +92,16 @@ export function LocationProvider({ children }) {
         })
         .finally(() => setLoading(false));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const updateLocation = (newLoc) => {
     setLocation(newLoc);
+    try {
+      localStorage.setItem(SAVED_LOCATION_KEY, JSON.stringify(newLoc));
+    } catch (e) {
+      // Storage unavailable (private mode) — in-memory only.
+    }
   };
 
   return (

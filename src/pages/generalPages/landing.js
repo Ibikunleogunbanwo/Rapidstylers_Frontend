@@ -12,6 +12,7 @@ import about from "../../assets/images/about_landing.png"
 import stylistImg1 from "../../assets/images/stylist 1.png"
 import stylistImg2 from "../../assets/images/stylist 2.png"
 import ScrollContainer from "../../components/img-slider";
+import AdSlot from "../../components/adSlot";
 import { useEffect, useState } from "react";
 import { APIService } from "../../hooks/remote/apiService";
 
@@ -390,24 +391,38 @@ const LandingPage = () => {
           </div>
         </div>
 
+        {/* Ad unit (renders nothing until REACT_APP_ADSENSE_CLIENT is configured) */}
+        <div className="px-4 md:px-[50px] max-w-5xl mx-auto w-full">
+          <AdSlot slot="landing_mid" />
+        </div>
+
         {/* Blog section — fetched from API, 4 fallback posts if backend is down */}
         <BlogSection />
 
         {/* Stylist by location */}
-        <div className="px-4 md:px-[50px] mt-16">
-          <p className="text-3xl">Find beauty professionals anywhere in Canada.</p>
-          <p className="text-sm text-black/50 mt-1">
-            Choose a province to browse professionals near you.
-          </p>
-          <div className="grid gap-3 mt-4">
+        <div className="relative overflow-hidden bg-black">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_80%,rgba(147,129,255,0.12),transparent_50%),radial-gradient(circle_at_80%_20%,rgba(147,129,255,0.08),transparent_50%)]"></div>
+          <div className="relative px-4 md:px-[50px] py-20 lg:py-28 max-w-7xl mx-auto">
+            <div className="text-center mb-12">
+              <p className="text-xs uppercase tracking-[0.25em] text-brand font-bold">Nationwide coverage</p>
+              <h2 className="text-3xl md:text-5xl font-bold mt-3 leading-tight font-serif text-white">
+                Find beauty professionals<br />anywhere in <span className="text-brand">Canada.</span>
+              </h2>
+              <p className="text-white/50 mt-3 text-lg max-w-xl mx-auto">
+                Choose a province to discover top-rated stylists near you.
+              </p>
+            </div>
             <ul className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {PROVINCES.map((province) => (
                 <li key={province}>
                   <Link
                     to={`/search?province=${encodeURIComponent(province)}`}
-                    className="inline-block w-full truncate text-gray-700 hover:text-brand hover:underline underline-offset-4 transition-colors"
+                    className="group flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.04] px-5 py-4 text-white/80 hover:bg-brand hover:border-brand hover:text-white hover:shadow-[0_0_30px_rgba(147,129,255,0.35)] hover:-translate-y-0.5 transition-all duration-300"
                   >
-                    {province}
+                    <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 text-brand group-hover:text-white shrink-0 transition-colors">
+                      <path fillRule="evenodd" d="M9.69 18.933l.003.001C9.89 19.02 10 19 10 19s.11.02.308-.066l.002-.001.006-.003.018-.008a5.741 5.741 0 00.281-.14c.186-.096.446-.24.757-.433.62-.384 1.445-.966 2.274-1.765C15.302 14.988 17 12.493 17 9A7 7 0 103 9c0 3.492 1.698 5.988 3.355 7.584a13.731 13.731 0 002.273 1.765 11.842 11.842 0 00.976.544l.062.029.018.008.006.003zM10 11.25a2.25 2.25 0 100-4.5 2.25 2.25 0 000 4.5z" clipRule="evenodd" />
+                    </svg>
+                    <span className="font-semibold text-sm truncate">{province}</span>
                   </Link>
                 </li>
               ))}

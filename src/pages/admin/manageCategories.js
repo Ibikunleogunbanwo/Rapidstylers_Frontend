@@ -97,6 +97,12 @@ const ManageCategories = () => {
           </button>
         </div>
 
+        <div className="flex gap-4 mb-6 text-sm font-semibold">
+          <span className="text-brand underline">Categories</span>
+          <Link to="/admin/blog" className="text-gray-500 hover:text-gray-800">Blog</Link>
+          <Link to="/admin/stylers" className="text-gray-500 hover:text-gray-800">Stylist verification</Link><Link to="/admin/operations" className="text-gray-500 hover:text-gray-800">Operations</Link>
+        </div>
+
         {/* Create */}
         <form onSubmit={handleCreate} className="bg-white rounded-2xl shadow-md p-6 mb-6">
           <p className="font-semibold text-gray-900 mb-3">Add a new category</p>

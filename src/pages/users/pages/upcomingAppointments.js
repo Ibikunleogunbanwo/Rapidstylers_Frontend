@@ -1,10 +1,12 @@
 import more from "../../../assets/svg-icons/more.svg";
 import close from "../../../assets/svg-icons/closeBlack.svg";
 import React, { useState } from "react";
-import Rating from "../../../components/rating";
+import { APIService } from "../../../hooks/remote/apiService";
+import { showSuccessToastMessage } from "../../../utils/constant";
 
-const Appointments = ({appointmentDate, serviceTime, serviceProvider, serviceType, businessAddress,serviceName, numberOfPeople, appointmentStatus, appointmentPrice}) => {
+const Appointments = ({appointmentDate, serviceTime, serviceProvider, serviceType, businessAddress,serviceName, numberOfPeople, appointmentStatus, appointmentPrice, servicePrice, travelFee, includedTravelKm, billableTravelKm, travelDistanceKm, extraTravelRatePerKm, appointmentId, statusCode}) => {
   const [menuVisible, setMenuVisible] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
 
   // Function to toggle the menu visibility
   const toggleMenu = () => {
@@ -16,11 +18,22 @@ const Appointments = ({appointmentDate, serviceTime, serviceProvider, serviceTyp
     setMenuVisible(false);
   };
 
-  const [userRating, setUserRating] = useState(0);
+  const canCancel = statusCode === "1" || statusCode === "3";
 
-  const handleRatingChange = (newRating) => {
-    // Do something with the new rating, e.g., update it in the state
-    setUserRating(newRating);
+  const handleCancelAppointment = async () => {
+    if (!appointmentId || cancelling) return;
+    if (!window.confirm("Are you sure you want to cancel this appointment?")) return;
+    setCancelling(true);
+    try {
+      await APIService.cancelAppointment(appointmentId);
+      showSuccessToastMessage("Appointment cancelled");
+      closeMenu();
+      setTimeout(() => window.location.reload(), 1200);
+    } catch (error) {
+      // Error toasts are handled inside APIService.
+    } finally {
+      setCancelling(false);
+    }
   };
 
   return (
@@ -93,9 +106,12 @@ const Appointments = ({appointmentDate, serviceTime, serviceProvider, serviceTyp
               <div className="grid">
                 <span className="text-black/50">Service type:</span>
                 <span className="">{serviceType}</span>
-              </div>
-              <div className="col-span-2 grid">
-                <div className="flex gap-2"><span className="text-black/50">Address:</span><span className="text-brand">[ Get directions ]</span></div>
+              </div>                  <div className="col-span-2 grid">
+                <div className="flex gap-2"><span className="text-black/50">Address:</span>{businessAddress ? (
+                  <a href={`https://maps.google.com/?q=${encodeURIComponent(businessAddress)}`} target="_blank" rel="noreferrer" className="text-brand hover:underline">[ Get directions ]</a>
+                ) : (
+                  <span className="text-gray-400">No address</span>
+                )}</div>
                 <span>{businessAddress}</span>
               </div>
               <div className="grid">
@@ -103,9 +119,30 @@ const Appointments = ({appointmentDate, serviceTime, serviceProvider, serviceTyp
                 <span>{serviceName}</span>
               </div>
               <div className="grid">
-                <span className="text-black/50">Price:</span>
+                <span className="text-black/50">Service price:</span>
+                <span>{servicePrice || appointmentPrice} CAD</span>
+              </div>
+              <div className="grid">
+                <span className="text-black/50">Travel fee:</span>
+                <span>
+                  {travelFee || "0.00"} CAD
+                  {travelFee && (
+                    <span className="block text-xs text-gray-500">
+                      {billableTravelKm || 0}km billable after {includedTravelKm || 15}km included
+                    </span>
+                  )}
+                </span>
+              </div>
+              <div className="grid">
+                <span className="text-black/50">Total estimate:</span>
                 <span>{appointmentPrice} CAD</span>
               </div>
+              {travelDistanceKm != null && (
+                <div className="grid">
+                  <span className="text-black/50">Estimated distance:</span>
+                  <span>{travelDistanceKm}km at ${extraTravelRatePerKm || "0.00"}/km above included distance</span>
+                </div>
+              )}
               <div className="grid">
                 <span className="text-black/50">Number of people:</span>
                 <span className="">{numberOfPeople}</span>
@@ -116,24 +153,24 @@ const Appointments = ({appointmentDate, serviceTime, serviceProvider, serviceTyp
               </div>
               <div className="col-span-2 mt-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="bg-[#FF6347] text-white w-full rounded-md text-center py-4 text-md lg:text-sm">
-                    Cancel appointment
-                  </div>
-                  <div className=" bg-brand/15 text-brand w-full rounded-md text-center py-4 text-md lg:text-sm">
-                    Reschedule appointment
+                  {canCancel && (
+                    <div
+                      className={`bg-[#FF6347] text-white w-full rounded-md text-center py-4 text-md lg:text-sm ${cancelling ? "opacity-60" : "cursor-pointer"}`}
+                      onClick={handleCancelAppointment}
+                    >
+                      {cancelling ? "Cancelling…" : "Cancel appointment"}
+                    </div>
+                  )}
+                  <div className=" bg-brand/15 text-brand w-full rounded-md text-center py-4 text-md lg:text-sm cursor-not-allowed opacity-60" title="Rescheduling coming soon">
+                    Reschedule (coming soon)
                   </div>
                 </div>
               </div>
               <div className=" col-span-2">
                 <hr className="mt-4 mb-6"/>
-                <p className="text-sm text-center">Write a review:</p>
-                <div className="w-full">
-                  <Rating
-                    maxRating={5}
-                    initialRating={userRating}
-                    onRatingChange={handleRatingChange}
-                  />
-                </div>
+                <p className="text-sm text-center text-gray-400">
+                  Reviews are available once this appointment is completed.
+                </p>
               </div>
             </div>
           </div>

@@ -29,7 +29,7 @@ const StylerSignUp = () => {
                       {i + 1}. {label}
                     </span>
                     {i < steps.length - 1 && (
-                      <span className="text-gray-300 mx-1">—</span>
+                      <span className="text-gray-300 mx-1">·</span>
                     )}
                   </div>
                 ))}

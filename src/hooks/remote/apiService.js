@@ -34,7 +34,7 @@ export class APIService {
 
     static async stylerGenerateOtp(data){
         try{
-            return ApiClient.post("/styler_generate_otp", data);
+            return await ApiClient.post("/styler_generate_otp", data);
         }
         catch(error){
             APIService.extractError(error);
@@ -43,7 +43,7 @@ export class APIService {
     }
     static async stylerVerifyOtp(otpCode){
         try{
-            return ApiClient.get(`/styler_verify_otp?otpCode=${otpCode}`);
+            return await ApiClient.get(`/styler_verify_otp?otpCode=${otpCode}`);
         }
         catch(error){
             APIService.extractError(error);
@@ -52,7 +52,7 @@ export class APIService {
     }
     static async createStyler(data){
         try{
-            return ApiClient.post("/create_styler", data);
+            return await ApiClient.post("/create_styler", data);
         }
         catch(error){
             APIService.extractError(error);
@@ -61,7 +61,7 @@ export class APIService {
     }
     static async  generateSignUpOtpCode(userData){
         try{
-            return ApiClient.post("/generate_sign_up_otp_code", userData)
+            return await ApiClient.post("/generate_sign_up_otp_code", userData)
         }
         catch(error){
             APIService.extractError(error);
@@ -70,7 +70,7 @@ export class APIService {
     }
     static async verifyOtpCode(otpCode){
         try{
-            return ApiClient.get(`/verify_otp_code?otpCode=${otpCode}`)
+            return await ApiClient.get(`/verify_otp_code?otpCode=${otpCode}`)
         }
         catch(error){
             APIService.extractError(error);
@@ -79,7 +79,7 @@ export class APIService {
     }
     static async createUserAccount(data){
         try{
-            return ApiClient.post("/create_user_account", data);
+            return await ApiClient.post("/create_user_account", data);
         }
         catch(error){
             APIService.extractError(error);
@@ -88,7 +88,7 @@ export class APIService {
     }
     static async userSignIn(data){
         try{
-            return ApiClient.post("/user_sign_in", data);
+            return await ApiClient.post("/user_sign_in", data);
         }
         catch(error){
             APIService.extractError(error);
@@ -98,16 +98,25 @@ export class APIService {
     /** Unified sign-in for customers, stylists and admins — routes by the role in the response. */
     static async signIn(data){
         try{
-            return ApiClient.post("/sign_in", data);
+            const response = await ApiClient.post("/sign_in", data);
+            if(response.data?.statusCode && response.data.statusCode !== "200"){
+                const error = new Error(response.data?.message || "Sign in failed");
+                error.handledByApiService = true;
+                APIService.extractError(error);
+                throw error;
+            }
+            return response;
         }
         catch(error){
-            APIService.extractError(error);
+            if(!error.handledByApiService){
+                APIService.extractError(error);
+            }
             throw(error);
         }
     }
     static async listIdentificationTypes(){
         try{
-            return ApiClient.get(`/list_identification`)
+            return await ApiClient.get(`/list_identification`)
         }
         catch(error){
             APIService.extractError(error);
@@ -116,7 +125,7 @@ export class APIService {
     }
     static async getStylerType(){
         try{
-            return ApiClient.get(`/list_service`)
+            return await ApiClient.get(`/list_service`)
         }
         catch(error){
             APIService.extractError(error);
@@ -127,16 +136,25 @@ export class APIService {
     // ── Admin-only endpoints (require an ADMIN-role JWT via the interceptor) ─
     static async adminSignIn(data){
         try{
-            return ApiClient.post("/admin_sign_in", data);
+            const response = await ApiClient.post("/admin_sign_in", data);
+            if(response.data?.statusCode && response.data.statusCode !== "200"){
+                const error = new Error(response.data?.message || "Admin sign in failed");
+                error.handledByApiService = true;
+                APIService.extractError(error);
+                throw error;
+            }
+            return response;
         }
         catch(error){
-            APIService.extractError(error);
+            if(!error.handledByApiService){
+                APIService.extractError(error);
+            }
             throw(error);
         }
     }
     static async adminCreateService(data){
         try{
-            return ApiClient.post("/create_service", data);
+            return await ApiClient.post("/create_service", data);
         }
         catch(error){
             APIService.extractError(error);
@@ -145,7 +163,7 @@ export class APIService {
     }
     static async adminUpdateService(data){
         try{
-            return ApiClient.post("/update_service", data);
+            return await ApiClient.post("/update_service", data);
         }
         catch(error){
             APIService.extractError(error);
@@ -154,7 +172,90 @@ export class APIService {
     }
     static async adminDeleteService(id){
         try{
-            return ApiClient.get(`/delete_service?id=${id}`);
+            return await ApiClient.get(`/delete_service?id=${id}`);
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+    static async getStylerVerificationQueue(){
+        try{
+            return await ApiClient.get("/admin/styler_verification_queue");
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+    static async adminUpdateStylerVerification(data){
+        try{
+            return await ApiClient.post("/admin/update_styler_verification", data);
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+    static async getAllPortfolios(){
+        try{
+            return await ApiClient.get("/admin/all_portfolios");
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+    static async adminDeletePortfolioImage(portfolioId){
+        try{
+            return await ApiClient.post("/admin/delete_portfolio_image", { portfolioId });
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+    static async createReview(data){
+        try{
+            return await ApiClient.post("/create_review", data);
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+    static async getOwnPortfolio(){
+        try{
+            return await ApiClient.get("/styler_own_portfolio");
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+    static async createSubService(data){
+        try{
+            return await ApiClient.post("/create_sub_service", data);
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+    static async listSubServices(stylerId){
+        try{
+            return stylerId === "self"
+                ? await ApiClient.get("/styler_own_sub_services")
+                : await ApiClient.get(`/list_sub_service?stylerId=${encodeURIComponent(stylerId)}`);
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+    static async createPortfolio(data){
+        try{
+            return await ApiClient.post("/create_portfolio", data);
         }
         catch(error){
             APIService.extractError(error);
@@ -164,7 +265,7 @@ export class APIService {
 
     static async stylersBaseOnCategory(categoryId){
         try{
-            return ApiClient.get(`/search_by_service?serviceTypeId=${categoryId}`)
+            return await ApiClient.get(`/search_by_service?serviceTypeId=${categoryId}`)
         }
         catch(error){
             APIService.extractError(error);
@@ -173,7 +274,7 @@ export class APIService {
     }
     static async singleStylerData(stylerId){
         try{
-            return ApiClient.get(`/single_styler?stylerId=${stylerId}`)
+            return await ApiClient.get(`/single_styler?stylerId=${stylerId}`)
         }
         catch(error){
             APIService.extractError(error);
@@ -183,7 +284,7 @@ export class APIService {
 
     static async searchForStyler(businessName){
         try{
-            return ApiClient.get(`/search_styler?businessName=${businessName}`)
+            return await ApiClient.get(`/search_styler?businessName=${businessName}`)
         }
         catch(error){
             APIService.extractError(error);
@@ -192,7 +293,7 @@ export class APIService {
     }
     static async searchByProvince(province){
         try{
-            return ApiClient.get(`/search_by_province?province=${encodeURIComponent(province)}`)
+            return await ApiClient.get(`/search_by_province?province=${encodeURIComponent(province)}`)
         }
         catch(error){
             APIService.extractError(error);
@@ -200,27 +301,118 @@ export class APIService {
         }
     }
 
-    static async userPendingAppointment(userId){
+    // Account-owned reads: identity comes from the Bearer token (JWT subject), not a query param.
+    static async userPendingAppointment(){
         try{
-            return ApiClient.get(`/user_pending_appointments?userId=${userId}`)
+            return await ApiClient.get(`/user_pending_appointments`)
         }
         catch(error){
             APIService.extractError(error);
             throw(error);
         }
     }
-    static async allUserAppointment(userId){
+    static async allUserAppointment(){
         try{
-            return ApiClient.get(`/user_appointments?userId=${userId}`)
+            return await ApiClient.get(`/user_appointments`)
         }
         catch(error){
             APIService.extractError(error);
             throw(error);
         }
     }
-    static async getUserDetails(userId){
+    static async getUserDetails(){
         try{
-            return ApiClient.get(`/user_data?userId=${userId}`)
+            return await ApiClient.get(`/user_data`)
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+
+    static async listSavedStylists(){
+        try{
+            return await ApiClient.get(`/saved_stylists`);
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+
+    static async saveStylist(stylerId){
+        try{
+            return await ApiClient.post(`/save_stylist?stylerId=${encodeURIComponent(stylerId)}`);
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+
+    static async removeSavedStylist(stylerId){
+        try{
+            return await ApiClient.post(`/remove_saved_stylist?stylerId=${encodeURIComponent(stylerId)}`);
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+
+    static async listNotifications(){
+        try{
+            return await ApiClient.get("/notifications");
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+
+    static async markNotificationRead(notificationId){
+        try{
+            return await ApiClient.post("/notifications/read", { notificationId });
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+
+    static async markAllNotificationsRead(){
+        try{
+            return await ApiClient.post("/notifications/read_all");
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+
+    static async getNotificationPreferences(){
+        try{
+            return await ApiClient.get("/notification_preferences");
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+
+    static async updateNotificationPreferences(data){
+        try{
+            return await ApiClient.post("/notification_preferences", data);
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+
+    static async updateSubService(data){
+        try{
+            return await ApiClient.post("/update_sub_service", data);
         }
         catch(error){
             APIService.extractError(error);
@@ -230,7 +422,7 @@ export class APIService {
 
     static async updateUserDetails(data){
         try{
-            return ApiClient.post("/update_user_data", data)
+            return await ApiClient.post("/update_user_data", data)
         }
         catch(error){
             APIService.extractError(error);
@@ -240,7 +432,7 @@ export class APIService {
 
     static async updateUserPassword(data){
         try{
-            return ApiClient.post("/update_user_password", data);
+            return await ApiClient.post("/update_user_password", data);
         }
         catch(error){
             APIService.extractError(error);
@@ -251,7 +443,215 @@ export class APIService {
     
     static async updateUserCardDetails(data){
         try{
-            return ApiClient.post("/update_card_details", data);
+            return await ApiClient.post("/update_card_details", data);
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+
+    // ── Marketplace booking (identity comes from the Bearer token) ────────
+    static async estimateBooking(data){
+        try{
+            return await ApiClient.post("/booking_estimate", data);
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+    static async bookAppointment(data){
+        try{
+            return await ApiClient.post("/book_appointment", data);
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+    static async stylerAppointments(){
+        try{
+            return await ApiClient.get(`/styler_appointments`);
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+    static async stylerAvailability(){
+        try{
+            return await ApiClient.get(`/styler_availability`);
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+    static async updateStylerAvailability(slots){
+        try{
+            return await ApiClient.post("/update_styler_availability", slots);
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+    static async stylerAvailabilityExceptions(){
+        try{
+            return await ApiClient.get(`/styler_availability_exceptions`);
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+    static async addAvailabilityException(data){
+        try{
+            return await ApiClient.post("/add_availability_exception", data);
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+    static async deleteAvailabilityException(exceptionId){
+        try{
+            return await ApiClient.post("/delete_availability_exception", { exceptionId });
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+    static async stylerSignOut(){
+        try{
+            return await ApiClient.get(`/styler_sign_out`);
+        }
+        catch(error){
+            // Best-effort — local sign-out must succeed even if the call fails.
+        }
+    }
+    static async acceptAppointment(appointmentId){
+        try{
+            return await ApiClient.post("/accept_appointment", { appointmentId });
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+    static async declineAppointment(appointmentId){
+        try{
+            return await ApiClient.post("/decline_appointment", { appointmentId });
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+    static async completeAppointment(appointmentId){
+        try{
+            return await ApiClient.post("/complete_appointment", { appointmentId });
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+    static async cancelAppointment(appointmentId){
+        try{
+            return await ApiClient.post("/cancel_appointment", { appointmentId });
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+    static async createSupportTicket(data){
+        try{
+            return await ApiClient.post("/support_tickets", data);
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+    static async listSupportTickets(){
+        try{
+            return await ApiClient.get("/support_tickets");
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+    static async adminSupportTickets(){
+        try{
+            return await ApiClient.get("/admin/support_tickets");
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+    static async adminUpdateSupportTicket(data){
+        try{
+            return await ApiClient.post("/admin/update_support_ticket", data);
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+    static async adminKpis(){
+        try{
+            return await ApiClient.get("/admin/kpis");
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+    static async adminAuditLogs(){
+        try{
+            return await ApiClient.get("/admin/audit_logs");
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+    static async adminReviewQueue(){
+        try{
+            return await ApiClient.get("/admin/review_moderation_queue");
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+    static async adminUpdateReviewModeration(data){
+        try{
+            return await ApiClient.post("/admin/update_review_moderation", data);
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+    static async getLoyaltyAccount(){
+        try{
+            return await ApiClient.get("/loyalty_account");
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+    static async applyReferral(referralCode){
+        try{
+            return await ApiClient.post(`/apply_referral?referralCode=${encodeURIComponent(referralCode)}`);
         }
         catch(error){
             APIService.extractError(error);
@@ -260,7 +660,27 @@ export class APIService {
     }
     static async submitUserFeedBack(data){
         try{
-            return ApiClient.post("/add_feedback", data);
+            return await ApiClient.post("/add_feedback", data);
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+
+    // ── Places (proxied through the backend so the Google key stays server-side) ──
+    static async placeAutocomplete(input){
+        try{
+            return await ApiClient.get(`/place_autocomplete?input=${encodeURIComponent(input)}`);
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+    static async placeDetails(placeId){
+        try{
+            return await ApiClient.get(`/place_details?placeId=${encodeURIComponent(placeId)}`);
         }
         catch(error){
             APIService.extractError(error);
@@ -271,7 +691,7 @@ export class APIService {
     // ── Location ─────────────────────────────────────────────────────────
     static async detectLocation(){
         try{
-            return ApiClient.get(`/detect-location`);
+            return await ApiClient.get(`/detect-location`);
         }
         catch(error){
             APIService.extractError(error);
@@ -280,19 +700,23 @@ export class APIService {
     }
     static async reverseGeocode(lat, lng){
         try{
-            return ApiClient.get(`/reverse-geocode?lat=${lat}&lng=${lng}`);
+            return await ApiClient.get(`/reverse-geocode?lat=${lat}&lng=${lng}`);
         }
         catch(error){
             APIService.extractError(error);
             throw(error);
         }
     }
-    static async searchNearby(lat, lng, radius = 25, serviceTypeId = "", city = ""){
+    static async searchNearby(lat, lng, radius = 25, serviceTypeId = "", city = "", filters = {}){
         try{
             let url = `/search_nearby?lat=${lat}&lng=${lng}&radius=${radius}`;
         if(serviceTypeId) url += `&serviceTypeId=${serviceTypeId}`;
         if(city) url += `&city=${encodeURIComponent(city)}`;
-            return ApiClient.get(url);
+        if(filters.requestedDate) url += `&requestedDate=${encodeURIComponent(filters.requestedDate)}`;
+        if(filters.requestedTime) url += `&requestedTime=${encodeURIComponent(filters.requestedTime)}`;
+        if(filters.durationMinutes) url += `&durationMinutes=${encodeURIComponent(filters.durationMinutes)}`;
+        if(filters.openNow) url += `&openNow=true`;
+            return await ApiClient.get(url);
         }
         catch(error){
             APIService.extractError(error);
@@ -301,9 +725,11 @@ export class APIService {
     }
 
     // ── Gallery (Pexels proxy) ────────────────────────────────────────────
-    static async searchGallery(category, perPage = 12){
+    static async searchGallery(category, perPage = 12, page = 1, query = ""){
         try{
-            return ApiClient.get(`/gallery?category=${encodeURIComponent(category)}&per_page=${perPage}`);
+            let url = `/gallery?category=${encodeURIComponent(category)}&per_page=${perPage}&page=${page}`;
+            if(query && query.trim()) url += `&query=${encodeURIComponent(query.trim())}`;
+            return await ApiClient.get(url);
         }
         catch(error){
             APIService.extractError(error);
@@ -315,7 +741,7 @@ export class APIService {
     // list_blog / single_blog are public; create/update/delete require ADMIN.
     static async listBlog(){
         try{
-            return ApiClient.get(`/list_blog`);
+            return await ApiClient.get(`/list_blog`);
         }
         catch(error){
             APIService.extractError(error);
@@ -324,7 +750,7 @@ export class APIService {
     }
     static async singleBlog(id){
         try{
-            return ApiClient.get(`/single_blog?id=${id}`);
+            return await ApiClient.get(`/single_blog?id=${id}`);
         }
         catch(error){
             APIService.extractError(error);
@@ -333,7 +759,7 @@ export class APIService {
     }
     static async adminCreateBlog(data){
         try{
-            return ApiClient.post("/create_blog", data);
+            return await ApiClient.post("/create_blog", data);
         }
         catch(error){
             APIService.extractError(error);
@@ -342,7 +768,7 @@ export class APIService {
     }
     static async adminUpdateBlog(data){
         try{
-            return ApiClient.post("/update_blog", data);
+            return await ApiClient.post("/update_blog", data);
         }
         catch(error){
             APIService.extractError(error);
@@ -351,7 +777,7 @@ export class APIService {
     }
     static async adminDeleteBlog(id){
         try{
-            return ApiClient.get(`/delete_blog?id=${id}`);
+            return await ApiClient.get(`/delete_blog?id=${id}`);
         }
         catch(error){
             APIService.extractError(error);

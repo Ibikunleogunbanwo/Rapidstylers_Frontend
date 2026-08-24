@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import Footer from "../../components/footer";
+import AdSlot from "../../components/adSlot";
 import { APIService } from "../../hooks/remote/apiService";
 
 // Fallback used only when the backend is unreachable — mirrors the seeded posts.
@@ -122,6 +123,7 @@ const BlogPost = () => {
             </p>
           ))}
         </article>
+        <AdSlot slot="blog_in_article" style={{ marginTop: "1.5rem" }} />
         <div className="mt-8 text-center">
           <Link to="/#blog" className="inline-block py-3 px-8 bg-brand rounded-md text-sm text-white font-semibold hover:opacity-90">
             ← Back to articles

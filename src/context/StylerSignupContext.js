@@ -8,6 +8,15 @@ const StylerSignupContext = createContext(null);
  * so the final step can POST everything to /create_styler.
  */
 export function StylerSignupProvider({ children }) {
+  // Image files picked on the photos step. Kept OUT of formData (which is
+  // the create_styler payload) so File objects never get JSON-serialized.
+  // Uploads to Cloudinary are deferred until the final submit so abandoned
+  // signups don't leave orphaned images.
+  const [imageFiles, setImageFiles] = useState({
+    profileImageFile: null,
+    identificationImageFile: null,
+  });
+
   const [formData, setFormData] = useState({
     // Step 1 — personal details
     firstname: "",
@@ -45,8 +54,13 @@ export function StylerSignupProvider({ children }) {
     setFormData((prev) => ({ ...prev, ...partial }));
   }, []);
 
+  /** Merge picked image files (photos step) */
+  const updateImageFiles = useCallback((partial) => {
+    setImageFiles((prev) => ({ ...prev, ...partial }));
+  }, []);
+
   return (
-    <StylerSignupContext.Provider value={{ formData, updateData }}>
+    <StylerSignupContext.Provider value={{ formData, updateData, imageFiles, updateImageFiles }}>
       {children}
     </StylerSignupContext.Provider>
   );

@@ -1,4 +1,4 @@
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import logo from "../../../assets/svg-icons/colouredLogo.svg";
 import InputWithLabel from "../../../components/inputWithLabel";
 import SelectInput from "../../../components/selectInput";
@@ -22,7 +22,7 @@ const PersonalDetails = () => {
 
   const location  = useLocation();
   const navigate = useNavigate();
-  const emailAddress = location.state?.userEmailAddress || '';
+  const emailAddress = location.state?.userEmailAddress || sessionStorage.getItem('signupEmail') || '';
   const country = [{ value: 'Canada', label: 'Canada' }]
   const province = [
     { value: 'Alberta', label: 'Alberta' },
@@ -44,6 +44,7 @@ const PersonalDetails = () => {
       address: '',
       state: '',
       phoneNumber: '',
+      agreeToTerms: false,
     },
     validationSchema : Yup.object({
       firstname : Yup.string().required("Firstname cannot be empty").min(3,"Firstname must be at least 3 letters"),
@@ -51,6 +52,7 @@ const PersonalDetails = () => {
       country : Yup.string().required("Kindly select a country"),
       address : Yup.string().required("Address cannot be empty").min(3,"Address must be at least 3 letters"),
       state : Yup.string().required("Kindly select a state"),
+      agreeToTerms : Yup.boolean().oneOf([true], "You must agree to the Terms and Conditions"),
       phoneNumber : Yup.string()
         .required("Phone number is required")
         .matches(/^[0-9]+$/, "Phone number can only contain digits")
@@ -151,6 +153,24 @@ const PersonalDetails = () => {
                               inputOnChange={personalData.handleChange}
                               inputValue={personalData.values.phoneNumber}
                               inputError={personalData.touched.phoneNumber && personalData.errors.phoneNumber ? personalData.errors.phoneNumber : null} />
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  name="agreeToTerms"
+                  checked={personalData.values.agreeToTerms}
+                  onChange={personalData.handleChange}
+                  className="mt-1 h-4 w-4 rounded border-gray-300 text-brand focus:ring-brand"
+                />
+                <span className="text-sm text-gray-600">
+                  I agree to the{' '}
+                  <Link to="/terms-and-conditions" target="_blank" className="text-brand font-semibold hover:underline">
+                    Terms and Conditions
+                  </Link>
+                </span>
+              </label>
+              {personalData.touched.agreeToTerms && personalData.errors.agreeToTerms && (
+                <p className="text-xs text-red-500 -mt-2">{personalData.errors.agreeToTerms}</p>
+              )}
               <Buttons btnText={'Continue'} btnType={'primary'} type={"submit"} />
             </form>
           </div>

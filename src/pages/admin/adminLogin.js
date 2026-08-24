@@ -9,6 +9,7 @@ const AdminLogin = () => {
   const [emailAddress, setEmailAddress] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
 
   if (getAuthToken()) {
     return <Navigate to="/admin/categories" replace />;
@@ -16,6 +17,7 @@ const AdminLogin = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setErrorMsg("");
     setLoading(true);
     try {
       const res = await APIService.adminSignIn({ emailAddress, password });
@@ -26,7 +28,8 @@ const AdminLogin = () => {
         navigate("/admin/categories");
       }
     } catch (error) {
-      // Error toasts are handled in APIService
+      const msg = error?.response?.data?.message || error?.message || "Sign in failed";
+      setErrorMsg(msg);
     } finally {
       setLoading(false);
     }
@@ -67,6 +70,12 @@ const AdminLogin = () => {
           >
             {loading ? "Signing in…" : "Sign In"}
           </button>
+          {errorMsg && (
+            <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700 flex items-start gap-2">
+              <svg className="w-4 h-4 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
+              <span>{errorMsg}</span>
+            </div>
+          )}
         </form>
       </div>
     </div>

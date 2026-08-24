@@ -1,16 +1,17 @@
 import { useRef, useEffect, useState } from "react";
-import { loadGoogleMaps, placeToAddressData } from "../utils/loadGoogleMaps";
+import { APIService } from "../hooks/remote/apiService";
 
 /**
- * Address input for styler signup backed by Google Places Autocomplete.
+ * Address input for styler signup backed by Google Places Autocomplete,
+ * proxied through the backend (/place_autocomplete + /place_details) so the
+ * Google API key never ships in the browser bundle.
  *
- * - While typing, Google suggests real addresses (restricted to Canada).
+ * - While typing, address suggestions (Canada-only) appear in a dropdown.
  * - On selection, `onChange` is called with a fully parsed address:
  *   { formattedAddress, streetAddress, unit, city, province, postalCode,
  *     country, latitude, longitude }.
- * - If the Maps script can't load (no key, blocked network, invalid key)
- *   it degrades to a plain text input that emits the typed value on blur,
- *   so the form still works without Google.
+ * - If the proxy is unreachable it degrades to a plain text input that emits
+ *   the typed value on blur, so the form still works without Google.
  *
  * Props:
  *   onChange(data) — called with parsed address data
@@ -23,12 +24,16 @@ const AddressAutocomplete = ({
   value = "",
   placeholder = "Start typing your business address…",
   className = "",
+  label = "Address:",
 }) => {
   const inputRef = useRef(null);
   const onChangeRef = useRef(onChange);
-  const autoCompleteRef = useRef(null);
-  const placeSelectedRef = useRef(false);
-  const [mapsFailed, setMapsFailed] = useState(false);
+  const debounceRef = useRef(null);
+  const selectedRef = useRef(false);
+  const [suggestions, setSuggestions] = useState([]);
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     onChangeRef.current = onChange;
@@ -42,75 +47,67 @@ const AddressAutocomplete = ({
     }
   }, [value]);
 
-  // Attach Google Places Autocomplete once the script is available
-  useEffect(() => {
-    let cancelled = false;
+  useEffect(() => () => clearTimeout(debounceRef.current), []);
 
-    const fallbackToPlainText = () => {
-      if (cancelled) return;
-      setMapsFailed(true);
-      // Google disables the input when its key is invalid — undo that so
-      // the user can still type a full address by hand.
-      if (inputRef.current) {
-        inputRef.current.disabled = false;
+  const fetchSuggestions = (query) => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    const text = query.trim();
+    if (!text) {
+      setSuggestions([]);
+      setOpen(false);
+      return;
+    }
+
+    debounceRef.current = setTimeout(async () => {
+      setLoading(true);
+      try {
+        const res = await APIService.placeAutocomplete(text);
+        const items = res.data?.data || [];
+        setSuggestions(items);
+        setOpen(items.length > 0);
+        setFailed(false);
+      } catch {
+        // Proxy unreachable — fall back to free text.
+        setSuggestions([]);
+        setOpen(false);
+        setFailed(true);
+      } finally {
+        setLoading(false);
       }
-    };
+    }, 300);
+  };
 
-    const attachAutocomplete = (maps) => {
-      if (cancelled || !inputRef.current) return;
-      const autocomplete = new maps.places.Autocomplete(inputRef.current, {
-        fields: ["address_components", "formatted_address", "geometry", "name"],
-        types: ["address"],
-        componentRestrictions: { country: "CA" },
-      });
+  const handleSelect = async (placeId, description) => {
+    setOpen(false);
+    if (!placeId) return;
 
-      autocomplete.addListener("place_changed", () => {
-        const place = autocomplete.getPlace();
-        if (!place || !place.geometry) return;
-        placeSelectedRef.current = true;
-        onChangeRef.current?.(placeToAddressData(place));
-      });
-
-      autoCompleteRef.current = autocomplete;
-    };
-
-    loadGoogleMaps()
-      .then((maps) => {
-        if (cancelled || !inputRef.current) return;
-        // Probe the Places service first — with an invalid or restricted key
-        // the widget silently disables the input, so detect that up front.
-        const service = new maps.places.AutocompleteService();
-        let probed = false;
-        const onProbeResult = (predictions, status) => {
-          if (cancelled || probed) return;
-          probed = true;
-          clearTimeout(probeTimeout);
-          if (status === "OK" || status === "ZERO_RESULTS") {
-            attachAutocomplete(maps);
-          } else {
-            fallbackToPlainText();
-          }
-        };
-        // Some key failures never invoke the callback — bail out after a bit.
-        const probeTimeout = setTimeout(() => onProbeResult(null, "TIMEOUT"), 4000);
-        try {
-          service.getPlacePredictions(
-            { input: "Edmonton", componentRestrictions: { country: "CA" } },
-            onProbeResult
-          );
-        } catch {
-          onProbeResult(null, "ERROR");
-        }
-      })
-      .catch(fallbackToPlainText);
-
-    return () => {
-      cancelled = true;
-      if (autoCompleteRef.current && window.google?.maps?.event) {
-        window.google.maps.event.clearInstanceListeners(autoCompleteRef.current);
+    try {
+      const res = await APIService.placeDetails(placeId);
+      const d = res.data?.data;
+      if (d) {
+        selectedRef.current = true;
+        const formatted = d.formattedAddress || description;
+        if (inputRef.current) inputRef.current.value = formatted;
+        onChangeRef.current?.({
+          formattedAddress: formatted,
+          streetAddress: d.streetAddress || "",
+          unit: d.unit || "",
+          city: d.city || "",
+          province: d.province || "",
+          postalCode: d.postalCode || "",
+          country: d.country || "Canada",
+          latitude: d.latitude ?? null,
+          longitude: d.longitude ?? null,
+        });
+        return;
       }
-    };
-  }, []);
+    } catch {
+      // fall through to free text
+    }
+    // Details call failed — keep the picked description as typed text.
+    if (inputRef.current) inputRef.current.value = description;
+  };
 
   const emitFreeText = () => {
     const text = inputRef.current?.value || "";
@@ -129,24 +126,57 @@ const AddressAutocomplete = ({
   };
 
   return (
-    <div className={`grid w-full ${className}`}>
-      <span className="font-medium text-sm pb-1">Address:</span>
+    <div className={`grid w-full ${className} relative`}>
+      <span className="font-medium text-sm pb-1">{label}</span>
       <input
         ref={inputRef}
         type="text"
         defaultValue={value}
         autoComplete="off"
-        onBlur={(e) => {
-          // Only fall back to free text if the user didn't pick a suggestion
-          // (place_changed fires before blur, so the ref is set by then).
-          if (!placeSelectedRef.current) emitFreeText();
+        onChange={(e) => {
+          selectedRef.current = false;
+          fetchSuggestions(e.target.value);
+        }}
+        onBlur={() => {
+          // Close the dropdown; let the click on an item win (onMouseDown
+          // fires before blur).
+          setTimeout(() => setOpen(false), 150);
+          if (!selectedRef.current) emitFreeText();
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") setOpen(false);
         }}
         className="w-full p-3 text-sm rounded-md border border-[#c4c4c440] bg-[#c4c4c410] placeholder:text-xs placeholder:font-extralight active:outline-0 focus:outline-brand"
         placeholder={placeholder}
       />
-      {mapsFailed && (
+
+      {/* Suggestion dropdown */}
+      {open && (
+        <ul className="absolute left-0 right-0 top-full z-20 mt-1 max-h-56 overflow-y-auto rounded-md border border-[#c4c4c440] bg-white shadow-lg">
+          {loading && (
+            <li className="px-3 py-2 text-xs text-gray-400">Loading suggestions…</li>
+          )}
+          {!loading &&
+            suggestions.map((s) => (
+              <li key={s.placeId || s.description}>
+                <button
+                  type="button"
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    handleSelect(s.placeId, s.description);
+                  }}
+                  className="w-full text-left px-3 py-2 text-sm hover:bg-[#c4c4c416] focus:bg-[#c4c4c416] transition-colors"
+                >
+                  {s.description}
+                </button>
+              </li>
+            ))}
+        </ul>
+      )}
+
+      {failed && (
         <p className="text-[10px] text-gray-400 mt-1">
-          Address suggestions unavailable — type the full address and fill in
+          Address suggestions unavailable. Type the full address and fill in
           city, province and postal code below.
         </p>
       )}

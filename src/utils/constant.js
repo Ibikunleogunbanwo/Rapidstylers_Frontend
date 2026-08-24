@@ -27,13 +27,22 @@ export const FORM_DATA_HEADER = {
     'Content-Type': 'multipart/form-data',
 }
 
+const TOAST_OPTIONS = {
+    autoClose: 4000,
+    hideProgressBar: false,
+    closeOnClick: true,
+    pauseOnHover: true,
+    draggable: true,
+    theme: "colored",
+};
+
 export const showSuccessToastMessage  = (successMessage)=>{
-    toast.success(successMessage);
+    toast.success(successMessage, TOAST_OPTIONS);
     return null;
 }
 
 export const showErrorToastMessage  = (errorMessage)=>{
-    toast.error(errorMessage);
+    toast.error(errorMessage, { ...TOAST_OPTIONS, autoClose: 5000 });
     return null;
 }
 

@@ -1,147 +1,200 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import more from "../../assets/svg-icons/more.svg";
+import { APIService } from "../../hooks/remote/apiService";
+import { getAuthToken, showSuccessToastMessage } from "../../utils/constant";
 import PendingAppointments from "./stylerComponents/pendingAppointments";
 
 const StylerAppointments = () => {
-    const [pendingAppointments, setPendingAppointments] = useState(true);
-    const [pastAppointments, setPastAppointments] = useState(false);
+  const [appointments, setAppointments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [view, setView] = useState("pending"); // "pending" | "past"
+  const [selectedAppointment, setSelectedAppointment] = useState(null);
+  const [actionLoading, setActionLoading] = useState(false);
 
-    const togglePending = () => {
-        setPendingAppointments(true);
-        setPastAppointments(false);
-    };
-
-    const togglePast = () => {
-        setPendingAppointments(false);
-        setPastAppointments(true);
-    };
-
-    const activeStyle = "bg-brand text-white p-4 rounded-md font-medium";
-    const inactiveStyle = "bg-gray-50 border rounded-md border p-4 text-gray-500";
-
-    const [isDetailsOpen, setIsDetailsOpen] = useState(false);
-
-  const openDetails = () => {
-    setIsDetailsOpen(true);
+  const loadAppointments = async () => {
+    setLoading(true);
+    try {
+      const res = await APIService.stylerAppointments();
+      setAppointments(res.data?.data || []);
+    } catch (error) {
+      // Error toasts are handled inside APIService.
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const closeDetails = () => {
-    setIsDetailsOpen(false);
+  useEffect(() => {
+    loadAppointments();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Pending (awaiting a decision) + accepted (upcoming) are the live queue;
+  // completed / rejected / cancelled are history.
+  const pending = appointments.filter(
+    (a) => a.statusCode === "1" || a.statusCode === "3"
+  );
+  const past = appointments.filter((a) =>
+    ["0", "2", "4"].includes(a.statusCode)
+  );
+
+  const runAction = async (appointmentId, action) => {
+    setActionLoading(true);
+    try {
+      if (action === "accept") {
+        await APIService.acceptAppointment(appointmentId);
+        showSuccessToastMessage("Appointment confirmed");
+      } else if (action === "decline") {
+        await APIService.declineAppointment(appointmentId);
+        showSuccessToastMessage("Appointment rejected");
+      } else if (action === "complete") {
+        await APIService.completeAppointment(appointmentId);
+        showSuccessToastMessage("Appointment marked as completed");
+      }
+      setSelectedAppointment(null);
+      await loadAppointments();
+    } catch (error) {
+      // Error toasts are handled inside APIService.
+    } finally {
+      setActionLoading(false);
+    }
   };
 
+  const activeStyle = "bg-brand text-white p-4 rounded-md font-medium";
+  const inactiveStyle = "bg-gray-50 border rounded-md border p-4 text-gray-500";
+
+  const statusLabel = (code) =>
+    code === "0" ? "Completed" : code === "2" ? "Rejected" : "Cancelled";
+  const statusColor = (code) =>
+    code === "0" ? "text-emerald-500" : "text-rose-500";
+
+  const serviceName = (a) => a.subServiceData?.name || "Service";
+  const clientName = (a) =>
+    [a.userData?.firstname, a.userData?.lastname].filter(Boolean).join(" ") ||
+    a.userData?.emailAddress ||
+    "Client";
+  const dateTime = (a) => `${a.appointmentDate}${a.arrivalTime ? ", " + a.arrivalTime : ""}`;
+
+  if (!getAuthToken()) {
     return (
-      <div className="rounded-md border">
-        <div className="border-b p-4 font-medium text-sm">
-          My appointments:
-        </div>
-        <div className="p-4">
-          <div className="text-xs flex gap-4">
-            <div
-              className={`p-2 cursor-pointer ${
-                pendingAppointments ? activeStyle : inactiveStyle
-              }`}
-              onClick={togglePending}
-            >
-              Pending appointments
-            </div>
-            <div
-              className={`p-2 cursor-pointer ${
-                pastAppointments ? activeStyle : inactiveStyle
-              }`}
-              onClick={togglePast}
-            >
-              Past appointments
-            </div>
-          </div>
-
-          {pendingAppointments && (
-            <div className="mt-10 grid gap-6">
-              <div className="grid grid-cols-12 gap-4 pb-3 border-b last:border-0">
-                <div className="flex col-span-10 md:col-span-11 gap-4">
-                  <div className="grid">
-                    <span className="text-[15px] truncate">
-                      Special haircut - (skin fade, blow out, mohawk)
-                    </span>
-                    <span className="text-sm text-black/50">
-                      24 December, 20:00
-                    </span>
-                  </div>
-                </div>
-                <div className="cursor-pointer col-span-2 md:col-span-1 flex justify-end">
-                  <img src={more} alt="" className="h-8 " onClick={openDetails}/>
-                </div>
-              </div>
-              <div className="grid grid-cols-12 gap-4 pb-3 border-b last:border-0">
-                <div className="flex col-span-10 md:col-span-11 gap-4">
-                  <div className="grid">
-                    <span className="text-[15px] truncate">
-                      Special haircut - (skin fade, blow out, mohawk)
-                    </span>
-                    <span className="text-sm text-black/50">
-                      24 December, 20:00
-                    </span>
-                  </div>
-                </div>
-                <div className="cursor-pointer col-span-2 md:col-span-1 flex justify-end">
-                  <img src={more} alt="" className="h-8 " />
-                </div>
-              </div>
-              <div className="grid grid-cols-12 gap-4 pb-3 border-b last:border-0">
-                <div className="flex col-span-10 md:col-span-11 gap-4">
-                  <div className="grid">
-                    <span className="text-[15px] truncate">
-                      Special haircut - (skin fade, blow out, mohawk)
-                    </span>
-                    <span className="text-sm text-black/50">
-                      24 December, 20:00
-                    </span>
-                  </div>
-                </div>
-                <div className="cursor-pointer col-span-2 md:col-span-1 flex justify-end">
-                  <img src={more} alt="" className="h-8 " />
-                </div>
-              </div>
-            </div>
-          )}
-          {pastAppointments && (
-            <div className="mt-10 grid gap-6">
-              <div className="flex justify-between gap-4 pb-3 border-b last:border-0">
-                <div className="flex col-span-10 md:col-span-11 gap-4">
-                  <div className="grid">
-                    <span className="text-[15px] truncate">
-                      Special haircut - (skin fade, blow out, mohawk)
-                    </span>
-                    <span className="text-sm text-black/50">
-                      24 December, 20:00
-                    </span>
-                  </div>
-                </div>
-                <div className="cursor-pointer col-span-2 md:col-span-1 flex justify-end text-sm text-emerald-500 font-semibold">
-                  Completed
-                </div>
-              </div>
-              <div className="flex justify-between gap-4 pb-3 border-b last:border-0">
-                <div className="flex col-span-10 md:col-span-11 gap-4">
-                  <div className="grid">
-                    <span className="text-[15px] truncate">
-                      Special haircut - (skin fade, blow out, mohawk)
-                    </span>
-                    <span className="text-sm text-black/50">
-                      24 December, 20:00
-                    </span>
-                  </div>
-                </div>
-                <div className="cursor-pointer col-span-2 md:col-span-1 flex justify-end text-sm text-rose-500 font-semibold">
-                  Cancelled
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-    {/* Appointment details */}
-    {isDetailsOpen && <PendingAppointments onclose={closeDetails} />}
+      <div className="rounded-md border p-8 text-center text-sm text-gray-500">
+        Please sign in to view your appointments.
       </div>
     );
-}
+  }
+
+  return (
+    <div className="rounded-md border">
+      <div className="border-b p-4 font-medium text-sm">My appointments:</div>
+      <div className="p-4">
+        <div className="text-xs flex gap-4">
+          <div
+            className={`p-2 cursor-pointer ${
+              view === "pending" ? activeStyle : inactiveStyle
+            }`}
+            onClick={() => setView("pending")}
+          >
+            Pending appointments
+          </div>
+          <div
+            className={`p-2 cursor-pointer ${
+              view === "past" ? activeStyle : inactiveStyle
+            }`}
+            onClick={() => setView("past")}
+          >
+            Past appointments
+          </div>
+        </div>
+
+        {loading ? (
+          <div className="mt-10 text-sm text-gray-500">Loading appointments…</div>
+        ) : view === "pending" ? (
+          pending.length === 0 ? (
+            <div className="mt-10 text-sm text-gray-500">
+              No pending appointments. New booking requests will appear here.
+            </div>
+          ) : (
+            <div className="mt-10 grid gap-6">
+              {pending.map((appointment) => (
+                <div
+                  key={appointment.appointmentId}
+                  className="grid grid-cols-12 gap-4 pb-3 border-b last:border-0"
+                >
+                  <div className="flex col-span-10 md:col-span-11 gap-4">
+                    <div className="grid">
+                      <span className="text-[15px] truncate">
+                        {serviceName(appointment)}
+                      </span>
+                      <span className="text-sm text-black/50">
+                        {clientName(appointment)} · {dateTime(appointment)}
+                      </span>
+                      <span
+                        className={`text-xs font-medium mt-1 ${
+                          appointment.statusCode === "1"
+                            ? "text-amber-500"
+                            : "text-emerald-500"
+                        }`}
+                      >
+                        {appointment.statusCode === "1" ? "Pending" : "Accepted"}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="cursor-pointer col-span-2 md:col-span-1 flex justify-end">
+                    <img
+                      src={more}
+                      alt="More appointment actions"
+                      className="h-8"
+                      onClick={() => setSelectedAppointment(appointment)}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )
+        ) : past.length === 0 ? (
+          <div className="mt-10 text-sm text-gray-500">
+            No past appointments yet.
+          </div>
+        ) : (
+          <div className="mt-10 grid gap-6">
+            {past.map((appointment) => (
+              <div
+                key={appointment.appointmentId}
+                className="flex justify-between gap-4 pb-3 border-b last:border-0"
+              >
+                <div className="flex col-span-10 md:col-span-11 gap-4">
+                  <div className="grid">
+                    <span className="text-[15px] truncate">
+                      {serviceName(appointment)}
+                    </span>
+                    <span className="text-sm text-black/50">
+                      {clientName(appointment)} · {dateTime(appointment)}
+                    </span>
+                  </div>
+                </div>
+                <div
+                  className={`cursor-pointer col-span-2 md:col-span-1 flex justify-end text-sm font-semibold ${statusColor(
+                    appointment.statusCode
+                  )}`}
+                >
+                  {statusLabel(appointment.statusCode)}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+      {selectedAppointment && (
+        <PendingAppointments
+          appointment={selectedAppointment}
+          onclose={() => setSelectedAppointment(null)}
+          actionLoading={actionLoading}
+          onAccept={() => runAction(selectedAppointment.appointmentId, "accept")}
+          onDecline={() => runAction(selectedAppointment.appointmentId, "decline")}
+          onComplete={() => runAction(selectedAppointment.appointmentId, "complete")}
+        />
+      )}
+    </div>
+  );
+};
 
 export default StylerAppointments;

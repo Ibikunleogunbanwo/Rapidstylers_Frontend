@@ -36,8 +36,8 @@ const ChangePassword = ({setPageTitle}) => {
     onSubmit: async (values,{resetForm}) => {
         const {password, confirmPassword,oldPassword} = values;
         let changePasswordData = {emailAddress:userSessionData.emailAddress, password,confirmPassword,oldPassword};
-        const {payload} = dispatch(changeUserPassword(changePasswordData));
-        if(payload.statusCode === "200"){
+        const { payload } = await dispatch(changeUserPassword(changePasswordData));
+        if (payload?.statusCode === "200") {
           resetForm();
         }
     },
