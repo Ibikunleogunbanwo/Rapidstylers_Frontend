@@ -1,5 +1,5 @@
-import { useState, useRef } from "react";
-import { ApiClient } from "../hooks/remote/apiClient";
+import { useState, useRef, useEffect } from "react";
+import { uploadToCloudinary } from "../utils/cloudinaryUpload";
 
 /**
  * Reusable image uploader that uploads directly to Cloudinary
@@ -11,65 +11,73 @@ import { ApiClient } from "../hooks/remote/apiClient";
  *   folder="store"    → rapid_stylers/store/
  *   (no folder)       → rapid_stylers/
  *
+ * Two modes:
+ *   - default: uploads to Cloudinary immediately on file pick and calls
+ *     onUpload(url). Use for one-shot uploads.
+ *   - deferUpload: does NOT touch Cloudinary. It just reports the picked
+ *     File via onFileSelected(file) and shows a local object-URL preview.
+ *     The caller commits the file later (e.g. at final submit), which is
+ *     how the signup wizard avoids orphaned images.
+ *
  * Props:
- *   onUpload(url)  — called with the Cloudinary CDN URL after success
- *   onError(msg)   — called with error string on failure
- *   label          — display label
- *   folder         — Cloudinary subfolder (profile, id, store, etc.)
- *   accept         — file input accept filter (default: image/*)
- *   previewUrl     — initial preview image URL
- *   className      — extra wrapper classes
+ *   onUpload(url)      — called with the Cloudinary CDN URL after success (direct mode)
+ *   onFileSelected(f)  — called with the File in deferUpload mode
+ *   file               — the selected File (deferUpload mode; drives the preview)
+ *   onError(msg)       — called with error string on failure
+ *   label, folder, accept, previewUrl, className
  */
-const ImageUpload = ({ onUpload, onError, label, folder, accept = "image/*", previewUrl, className = "" }) => {
+const ImageUpload = ({
+  onUpload,
+  onError,
+  label,
+  folder,
+  accept = "image/*",
+  previewUrl,
+  className = "",
+  deferUpload = false,
+  onFileSelected,
+  file,
+}) => {
   const [preview, setPreview] = useState(previewUrl || "");
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const inputRef = useRef(null);
 
+  // Deferred mode: preview the picked file locally until it's committed.
+  useEffect(() => {
+    if (!deferUpload) return;
+    if (file) {
+      const objectUrl = URL.createObjectURL(file);
+      setPreview(objectUrl);
+      return () => URL.revokeObjectURL(objectUrl);
+    }
+    setPreview("");
+  }, [deferUpload, file]);
+
   const handleFile = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const selected = e.target.files?.[0];
+    if (!selected) return;
 
     // Client-side validation
-    if (file.size > 5 * 1024 * 1024) {
-      setError("Image must be under 5 MB");
-      onError?.("Image must be under 5 MB");
+    if (selected.size > 5 * 1024 * 1024) {
+      const msg = "Image must be under 5 MB";
+      setError(msg);
+      onError?.(msg);
       return;
     }
 
     setError("");
+
+    // Deferred mode: just hand the File up; nothing is uploaded yet.
+    if (deferUpload) {
+      onFileSelected?.(selected);
+      return;
+    }
+
+    // Direct mode: upload now.
     setUploading(true);
-
     try {
-      // 1. Get signed upload credentials from backend (with folder prefix)
-      const sigUrl = folder
-        ? `/get_upload_signature?folderPrefix=${encodeURIComponent(folder)}`
-        : "/get_upload_signature";
-      const sigRes = await ApiClient.get(sigUrl);
-      const sig = sigRes.data?.data;
-      if (!sig) throw new Error("Failed to get upload credentials");
-
-      // 2. Upload directly to Cloudinary
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("api_key", sig.apiKey);
-      formData.append("timestamp", sig.timestamp);
-      formData.append("folder", sig.folder);
-      formData.append("signature", sig.signature);
-
-      const cloudRes = await fetch(
-        `https://api.cloudinary.com/v1_1/${sig.cloudName}/image/upload`,
-        { method: "POST", body: formData }
-      );
-
-      if (!cloudRes.ok) {
-        const errBody = await cloudRes.json().catch(() => ({}));
-        throw new Error(errBody.error?.message || "Upload failed");
-      }
-
-      const result = await cloudRes.json();
-      const url = result.secure_url;
-
+      const { url } = await uploadToCloudinary(selected, folder);
       setPreview(url);
       onUpload?.(url);
     } catch (err) {

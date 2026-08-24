@@ -8,6 +8,7 @@ import * as Yup from "yup";
 import PasswordInput from "../../../components/passwordInput";
 import { useDispatch } from "react-redux";
 import { createUserAccount, getUserDetails, userAuthenticate } from "../../../hooks/local/userReducer";
+import { showErrorToastMessage } from "../../../utils/constant";
 import { useNavigate } from "react-router-dom";
 
 const steps = [
@@ -23,7 +24,7 @@ const SecureAccount = () => {
     document.querySelector('meta[name="description"]').content = "Join RapidStylers: Start your beautification journey with a personalized account.";
   }, []);
 
-  const userProfileData = JSON.parse(sessionStorage.getItem('userProfileData'));
+  const userProfileData = JSON.parse(sessionStorage.getItem('userProfileData') || 'null');
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [dashboardModal, setDashboardModal] = useState(false);
@@ -48,12 +49,18 @@ const SecureAccount = () => {
       }),
       onSubmit: async (values) => {
         const { password } = values;
+        if (!userProfileData) {
+          showErrorToastMessage("Session expired. Please restart your registration.");
+          return;
+        }
+        // Fall back to the persisted signup email if the profile snapshot lacks it.
         const { firstname, lastname, country, address, state, phoneNumber, emailAddress } = userProfileData;
-        let userRegistrationData = { firstname, lastname, country, address, state, emailAddress, phoneNumber, password };
+        const finalEmailAddress = emailAddress || sessionStorage.getItem('signupEmail') || '';
+        let userRegistrationData = { firstname, lastname, country, address, state, emailAddress: finalEmailAddress, phoneNumber, password };
         const { payload } = await dispatch(createUserAccount(userRegistrationData));
         if(payload.statusCode === "200"){
           setDashboardModal(true);
-          setUserEmailAddress(emailAddress);
+          setUserEmailAddress(finalEmailAddress);
           setUserPassword(password);
         }
       }

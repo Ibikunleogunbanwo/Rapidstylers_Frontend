@@ -17,6 +17,8 @@ const ManageBlog = () => {
   const [form, setForm] = useState(EMPTY_FORM);
   const [editItem, setEditItem] = useState(null); // { id } while editing
   const [editForm, setEditForm] = useState(EMPTY_FORM);
+  const [createError, setCreateError] = useState("");
+  const [editError, setEditError] = useState("");
 
   const loadPosts = () => {
     APIService.listBlog()
@@ -36,6 +38,7 @@ const ManageBlog = () => {
   const handleCreate = async (e) => {
     e.preventDefault();
     if (!form.title.trim()) return;
+    setCreateError("");
     setSubmitting(true);
     try {
       await APIService.adminCreateBlog(form);
@@ -43,7 +46,7 @@ const ManageBlog = () => {
       setForm(EMPTY_FORM);
       loadPosts();
     } catch (error) {
-      // Error toasts are handled in APIService
+      setCreateError(error?.response?.data?.message || error?.message || "Failed to publish article");
     } finally {
       setSubmitting(false);
     }
@@ -61,7 +64,7 @@ const ManageBlog = () => {
       setEditForm(EMPTY_FORM);
       loadPosts();
     } catch (error) {
-      // Error toasts are handled in APIService
+      setEditError(error?.response?.data?.message || error?.message || "Failed to update article");
     }
   };
 
@@ -78,6 +81,7 @@ const ManageBlog = () => {
 
   const startEdit = (item) => {
     setEditItem({ id: item.id });
+    setEditError("");
     setEditForm({
       title: item.title || "",
       category: item.category || "",
@@ -100,6 +104,12 @@ const ManageBlog = () => {
           >
             Sign out
           </button>
+        </div>
+
+        <div className="flex gap-4 mb-6 text-sm font-semibold">
+          <Link to="/admin/categories" className="text-gray-500 hover:text-gray-800">Categories</Link>
+          <span className="text-brand underline">Blog</span>
+          <Link to="/admin/stylers" className="text-gray-500 hover:text-gray-800">Stylist verification</Link><Link to="/admin/operations" className="text-gray-500 hover:text-gray-800">Operations</Link>
         </div>
 
         {/* Create */}
@@ -142,6 +152,12 @@ const ManageBlog = () => {
               placeholder="Article content (paragraphs separated by blank lines)"
             />
           </div>
+          {createError && (
+            <div className="mt-3 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700 flex items-start gap-2">
+              <svg className="w-4 h-4 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
+              <span>{createError}</span>
+            </div>
+          )}
           <button
             type="submit"
             disabled={submitting}
@@ -200,6 +216,12 @@ const ManageBlog = () => {
                         className={`${field} min-h-[120px]`}
                         placeholder="Article content"
                       />
+                      {editError && (
+                        <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700 flex items-start gap-2">
+                          <svg className="w-4 h-4 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
+                          <span>{editError}</span>
+                        </div>
+                      )}
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => handleUpdate(item)}

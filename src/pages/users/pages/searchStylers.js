@@ -1,4 +1,3 @@
-import { Link } from "react-router-dom";
 import search from "../../../assets/svg-icons/search.svg";
 import { useEffect, useState } from "react";
 import Spinner from "../../../components/spinner";
@@ -6,6 +5,9 @@ import { useDispatch, useSelector } from "react-redux";
 import Back from "../../../components/goBack";
 import { searchStyler } from "../../../hooks/local/userReducer";
 import ServiceCard from "../../../components/serviceCard";
+import { useUserLocation } from "../../../context/LocationContext";
+import LocationPicker from "../../../components/locationPicker";
+import { useSavedStylists } from "../../../hooks/useSavedStylists";
 
 const SearchStyler = ({ setPageTitle, stylerSearchName }) => {
   useEffect((() => {
@@ -13,8 +15,25 @@ const SearchStyler = ({ setPageTitle, stylerSearchName }) => {
     document.title = "Search | RapidStylers";
   }));
   const dispatch = useDispatch();
+  const { location: userLocation } = useUserLocation();
+  const [locationPickerOpen, setLocationPickerOpen] = useState(false);
   const [userSearchWord, setUserSearchWord] = useState(stylerSearchName);
   const [stylerProfileData, setStylerProfileData] = useState([]);
+  const { savedIds, loading: savedLoading, toggleSaved } = useSavedStylists();
+
+  const displayLocation = userLocation
+    ? [userLocation.city, userLocation.province].filter(Boolean).join(", ") || "Unknown"
+    : "Detecting...";
+
+  // Respect the chosen area: when a location is set, narrow results to that
+  // province so the change has a visible effect on the results.
+  const visibleResults = userLocation?.province
+    ? stylerProfileData.filter(
+        (s) =>
+          String(s.province || "").trim().toLowerCase() ===
+          String(userLocation.province).trim().toLowerCase()
+      )
+    : stylerProfileData;
 
   const searchForAStyler = async()=>{
     try{
@@ -46,9 +65,14 @@ const SearchStyler = ({ setPageTitle, stylerSearchName }) => {
         <div className="text-sm grid gap-4 md:flex md:justify-between ">
           <p>
             Current location:{" "}
-            <span className="font-medium text-brand">Edmonton, Canada</span>
+            <span className="font-medium text-brand">{displayLocation}</span>
           </p>
-          <p className="text-brand">[ Change location ]</p>
+          <button
+            onClick={() => setLocationPickerOpen(true)}
+            className="text-brand cursor-pointer hover:underline"
+          >
+            [ Change location ]
+          </button>
         </div>
         <div className="my-6 overflow-hidden rounded-[4px]">
           <span className="border w-full rounded-[4px] bg-white flex items-center gap-3 p-1">
@@ -69,21 +93,24 @@ const SearchStyler = ({ setPageTitle, stylerSearchName }) => {
    
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {
-          stylerProfileData.length > 0
+          visibleResults.length > 0
             ? (
-                stylerProfileData.map((val, key) => {
+                visibleResults.map((val, key) => {
                 return (
-                  <div className="grid grid-cols-1 gap-4">
-                    <Link to={`/stylistProfile/${btoa(val.stylerId)}/${btoa(val.businessName)}`}>
+                  <div className="grid grid-cols-1 gap-4" key={key}>
                       <ServiceCard
                         coverImg={val.profileImageUrl}
                         name={val.businessName}
                         status={val.visibilityStatus}
-                        distance={"24km"}
-                        rating={"5.0"}
-                        reviews={"200"}
+                        distance={val.distanceKm}
+                        rating={val.averageRating}
+                        reviews={val.reviewCount}
+                        stylerId={val.stylerId}
+                        businessName={val.businessName}
+                        isSaved={savedIds.has(String(val.stylerId))}
+                        onToggleSaved={toggleSaved}
+                        saveLoading={savedLoading}
                       />
-                    </Link>
                   </div>
                 )
               })
@@ -91,7 +118,9 @@ const SearchStyler = ({ setPageTitle, stylerSearchName }) => {
             :
             (
               <div>
-                No professionals found with that name.
+                {stylerProfileData.length > 0
+                  ? `No professionals found in ${displayLocation}.`
+                  : "No professionals found with that name."}
               </div>
             )
         }
@@ -106,6 +135,7 @@ const SearchStyler = ({ setPageTitle, stylerSearchName }) => {
           appointments.
         </p>
       </div>
+      {locationPickerOpen && <LocationPicker onClose={() => setLocationPickerOpen(false)} />}
     </div>
   );
 };

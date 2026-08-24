@@ -4,7 +4,7 @@ import { API_BASE_URL, API_HEADER, FORM_DATA_HEADER, getAuthToken } from "../../
 // Attach the signed-in user's JWT to every request. Role-protected endpoints
 // (create_service, book_appointment, …) reject requests without a valid token;
 // public endpoints simply ignore the header.
-const attachAuthToken = (config) => {
+export const attachAuthToken = (config) => {
     const token = getAuthToken();
     if (token) {
         config.headers.Authorization = `Bearer ${token}`;

@@ -26,7 +26,7 @@ const location  = useLocation();
 const navigate = useNavigate();
 const dispatch = useDispatch();
 
-const userEmailAddress = location.state?.emailAddress || '';
+const userEmailAddress = location.state?.emailAddress || sessionStorage.getItem('signupEmail') || '';
 
   const handleOTPCodeChange = (currentInput)=>{
     const userInput = handleInput(currentInput);
@@ -44,7 +44,11 @@ const userEmailAddress = location.state?.emailAddress || '';
       const {otpCode} = values
       const {payload} = await dispatch(verifyOtpCode(otpCode));
       if(payload.statusCode === "200") {
-        navigate("/personalDetails", {state : {userEmailAddress}});
+        // Use the email from the backend response (source of truth) and persist
+        // it so a refresh on the next step keeps the flow working.
+        const verifiedEmail = payload.data?.emailAddress || userEmailAddress;
+        sessionStorage.setItem('signupEmail', verifiedEmail);
+        navigate("/personalDetails", {state : {userEmailAddress: verifiedEmail}});
       }
     },
   })

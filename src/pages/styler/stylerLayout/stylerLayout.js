@@ -1,6 +1,8 @@
 import { Link, Outlet, useLocation } from "react-router-dom";
 import StylerTopBar from "./topNav";
 import BusinessSummary from "../stylerComponents/businessSummary";
+import { clearAuthToken } from "../../../utils/constant";
+import { APIService } from "../../../hooks/remote/apiService";
 
 const StylerLayout = () => {
   const location = useLocation();
@@ -36,6 +38,30 @@ const StylerLayout = () => {
             </div>
             <div>
               <Link
+                to="/styler-dashboard/calendar"
+                className={`py-4 px-4 rounded-md ${
+                  location.pathname === "/styler-dashboard/calendar"
+                    ? "bg-brand text-white cursor-default"
+                    : "cursor-pointer"
+                }`}
+              >
+                Calendar
+              </Link>
+            </div>
+            <div>
+              <Link
+                to="/styler-dashboard/availability"
+                className={`py-4 px-4 rounded-md ${
+                  location.pathname === "/styler-dashboard/availability"
+                    ? "bg-brand text-white cursor-default"
+                    : "cursor-pointer"
+                }`}
+              >
+                Availability
+              </Link>
+            </div>
+            <div>
+              <Link
                 to="/styler-dashboard/services"
                 className={`py-4 px-4 rounded-md ${
                   location.pathname === "/styler-dashboard/services"
@@ -44,6 +70,18 @@ const StylerLayout = () => {
                 }`}
               >
                 Services
+              </Link>
+            </div>
+            <div>
+              <Link
+                to="/styler-dashboard/my-work"
+                className={`py-4 px-4 rounded-md ${
+                  location.pathname === "/styler-dashboard/my-work"
+                    ? "bg-brand text-white cursor-default"
+                    : "cursor-pointer"
+                }`}
+              >
+                My work
               </Link>
             </div>
             <div>
@@ -57,6 +95,18 @@ const StylerLayout = () => {
               >
                 My profile
               </Link>
+            </div>
+            <div>
+              <button
+                onClick={() => {
+                  APIService.stylerSignOut();
+                  clearAuthToken();
+                  window.location.href = "/";
+                }}
+                className="py-4 px-4 rounded-md cursor-pointer text-left w-full"
+              >
+                Sign out
+              </button>
             </div>
           </div>
         </div>

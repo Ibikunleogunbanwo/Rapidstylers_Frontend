@@ -8,10 +8,12 @@ import { useStylerSignup } from "../../../context/StylerSignupContext";
 import { APIService } from "../../../hooks/remote/apiService";
 
 /* ── Zod schema ─────────────────────────────────────────────────────── */
+// Files are required, not URLs — images are only uploaded to Cloudinary at
+// the final submit, so an abandoned signup never leaves orphaned images.
 const imagesSchema = z.object({
-  profileImageUrl: z.string().min(1, "Profile image is required"),
+  profileImageFile: z.any().refine((f) => f instanceof File, "Profile photo is required"),
   identificationTypeId: z.string().min(1, "Select an ID type"),
-  identificationImageUrl: z.string().min(1, "ID image is required"),
+  identificationImageFile: z.any().refine((f) => f instanceof File, "ID photo is required"),
 });
 
 function toFormikErrors(zodError) {
@@ -26,7 +28,7 @@ function toFormikErrors(zodError) {
 /* ── Component ──────────────────────────────────────────────────────── */
 const ImagesStep = () => {
   const navigate = useNavigate();
-  const { formData, updateData } = useStylerSignup();
+  const { formData, updateData, imageFiles, updateImageFiles } = useStylerSignup();
   const [idTypes, setIdTypes] = useState([]);
   const [loadingTypes, setLoadingTypes] = useState(true);
 
@@ -44,9 +46,9 @@ const ImagesStep = () => {
   }, []);
 
   const initialValues = {
-    profileImageUrl: formData.profileImageUrl || "",
+    profileImageFile: imageFiles.profileImageFile || null,
     identificationTypeId: formData.identificationTypeId || "",
-    identificationImageUrl: formData.identificationImageUrl || "",
+    identificationImageFile: imageFiles.identificationImageFile || null,
   };
 
   const validate = (values) => {
@@ -56,7 +58,9 @@ const ImagesStep = () => {
   };
 
   const handleSubmit = (values) => {
-    updateData(values);
+    updateData({ identificationTypeId: values.identificationTypeId });
+    // Files already live in context (updateImageFiles on pick) — nothing
+    // is uploaded here, so there is nothing to clean up if the user leaves.
     navigate("/styler-signup/secure-account");
   };
 
@@ -75,12 +79,15 @@ const ImagesStep = () => {
           <div className="mb-5">
             <ImageUpload
               label="Profile photo"
-              folder="profile"
-              onUpload={(url) => setFieldValue("profileImageUrl", url)}
-              previewUrl={values.profileImageUrl}
+              deferUpload
+              file={values.profileImageFile}
+              onFileSelected={(file) => {
+                setFieldValue("profileImageFile", file);
+                updateImageFiles({ profileImageFile: file });
+              }}
             />
-            {touched.profileImageUrl && errors.profileImageUrl && (
-              <p className="text-red-500 text-xs mt-1">{errors.profileImageUrl}</p>
+            {touched.profileImageFile && errors.profileImageFile && (
+              <p className="text-red-500 text-xs mt-1">{errors.profileImageFile}</p>
             )}
           </div>
 
@@ -130,12 +137,15 @@ const ImagesStep = () => {
           <div className="mb-5">
             <ImageUpload
               label="Upload ID photo"
-              folder="id"
-              onUpload={(url) => setFieldValue("identificationImageUrl", url)}
-              previewUrl={values.identificationImageUrl}
+              deferUpload
+              file={values.identificationImageFile}
+              onFileSelected={(file) => {
+                setFieldValue("identificationImageFile", file);
+                updateImageFiles({ identificationImageFile: file });
+              }}
             />
-            {touched.identificationImageUrl && errors.identificationImageUrl && (
-              <p className="text-red-500 text-xs mt-1">{errors.identificationImageUrl}</p>
+            {touched.identificationImageFile && errors.identificationImageFile && (
+              <p className="text-red-500 text-xs mt-1">{errors.identificationImageFile}</p>
             )}
           </div>
 

@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { Link, useNavigate, Navigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
 import { APIService } from "../../hooks/remote/apiService";
+import { setUserSession, getUserDetails } from "../../hooks/local/userReducer";
 import { getAuthToken, setAuthToken, showSuccessToastMessage } from "../../utils/constant";
 import logo from "../../assets/svg-icons/colouredLogo.svg";
 import InputWithLabel from "../../components/inputWithLabel";
@@ -15,9 +17,11 @@ import Buttons from "../../components/button";
 const Login = () => {
   document.title = "Sign In | RapidStylers";
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [emailAddress, setEmailAddress] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
 
   if (getAuthToken()) {
     return <Navigate to="/" replace />;
@@ -26,25 +30,36 @@ const Login = () => {
   const routeByRole = (role) => {
     if (role === "ADMIN") return "/admin/categories";
     if (role === "STYLER") return "/styler-dashboard";
-    return "/";
+    return "/dashboard";
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setErrorMsg("");
     setLoading(true);
     try {
       const res = await APIService.signIn({ emailAddress, password });
       const token = res.data?.token;
       const role = res.data?.data?.role;
+      const account = res.data?.data?.account;
       if (token) {
         setAuthToken(token);
+        if (role === "CUSTOMER" && account) {
+          // Persist the session (store + localStorage) so the dashboard guard
+          // passes without a reload, then fetch the full profile in the
+          // background — same behavior as the hero-section login path.
+          dispatch(setUserSession(res.data));
+          dispatch(getUserDetails(account.userId));
+        }
         showSuccessToastMessage(
           role === "ADMIN" ? "Welcome, admin" : "Welcome back"
         );
         navigate(routeByRole(role));
       }
     } catch (error) {
-      // Error toasts are handled in APIService
+      // Error toasts are handled in APIService; also show inline
+      const msg = error?.response?.data?.message || error?.message || "Sign in failed";
+      setErrorMsg(msg);
     } finally {
       setLoading(false);
     }
@@ -101,6 +116,13 @@ const Login = () => {
                 btnText={loading ? "Signing in..." : "Sign In"}
               />
             </form>
+
+            {errorMsg && (
+              <div className="mt-3 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700 flex items-start gap-2">
+                <svg className="w-4 h-4 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
+                <span>{errorMsg}</span>
+              </div>
+            )}
 
             <div className="mt-8 pt-6 border-t border-gray-100 flex flex-col gap-2 text-sm">
               <p>

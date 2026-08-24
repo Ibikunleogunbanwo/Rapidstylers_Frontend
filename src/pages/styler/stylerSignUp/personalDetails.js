@@ -54,7 +54,7 @@ const StylerPersonalDetails = () => {
   const initialValues = {
     firstname: formData.firstname || "",
     lastname: formData.lastname || "",
-    emailAddress: formData.emailAddress || "",
+    emailAddress: formData.emailAddress || sessionStorage.getItem("stylerSignupEmail") || "",
     phoneNumber: formData.phoneNumber || "",
   };
 
@@ -69,6 +69,8 @@ const StylerPersonalDetails = () => {
     try {
       const res = await APIService.stylerGenerateOtp({ emailAddress: values.emailAddress });
       if (res.data?.statusCode === "200") {
+        // Persist the signup email so a refresh mid-flow doesn't lose it.
+        sessionStorage.setItem("stylerSignupEmail", values.emailAddress);
         updateData(values);
         navigate("/styler-signup/verify-email");
       }

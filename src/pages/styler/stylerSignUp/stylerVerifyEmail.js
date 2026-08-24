@@ -7,7 +7,9 @@ import { showSuccessToastMessage } from "../../../utils/constant";
 
 const StylerVerifyEmail = () => {
   const navigate = useNavigate();
-  const { formData } = useStylerSignup();
+  const { formData, updateData } = useStylerSignup();
+  // Survive a refresh: sessionStorage holds the email from the previous step.
+  const signupEmail = formData.emailAddress || sessionStorage.getItem("stylerSignupEmail") || "";
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [error, setError] = useState("");
   const [verifying, setVerifying] = useState(false);
@@ -66,6 +68,11 @@ const StylerVerifyEmail = () => {
     try {
       const res = await APIService.stylerVerifyOtp(code);
       if (res.data?.statusCode === "200") {
+        // Use the email from the backend response (source of truth) and persist
+        // it into the shared context + sessionStorage.
+        const verifiedEmail = res.data?.emailAddress || signupEmail;
+        sessionStorage.setItem("stylerSignupEmail", verifiedEmail);
+        updateData({ emailAddress: verifiedEmail });
         showSuccessToastMessage("Email verified! Continue with your registration.");
         navigate("/styler-signup/business-details");
       } else {
@@ -87,7 +94,7 @@ const StylerVerifyEmail = () => {
       <p className="my-4 font-bold">Verify your email address.</p>
       <p className="text-sm text-gray-500 mb-4">
         A 6-digit verification code was sent to{" "}
-        <span className="font-medium text-gray-700">{formData.emailAddress}</span>.
+        <span className="font-medium text-gray-700">{signupEmail}</span>.
         Enter it below to continue.
       </p>
 

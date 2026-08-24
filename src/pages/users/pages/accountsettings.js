@@ -45,6 +45,30 @@ const AccountSettings = ({setPageTitle}) => {
             </div>
           </div>
           </Link>
+          <Link to={"/support"}>
+          <div className="flex items-center justify-between py-3">
+            <span className="">Support</span>
+            <div>
+              <img src={arrow} alt="" className="h-5"/>
+            </div>
+          </div>
+          </Link>
+          <Link to={"/loyalty"}>
+          <div className="flex items-center justify-between py-3">
+            <span className="">Loyalty and referrals</span>
+            <div>
+              <img src={arrow} alt="" className="h-5"/>
+            </div>
+          </div>
+          </Link>
+          <Link to={"/notifications"}>
+          <div className="flex items-center justify-between py-3">
+            <span className="">Notifications</span>
+            <div>
+              <img src={arrow} alt="" className="h-5"/>
+            </div>
+          </div>
+          </Link>
           <Link to={"/notificationSettings"}>
           <div className="flex items-center justify-between py-3">
             <span className="">Manage notification preferences</span>

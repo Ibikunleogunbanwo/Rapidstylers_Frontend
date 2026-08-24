@@ -18,13 +18,67 @@ const CardDetails = ({ setPageTitle }) => {
   }));
 
   const dispatch = useDispatch();
-  const userData = useSelector((state) => state.user.userDetailsData).userCardData;
-  const userCardName = userData.cardName !== null ? decryptData(userData?.cardName) : userData.cardName;
-  const userCardNumber = userData.cardNumber !== null ? decryptData(userData?.cardNumber) : userData.cardNumber;
-  const userCardExpirationDate = userData.expiryDate !== null ? decryptData(userData?.expiryDate) : userData.expiryDate;
-  const userCardCVV = userData.cvv !== null ? decryptData(userData?.cvv) : userData.cardName;
-  const userId = useSelector((state) => state.user.userSessionData).userId;
-  const emailAddress = useSelector((state) => state.user.userSessionData).emailAddress;
+  // userDetailsData can be null (fresh reload with a persisted session, or a
+  // failed fetch) — never assume another page has loaded it first.
+  const userData = useSelector((state) => state.user.userDetailsData)?.userCardData || null;
+  const [fetching, setFetching] = useState(!userData);
+  const [fetchFailed, setFetchFailed] = useState(false);
+
+  useEffect(() => {
+    if (userData) return;
+    let cancelled = false;
+    setFetching(true);
+    setFetchFailed(false);
+    // Identity comes from the Bearer token — no arg needed.
+    dispatch(getUserDetails())
+      .catch(() => {
+        if (!cancelled) setFetchFailed(true);
+      })
+      .finally(() => {
+        if (!cancelled) setFetching(false);
+      });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const userCardName = userData && userData.cardName !== null ? decryptData(userData.cardName) : null;
+
+  return (
+    <div className="bg-white rounded-lg border">
+      <Spinner loading={useSelector((state) => state.user).loading} />
+      <div className="flex gap-1 items-center border-b p-4 text-[15px] font-bold bg-[#1d1d1d08] rounded-t-lg">
+        <Back />
+        <span>{userCardName === null ? "Add" : "Update"} Card Details.</span>
+      </div>
+      {!userData && fetching && (
+        <div className="p-10 text-center text-sm text-black/50">Loading your details...</div>
+      )}
+      {!userData && !fetching && fetchFailed && (
+        <div className="p-10 text-center text-sm text-red-500">
+          Could not load your card details.{" "}
+          <button
+            type="button"
+            className="text-brand underline"
+            onClick={() => { setFetching(true); setFetchFailed(false); dispatch(getUserDetails()).catch(() => setFetchFailed(true)).finally(() => setFetching(false)); }}
+          >
+            Retry
+          </button>
+        </div>
+      )}
+      {userData && <CardDetailsForm userData={userData} userCardName={userCardName} />}
+    </div>
+  );
+};
+
+// Rendered only once card details are present, so formik's initialValues are
+// computed with real data (mounting the form later would freeze empty values).
+const CardDetailsForm = ({ userData, userCardName }) => {
+  const dispatch = useDispatch();
+  const userCardNumber = userData.cardNumber !== null ? decryptData(userData.cardNumber) : null;
+  const userCardExpirationDate = userData.expiryDate !== null ? decryptData(userData.expiryDate) : null;
+  const userCardCVV = userData.cvv !== null ? decryptData(userData.cvv) : null;
+  const userId = useSelector((state) => state.user.userSessionData)?.userId;
+  const emailAddress = useSelector((state) => state.user.userSessionData)?.emailAddress;
   const [cardDetailsInputType, setCardDetailsInputType] = useState();
   const [cardInputDisabled, setCardInputDisabled] = useState(false);
   const [viewCardDetailsModal, setViewCardDetailsModal] = useState(false);
@@ -76,8 +130,8 @@ const CardDetails = ({ setPageTitle }) => {
       const { cardName, cardNumber, expiryDate, cvv } = values;
       let cardDetailsData = { userId, cardName, cardNumber, expiryDate, cvv };
       const { payload } = await (dispatch(updateCardDetail(cardDetailsData)));
-      if (payload.statusCode === "200") {
-        dispatch(getUserDetails(userId));
+      if (payload?.statusCode === "200") {
+        dispatch(getUserDetails());
         setCardDetailsInputType("password");
         setCardInputDisabled(true);
       }
@@ -85,12 +139,7 @@ const CardDetails = ({ setPageTitle }) => {
   })
 
   return (
-    <div className="bg-white rounded-lg border">
-          <Spinner loading={useSelector((state) => state.user).loading} />
-      <div className="flex gap-1 items-center border-b p-4 text-[15px] font-bold bg-[#1d1d1d08] rounded-t-lg">
-        <Back />
-        <span>{userCardName === null ? "Add" : "Update"} Card Details.</span>
-      </div>
+    <>
       <form onSubmit={updateUserCardDetails.handleSubmit}>
         <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
           <Input label={"Cardholder name:"}
@@ -156,9 +205,7 @@ const CardDetails = ({ setPageTitle }) => {
           </div>
         </form>
       </GeneralModal>
-
-    </div>
-
+    </>
   );
 }
 

@@ -12,6 +12,7 @@ import Spinner from "../../components/spinner";
 import { useDispatch, useSelector } from "react-redux";
 import { verifySignUpEmailAddress } from "../../hooks/local/userReducer";
 import SearchForStyler from "../../components/searchForStyler";
+import LocationPicker from "../../components/locationPicker";
 import { APIService } from "../../hooks/remote/apiService";
 import { useUserLocation } from "../../context/LocationContext";
 import largeVideo from "../../assets/Videos/large video.mp4";
@@ -236,9 +237,10 @@ const Hero = ({ height }) => {
   );
 };
 
-/** Shows the user's detected location in the navbar. */
+/** Shows the user's location in the navbar; click to change it. */
 const LocationBadge = () => {
   const { location } = useUserLocation();
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   if (!location || location.loading) return null;
 
@@ -249,16 +251,20 @@ const LocationBadge = () => {
   if (!display) return null;
 
   return (
-    <span
-      className="flex items-center gap-1 text-white/80 hover:text-white transition-colors shrink-0"
-      title="Detected location"
-    >
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4 shrink-0">
-        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-        <circle cx="12" cy="10" r="3" />
-      </svg>
-      <span className="hidden md:inline text-[11px] sm:text-xs truncate max-w-[140px]">{display}</span>
-    </span>
+    <>
+      <button
+        onClick={() => setPickerOpen(true)}
+        className="flex items-center gap-1 text-white/80 hover:text-white transition-colors shrink-0 cursor-pointer"
+        title="Change location"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4 shrink-0">
+          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+          <circle cx="12" cy="10" r="3" />
+        </svg>
+        <span className="hidden md:inline text-[11px] sm:text-xs truncate max-w-[140px]">{display}</span>
+      </button>
+      {pickerOpen && <LocationPicker onClose={() => setPickerOpen(false)} />}
+    </>
   );
 };
 
