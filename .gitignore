@@ -24,6 +24,9 @@ skills-lock.json
 .env.production.local
 .freebuff/
 
+# docs & screenshots
+/docs/
+
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
