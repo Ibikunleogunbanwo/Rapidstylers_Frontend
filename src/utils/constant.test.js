@@ -49,10 +49,11 @@ describe("Toast helpers", () => {
     expect(options.hideProgressBar).toBe(false);
   });
 
-  test("showSuccessToastMessage enables pauseOnHover", () => {
+  test("showSuccessToastMessage does not pause auto-close on hover or focus loss", () => {
     showSuccessToastMessage("Saved");
     const options = toast.success.mock.calls[0][1];
-    expect(options.pauseOnHover).toBe(true);
+    expect(options.pauseOnHover).toBe(false);
+    expect(options.pauseOnFocusLoss).toBe(false);
   });
 
   test("showSuccessToastMessage enables closeOnClick", () => {
@@ -91,10 +92,11 @@ describe("Toast helpers", () => {
     expect(options.hideProgressBar).toBe(false);
   });
 
-  test("showErrorToastMessage enables pauseOnHover", () => {
+  test("showErrorToastMessage does not pause auto-close on hover or focus loss", () => {
     showErrorToastMessage("Fail");
     const options = toast.error.mock.calls[0][1];
-    expect(options.pauseOnHover).toBe(true);
+    expect(options.pauseOnHover).toBe(false);
+    expect(options.pauseOnFocusLoss).toBe(false);
   });
 
   test("showSuccessToastMessage returns null", () => {

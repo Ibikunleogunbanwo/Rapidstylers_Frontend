@@ -31,7 +31,8 @@ const TOAST_OPTIONS = {
     autoClose: 4000,
     hideProgressBar: false,
     closeOnClick: true,
-    pauseOnHover: true,
+    pauseOnHover: false,
+    pauseOnFocusLoss: false,
     draggable: true,
     theme: "colored",
 };
@@ -42,7 +43,7 @@ export const showSuccessToastMessage  = (successMessage)=>{
 }
 
 export const showErrorToastMessage  = (errorMessage)=>{
-    toast.error(errorMessage, { ...TOAST_OPTIONS, autoClose: 5000 });
+    toast.error(errorMessage, { ...TOAST_OPTIONS, autoClose: 5000, pauseOnHover: false, pauseOnFocusLoss: false });
     return null;
 }
 

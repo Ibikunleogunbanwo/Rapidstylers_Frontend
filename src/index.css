@@ -33,6 +33,7 @@ body {
   overflow: hidden;
   min-width: 320px;
   max-width: 420px;
+  position: relative;
 }
 
 .rapid-toast-body {
@@ -85,6 +86,7 @@ body {
   height: 3px !important;
   background: rgba(255, 255, 255, 0.4) !important;
   border-radius: 0 !important;
+  transition: none !important;
 }
 
 /* Close button */
@@ -104,10 +106,7 @@ body {
   top: 4px;
   right: 4px;
   z-index: 1;
-}
-
-.rapid-toast .Toastify__close-button:hover {
-  opacity: 1;
+  pointer-events: auto;
 }
 
 .rapid-toast .Toastify__close-button:hover {

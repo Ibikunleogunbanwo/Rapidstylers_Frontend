@@ -1,70 +1,156 @@
-# Getting Started with Create React App
+# RapidStylers Frontend
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+The customer, stylist, and admin web app for RapidStylers, a beauty technician appointment booking platform for Canada. This is the React application that lives at `rapidstylers.ca`. It talks to the Spring Boot API at `api.rapidstylers.ca` in production and handles the public landing page, stylist discovery, account registration, appointment booking, user dashboards, stylist operations, support, notifications, and the admin console.
 
-## Available Scripts
+## What you're looking at
 
-In the project directory, you can run:
+This is a Create React App project built with React 18, Redux Toolkit, Tailwind CSS, MUI, Formik, Yup, and Zod. The routing is split by audience:
 
-### `npm start`
+* `src/pages/generalPages` is the public experience: landing page, search, blog, login, password reset, stylist profile, and general content pages.
+* `src/pages/users` is the client dashboard for profile management, appointments, saved stylists, cards, feedback, and support.
+* `src/pages/styler` is the beauty technician experience: onboarding, profile setup, services, portfolio, availability, appointments, earnings-related views, and account settings.
+* `src/pages/admin` is the platform admin console for categories, services, stylists, blog content, support, reviews, and operations.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+Reusable UI and domain components live under `src/components`. Shared app state lives under `src/hooks/local`, API access is centralized in `src/hooks/remote`, and cross-page context providers live in `src/context`.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## Stack
 
-### `npm test`
+* **React 18** with Create React App and React Router v6.
+* **Redux Toolkit** for shared application state and async workflows.
+* **Tailwind CSS** for utility-first styling, with project-level styles in `src/index.css`.
+* **MUI 5** for selected UI primitives and form controls.
+* **Formik, Yup, and Zod** for form handling and validation across legacy and newer flows.
+* **Axios** for API communication through a centralized client.
+* **React Toastify** for user-facing success and error messages.
+* **Cloudinary upload support** through `src/utils/cloudinaryUpload.js`.
+* **Google Maps / Places integration** for address capture, autocomplete, and booking distance support.
+* **Jest + React Testing Library** for component and API contract tests.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+Production deploys to Vercel. The backend should run separately, usually on a VPS, and be exposed through `api.rapidstylers.ca`.
 
-### `npm run build`
+## Prerequisites
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+* Node.js 18 or later
+* npm 9+
+* A running RapidStylers backend. In local development this is usually the Spring Boot API on `http://localhost:9090/rapid_stylers`.
+* API key values that match the backend `.env` configuration.
+* Google Maps credentials if you are testing address autocomplete or distance-based booking.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## Getting it running locally
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+```bash
+git clone git@github.com:Ibikunleogunbanwo/Rapidstylers_Frontend.git
+cd Rapidstylers_Frontend
+npm install
+cp .env.example .env
+npm start
+```
 
-### `npm run eject`
+`npm start` runs the app on `http://localhost:3000` with Fast Refresh.
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+### Environment variables
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+Create `.env` from `.env.example` and fill in real values. `.env` and `.env.local` are intentionally gitignored.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+```bash
+# Must match APP_API_KEY in Rapidstylers_Backend/.env
+REACT_APP_API_KEY=your_api_key
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+# Backend API base URL, including /rapid_stylers and no trailing slash
+REACT_APP_API_BASE_URL=http://localhost:9090/rapid_stylers
 
-## Learn More
+# Must match the decrypt key expected by the backend integration
+REACT_APP_DECRYPT_KEY=your_decrypt_key
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+# Google Maps browser key for address autocomplete and distance workflows
+REACT_APP_GOOGLE_MAPS_KEY=your_google_maps_key
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+# Google AdSense publisher ID. Leave empty until approved.
+REACT_APP_ADSENSE_CLIENT=
+```
 
-### Code Splitting
+Create React App also reads `.env.local`, and it can override `.env`. If local data looks different from what you expect, check both files before debugging the code.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+## npm scripts
 
-### Analyzing the Bundle Size
+* `npm start` starts the local development server.
+* `npm test` runs the Jest test runner in watch mode.
+* `CI=true npm test -- --watchAll=false` runs the test suite once, which is better for verification before pushing.
+* `npm run build` creates a production build in `build/`.
+* `npm run eject` ejects Create React App configuration. Avoid this unless the team explicitly decides to own the full build setup.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+## Project layout
 
-### Making a Progressive Web App
+```text
+src/
+|-- assets/                 images, videos, logos, SVG icons, animation files
+|-- components/             reusable UI and domain components
+|-- context/                React context providers for location and stylist signup
+|-- hooks/
+|   |-- local/              Redux store, reducers, and local state workflows
+|   `-- remote/             Axios clients, API service methods, API contract tests
+|-- pages/
+|   |-- admin/              admin login, categories, blog, stylists, support, operations
+|   |-- generalPages/       landing, auth, search, blog, stylist profiles
+|   |-- styler/             stylist onboarding, dashboard, appointments, profile
+|   `-- users/              client dashboard, appointments, account, support
+|-- utils/                  constants, crypto helpers, Cloudinary helpers
+|-- App.js                  route registration and lazy-loaded page entry points
+|-- index.js                React app bootstrap
+`-- index.css               global styles, Tailwind layers, toast styling
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+## Conventions worth following
 
-### Advanced Configuration
+* **API calls** go through `src/hooks/remote/apiService.js`. The Axios client attaches the shared API key and current JWT, so avoid calling Axios directly from page components.
+* **Backend responses use `statusCode` in the response body.** Some failed requests may still return HTTP 200, so service methods must check app-level status codes before treating a request as successful.
+* **Auth tokens** are stored in `sessionStorage` under `rapidstylers_auth_token` and attached by the API client interceptor.
+* **Booking pricing** is backend-owned. The frontend can display service price, included travel distance, travel fee, and appointment total, but it should not calculate the final payable amount as the source of truth.
+* **Blog content** is fetched from `/list_blog`. The public pages include fallback posts so the landing page does not break when the backend is unavailable. If Vercel shows different blog counts than localhost, confirm the deployed frontend can reach the backend before changing static content.
+* **Environment files stay local.** Do not commit `.env`, `.env.local`, `.freebuff/`, agent skill folders, or machine-specific IDE files.
+* **Toasts** come from React Toastify. Keep error messages surfaced through `APIService.extractError` unless a page needs a specific inline message too.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+## Deployment
 
-### Deployment
+Vercel deploys the frontend from GitHub. Production should use:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+```text
+rapidstylers.ca       -> Vercel frontend
+www.rapidstylers.ca   -> Vercel frontend
+api.rapidstylers.ca   -> Spring Boot backend on VPS
+```
 
-### `npm run build` fails to minify
+Set the production environment variables in Vercel project settings:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+```bash
+REACT_APP_API_BASE_URL=https://api.rapidstylers.ca/rapid_stylers
+REACT_APP_API_KEY=production_api_key
+REACT_APP_DECRYPT_KEY=production_decrypt_key
+REACT_APP_GOOGLE_MAPS_KEY=production_google_maps_key
+REACT_APP_ADSENSE_CLIENT=
+```
+
+After changing environment variables in Vercel, redeploy the frontend. Vercel builds React env values into the static bundle, so updating the setting alone is not enough.
+
+## Things that commonly trip people up
+
+* **Localhost and Vercel show different data.** Vercel may be using fallback content because the deployed API URL or API key is missing. Check the browser Network tab for failed `/list_blog`, search, or appointment requests.
+* **`.env.local` overrides `.env`.** If your local app is calling the wrong backend port, inspect both files.
+* **Wrong password does not show an error.** The backend may return HTTP 200 with `statusCode: "400"` in the body, so login code must handle app-level failures.
+* **CORS errors after backend deployment.** Add `https://rapidstylers.ca`, `https://www.rapidstylers.ca`, and local dev origins to the backend CORS allow-list.
+* **Booking estimate looks wrong.** Confirm the stylist has base/included travel settings and that the home-service flow sends `travelDistanceKm`.
+
+## Contributing
+
+Keep pull requests focused. Separate styling-only changes from behavior changes when possible. Before pushing, run:
+
+```bash
+CI=true npm test -- --watchAll=false
+npm run build
+```
+
+Develop on `dev`, then merge `dev` into `main` when the change is ready for production.
+
+## Contact
+
+Ibikunle Ogunbanwo, `ibikunleogunbanwo@gmail.com`.
