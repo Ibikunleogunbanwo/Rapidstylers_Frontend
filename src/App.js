@@ -54,9 +54,9 @@ function App() {
         newestOnTop
         closeOnClick
         rtl={false}
-        pauseOnFocusLoss
+        pauseOnFocusLoss={false}
         draggable
-        pauseOnHover
+        pauseOnHover={false}
         theme="colored"
         toastClassName="rapid-toast"
         bodyClassName="rapid-toast-body"
