@@ -68,8 +68,7 @@ describe("RapidStylers API contracts", () => {
     ).rejects.toThrow("Invalid Email Address or Password");
 
     expect(toast.error).toHaveBeenCalledWith(
-      "Invalid Email Address or Password",
-      expect.objectContaining({ autoClose: 5000 })
+      "Invalid Email Address or Password"
     );
   });
 

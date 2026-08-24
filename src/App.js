@@ -54,13 +54,9 @@ function App() {
         newestOnTop
         closeOnClick
         rtl={false}
-        pauseOnFocusLoss={false}
         draggable
         pauseOnHover={false}
         theme="colored"
-        toastClassName="rapid-toast"
-        bodyClassName="rapid-toast-body"
-        progressClassName="rapid-toast-progress"
       />
       <LocationProvider>
       <BrowserRouter>

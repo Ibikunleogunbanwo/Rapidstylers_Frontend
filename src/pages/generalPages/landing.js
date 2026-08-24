@@ -383,9 +383,12 @@ const LandingPage = () => {
                 services.
               </p>
               <div className="flex">
-                <span className="bg-white rounded-md text-sm text-[#1e1e1e] font-semibold mt-6 py-4 px-8">
+                <Link
+                  to={"/styler-signup"}
+                  className="inline-flex min-h-[52px] w-full sm:w-auto items-center justify-center bg-white rounded-md text-sm text-[#1e1e1e] font-semibold mt-6 py-3 px-6 sm:px-8 hover:opacity-90 transition"
+                >
                   Register as a stylist
-                </span>
+                </Link>
               </div>
             </div>
           </div>
