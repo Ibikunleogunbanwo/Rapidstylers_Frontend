@@ -26,7 +26,7 @@ describe("RapidStylers API contracts", () => {
       stylerId: "STYLER1",
       subServiceId: "42",
       appointmentDate: "2030-08-24",
-      arrivalTime: "9:30 am",
+      arrivalTime: "09:30",
       serviceTime: "visitBarber",
       noOfPeople: "1",
     };

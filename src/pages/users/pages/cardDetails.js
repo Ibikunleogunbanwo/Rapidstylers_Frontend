@@ -1,21 +1,27 @@
 import { useEffect, useState } from "react";
+import { loadStripe } from "@stripe/stripe-js";
+import { CardElement, Elements, useElements, useStripe } from "@stripe/react-stripe-js";
 import Back from "../../../components/goBack";
 import Input from "../../../components/input";
 import { useDispatch, useSelector } from "react-redux";
-import { useFormik } from "formik";
-import * as Yup from "yup";
 import Buttons from "../../../components/button";
-import { getUserDetails, updateCardDetail, userAuthenticate } from "../../../hooks/local/userReducer";
-import { decryptData } from "../../../utils/constant";
-import GeneralModal from "../../../components/generalModal";
-import PasswordInput from "../../../components/passwordInput";
+import { getUserDetails, updateCardDetail } from "../../../hooks/local/userReducer";
+import { showSuccessToastMessage, STRIPE_PUBLISHABLE_KEY } from "../../../utils/constant";
 import Spinner from "../../../components/spinner";
+import { APIService } from "../../../hooks/remote/apiService";
 
+const stripePromise = STRIPE_PUBLISHABLE_KEY ? loadStripe(STRIPE_PUBLISHABLE_KEY) : null;
+
+/**
+ * Card-on-file via Stripe Elements. The card number/CVV/expiry are collected
+ * inside Stripe's iframe and never touch this app — only a PaymentMethod id is
+ * sent to the backend, which stores Stripe references + display metadata.
+ */
 const CardDetails = ({ setPageTitle }) => {
-  useEffect((() => {
+  useEffect(() => {
     setPageTitle("Account Settings");
     document.title = "Card details | RapidStylers";
-  }));
+  }, [setPageTitle]);
 
   const dispatch = useDispatch();
   // userDetailsData can be null (fresh reload with a persisted session, or a
@@ -23,6 +29,7 @@ const CardDetails = ({ setPageTitle }) => {
   const userData = useSelector((state) => state.user.userDetailsData)?.userCardData || null;
   const [fetching, setFetching] = useState(!userData);
   const [fetchFailed, setFetchFailed] = useState(false);
+  const [updating, setUpdating] = useState(false);
 
   useEffect(() => {
     if (userData) return;
@@ -41,14 +48,14 @@ const CardDetails = ({ setPageTitle }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const userCardName = userData && userData.cardName !== null ? decryptData(userData.cardName) : null;
+  const hasCard = Boolean(userData && userData.last4);
 
   return (
     <div className="bg-white rounded-lg border">
       <Spinner loading={useSelector((state) => state.user).loading} />
       <div className="flex gap-1 items-center border-b p-4 text-[15px] font-bold bg-[#1d1d1d08] rounded-t-lg">
         <Back />
-        <span>{userCardName === null ? "Add" : "Update"} Card Details.</span>
+        <span>{hasCard ? "Update" : "Add"} Card Details.</span>
       </div>
       {!userData && fetching && (
         <div className="p-10 text-center text-sm text-black/50">Loading your details...</div>
@@ -65,148 +72,137 @@ const CardDetails = ({ setPageTitle }) => {
           </button>
         </div>
       )}
-      {userData && <CardDetailsForm userData={userData} userCardName={userCardName} />}
+      {!STRIPE_PUBLISHABLE_KEY && (
+        <div className="p-6 text-sm text-black/60">
+          Payments are not configured yet. Add your Stripe publishable key to enable card-on-file payments.
+        </div>
+      )}
+      {userData && STRIPE_PUBLISHABLE_KEY && !updating && hasCard && (
+        <SavedCardSummary userData={userData} onUpdate={() => setUpdating(true)} />
+      )}
+      {userData && STRIPE_PUBLISHABLE_KEY && (updating || !hasCard) && stripePromise && (
+        <Elements stripe={stripePromise}>
+          <CardForm onSaved={() => setUpdating(false)} />
+        </Elements>
+      )}
     </div>
   );
 };
 
-// Rendered only once card details are present, so formik's initialValues are
-// computed with real data (mounting the form later would freeze empty values).
-const CardDetailsForm = ({ userData, userCardName }) => {
+const SavedCardSummary = ({ userData, onUpdate }) => {
+  const brand = (userData.brand || "card").replace(/_/g, " ");
+  const exp = userData.expMonth && userData.expYear
+    ? `${String(userData.expMonth).padStart(2, "0")}/${String(userData.expYear).slice(-2)}`
+    : null;
+  return (
+    <div className="p-6">
+      <div className="rounded-lg border border-black/10 bg-[#fafafa] p-5 max-w-md">
+        <p className="text-xs uppercase tracking-wide text-black/40">Card on file</p>
+        <p className="mt-2 text-lg font-semibold capitalize">
+          {brand} •••• {userData.last4}
+        </p>
+        {exp && <p className="mt-1 text-sm text-black/50">Expires {exp}</p>}
+        <p className="mt-1 text-sm text-black/50">{userData.cardName}</p>
+      </div>
+      <p className="mt-4 max-w-md text-xs text-black/40">
+        Your card number and CVV are stored securely with Stripe — RapidStylers never sees or stores them.
+      </p>
+      <div className="mt-5">
+        <Buttons btnType={'light'} type="button" btnText="Update card" onClick={onUpdate} />
+      </div>
+    </div>
+  );
+};
+
+const CardForm = ({ onSaved }) => {
   const dispatch = useDispatch();
-  const userCardNumber = userData.cardNumber !== null ? decryptData(userData.cardNumber) : null;
-  const userCardExpirationDate = userData.expiryDate !== null ? decryptData(userData.expiryDate) : null;
-  const userCardCVV = userData.cvv !== null ? decryptData(userData.cvv) : null;
-  const userId = useSelector((state) => state.user.userSessionData)?.userId;
-  const emailAddress = useSelector((state) => state.user.userSessionData)?.emailAddress;
-  const [cardDetailsInputType, setCardDetailsInputType] = useState();
-  const [cardInputDisabled, setCardInputDisabled] = useState(false);
-  const [viewCardDetailsModal, setViewCardDetailsModal] = useState(false);
+  const stripe = useStripe();
+  const elements = useElements();
+  const [cardName, setCardName] = useState("");
+  const [agreed, setAgreed] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
 
-  useEffect(() => {
-    setCardDetailsInputType(userCardName !== null ? "password" : "text");
-    setCardInputDisabled(userCardName !== null ? true : false);
-  }, [userCardName]);
-
-  const verifyUserPassword = useFormik({
-    initialValues: {
-      password: "",
-    },
-    validationSchema: Yup.object({
-      password: Yup.string().required("Kindly enter your password")
-    }),
-    onSubmit: async (values, {resetForm}) => {
-      const { password } = values;
-      let verifyData = { emailAddress, password };
-      const { payload } = await dispatch(userAuthenticate(verifyData))
-      if (payload.statusCode === "200") {
-        resetForm();
-        setCardDetailsInputType("text");
-        setCardInputDisabled(false);
-        setViewCardDetailsModal(false);
-      }
-    }
-  })
-  const updateUserCardDetails = useFormik({
-    initialValues: {
-      cardName: userCardName,
-      cardNumber: userCardNumber,
-      expiryDate: userCardExpirationDate,
-      cvv: userCardCVV,
-    },
-    validationSchema: Yup.object({
-      cardName: Yup.string().required("Cardholder name is required"),
-      cardNumber: Yup.string()
-        .required("Card number is required")
-        .matches(/^[0-9]{12,16}$/, "Card number is not valid"), // Example for Visa cards
-      expiryDate: Yup.string()
-        .required("Expiry date is required")
-        .matches(/^(0[1-9]|1[0-2])\/\d{4}$/, "Expiry date is not valid. Format should be MM/YYYY"), // Format MM/YYYY
-      cvv: Yup.string()
-        .required("CVV is required")
-        .matches(/^[0-9]{3}$/, "CVV is not valid. It should be exactly 3 digits")
-    }),
-    onSubmit: async (values) => {
-      const { cardName, cardNumber, expiryDate, cvv } = values;
-      let cardDetailsData = { userId, cardName, cardNumber, expiryDate, cvv };
-      const { payload } = await (dispatch(updateCardDetail(cardDetailsData)));
+  const saveCard = async (event) => {
+    event.preventDefault();
+    if (!stripe || !elements) return;
+    if (!cardName.trim()) { setErrorMsg("Cardholder name is required"); return; }
+    if (!agreed) { setErrorMsg("Please accept the terms and conditions"); return; }
+    setErrorMsg("");
+    setSaving(true);
+    try {
+      const { data } = await APIService.getCardSetupIntent();
+      const clientSecret = data?.data?.clientSecret;
+      if (!clientSecret) throw new Error("Could not start card setup — please try again");
+      const { error, setupIntent } = await stripe.confirmCardSetup(clientSecret, {
+        payment_method: {
+          card: elements.getElement(CardElement),
+          billing_details: { name: cardName.trim() },
+        },
+      });
+      if (error) { setErrorMsg(error.message || "Could not verify your card"); setSaving(false); return; }
+      const { payload } = await dispatch(updateCardDetail({
+        cardName: cardName.trim(),
+        paymentMethodId: setupIntent.payment_method,
+      }));
       if (payload?.statusCode === "200") {
         dispatch(getUserDetails());
-        setCardDetailsInputType("password");
-        setCardInputDisabled(true);
+        showSuccessToastMessage("Card saved securely");
+        onSaved();
+      } else {
+        setErrorMsg(payload?.message || "Could not save your card — please try again");
       }
-    },
-  })
+    } catch (err) {
+      setErrorMsg(err?.message || "Could not save your card — please try again");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
-    <>
-      <form onSubmit={updateUserCardDetails.handleSubmit}>
-        <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Input label={"Cardholder name:"}
-            type={cardDetailsInputType}
-            name={"cardName"}
-            disabled={cardInputDisabled}
-            value={updateUserCardDetails.values.cardName}
-            onBlur={updateUserCardDetails.handleBlur}
-            onChange={updateUserCardDetails.handleChange}
-            onError={updateUserCardDetails.errors.cardName && updateUserCardDetails.touched.cardName ? updateUserCardDetails.errors.cardName : null} />
-          <Input label={"Card number:"}
-            type={cardDetailsInputType}
-            name={"cardNumber"}
-            disabled={cardInputDisabled}
-            value={updateUserCardDetails.values.cardNumber}
-            onBlur={updateUserCardDetails.handleBlur}
-            onChange={updateUserCardDetails.handleChange}
-            onError={updateUserCardDetails.errors.cardNumber && updateUserCardDetails.touched.cardNumber ? updateUserCardDetails.errors.cardNumber : null} />
-          <Input label={"Expiration date:"}
-            type={cardDetailsInputType}
-            name={"expiryDate"}
-            disabled={cardInputDisabled}
-            value={updateUserCardDetails.values.expiryDate}
-            onBlur={updateUserCardDetails.handleBlur}
-            onChange={updateUserCardDetails.handleChange}
-            onError={updateUserCardDetails.errors.expiryDate && updateUserCardDetails.touched.expiryDate ? updateUserCardDetails.errors.expiryDate : null} />
-          <Input label={"CVV:"}
-            type={cardDetailsInputType}
-            name={"cvv"}
-            disabled={cardInputDisabled}
-            value={updateUserCardDetails.values.cvv}
-            onBlur={updateUserCardDetails.handleBlur}
-            onChange={updateUserCardDetails.handleChange}
-            onError={updateUserCardDetails.errors.cvv && updateUserCardDetails.touched.cvv ? updateUserCardDetails.errors.cvv : null} />
-          <div className="col-span-1 md:col-span-2">
-            <p className="text-sm">By checking this box, you acknowledge that you have read and agree to the terms and conditions of our service. This includes understanding and consenting to our policies regarding the storage and usage of your provided data. Please take a moment to review our comprehensive terms and conditions, which outline the guidelines and expectations for the use of our platform. If you have any questions or concerns, feel free to contact our support team for clarification. Your use of this service is subject to compliance with these terms.</p>
-            <div className="flex items-center gap-2 mt-4">
-              <input type="checkbox" name="" id="" />
-              <span className="mb-[2px] text-sm">I have read and agree to the terms and conditions.</span>
-            </div>
+    <form onSubmit={saveCard}>
+      <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Input
+          label="Cardholder name:"
+          type="text"
+          name="cardName"
+          value={cardName}
+          onChange={(e) => setCardName(e.target.value)}
+        />
+        <div>
+          <label className="text-sm font-medium text-black/60 mb-1 block">Card details:</label>
+          <div className="rounded-lg border border-black/15 bg-white px-3 py-3">
+            <CardElement
+              options={{
+                style: {
+                  base: { fontSize: "15px", color: "#1d1d1d", "::placeholder": { color: "#a3a3a3" } },
+                  invalid: { color: "#dc2626" },
+                },
+              }}
+            />
           </div>
-          <div className="col-span-1 md:col-span-2 flex  gap-x-3">
-            {!cardInputDisabled && (
-              <Buttons btnType={'light'} type={"submit"} btnText={`${userCardName === null ? "Add" : "Update"} card details`} />
-            )}
-            {cardInputDisabled && (
-              <Buttons btnType={'light'} type={"button"} btnText="View / Update Card Details" onClick={() => setViewCardDetailsModal(true)} />
-            )}
+          <p className="mt-1 text-xs text-black/40">Secured by Stripe — your card number and CVV never touch RapidStylers.</p>
+        </div>
+        <div className="col-span-1 md:col-span-2">
+          <p className="text-sm">
+            By checking this box, you acknowledge that you have read and agree to the terms and conditions of our service. This includes understanding and consenting to our policies regarding the storage and usage of your provided data. Please take a moment to review our comprehensive terms and conditions, which outline the guidelines and expectations for the use of our platform. If you have any questions or concerns, feel free to contact our support team for clarification. Your use of this service is subject to compliance with these terms.
+          </p>
+          <div className="flex items-center gap-2 mt-4">
+            <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} />
+            <span className="mb-[2px] text-sm">I have read and agree to the terms and conditions.</span>
           </div>
         </div>
-      </form>
-      <GeneralModal isVisible={viewCardDetailsModal} onClose={() => setViewCardDetailsModal(false)} modalTitle={"View Card Details"}>
-        <form onSubmit={verifyUserPassword.handleSubmit}>
-          <PasswordInput labelName={"Enter your password"}
-            inputName={"password"}
-            inputValue={verifyUserPassword.values.password}
-            placeholder={"Enter your password"}
-            inputOnBlur={verifyUserPassword.handleBlur}
-            inputOnChange={verifyUserPassword.handleChange}
-            inputError={verifyUserPassword.errors.password && verifyUserPassword.touched.password ? verifyUserPassword.errors.password : null} />
-          <div className="pt-6">
-            <Buttons btnType={'light'} type={"submit"} btnText="Verify Account" />
+        {errorMsg && (
+          <div className="col-span-1 md:col-span-2 rounded-md bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-3">
+            {errorMsg}
           </div>
-        </form>
-      </GeneralModal>
-    </>
+        )}
+        <div className="col-span-1 md:col-span-2 flex gap-x-3">
+          <Buttons btnType={'light'} type="submit" btnText={saving ? "Saving..." : "Save card"} disabled={saving} />
+        </div>
+      </div>
+    </form>
   );
-}
+};
 
 export default CardDetails;

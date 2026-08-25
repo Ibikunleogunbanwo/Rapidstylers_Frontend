@@ -451,6 +451,102 @@ export class APIService {
         }
     }
 
+    /** Stripe Connect Express onboarding — creates/reuses the stylist account and returns the hosted link. */
+    static async createStylerConnectAccount(data){
+        try{
+            return await ApiClient.post("/styler/connect_account", data);
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+
+    /** Earnings + commission breakdown + live Stripe balances for the stylist. */
+    /** Admin: read/update the platform commission percent (runtime, no restart). */
+    static async getCommissionSetting(){
+        try{
+            return await ApiClient.get("/admin/settings/commission");
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+
+    static async updateCommissionSetting(commissionPercent){
+        try{
+            return await ApiClient.post("/admin/settings/commission", { commissionPercent });
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+
+    static async getStylerPayouts(){
+        try{
+            return await ApiClient.get("/styler/payouts");
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+
+    static async getStylerBusinessSummary(){
+        try{
+            return await ApiClient.get("/styler/business_summary");
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+
+    /** Admin view: per-stylist business stats (appointments, revenue, popular services). */
+    static async adminStylerBusinessSummaries(){
+        try{
+            return await ApiClient.get("/admin/styler_business_summaries");
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+
+    /** Admin support view: every stylist's Connect payout status, problems first. */
+    static async adminStylerConnectStatuses(){
+        try{
+            return await ApiClient.get("/admin/styler_connect_statuses");
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+
+    static async getStylerConnectStatus(){
+        try{
+            return await ApiClient.get("/styler/connect_status");
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+
+    /** Returns a Stripe SetupIntent clientSecret for saving a card in Elements. */
+    static async getCardSetupIntent(){
+        try{
+            return await ApiClient.get("/card_setup_intent");
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+
     // ── Marketplace booking (identity comes from the Bearer token) ────────
     static async estimateBooking(data){
         try{
@@ -463,10 +559,21 @@ export class APIService {
     }
     static async bookAppointment(data){
         try{
-            return await ApiClient.post("/book_appointment", data);
+            const response = await ApiClient.post("/book_appointment", data);
+            // Business errors come back as HTTP 200 with a non-200 statusCode —
+            // surface them so the booking modal can show the reason inline.
+            if(response.data?.statusCode && response.data.statusCode !== "200"){
+                const error = new Error(response.data.message || "Booking failed. Please try again.");
+                error.paymentError = response.data.data?.paymentError || null;
+                error.handledByApiService = true;
+                throw error;
+            }
+            return response;
         }
         catch(error){
-            APIService.extractError(error);
+            if(!error.handledByApiService){
+                APIService.extractError(error);
+            }
             throw(error);
         }
     }
@@ -490,7 +597,7 @@ export class APIService {
     }
     static async updateStylerAvailability(slots){
         try{
-            return await ApiClient.post("/update_styler_availability", slots);
+            return await ApiClient.post("/update_styler_availability", { slots });
         }
         catch(error){
             APIService.extractError(error);

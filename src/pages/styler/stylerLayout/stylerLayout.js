@@ -86,6 +86,18 @@ const StylerLayout = () => {
             </div>
             <div>
               <Link
+                to="/styler-dashboard/payouts"
+                className={`py-4 px-4 rounded-md ${
+                  location.pathname === "/styler-dashboard/payouts"
+                    ? "bg-brand text-white cursor-default"
+                    : "cursor-pointer"
+                }`}
+              >
+                Payouts
+              </Link>
+            </div>
+            <div>
+              <Link
                 to="/styler-dashboard/profile"
                 className={`py-4 px-4 rounded-md ${
                   location.pathname === "/styler-dashboard/profile"

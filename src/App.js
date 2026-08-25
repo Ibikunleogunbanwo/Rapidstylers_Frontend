@@ -27,6 +27,7 @@ const StylerAppointments = lazy(() => import('./pages/styler/stylerAppointments'
 const StylerCalendar = lazy(() => import('./pages/styler/stylerCalendar'));
 const StylerAvailability = lazy(() => import('./pages/styler/stylerAvailability'));
 const MyWork = lazy(() => import('./pages/styler/myWork'));
+const StylerPayouts = lazy(() => import('./pages/styler/stylerPayouts'));
 const Services = lazy(() => import('./pages/styler/stylerServices'));
 const StylerProfile = lazy(() => import('./pages/styler/stylerProfile'));
 const UpdateCoverPhoto = lazy(() => import('./pages/styler/updateCoverPhoto'));
@@ -89,6 +90,7 @@ function App() {
           <Route path='calendar' element={<StylerCalendar />} />
           <Route path='availability' element={<StylerAvailability />} />
           <Route path='my-work' element={<MyWork />} />
+          <Route path='payouts' element={<StylerPayouts />} />
           <Route path='services' element={<Services />} />
           <Route path='profile' element={<StylerProfile />} />
           <Route path='update-cover-photo' element={<UpdateCoverPhoto />} />

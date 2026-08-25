@@ -260,6 +260,7 @@ const SearchResults = () => {
                 isSaved={savedIds.has(String(stylist.stylerId || stylist.id))}
                 onToggleSaved={toggleSaved}
                 saveLoading={savedLoading}
+                payoutReady={stylist.payoutReady}
               />
             ))}
           </div>

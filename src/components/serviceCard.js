@@ -7,7 +7,7 @@ import bookmark from "../assets/svg-icons/bookmark.svg";
  * Renders an elegant initials placeholder when the stylist has no photo,
  * a status pill, rating chip, and optional save control.
  */
-const ServiceCard = ({ coverImg, name, rating, reviews, status, distance, stylerId, businessName, isSaved = false, onToggleSaved, saveLoading = false }) => {
+const ServiceCard = ({ coverImg, name, rating, reviews, status, distance, stylerId, businessName, isSaved = false, onToggleSaved, saveLoading = false, payoutReady = true }) => {
   const [imgFailed, setImgFailed] = useState(false);
   const hasImg = coverImg && !imgFailed;
   const hasRating = rating != null && Number(rating) > 0;
@@ -44,6 +44,12 @@ const ServiceCard = ({ coverImg, name, rating, reviews, status, distance, styler
           <span className={`h-1.5 w-1.5 rounded-full ${isOnline ? "bg-emerald-500" : "bg-gray-300"}`} />
           {isOnline ? "Online" : "Offline"}
         </span>
+        {payoutReady === false && (
+          <span className="absolute bottom-3 left-3 inline-flex items-center gap-1.5 rounded-full bg-amber-500/95 px-2.5 py-1 text-[11px] font-bold text-white shadow-sm">
+            <svg viewBox="0 0 20 20" fill="currentColor" className="h-3 w-3" aria-hidden="true"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clipRule="evenodd" /></svg>
+            Payments pending
+          </span>
+        )}
         {stylerId && onToggleSaved && (
           <button
             type="button"

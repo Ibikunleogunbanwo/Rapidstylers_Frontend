@@ -36,6 +36,14 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
     return `${hour}:${String(m).padStart(2, "0")} ${meridiem}`;
   };
 
+  // Canonical wire format is 24-hour HH:mm (aligned with the availability API);
+  // the picker stays 12-hour for readability, so convert before submitting.
+  const to24 = (value) => {
+    const minutes = toMinutes(value);
+    if (isNaN(minutes)) return value;
+    return `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
+  };
+
   const isDayAvailable = (weekday) => {
     if (availability === null) return true; // still loading — don't block the picker
     return (availability || []).some((s) => Number(s.dayOfWeek) === weekday);
@@ -177,6 +185,9 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
   const [estimateLoading, setEstimateLoading] = useState(false);
   const [isBooking, setIsBooking] = useState(false);
   const [bookingError, setBookingError] = useState("");
+  // When booking is blocked by the saved card (missing / expired / declined),
+  // prompt the customer to fix it from the card page instead of a generic error.
+  const [cardAction, setCardAction] = useState(null); // null | "add" | "update" | "check"
 
   const travelDistanceKm = (() => {
     const userLat = Number(userLocation?.latitude);
@@ -245,6 +256,7 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
       return;
     }
     setBookingError("");
+    setCardAction(null);
     setIsBooking(true);
     try {
       const appointmentDate = `${currentYear}-${String(months.indexOf(selectedMonth) + 1).padStart(2, "0")}-${String(selectedDay).padStart(2, "0")}`;
@@ -252,7 +264,7 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
         stylerId,
         subServiceId,
         appointmentDate,
-        arrivalTime: selectedTime,
+        arrivalTime: to24(selectedTime),
         serviceTime: selectedOption,
         noOfPeople: String(numberOfPeople),
         travelDistanceKm: selectedOption === "homeService" ? travelDistanceKm : 0,
@@ -260,7 +272,14 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
       showSuccessToastMessage("Booking request sent. The stylist will confirm shortly.");
       closeBookingForm();
     } catch (error) {
-      setBookingError(error?.response?.data?.message || error?.message || "Booking failed. Please try again.");
+      const paymentError = error?.paymentError || error?.response?.data?.data?.paymentError;
+      const message = error?.response?.data?.message || error?.message || "Booking failed. Please try again.";
+      setBookingError(message);
+      if (paymentError === "NO_PAYMENT_METHOD") setCardAction("add");
+      else if (paymentError === "CARD_EXPIRED" || paymentError === "CARD_DECLINED") setCardAction("update");
+      else if (paymentError === "PAYMENT_ERROR") setCardAction("check");
+      else if (/card|payment/i.test(message)) setCardAction("update");
+      else setCardAction(null);
     } finally {
       setIsBooking(false);
     }
@@ -517,7 +536,20 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
                 {bookingError && (
                   <div className="mb-2 rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700 flex items-start gap-2">
                     <svg className="w-3.5 h-3.5 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
-                    <span>{bookingError}</span>
+                    <div className="flex-1">
+                      <span>{bookingError}</span>
+                      {cardAction && (
+                        <div className="mt-1.5">
+                          <button
+                            type="button"
+                            className="underline font-semibold"
+                            onClick={() => navigate("/CardDetails")}
+                          >
+                            {cardAction === "add" ? "Add a card" : cardAction === "update" ? "Update card" : "Manage card"}
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>

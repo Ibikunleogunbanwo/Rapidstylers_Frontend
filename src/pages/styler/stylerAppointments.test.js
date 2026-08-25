@@ -25,7 +25,7 @@ test("stylist can open a pending booking and accept it", async () => {
   const appointment = {
     appointmentId: "APPT-1",
     appointmentDate: "2030-08-24",
-    arrivalTime: "9:30 am",
+    arrivalTime: "09:30",
     statusCode: "1",
     price: "120.00",
     userData: { firstname: "Ada", lastname: "Client" },
