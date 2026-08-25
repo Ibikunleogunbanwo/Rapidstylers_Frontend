@@ -137,8 +137,7 @@ const Hero = ({ height }) => {
               <span className="px-2 sm:px-3 md:ps-3 cursor-pointer hover:text-white/80 transition" onClick={toggleSignUp}>
                 Sign up
               </span>
-              <span className="hidden sm:inline md:ps-3 cursor-pointer hover:text-white/80 transition" onClick={() => navigate('/styler-signup')}>
-                For pros
+              <span className="hidden sm:inline md:ps-3 cursor-pointer hover:text-white/80 transition" onClick={() => navigate('/styler-signup')}>                 Register as a beauty professional
               </span>
             </div>
           </div>
