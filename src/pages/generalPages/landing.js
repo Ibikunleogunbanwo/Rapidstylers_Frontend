@@ -320,7 +320,7 @@ const LandingPage = () => {
           <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5">
             <div className="lg:w-1/2">
               <p className="text-xs uppercase tracking-[0.25em] text-brand font-bold">
-                For professionals
+                For beauty professionals
               </p>
               <p className="text-4xl md:text-5xl font-bold mt-2 leading-tight font-serif">
                 Calling all <span className="text-brand">beauty professionals!</span>
@@ -387,7 +387,7 @@ const LandingPage = () => {
                   to={"/styler-signup"}
                   className="inline-flex min-h-[52px] w-full sm:w-auto items-center justify-center bg-white rounded-md text-sm text-[#1e1e1e] font-semibold mt-6 py-3 px-6 sm:px-8 hover:opacity-90 transition"
                 >
-                  Register as a stylist
+                  Register as a beauty professional
                 </Link>
               </div>
             </div>
