@@ -33,6 +33,7 @@ const Hero = ({ height }) => {
   }, []);
 
   const [signUpVisible, setSignUpVisible] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [signUpRole, setSignUpRole] = useState("customer"); // customer | stylist | admin
   const [searchParams] = useSearchParams();
 
@@ -46,6 +47,7 @@ const Hero = ({ height }) => {
   // Function to toggle the sign up modal
   const toggleSignUp = () => {
     setSignUpVisible(!signUpVisible);
+    setMobileMenuOpen(false);
   };
   const userSignUp = useFormik({
     initialValues: {
@@ -130,27 +132,40 @@ const Hero = ({ height }) => {
       </div>
 
       {/* Navbar */}
-      <div className="fixed w-full flex items-center border-b border-[#ffffff16] bg-[#00000060] backdrop-blur-xl px-3 sm:px-4 md:px-[50px] text-white py-3 sm:py-4 md:py-5 z-20">
-        <div className="w-full flex justify-between items-center">
-          <Link to={"/"} onClick={(e) => { e.preventDefault(); window.location.href = "/"; }}>
-            <img src={logo} alt="RapidStylers" className="h-8 sm:h-10" />
+      <header className="fixed top-0 w-full border-b border-white/10 bg-black/60 backdrop-blur-xl text-white z-20">
+        <div className="mx-auto flex min-h-[64px] w-full max-w-[1600px] items-center justify-between gap-3 px-4 py-3 sm:px-6 md:min-h-[76px] md:px-10 lg:px-[50px]">
+          <Link to="/" aria-label="RapidStylers home" onClick={(e) => { e.preventDefault(); window.location.href = "/"; }} className="shrink-0">
+            <img src={logo} alt="RapidStylers" className="h-8 w-auto sm:h-10" />
           </Link>
-          <div className="flex items-center gap-2 sm:gap-4 md:gap-8">
+          <div className="flex items-center gap-3 sm:gap-5 md:gap-8">
             <LocationBadge />
-            <div className="flex items-center gap-2 sm:gap-3 md:divide-x md:text-sm text-[11px] sm:text-xs">
-              <span className="md:pe-3 cursor-pointer hover:text-white/80 transition" onClick={() => navigate('/login')}>
-                Login
-              </span>
-              <span className="px-2 sm:px-3 md:ps-3 cursor-pointer hover:text-white/80 transition" onClick={toggleSignUp}>
-                Sign up
-              </span>
-              <span className="hidden sm:inline md:ps-3 cursor-pointer hover:text-white/80 transition" onClick={() => navigate('/styler-signup')}>
-                For pros
-              </span>
-            </div>
+            <nav className="hidden items-center gap-4 text-sm md:flex md:gap-6" aria-label="Primary navigation">
+              <button type="button" className="cursor-pointer transition hover:text-white/80" onClick={() => navigate('/login')}>Login</button>
+              <button type="button" className="cursor-pointer transition hover:text-white/80" onClick={toggleSignUp}>Sign up</button>
+              <button type="button" className="cursor-pointer whitespace-nowrap transition hover:text-white/80" onClick={() => navigate('/styler-signup')}>Register as a beauty professional</button>
+            </nav>
+            <button
+              type="button"
+              aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
+              aria-expanded={mobileMenuOpen}
+              onClick={() => setMobileMenuOpen((open) => !open)}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-white/20 bg-white/10 md:hidden"
+            >
+              <span className="sr-only">Menu</span>
+              <span className="text-xl leading-none">{mobileMenuOpen ? "×" : "☰"}</span>
+            </button>
           </div>
         </div>
-      </div>
+        {mobileMenuOpen && (
+          <nav className="border-t border-white/10 bg-black/90 px-4 py-3 md:hidden" aria-label="Mobile navigation">
+            <div className="mx-auto grid max-w-[1600px] gap-1">
+              <button type="button" className="rounded-lg px-3 py-3 text-left text-sm font-semibold hover:bg-white/10" onClick={() => { setMobileMenuOpen(false); navigate('/login'); }}>Login</button>
+              <button type="button" className="rounded-lg px-3 py-3 text-left text-sm font-semibold hover:bg-white/10" onClick={toggleSignUp}>Sign up</button>
+              <button type="button" className="rounded-lg px-3 py-3 text-left text-sm font-semibold text-brand hover:bg-white/10" onClick={() => { setMobileMenuOpen(false); navigate('/styler-signup'); }}>Register as a beauty professional</button>
+            </div>
+          </nav>
+        )}
+      </header>
 
       {/* Sign Up modal */}
       <Modal
