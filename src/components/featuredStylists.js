@@ -68,6 +68,7 @@ const Featured = () => {
               rating={stylist.averageRating || stylist.rating || "0"}
               reviews={stylist.reviewCount || stylist.reviews || "0"}
               status={stylist.online ? "Online" : "Offline"}
+              payoutReady={stylist.payoutReady}
             />
           ))}
         </div>

@@ -110,6 +110,7 @@ const SearchStyler = ({ setPageTitle, stylerSearchName }) => {
                         isSaved={savedIds.has(String(val.stylerId))}
                         onToggleSaved={toggleSaved}
                         saveLoading={savedLoading}
+                        payoutReady={val.payoutReady}
                       />
                   </div>
                 )

@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { APIService } from "../../../hooks/remote/apiService";
 import { showSuccessToastMessage } from "../../../utils/constant";
 
-const Appointments = ({appointmentDate, serviceTime, serviceProvider, serviceType, businessAddress,serviceName, numberOfPeople, appointmentStatus, appointmentPrice, servicePrice, travelFee, includedTravelKm, billableTravelKm, travelDistanceKm, extraTravelRatePerKm, appointmentId, statusCode}) => {
+const Appointments = ({appointmentDate, arrivalTime, serviceProvider, serviceType, businessAddress,serviceName, numberOfPeople, appointmentStatus, appointmentPrice, servicePrice, travelFee, includedTravelKm, billableTravelKm, travelDistanceKm, extraTravelRatePerKm, appointmentId, statusCode}) => {
   const [menuVisible, setMenuVisible] = useState(false);
   const [cancelling, setCancelling] = useState(false);
 
@@ -46,7 +46,7 @@ const Appointments = ({appointmentDate, serviceTime, serviceProvider, serviceTyp
                 <span className="text-black/50">Date:</span>
                 <span>{appointmentDate}</span>
               </div>
-              <p className="mt-2">{serviceTime}</p>
+              <p className="mt-2">{arrivalTime}</p>
             </div>
           </div>
           <div className="px-4 col-span-12 md:col-span-9 order-1 md:order-2">

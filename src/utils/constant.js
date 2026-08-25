@@ -10,6 +10,10 @@ export const JSON_CONTENT_TYPE = "application/json";
 export const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "http://localhost:9090/rapid_stylers";
 export const DECRYPT_KEY = process.env.REACT_APP_DECRYPT_KEY || "";
 
+// Stripe publishable key (frontend) — collect cards inside Stripe's Elements
+// iframe. Empty until Stripe test/live keys are added to .env.
+export const STRIPE_PUBLISHABLE_KEY = process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY || "";
+
 export const API_HEADER = {
     'Content-Type' : JSON_CONTENT_TYPE,
     'x-api-key' : API_KEY
@@ -32,9 +36,39 @@ export const showSuccessToastMessage  = (successMessage)=>{
     return null;
 }
 
+// Stripe Connect disabled reasons look like "rejected.other" / "requirements.past_due" —
+// turn them into plain words for UI banners (Payouts page, dashboard card).
+export const humanizeConnectReason = (reason) => {
+  if (!reason) return "Your payout account could not be verified by Stripe.";
+  const cleaned = String(reason).replace(/[._]+/g, " ").replace(/\s+/g, " ").trim();
+  return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+};
+
 export const showErrorToastMessage  = (errorMessage)=>{
     toast.error(errorMessage);
     return null;
+}
+
+/**
+ * The wire format for appointment times is canonical 24-hour HH:mm (aligned
+ * with the availability API). This renders it as a friendly 12-hour clock time
+ * for customer-facing UIs; values already in 12-hour form (legacy rows) pass
+ * through unchanged.
+ */
+export const formatTime12 = (value) => {
+  if (!value) return value || "";
+  const m = /^(\d{1,2}):(\d{2})\s*(am|pm)?$/i.exec(String(value).trim());
+  if (!m) return value;
+  const hasMeridiem = m[3];
+  let hour = parseInt(m[1], 10);
+  const minute = parseInt(m[2], 10);
+  if (hasMeridiem) {
+    if (hasMeridiem.toLowerCase() === "pm" && hour < 12) hour += 12;
+    if (hasMeridiem.toLowerCase() === "am" && hour === 12) hour = 0;
+  }
+  const meridiem = hour >= 12 ? "PM" : "AM";
+  const hour12 = hour % 12 === 0 ? 12 : hour % 12;
+  return `${hour12}:${String(minute).padStart(2, "0")} ${meridiem}`;
 }
 
 export const showSuccessMessageReload = (successMessage)=>{

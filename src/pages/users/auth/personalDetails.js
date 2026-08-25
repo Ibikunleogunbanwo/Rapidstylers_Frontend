@@ -2,6 +2,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import logo from "../../../assets/svg-icons/colouredLogo.svg";
 import InputWithLabel from "../../../components/inputWithLabel";
 import SelectInput from "../../../components/selectInput";
+import AddressAutocomplete from "../../../components/AddressAutocomplete";
 import Buttons from "../../../components/button";
 import { useEffect } from "react";
 import { useFormik } from "formik";
@@ -14,6 +15,28 @@ const steps = [
   "Secure your account",
 ];
 
+/** Canadian convention: "123 Main St, Unit 4, Toronto, ON M5V 2T6, Canada" */
+const composeCanadianAddress = (v) =>
+  [
+    v.street,
+    v.unit ? (/^(apt|unit|suite|#)/i.test(v.unit) ? v.unit : `Unit ${v.unit}`) : "",
+    v.city,
+    [v.province, v.postalCode].filter(Boolean).join(" "),
+    v.country,
+  ]
+    .filter(Boolean)
+    .join(", ");
+
+/** Format a 10/11-digit Canadian number as (XXX) XXX-XXXX while typing. */
+const formatCanadianPhone = (value) => {
+  const digits = (value || "").replace(/\D/g, "").replace(/^1(?=\d{10}$)/, "").slice(0, 10);
+  if (digits.length < 4) return digits;
+  if (digits.length < 7) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+};
+
+const phoneDigits = (value) => (value || "").replace(/\D/g, "").replace(/^1(?=\d{10}$)/, "");
+
 const PersonalDetails = () => {
   useEffect(() => {
     document.title = "Personal Details | RapidStylers";
@@ -24,25 +47,16 @@ const PersonalDetails = () => {
   const navigate = useNavigate();
   const emailAddress = location.state?.userEmailAddress || sessionStorage.getItem('signupEmail') || '';
   const country = [{ value: 'Canada', label: 'Canada' }]
-  const province = [
-    { value: 'Alberta', label: 'Alberta' },
-    { value: 'British Columbia', label: 'British Columbia' },
-    { value: 'Manitoba', label: 'Manitoba' },
-    { value: 'New Brunswick', label: 'New Brunswick' },
-    { value: 'Newfoundland and Labrador', label: 'Newfoundland and Labrador' },
-    { value: 'Nova Scotia', label: 'Nova Scotia' },
-    { value: 'Ontario', label: 'Ontario' },
-    { value: 'Prince Edward Island', label: 'Prince Edward Island' },
-    { value: 'Quebec', label: 'Quebec' },
-    { value: 'Saskatchewan', label: 'Saskatchewan' }
-  ];
   const personalData = useFormik({
     initialValues: {
       firstname: '',
       lastname: '',
-      country: '',
-      address: '',
-      state: '',
+      country: 'Canada',
+      street: '',
+      unit: '',
+      city: '',
+      province: '',
+      postalCode: '',
       phoneNumber: '',
       agreeToTerms: false,
     },
@@ -50,20 +64,27 @@ const PersonalDetails = () => {
       firstname : Yup.string().required("Firstname cannot be empty").min(3,"Firstname must be at least 3 letters"),
       lastname : Yup.string().required("Lastname cannot be empty").min(3,"Lastname must be at least 3 letters"),
       country : Yup.string().required("Kindly select a country"),
-      address : Yup.string().required("Address cannot be empty").min(3,"Address must be at least 3 letters"),
-      state : Yup.string().required("Kindly select a state"),
+      street : Yup.string().required("Street address is required").min(3,"Street address must be at least 3 letters"),
+      city : Yup.string().required("City is required"),
+      province : Yup.string().required("Province is required"),
+      postalCode : Yup.string()
+        .required("Postal code is required")
+        .matches(/^[A-Za-z]\d[A-Za-z][ -]?\d[A-Za-z]\d$/, "Enter a valid Canadian postal code (e.g. T2P 1B5)"),
       agreeToTerms : Yup.boolean().oneOf([true], "You must agree to the Terms and Conditions"),
       phoneNumber : Yup.string()
         .required("Phone number is required")
-        .matches(/^[0-9]+$/, "Phone number can only contain digits")
-        .test("ca-phone", "Enter a valid Canadian phone number (10 digits, or 11 with leading 1)", (val) => {
+        .test("ca-phone", "Enter a valid Canadian phone number, e.g. (587) 555-1234", (val) => {
           if (!val) return false;
-          return val.length === 10 || (val.length === 11 && val.startsWith("1"));
+          const digits = phoneDigits(val);
+          return digits.length === 10;
         })
     }),
     onSubmit: (values) => {
-      const {firstname, lastname, country, address, state, phoneNumber} = values;
-      let userProfileData = {firstname,lastname, country, address, state, phoneNumber,emailAddress};
+      const {firstname, lastname, country, phoneNumber} = values;
+      // Persist the single-line address in Canadian convention — the backend
+      // stores address + state (province) + country for user accounts.
+      const address = composeCanadianAddress(values);
+      let userProfileData = {firstname,lastname, country, address, state: values.province, phoneNumber: phoneDigits(phoneNumber), emailAddress};
       sessionStorage.setItem('userProfileData', JSON.stringify(userProfileData));
       navigate("/secureAccount")
     }
@@ -128,31 +149,83 @@ const PersonalDetails = () => {
                            onChange={(event)=>personalData.setFieldValue('country',event.target.value)}
                            selectValue={personalData.values.country}
                            selectError={personalData.touched.country && personalData.errors.country ? personalData.errors.country : null} />
-              <SelectInput labelName={"State / Province"}
-                           selectOptions={province}
-                           valueKey={'value'}
-                           labelKey={'label'}
-                           selectName={"state"}
-                           selectBlur={personalData.handleBlur}
-                           onChange={(event)=>personalData.setFieldValue('state',event.target.value)}
-                           selectValue={personalData.values.state}
-                           selectError={personalData.touched.state && personalData.errors.state ? personalData.errors.state : null} />
-              <InputWithLabel labelName={"Physical Address"}
+
+              {/* Google Places search — auto-computes every Canadian field below */}
+              <AddressAutocomplete
+                label="Find your address:"
+                value={personalData.values.street}
+                placeholder={"Start typing your address…"}
+                onChange={(data) => {
+                  // Free-text edits carry only the raw line — update the street without
+                  // wiping the computed Canadian fields. A real Places selection carries
+                  // parsed components, so it recomputes everything.
+                  const isSelection = !!(data.city || data.province || data.postalCode);
+                  personalData.setFieldValue("street", data.streetAddress || data.formattedAddress || "");
+                  if (isSelection) {
+                    personalData.setFieldValue("unit", data.unit || "");
+                    personalData.setFieldValue("city", data.city || "");
+                    personalData.setFieldValue("province", data.province || "");
+                    personalData.setFieldValue("postalCode", (data.postalCode || "").toUpperCase());
+                    personalData.setFieldValue("country", data.country || "Canada");
+                    ["street", "city", "province", "postalCode", "country"].forEach((f) =>
+                      personalData.setFieldTouched(f, true, false)
+                    );
+                  }
+                }}
+              />
+
+              <InputWithLabel labelName={"Street address"}
                               inputType={"text"}
                               placeholder={"e.g 123 Main Street"}
-                              inputName={"address"}
+                              inputName={"street"}
                               inputOnBlur={personalData.handleBlur}
                               inputOnChange={personalData.handleChange}
-                              inputValue={personalData.values.address}
-                              inputError={personalData.touched.address && personalData.errors.address ? personalData.errors.address : null} />
-              <InputWithLabel labelName={"Phone Number"}
+                              inputValue={personalData.values.street}
+                              inputError={personalData.touched.street && personalData.errors.street ? personalData.errors.street : null} />
+              <InputWithLabel labelName={"Unit / Apt / Suite"}
                               inputType={"text"}
-                              placeholder={"e.g. 5875551234"}
-                              inputName={"phoneNumber"}
+                              placeholder={"Optional"}
+                              inputName={"unit"}
                               inputOnBlur={personalData.handleBlur}
                               inputOnChange={personalData.handleChange}
-                              inputValue={personalData.values.phoneNumber}
-                              inputError={personalData.touched.phoneNumber && personalData.errors.phoneNumber ? personalData.errors.phoneNumber : null} />
+                              inputValue={personalData.values.unit}
+                              inputError={personalData.touched.unit && personalData.errors.unit ? personalData.errors.unit : null} />
+              <div className="grid grid-cols-2 gap-3">
+                <InputWithLabel labelName={"City"}
+                                inputType={"text"}
+                                placeholder={"e.g Toronto"}
+                                inputName={"city"}
+                                inputOnBlur={personalData.handleBlur}
+                                inputOnChange={personalData.handleChange}
+                                inputValue={personalData.values.city}
+                                inputError={personalData.touched.city && personalData.errors.city ? personalData.errors.city : null} />
+                <InputWithLabel labelName={"Province"}
+                                inputType={"text"}
+                                placeholder={"e.g Ontario"}
+                                inputName={"province"}
+                                inputOnBlur={personalData.handleBlur}
+                                inputOnChange={personalData.handleChange}
+                                inputValue={personalData.values.province}
+                                inputError={personalData.touched.province && personalData.errors.province ? personalData.errors.province : null} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <InputWithLabel labelName={"Postal code"}
+                                inputType={"text"}
+                                placeholder={"e.g M5V 2T6"}
+                                inputName={"postalCode"}
+                                inputOnBlur={personalData.handleBlur}
+                                inputOnChange={personalData.handleChange}
+                                inputValue={personalData.values.postalCode}
+                                inputError={personalData.touched.postalCode && personalData.errors.postalCode ? personalData.errors.postalCode : null} />
+                <InputWithLabel labelName={"Phone Number"}
+                                inputType={"tel"}
+                                placeholder={"(587) 555-1234"}
+                                inputName={"phoneNumber"}
+                                inputOnBlur={personalData.handleBlur}
+                                inputOnChange={(e) => personalData.setFieldValue("phoneNumber", formatCanadianPhone(e.target.value))}
+                                inputValue={personalData.values.phoneNumber}
+                                inputError={personalData.touched.phoneNumber && personalData.errors.phoneNumber ? personalData.errors.phoneNumber : null} />
+              </div>
               <label className="flex items-start gap-3 cursor-pointer">
                 <input
                   type="checkbox"

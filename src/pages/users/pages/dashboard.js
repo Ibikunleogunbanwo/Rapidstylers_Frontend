@@ -5,6 +5,7 @@ import ReviewForm from "../../../components/reviewForm";
 import { useAllUserAppointments, useUserPendingAppointments } from "../userLayout/functionalEffects";
 import Spinner from "../../../components/spinner";
 import { useSelector } from "react-redux";
+import { formatTime12 } from "../../../utils/constant";
 
 const Dashboard = ({ setPageTitle }) => {
   useEffect((() => {
@@ -32,7 +33,7 @@ const Dashboard = ({ setPageTitle }) => {
           <p className="text-sm font-semibold">Upcoming appointments:</p>
           {pendingAppointment.map((val, key) => (
             <Appointments appointmentDate={val?.appointmentDate}
-                          serviceTime={val?.arrivalTime} 
+                          arrivalTime={formatTime12(val?.arrivalTime)}
                           serviceProvider={val.stylerData?.businessName}
                           stylerId={val.stylerData?.stylerId}
                           serviceType={val.subServiceData?.serviceTypeName || "Service"}
@@ -74,7 +75,7 @@ const Dashboard = ({ setPageTitle }) => {
                     </div>
                     <div className="col-span-4 text-end  grid">
                       <div><span className="font-semibold">{val?.price || val.subServiceData?.price}</span> <span className=" text-gray-400">CAD</span></div>
-                      <div><span className="font-semibold text-black/50 text-sm">Time:</span> <span className=" text-gray-400 text-sm">{val?.arrivalTime}</span></div>
+                      <div><span className="font-semibold text-black/50 text-sm">Time:</span> <span className=" text-gray-400 text-sm">{formatTime12(val?.arrivalTime)}</span></div>
                       <div><span className="font-semibold text-black/50 text-sm">Date:</span> <span className=" text-gray-400 text-sm">{val?.appointmentDate}</span></div>
                     </div>
                     {val?.statusCode === "0" && (

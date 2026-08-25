@@ -70,6 +70,7 @@ const SavedStylist = ({ setPageTitle }) => {
                   distance={styler.distanceKm}
                   rating={styler.averageRating}
                   reviews={styler.reviewCount}
+                  payoutReady={styler.payoutReady}
                 />
                 <button
                   type="button"
