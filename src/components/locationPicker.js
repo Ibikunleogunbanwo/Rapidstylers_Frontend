@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import Modal from "./modals";
 import HeroSelect from "./heroSelect";
 import Input from "./input";
@@ -52,7 +53,7 @@ const LocationPicker = ({ onClose }) => {
     window.location.reload();
   };
 
-  return (
+  return createPortal(
     <Modal isVisible onClose={onClose} modalTitle={"Change location"} width={"md:w-[45%]"}>
       <div className="text-sm text-black/70">
         Professionals are matched to the area you choose. Leave the city blank
@@ -73,15 +74,15 @@ const LocationPicker = ({ onClose }) => {
         placeholder={"e.g. Calgary"}
         onChange={(e) => setCity(e.target.value)}
       />
-      <div className="flex items-center justify-between pt-2">
+      <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between pt-2 gap-3">
         <button
           type="button"
           onClick={handleDetect}
-          className="text-xs text-brand underline"
+          className="text-xs text-brand underline self-start sm:self-auto"
         >
           Use my current location
         </button>
-        <div className="flex gap-3">
+        <div className="flex gap-3 justify-end sm:justify-start">
           <button
             type="button"
             onClick={onClose}
@@ -99,7 +100,8 @@ const LocationPicker = ({ onClose }) => {
           </button>
         </div>
       </div>
-    </Modal>
+    </Modal>,
+    document.body
   );
 };
 

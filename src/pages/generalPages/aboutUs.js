@@ -1,5 +1,5 @@
 import Hero from "./heroSection";
-import about1 from "../../assets/images/about-1.jpg";
+import about1 from "../../assets/images/about-1.webp";
 import about2 from "../../assets/images/about-2.jpg"
 import Footer from "../../components/footer";
 import { Link } from "react-router-dom";

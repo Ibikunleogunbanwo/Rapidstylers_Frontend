@@ -132,8 +132,8 @@ const SecureAccount = () => {
       </div>
       {dashboardModal && (
 
-      <div className="fixed bg-black/60 h-screen w-full px-4 flex items-center justify-center z-50">
-      <div className="bg-white rounded-md w-full md:w-[35%] flex flex-col items-center justify-center">
+      <div className="fixed inset-0 z-50 bg-black/60 px-4 py-4 sm:py-6 flex items-start sm:items-center justify-center overflow-y-auto">
+      <div className="bg-white rounded-md w-full md:w-[35%] flex flex-col items-center justify-center my-auto">
         <div className="">
           <Lottie animationData={successAnim} className="h-48"/>
         </div>
