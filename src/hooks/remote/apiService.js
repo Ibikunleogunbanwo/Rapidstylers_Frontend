@@ -263,6 +263,17 @@ export class APIService {
         }
     }
 
+    /** Stylist removes one of their own portfolio photos (ownership enforced server-side). */
+    static async deleteOwnPortfolioImage(portfolioId){
+        try{
+            return await ApiClient.post("/delete_portfolio_image", { portfolioId });
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+
     static async stylersBaseOnCategory(categoryId){
         try{
             return await ApiClient.get(`/search_by_service?serviceTypeId=${encodeURIComponent(categoryId)}`)

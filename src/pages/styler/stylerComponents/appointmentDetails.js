@@ -1,13 +1,9 @@
-import close from "../../../assets/svg-icons/closeBlack.svg"
+import Modal from "../../../components/modals"
 
 const AppointmentDetails = ({onclose}) => {
     return ( 
-        <div className="h-screen fixed top-0 left-0 bg-black/50 w-full z-50 p-4 flex justify-center items-center">
-            <div className="bg-white max-h-[90%] overflow-auto w-full md:w-1/2 lg:w-1/3 rounded-md">
-              <div className="p-4 md:p-6 border-b font-medium bg-white sticky top-0 flex justify-between items-center text-sm">
-                <div>Appointment details</div><div className="cursor-pointer"><img src={close} alt="" className="h-4" onClick={onclose}/></div>
-              </div>
-              <div className="p-4 md:p-6 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-4">
+        <Modal isVisible onClose={onclose} modalTitle="Appointment details" width="md:w-1/2 lg:w-1/3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-4">
                 <div className="text-sm md:col-span-2">
                   <div className="text-gray-400">Client name:</div>
                   <div>John Wick <span className="text-gray-600 font-medium text-xs">(+3 guests)</span></div>
@@ -37,12 +33,11 @@ const AppointmentDetails = ({onclose}) => {
                   <div>$20:00</div>
                 </div>
               </div>
-              <div className="p-4 sticky bottom-0">
+              <div className="sticky bottom-0 bg-white p-4 -mx-6 -mb-8">
                 {/* <div className="bg-emerald-500 rounded-md text-xs text-white p-5 text-center">Confirm appointment</div> */}
                 <div className="bg-rose-100 rounded-md text-xs text-rose-500 p-5 text-center">Cancel appointment</div>
               </div>
-            </div>
-        </div>
+        </Modal>
      );
 }
  
