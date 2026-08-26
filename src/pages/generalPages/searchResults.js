@@ -22,11 +22,28 @@ const SearchResults = () => {
   const name = searchParams.get("name") || "";
   const province = searchParams.get("province") || "";
   const city = searchParams.get("city") || "";
+  const openNow = searchParams.get("openNow") === "true";
+
+  const isOpenNow = React.useCallback((stylist) => {
+    if (!openNow) return true;
+    const now = new Date();
+    const blocked = (stylist.exceptions || []).some((exception) => exception.blockedDate === now.toISOString().slice(0, 10));
+    if (blocked) return false;
+    const weekday = String(now.getDay());
+    const minutes = now.getHours() * 60 + now.getMinutes();
+    return (stylist.availability || []).some((slot) => {
+      if (String(slot.dayOfWeek) !== weekday) return false;
+      const [startHour, startMinute] = String(slot.startTime || "").split(":").map(Number);
+      const [endHour, endMinute] = String(slot.endTime || "").split(":").map(Number);
+      return minutes >= startHour * 60 + startMinute && minutes < endHour * 60 + endMinute;
+    });
+  }, [openNow]);
 
   const [stylists, setStylists] = useState([]);
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState([]);
   const [activeServiceId, setActiveServiceId] = useState(serviceTypeId);
+  const [openNowFilter, setOpenNowFilter] = useState(openNow);
   const { savedIds, loading: savedLoading, toggleSaved } = useSavedStylists();
 
   // Load service type categories for the filter dropdown
@@ -47,6 +64,7 @@ const SearchResults = () => {
   // Fetch results when params change
   useEffect(() => {
     setActiveServiceId(serviceTypeId);
+    setOpenNowFilter(openNow);
     const run = async () => {
       setLoading(true);
       try {
@@ -58,7 +76,8 @@ const SearchResults = () => {
             parseFloat(lng),
             parseFloat(radius),
             serviceTypeId,
-            city
+            city,
+            { openNow }
           );
           results = res.data?.data || [];
         } else if (serviceTypeId) {
@@ -70,6 +89,18 @@ const SearchResults = () => {
         } else if (province) {
           const res = await APIService.searchByProvince(province);
           results = res.data?.data || [];
+        }
+
+        if (openNow && !(lat && lng)) {
+          const detailed = await Promise.all(results.map(async (stylist) => {
+            try {
+              const detail = await APIService.singleStylerData(stylist.stylerId || stylist.id);
+              return { ...stylist, ...(detail.data?.data?.stylerInformation || {}), ...detail.data?.data };
+            } catch (_) {
+              return stylist;
+            }
+          }));
+          results = detailed.filter(isOpenNow);
         }
 
         // Client-side secondary filter by province
@@ -88,7 +119,7 @@ const SearchResults = () => {
       }
     };
     run();
-  }, [lat, lng, radius, serviceTypeId, name, province, city]);
+  }, [lat, lng, radius, serviceTypeId, name, province, city, openNow, isOpenNow]);
 
   // Re-filter by service type from the dropdown on the results page
   const handleServiceFilter = (e) => {
@@ -103,6 +134,15 @@ const SearchResults = () => {
       params.delete("serviceTypeId");
       params.delete("serviceTypeName");
     }
+    navigate(`/search?${params.toString()}`);
+  };
+
+  const handleOpenNowChange = (event) => {
+    const nextValue = event.target.checked;
+    setOpenNowFilter(nextValue);
+    const params = new URLSearchParams(searchParams);
+    if (nextValue) params.set("openNow", "true");
+    else params.delete("openNow");
     navigate(`/search?${params.toString()}`);
   };
 
@@ -131,6 +171,7 @@ const SearchResults = () => {
   if (radius && lat) pills.push({ label: `Within ${radius} km`, key: "radius" });
   if (name) pills.push({ label: `"${name}"`, key: "name" });
   if (province) pills.push({ label: province, key: "province" });
+  if (openNow) pills.push({ label: "Open now", key: "openNow" });
 
   const serviceOptions = [
     { value: "", label: "All services" },
@@ -198,6 +239,16 @@ const SearchResults = () => {
               />
             </svg>
           </div>
+
+          <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm hover:border-brand/40">
+            <input
+              type="checkbox"
+              checked={openNowFilter}
+              onChange={handleOpenNowChange}
+              className="h-4 w-4 rounded border-gray-300 text-brand focus:ring-brand"
+            />
+            Open now
+          </label>
 
           {/* Active filter pills */}
           {pills.map((pill) => (

@@ -4,9 +4,10 @@ import React, { useState } from "react";
 import { APIService } from "../../../hooks/remote/apiService";
 import { showSuccessToastMessage } from "../../../utils/constant";
 
-const Appointments = ({appointmentDate, arrivalTime, serviceProvider, serviceType, businessAddress,serviceName, numberOfPeople, appointmentStatus, appointmentPrice, servicePrice, travelFee, includedTravelKm, billableTravelKm, travelDistanceKm, extraTravelRatePerKm, appointmentId, statusCode}) => {
+const Appointments = ({appointmentDate, arrivalTime, serviceProvider, serviceType, businessAddress,serviceName, numberOfPeople, appointmentStatus, appointmentPrice, servicePrice, travelFee, includedTravelKm, billableTravelKm, travelDistanceKm, extraTravelRatePerKm, appointmentId, statusCode, paymentStatus, paymentFailureCode}) => {
   const [menuVisible, setMenuVisible] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  const [retryingPayment, setRetryingPayment] = useState(false);
 
   // Function to toggle the menu visibility
   const toggleMenu = () => {
@@ -19,6 +20,20 @@ const Appointments = ({appointmentDate, arrivalTime, serviceProvider, serviceTyp
   };
 
   const canCancel = statusCode === "1" || statusCode === "3";
+
+  const handleRetryPayment = async () => {
+    if (!appointmentId || retryingPayment) return;
+    setRetryingPayment(true);
+    try {
+      await APIService.retryAppointmentPayment(appointmentId);
+      showSuccessToastMessage("Payment completed and your appointment is confirmed");
+      setTimeout(() => window.location.reload(), 1200);
+    } catch (error) {
+      // APIService displays the actionable payment error.
+    } finally {
+      setRetryingPayment(false);
+    }
+  };
 
   const handleCancelAppointment = async () => {
     if (!appointmentId || cancelling) return;
@@ -151,6 +166,28 @@ const Appointments = ({appointmentDate, arrivalTime, serviceProvider, serviceTyp
                 <span className="text-black/50">Appointment status:</span>
                 <span className="">{appointmentStatus}</span>
               </div>
+              {paymentStatus && (
+                <div className="col-span-2 rounded-md bg-amber-50 border border-amber-200 px-3 py-2 text-amber-800">
+                  <span className="font-semibold">Payment: </span>
+                  {paymentStatus === "PAYMENT_ACCEPTED_SCHEDULED"
+                    ? "Payment will be processed 48 hours before the appointment."
+                    : paymentStatus === "PAYMENT_REQUIRES_ACTION"
+                    ? "Payment authentication is required."
+                    : paymentStatus === "PAYMENT_FAILED"
+                    ? "Payment could not be completed."
+                    : paymentStatus}
+                  {["PAYMENT_FAILED", "PAYMENT_REQUIRES_ACTION"].includes(paymentStatus) && (
+                    <button
+                      type="button"
+                      onClick={handleRetryPayment}
+                      className="ml-2 font-semibold underline"
+                      disabled={retryingPayment}
+                    >
+                      {retryingPayment ? "Retrying…" : "Retry payment"}
+                    </button>
+                  )}
+                </div>
+              )}
               <div className="col-span-2 mt-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {canCancel && (

@@ -8,6 +8,15 @@ import { useStylerSignup } from "../../../context/StylerSignupContext";
 import { APIService } from "../../../hooks/remote/apiService";
 
 /* ── Zod schema ─────────────────────────────────────────────────────── */
+const formatCanadianPhone = (value) => {
+  const digits = (value || "").replace(/\D/g, "").replace(/^1(?=\d{10}$)/, "").slice(0, 10);
+  if (digits.length < 4) return digits;
+  if (digits.length < 7) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+};
+
+const phoneDigits = (value) => (value || "").replace(/\D/g, "").replace(/^1(?=\d{10}$)/, "");
+
 const personalSchema = z.object({
   firstname: z
     .string()
@@ -24,14 +33,9 @@ const personalSchema = z.object({
   phoneNumber: z
     .string()
     .min(1, "Phone number is required")
-    .regex(/^[0-9]+$/, "Phone number can only contain digits")
     .refine(
-      (val) => val.length === 10 || val.length === 11,
-      "Enter a valid Canadian phone number (10 digits, or 11 with leading 1)"
-    )
-    .refine(
-      (val) => val.length !== 11 || val.startsWith("1"),
-      "11-digit numbers must start with 1"
+      (val) => phoneDigits(val).length === 10,
+      "Enter a valid Canadian phone number, e.g. (587) 555-1234"
     ),
 });
 
@@ -71,7 +75,7 @@ const StylerPersonalDetails = () => {
       if (res.data?.statusCode === "200") {
         // Persist the signup email so a refresh mid-flow doesn't lose it.
         sessionStorage.setItem("stylerSignupEmail", values.emailAddress);
-        updateData(values);
+        updateData({ ...values, phoneNumber: phoneDigits(values.phoneNumber) });
         navigate("/styler-signup/verify-email");
       }
       // Error toasts are handled by APIService.extractError
@@ -131,7 +135,7 @@ const StylerPersonalDetails = () => {
               placeholder="e.g. 5875551234"
               inputName="phoneNumber"
               inputValue={values.phoneNumber}
-              inputOnChange={handleChange}
+              inputOnChange={(event) => handleChange({ target: { name: "phoneNumber", value: formatCanadianPhone(event.target.value) } })}
               inputOnBlur={handleBlur}
               inputError={touched.phoneNumber && errors.phoneNumber ? errors.phoneNumber : ""}
             />
