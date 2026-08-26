@@ -23,6 +23,7 @@ export function StylerSignupProvider({ children }) {
     lastname: "",
     emailAddress: "",
     phoneNumber: "",
+    agreeToTerms: false,
 
     // Step 2 — business details
     serviceTypeId: "",

@@ -84,7 +84,7 @@ const PersonalDetails = () => {
       // Persist the single-line address in Canadian convention — the backend
       // stores address + state (province) + country for user accounts.
       const address = composeCanadianAddress(values);
-      let userProfileData = {firstname,lastname, country, address, state: values.province, phoneNumber: phoneDigits(phoneNumber), emailAddress};
+      let userProfileData = {firstname,lastname, country, address, state: values.province, phoneNumber: phoneDigits(phoneNumber), emailAddress, agreeToTerms: values.agreeToTerms};
       sessionStorage.setItem('userProfileData', JSON.stringify(userProfileData));
       navigate("/secureAccount")
     }

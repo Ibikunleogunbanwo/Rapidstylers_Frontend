@@ -54,9 +54,9 @@ const SecureAccount = () => {
           return;
         }
         // Fall back to the persisted signup email if the profile snapshot lacks it.
-        const { firstname, lastname, country, address, state, phoneNumber, emailAddress } = userProfileData;
+        const { firstname, lastname, country, address, state, phoneNumber, emailAddress, agreeToTerms } = userProfileData;
         const finalEmailAddress = emailAddress || sessionStorage.getItem('signupEmail') || '';
-        let userRegistrationData = { firstname, lastname, country, address, state, emailAddress: finalEmailAddress, phoneNumber, password };
+        let userRegistrationData = { firstname, lastname, country, address, state, emailAddress: finalEmailAddress, phoneNumber, password, agreeToTerms: agreeToTerms === true };
         const { payload } = await dispatch(createUserAccount(userRegistrationData));
         if(payload.statusCode === "200"){
           setDashboardModal(true);

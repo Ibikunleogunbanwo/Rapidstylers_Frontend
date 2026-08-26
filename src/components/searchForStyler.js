@@ -11,6 +11,7 @@ const SearchForStyler = () => {
     const [serviceId, setServiceId] = useState("");
     const [query, setQuery] = useState("");
     const [radius, setRadius] = useState(25);
+    const [openNow, setOpenNow] = useState(false);
     const navigate = useNavigate();
     const { location: userLocation } = useUserLocation();
 
@@ -51,6 +52,7 @@ const SearchForStyler = () => {
             if (selected) params.set("serviceTypeName", selected.label);
         }
         if (query.trim()) params.set("name", query.trim());
+        if (openNow) params.set("openNow", "true");
         if (userLocation && radius) {
             params.set("lat", userLocation.latitude);
             params.set("lng", userLocation.longitude);
@@ -86,6 +88,15 @@ const SearchForStyler = () => {
             selectValue={radius}
             onChange={(e) => setRadius(e.target.value)}
           />
+          <label className="inline-flex items-center gap-2 whitespace-nowrap px-2 text-xs font-semibold text-gray-700">
+            <input
+              type="checkbox"
+              checked={openNow}
+              onChange={(e) => setOpenNow(e.target.checked)}
+              className="h-4 w-4 rounded border-gray-300 text-brand focus:ring-brand"
+            />
+            Open now
+          </label>
           <Buttons btnType={"primary"} btnText={"Search"} type={"submit"} />
         </div>
       </form>

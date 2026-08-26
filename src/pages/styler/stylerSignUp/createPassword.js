@@ -97,6 +97,7 @@ const CreatePassword = () => {
       const payload = {
         ...formData,
         password: values.password,
+        agreeToTerms: values.agreeToTerms === true,
         profileImageUrl,
         identificationImageUrl,
       };
