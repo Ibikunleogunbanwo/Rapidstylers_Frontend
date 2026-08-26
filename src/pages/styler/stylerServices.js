@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import close from "../../assets/svg-icons/closeBlack.svg";
 import Input from "../../components/input";
 import Buttons from "../../components/button";
+import Modal from "../../components/modals";
 import { APIService } from "../../hooks/remote/apiService";
 import { getAuthToken, showErrorToastMessage, showSuccessToastMessage } from "../../utils/constant";
 
@@ -139,43 +139,36 @@ const Services = () => {
         </table>
       </div>
 
-      {addServiceModal && (
-        <div className="h-screen fixed top-0 left-0 bg-black/50 w-full z-50 p-4 flex justify-center items-center">
-          <div className="bg-white max-h-[90%] overflow-auto w-full md:w-1/2 lg:w-1/3 rounded-md">
-            <div className="p-4 md:p-6 border-b font-medium bg-white sticky top-0 flex justify-between items-center text-sm">
-              <div>{editingService ? "Edit service" : "Add new service"}</div>
-              <button type="button" className="cursor-pointer" onClick={closeServiceModal} aria-label="Close">
-                <img src={close} alt="" className="h-4" />
-              </button>
-            </div>
-            <div className="p-4 md:p-6 grid gap-4">
-              <Input label="Service name:" placeholder="e.g. Knotless braids" value={name} onChange={(e) => setName(e.target.value)} />
-              <Input label="Amount:" placeholder="$0.00" value={price} onChange={(e) => setPrice(e.target.value)} />
-              <div>
-                <label className="font-medium text-sm" htmlFor="service-duration">Duration:</label>
-                <select
-                  id="service-duration"
-                  value={durationMinutes}
-                  onChange={(e) => setDurationMinutes(e.target.value)}
-                  className="mt-1 w-full p-3 text-sm rounded-md border border-[#c4c4c440] bg-[#c4c4c410] focus:outline-brand"
-                >
-                  {Array.from({ length: 32 }, (_, index) => (index + 1) * 15).map((minutes) => (
-                    <option key={minutes} value={minutes}>{formatDuration(minutes)}</option>
-                  ))}
-                </select>
-                <p className="mt-1 text-xs text-gray-500">Choose how long this service blocks the calendar.</p>
-              </div>
-              {modalError && (
-                <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700 flex items-start gap-2">
-                  <svg className="w-4 h-4 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
-                  <span>{modalError}</span>
-                </div>
-              )}
-              <Buttons btnType="primary" btnText={saving ? "Saving..." : editingService ? "Save changes" : "Add service"} onClick={addService} disabled={saving} />
-            </div>
-          </div>
+      <Modal
+        isVisible={addServiceModal}
+        onClose={closeServiceModal}
+        modalTitle={editingService ? "Edit service" : "Add new service"}
+        width="md:w-1/2 lg:w-1/3"
+      >
+        <Input label="Service name:" placeholder="e.g. Knotless braids" value={name} onChange={(e) => setName(e.target.value)} />
+        <Input label="Amount:" placeholder="$0.00" value={price} onChange={(e) => setPrice(e.target.value)} />
+        <div>
+          <label className="font-medium text-sm" htmlFor="service-duration">Duration:</label>
+          <select
+            id="service-duration"
+            value={durationMinutes}
+            onChange={(e) => setDurationMinutes(e.target.value)}
+            className="mt-1 w-full p-3 text-sm rounded-md border border-[#c4c4c440] bg-[#c4c4c410] focus:outline-brand"
+          >
+            {Array.from({ length: 32 }, (_, index) => (index + 1) * 15).map((minutes) => (
+              <option key={minutes} value={minutes}>{formatDuration(minutes)}</option>
+            ))}
+          </select>
+          <p className="mt-1 text-xs text-gray-500">Choose how long this service blocks the calendar.</p>
         </div>
-      )}
+        {modalError && (
+          <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700 flex items-start gap-2">
+            <svg className="w-4 h-4 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
+            <span>{modalError}</span>
+          </div>
+        )}
+        <Buttons btnType="primary" btnText={saving ? "Saving..." : editingService ? "Save changes" : "Add service"} onClick={addService} disabled={saving} />
+      </Modal>
     </div>
   );
 };

@@ -13,7 +13,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { getUserDetails, userAuthenticate, verifySignUpEmailAddress } from "../../hooks/local/userReducer";
 import PasswordInput from "../../components/passwordInput";
 import SearchForStyler from "../../components/searchForStyler";
-import elevate from "../../assets/images/elevate.png"
+import elevate from "../../assets/images/elevate.webp"
 import { showSuccessToastMessage } from "../../utils/constant";
 import { getPeriodOfDay } from "../../utils/utility";
 

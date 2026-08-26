@@ -122,6 +122,42 @@ describe("RapidStylers API contracts", () => {
     expect(ApiClient.post).toHaveBeenCalledWith("/admin/update_review_moderation", { reviewId: 8, action: "APPROVED" });
   });
 
+  test("search queries URL-encode city, name, and service ids so special characters stay conformant", async () => {
+    await APIService.searchNearby(43.7, -79.4, 25, "SV&C2", " Toronto & Suburbs ", { openNow: true });
+    await APIService.searchForStyler("Men's & Women's Cuts");
+    await APIService.searchByProvince("British Columbia");
+    await APIService.stylersBaseOnCategory("CAT-1");
+    await APIService.singleStylerData("STYLER-1");
+
+    expect(ApiClient.get).toHaveBeenNthCalledWith(
+      1,
+      "/search_nearby?lat=43.7&lng=-79.4&radius=25&serviceTypeId=SV%26C2&city=Toronto%20%26%20Suburbs&openNow=true"
+    );
+    // encodeURIComponent preserves apostrophes; spaces and & are percent-encoded.
+    expect(ApiClient.get).toHaveBeenNthCalledWith(
+      2,
+      "/search_styler?businessName=Men's%20%26%20Women's%20Cuts"
+    );
+    expect(ApiClient.get).toHaveBeenNthCalledWith(
+      3,
+      "/search_by_province?province=British%20Columbia"
+    );
+    expect(ApiClient.get).toHaveBeenNthCalledWith(
+      4,
+      "/search_by_service?serviceTypeId=CAT-1"
+    );
+    expect(ApiClient.get).toHaveBeenNthCalledWith(
+      5,
+      "/single_styler?stylerId=STYLER-1"
+    );
+  });
+
+  test("search_for_styler trims whitespace before encoding the business name", async () => {
+    await APIService.searchForStyler("   Bravo Salon   ");
+
+    expect(ApiClient.get).toHaveBeenCalledWith("/search_styler?businessName=Bravo%20Salon");
+  });
+
   test("stylist service creation sends duration while ownership stays token-derived", async () => {
     const service = { name: "Knotless braids", price: "120", durationMinutes: "90" };
 

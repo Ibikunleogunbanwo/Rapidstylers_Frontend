@@ -311,7 +311,7 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
       </div>
       {/* book appointment form */}
       <div
-        className={`fixed w-full h-[100vh] top-0 bottom-0 left-0 right-0 ${
+        className={`fixed z-50 w-full h-[100vh] top-0 bottom-0 left-0 right-0 ${
           bookAppointmentForm ? "block" : "hidden"
         }`}
       >

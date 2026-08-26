@@ -263,9 +263,20 @@ export class APIService {
         }
     }
 
+    /** Stylist removes one of their own portfolio photos (ownership enforced server-side). */
+    static async deleteOwnPortfolioImage(portfolioId){
+        try{
+            return await ApiClient.post("/delete_portfolio_image", { portfolioId });
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+
     static async stylersBaseOnCategory(categoryId){
         try{
-            return await ApiClient.get(`/search_by_service?serviceTypeId=${categoryId}`)
+            return await ApiClient.get(`/search_by_service?serviceTypeId=${encodeURIComponent(categoryId)}`)
         }
         catch(error){
             APIService.extractError(error);
@@ -274,7 +285,7 @@ export class APIService {
     }
     static async singleStylerData(stylerId){
         try{
-            return await ApiClient.get(`/single_styler?stylerId=${stylerId}`)
+            return await ApiClient.get(`/single_styler?stylerId=${encodeURIComponent(stylerId)}`)
         }
         catch(error){
             APIService.extractError(error);
@@ -284,7 +295,8 @@ export class APIService {
 
     static async searchForStyler(businessName){
         try{
-            return await ApiClient.get(`/search_styler?businessName=${businessName}`)
+            const query = String(businessName || "").trim();
+            return await ApiClient.get(`/search_styler?businessName=${encodeURIComponent(query)}`)
         }
         catch(error){
             APIService.extractError(error);
@@ -825,9 +837,9 @@ export class APIService {
     }
     static async searchNearby(lat, lng, radius = 25, serviceTypeId = "", city = "", filters = {}){
         try{
-            let url = `/search_nearby?lat=${lat}&lng=${lng}&radius=${radius}`;
-        if(serviceTypeId) url += `&serviceTypeId=${serviceTypeId}`;
-        if(city) url += `&city=${encodeURIComponent(city)}`;
+            let url = `/search_nearby?lat=${encodeURIComponent(lat)}&lng=${encodeURIComponent(lng)}&radius=${encodeURIComponent(radius)}`;
+        if(serviceTypeId) url += `&serviceTypeId=${encodeURIComponent(serviceTypeId)}`;
+        if(city) url += `&city=${encodeURIComponent(String(city).trim())}`;
         if(filters.requestedDate) url += `&requestedDate=${encodeURIComponent(filters.requestedDate)}`;
         if(filters.requestedTime) url += `&requestedTime=${encodeURIComponent(filters.requestedTime)}`;
         if(filters.durationMinutes) url += `&durationMinutes=${encodeURIComponent(filters.durationMinutes)}`;
