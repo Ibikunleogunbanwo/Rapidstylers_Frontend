@@ -116,6 +116,16 @@ const SearchResults = () => {
           );
         }
 
+        // Client-side secondary filter by city. When no lat/lng is present the
+        // search runs province-wide, so without this the heading would say
+        // "Professionals in Calgary" while showing the whole province.
+        if (city && !(lat && lng)) {
+          const needle = city.trim().toLowerCase();
+          results = results.filter(
+            (s) => String(s.city || "").trim().toLowerCase() === needle
+          );
+        }
+
         setStylists(results);
       } catch (error) {
         setStylists([]);
