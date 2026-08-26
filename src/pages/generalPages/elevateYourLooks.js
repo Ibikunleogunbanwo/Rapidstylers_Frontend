@@ -16,22 +16,8 @@ const CATEGORIES = [
   "Nail tech",
   "Makeup",
   "Eyelash extensions",
-];
-
-// Static fallback for when the backend is unreachable
-const FALLBACK_IMAGES = [
-  "https://img.freepik.com/free-photo/ai-generated-cute-girl-pic_23-2150649916.jpg?t=st=1703594682~exp=1703598282~hmac=73526701750bbf321b834567f522149fc132a315987dd64567366c01a2be4836&w=360",
-  "https://img.freepik.com/free-photo/young-adult-woman-with-curly-brown-hair-smiling-generated-by-ai_188544-39044.jpg?t=st=1703595330~exp=1703598930~hmac=238e53df5c36bc1b7219af2f043fea17f6bb9eebcdb6ef11107f66f2719f0957&w=1060",
-  "https://img.freepik.com/free-photo/portrait-person-daily-life-new-york-city_23-2150820012.jpg?t=st=1703594718~exp=1703598318~hmac=eb7455451f857b4b11684113482fe85ab7182b74123ea6c781874420e26667cc&w=1060",
-  "https://img.freepik.com/free-photo/close-up-beautiful-girl-portrait_23-2150799905.jpg?t=st=1703594724~exp=1703598324~hmac=0a4b6d64e8377b4e9f5259f752476a627b156b51653fa76480baff4508c11947&w=740",
-  "https://img.freepik.com/free-photo/beautiful-fashion-model-with-long-curly-blond-hair-elegance-generated-by-artificial-intelligence_25030-62882.jpg?t=st=1703594727~exp=1703598327~hmac=0e889a84417724acfbadef154a79e9fba78a4e24abfbab6ee30a04e470533547&w=1060",
-  "https://img.freepik.com/free-photo/close-up-beautiful-girl-portrait_23-2150799885.jpg?t=st=1703590977~exp=1703594577~hmac=87441f4d6826feabf08c8b51120f0ec62748bb75a912236d8e56d5b547f03b9d&w=740",
-  "https://img.freepik.com/premium-photo/happy-woman-with-beautiful-hair-background-blooming-garden-generative-ai_272595-3958.jpg?w=900",
-  "https://img.freepik.com/free-photo/ai-generated-cute-girl-pic_23-2150649916.jpg?t=st=1703594682~exp=1703598282~hmac=73526701750bbf321b834567f522149fc132a315987dd64567366c01a2be4836&w=360",
-  "https://img.freepik.com/free-photo/young-adult-woman-with-curly-brown-hair-smiling-generated-by-ai_188544-39044.jpg?t=st=1703595330~exp=1703598930~hmac=238e53df5c36bc1b7219af2f043fea17f6bb9eebcdb6ef11107f66f2719f0957&w=1060",
-  "https://img.freepik.com/free-photo/portrait-person-daily-life-new-york-city_23-2150820012.jpg?t=st=1703594718~exp=1703598318~hmac=eb7455451f857b4b11684113482fe85ab7182b74123ea6c781874420e26667cc&w=1060",
-  "https://img.freepik.com/free-photo/close-up-beautiful-girl-portrait_23-2150799905.jpg?t=st=1703594724~exp=1703598324~hmac=0a4b6d64e8377b4e9f5259f752476a627b156b51653fa76480baff4508c11947&w=740",
-  "https://img.freepik.com/free-photo/beautiful-fashion-model-with-long-curly-blond-hair-elegance-generated-by-artificial-intelligence_25030-62882.jpg?t=st=1703594727~exp=1703598327~hmac=0e889a84417724acfbadef154a79e9fba78a4e24abfbab6ee30a04e470533547&w=1060",
+  "Natural hair",
+  "Locs",
 ];
 
 const PER_PAGE = 12;
@@ -49,6 +35,8 @@ const ElevateLooks = () => {
   const [searchQuery, setSearchQuery] = useState("");
   // True when the keyword had no text-level match and the API returned closest matches.
   const [fuzzy, setFuzzy] = useState(false);
+  // True when the gallery request itself failed (network/server), vs. simply empty.
+  const [loadError, setLoadError] = useState(false);
 
   const loadImages = (category, pageNum, append, query) => {
     const setter = append ? setLoadingMore : setLoading;
@@ -80,20 +68,24 @@ const ElevateLooks = () => {
             }
           }
           setFuzzy(isFuzzy);
+          setLoadError(false);
           setImages((prev) => (append && Array.isArray(prev) ? [...prev, ...mapped] : mapped));
           // A full page means there may be more — a short page means we reached the end.
           setHasMore(photos.length >= PER_PAGE);
         } else if (!append) {
-          // An active search with no matches shows the empty state ([]);
-          // no search at all falls back to the static grid (null).
+          // No uploads for this category/query — show the empty state.
           setFuzzy(false);
-          setImages(query && query.trim() ? [] : null);
+          setLoadError(false);
+          setImages([]);
           setHasMore(false);
         }
       })
       .catch(() => {
-        if (!append) setImages(null);
-        setHasMore(false);
+        if (!append) {
+          setImages([]);
+          setLoadError(true);
+          setHasMore(false);
+        }
       })
       .finally(() => setter(false));
   };
@@ -129,7 +121,7 @@ const ElevateLooks = () => {
     setSearchQuery("");
   };
 
-  const visibleImages = images || FALLBACK_IMAGES;
+  const visibleImages = images || [];
   const [lightboxIndex, setLightboxIndex] = useState(null);
 
   // Keyboard navigation while the lightbox is open.
@@ -216,12 +208,30 @@ const ElevateLooks = () => {
           {loading && (
             <p className="text-sm text-gray-400 py-4">Loading images…</p>
           )}
-          {!loading && images !== null && images.length === 0 && searchQuery && (
+          {!loading && images !== null && images.length === 0 && (
             <div className="rounded-2xl border border-dashed border-gray-200 bg-white/60 py-16 text-center">
-              <p className="text-base font-bold text-gray-700">No results for "{searchQuery}"</p>
-              <p className="mt-1 text-sm text-gray-400">
-                Try a different keyword, or clear the search to browse all {activeCategory} looks.
-              </p>
+              {loadError ? (
+                <>
+                  <p className="text-base font-bold text-gray-700">Couldn't load the gallery</p>
+                  <p className="mt-1 text-sm text-gray-400">
+                    Please refresh to try again. New professional work appears here as soon as it's posted.
+                  </p>
+                </>
+              ) : searchQuery ? (
+                <>
+                  <p className="text-base font-bold text-gray-700">No results for "{searchQuery}"</p>
+                  <p className="mt-1 text-sm text-gray-400">
+                    Try a different keyword, or clear the search to browse all {activeCategory} work.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="text-base font-bold text-gray-700">No {activeCategory} work posted yet</p>
+                  <p className="mt-1 text-sm text-gray-400">
+                    This gallery is filled by verified professionals. Be the first to share your work.
+                  </p>
+                </>
+              )}
             </div>
           )}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-2 lg:gap-1">
@@ -229,31 +239,73 @@ const ElevateLooks = () => {
               const src = typeof img === "string" ? img : img.src?.medium || img.src?.large || img.src?.original || img.src || "";
               const alt = typeof img === "string" ? activeCategory : img.alt;
               const isStylerWork = !(typeof img === "string") && img.source === "stylist";
-              return (
-                <button
-                  key={i}
-                  onClick={() => setLightboxIndex(i)}
-                  className="relative aspect-[4/5] rounded-md overflow-hidden bg-gray-100 cursor-zoom-in group"
-                  aria-label={`View ${alt}`}
-                >
+              const stylerId = typeof img === "string" ? "" : img.stylerId || "";
+              const photographer = typeof img === "string" ? "" : img.photographer || "";
+              // Approved stylist work links straight to the professional's profile.
+              const profileHref = isStylerWork && stylerId
+                ? `/stylistProfile/${btoa(stylerId)}/${btoa(photographer || "stylist")}`
+                : null;
+              const cardInner = (
+                <>
                   <img
                     src={src}
                     alt={alt}
                     className="absolute inset-0 h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
                     loading="lazy"
                   />
-                  {isStylerWork && (
-                    <span className="absolute bottom-2 left-2 text-[10px] uppercase tracking-wide text-white bg-black/60 backdrop-blur rounded-full px-2 py-0.5">
-                      By {img.photographer || "a stylist"}
+                  {isStylerWork && profileHref && (
+                    <span className="absolute top-2 left-2 inline-flex items-center gap-1 rounded-full bg-black/60 backdrop-blur px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
+                      <svg viewBox="0 0 20 20" fill="currentColor" className="h-3 w-3 text-emerald-400">
+                        <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd" />
+                      </svg>
+                      Verified
                     </span>
                   )}
-                </button>
+                  {isStylerWork && (
+                    <span className="absolute bottom-2 left-2 text-[10px] uppercase tracking-wide text-white bg-black/60 backdrop-blur rounded-full px-2 py-0.5 transition-colors group-hover:bg-black/80">
+                      <span className="text-white/50">By </span>
+                      {photographer || "a stylist"}
+                    </span>
+                  )}
+                </>
+              );
+              return (
+                <div key={i} className="relative aspect-[4/5] rounded-md overflow-hidden bg-gray-100 group">
+                  {profileHref ? (
+                    <a
+                      href={profileHref}
+                      className="absolute inset-0"
+                      aria-label={`View ${photographer || "this stylist"}'s profile`}
+                    >
+                      {cardInner}
+                    </a>
+                  ) : (
+                    <button
+                      onClick={() => setLightboxIndex(i)}
+                      className="absolute inset-0 cursor-zoom-in"
+                      aria-label={`View ${alt}`}
+                    >
+                      {cardInner}
+                    </button>
+                  )}
+                  {profileHref && (
+                    <button
+                      onClick={() => setLightboxIndex(i)}
+                      aria-label={`View ${alt} full size`}
+                      className="absolute top-2 right-2 flex h-8 w-8 items-center justify-center rounded-full bg-black/60 text-white transition-colors hover:bg-brand"
+                    >
+                      <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+                        <path d="M10 2a.75.75 0 01.75.75v5.5h5.5a.75.75 0 010 1.5h-5.5v5.5a.75.75 0 01-1.5 0v-5.5h-5.5a.75.75 0 010-1.5h5.5v-5.5A.75.75 0 0110 2z" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
               );
             })}
           </div>
           {images && images.length > 0 && (
             <p className="text-xs text-gray-400 mt-2">
-              Photos from Pexels {images[0]?.photographer ? `· ${images[0].photographer}` : ""}
+              Work posted by verified professionals
             </p>
           )}
           {images && hasMore && (

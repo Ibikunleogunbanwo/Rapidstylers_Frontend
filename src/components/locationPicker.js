@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { createPortal } from "react-dom";
 import Modal from "./modals";
 import HeroSelect from "./heroSelect";
 import Input from "./input";
@@ -69,7 +68,7 @@ const LocationPicker = ({ onClose }) => {
     window.location.reload();
   };
 
-  return createPortal(
+  return (
     <Modal isVisible onClose={onClose} modalTitle={"Change location"} width={"md:w-[45%]"}>
       <div className="text-sm text-black/70">
         Professionals are matched to the area you choose. Leave the city blank
@@ -121,8 +120,7 @@ const LocationPicker = ({ onClose }) => {
           </button>
         </div>
       </div>
-    </Modal>,
-    document.body
+    </Modal>
   );
 };
 
