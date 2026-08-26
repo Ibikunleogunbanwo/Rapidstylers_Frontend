@@ -44,6 +44,9 @@ const PublicStylist = lazy(() => import('./pages/users/pages/stylist'));
 const PublicStylistProfile = lazy(() => import('./pages/users/pages/stylistProfile'));
 const NotFound = lazy(() => import('./pages/generalPages/notFound'));
 const TermsAndConditions = lazy(() => import('./pages/generalPages/termsAndConditions'));
+const PrivacyPolicy = lazy(() => import('./pages/generalPages/privacyPolicy'));
+const Faqs = lazy(() => import('./pages/generalPages/faqs'));
+const ContactSupport = lazy(() => import('./pages/generalPages/contactSupport'));
 
 function App() {
   return (
@@ -74,6 +77,9 @@ function App() {
         <Route path="/secureAccount" element={<SecureAccount />} />
         <Route path="/about" element={<AboutUs />} />
         <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/faqs" element={<Faqs />} />
+        <Route path="/contact-support" element={<ContactSupport />} />
         {/* Public discovery pages. Browsing professionals does not require an account. */}
         <Route path="/stylist/:stylerTypeId/:stylerTypeName" element={<PublicStylist />} />
         <Route path="/stylistProfile/:stylerId/:stylerName" element={<PublicStylistProfile />} />

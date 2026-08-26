@@ -5,6 +5,11 @@ import AdSlot from "../../components/adSlot";
 import { APIService } from "../../hooks/remote/apiService";
 import { useSavedStylists } from "../../hooks/useSavedStylists";
 
+const displayServiceName = (value) => {
+  const label = String(value || "").trim();
+  return /^b?hairstylist$/i.test(label) ? "Hair Stylist" : label;
+};
+
 /**
  * Search results — supports radius + city + service type + name + province.
  * Shows active filter pills and a service type dropdown for re-filtering.
@@ -18,7 +23,7 @@ const SearchResults = () => {
   const lng = searchParams.get("lng");
   const radius = searchParams.get("radius") || "25";
   const serviceTypeId = searchParams.get("serviceTypeId") || "";
-  const serviceTypeName = searchParams.get("serviceTypeName") || "";
+  const serviceTypeName = displayServiceName(searchParams.get("serviceTypeName"));
   const name = searchParams.get("name") || "";
   const province = searchParams.get("province") || "";
   const city = searchParams.get("city") || "";
@@ -54,7 +59,7 @@ const SearchResults = () => {
         setCategories(
           items.map((c) => ({
             value: String(c.serviceTypeId || c.id),
-            label: c.serviceTypeName || c.serviceName || c.name,
+            label: displayServiceName(c.serviceTypeName || c.serviceName || c.name),
           }))
         );
       })
