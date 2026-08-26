@@ -1,19 +1,24 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import LocationPicker from "./locationPicker";
 
 // The picker reads the current location from context and lets the user save a
-// new one. Both are exercised here; updateLocation is only used on Save.
-jest.mock("../context/LocationContext", () => ({
-  useUserLocation: () => ({
-    location: {
-      city: "Edmonton",
-      province: "Alberta",
-      country: "Canada",
-      source: "manual",
-    },
-    updateLocation: jest.fn(),
-  }),
-}));
+// new one. Both are exercised here; updateLocation is only used on Save. The
+// mock exposes the fn as __updateLocation so tests can assert what gets saved.
+jest.mock("../context/LocationContext", () => {
+  const updateLocation = jest.fn();
+  return {
+    useUserLocation: () => ({
+      location: {
+        city: "Edmonton",
+        province: "Alberta",
+        country: "Canada",
+        source: "manual",
+      },
+      updateLocation,
+    }),
+    __updateLocation: updateLocation,
+  };
+});
 
 const MOBILE_VIEWPORT = { width: 375, height: 667 };
 
@@ -95,5 +100,74 @@ describe("LocationPicker viewport containment", () => {
     // Regression guard: the old pattern was `fixed bg-black/60 h-screen w-full`
     // with no top/left/right/bottom — exactly what broke on mobile.
     expect(overlay.className).not.toContain("h-screen");
+  });
+});
+
+describe("LocationPicker city/province reconciliation", () => {
+  const { __updateLocation } = jest.requireMock("../context/LocationContext");
+
+  beforeEach(() => {
+    __updateLocation.mockClear();
+  });
+
+  test("warns when the typed city belongs to a different province", () => {
+    render(<LocationPicker onClose={jest.fn()} />);
+
+    fireEvent.change(document.querySelector('select[name="Province"]'), {
+      target: { value: "Saskatchewan" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("e.g. Calgary"), {
+      target: { value: "Calgary" },
+    });
+
+    expect(screen.getByText(/Calgary is in Alberta/)).toBeInTheDocument();
+  });
+
+  test("saving a mismatched city auto-corrects the province", () => {
+    render(<LocationPicker onClose={jest.fn()} />);
+
+    fireEvent.change(document.querySelector('select[name="Province"]'), {
+      target: { value: "Saskatchewan" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("e.g. Calgary"), {
+      target: { value: "Calgary" },
+    });
+    fireEvent.click(screen.getByText("Save location"));
+
+    expect(__updateLocation).toHaveBeenCalledWith(
+      expect.objectContaining({ city: "Calgary", province: "Alberta" })
+    );
+  });
+
+  test("a known city with no province selected fills the province in", () => {
+    render(<LocationPicker onClose={jest.fn()} />);
+
+    fireEvent.change(document.querySelector('select[name="Province"]'), {
+      target: { value: "" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("e.g. Calgary"), {
+      target: { value: "Regina" },
+    });
+    fireEvent.click(screen.getByText("Save location"));
+
+    expect(__updateLocation).toHaveBeenCalledWith(
+      expect.objectContaining({ city: "Regina", province: "Saskatchewan" })
+    );
+  });
+
+  test("an unknown city keeps the selected province", () => {
+    render(<LocationPicker onClose={jest.fn()} />);
+
+    fireEvent.change(document.querySelector('select[name="Province"]'), {
+      target: { value: "Saskatchewan" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("e.g. Calgary"), {
+      target: { value: "Somewhereville" },
+    });
+    fireEvent.click(screen.getByText("Save location"));
+
+    expect(__updateLocation).toHaveBeenCalledWith(
+      expect.objectContaining({ province: "Saskatchewan" })
+    );
   });
 });

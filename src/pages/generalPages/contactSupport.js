@@ -37,7 +37,7 @@ const ContactSupport = () => {
 
         <div className="grid gap-4">
           <a
-            href="mailto:support@rapidstylers.com"
+            href="mailto:support@rapidstylers.ca"
             className="rounded-2xl border border-gray-100 bg-[#faf9ff] p-6 hover:border-brand/60 hover:shadow-[0_8px_30px_rgba(147,129,255,0.18)] transition-all group"
           >
             <div className="flex items-start gap-4">
@@ -50,7 +50,7 @@ const ContactSupport = () => {
               <div>
                 <p className="font-bold text-gray-900">Email us</p>
                 <p className="mt-1 text-sm text-gray-600">
-                  Write to us at support@rapidstylers.com and tell us what happened.
+                  Write to us at support@rapidstylers.ca and tell us what happened.
                 </p>
               </div>
             </div>

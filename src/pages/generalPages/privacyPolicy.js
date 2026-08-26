@@ -137,7 +137,7 @@ const PrivacyPolicy = () => {
           <section>
             <h2 className="text-lg font-bold text-gray-900 mb-2">10. Contact us</h2>
             <p>
-              Questions about your privacy? Reach us at support@rapidstylers.com
+              Questions about your privacy? Reach us at support@rapidstylers.ca
               and we will be happy to help.
             </p>
           </section>
