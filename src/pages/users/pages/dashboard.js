@@ -50,6 +50,8 @@ const Dashboard = ({ setPageTitle }) => {
                           extraTravelRatePerKm={val?.extraTravelRatePerKm}
                           appointmentId={val?.appointmentId}
                           statusCode={val?.statusCode}
+                          paymentStatus={val?.paymentStatus}
+                          paymentFailureCode={val?.paymentFailureCode}
                           key={key}
                           />
           ))}

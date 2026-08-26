@@ -666,6 +666,15 @@ export class APIService {
             throw(error);
         }
     }
+    static async retryAppointmentPayment(appointmentId){
+        try{
+            return await ApiClient.post("/retry_appointment_payment", { appointmentId });
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
     static async cancelAppointment(appointmentId){
         try{
             return await ApiClient.post("/cancel_appointment", { appointmentId });
