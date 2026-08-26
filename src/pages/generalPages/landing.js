@@ -1,16 +1,16 @@
 
 import Featured from "../../components/featuredStylists";
-import elevateLook from "../../assets/images/elevateLook.png";
+import elevateLook from "../../assets/images/elevate-look.webp";
 import scissors from "../../assets/svg-icons/scissors.svg";
 import Footer from "../../components/footer";
-import canada from "../../assets/images/canada.png";
+import canada from "../../assets/images/canada.webp";
 import canada2 from "../../assets/images/signup.jpg";
 import { Link } from "react-router-dom";
 import Hero from "./newHeroSection";
 // import rapidGIF from "../../assets/Videos/stylers.gif";
-import about from "../../assets/images/about_landing.png"
-import stylistImg1 from "../../assets/images/stylist 1.png"
-import stylistImg2 from "../../assets/images/stylist 2.png"
+import about from "../../assets/images/about-landing.webp"
+import stylistImg1 from "../../assets/images/stylist-1.webp"
+import stylistImg2 from "../../assets/images/stylist-2.webp"
 import ScrollContainer from "../../components/img-slider";
 import AdSlot from "../../components/adSlot";
 import { useEffect, useState } from "react";
@@ -125,6 +125,7 @@ const LandingPage = () => {
               <img
                 src={about}
                 alt="About RapidStylers"
+                decoding="async"
                 className="relative w-full object-cover rounded-3xl shadow-xl"
               />
               <div className="absolute -bottom-6 right-4 md:right-8 bg-black text-white rounded-2xl px-5 py-4 shadow-xl flex items-center gap-3">
@@ -170,8 +171,8 @@ const LandingPage = () => {
         {/* benefits for clients */}
         <div className="px-4 md:px-[50px] py-16 grid grid-cols-1 lg:grid-cols-2 items-center gap-6 bg-black">
           <div className="">
-            <img src={canada2} alt="" className="rounded-3xl hidden lg:block" />
-            <img src={canada} alt="" className="block lg:hidden" />
+            <img src={canada2} alt="" loading="lazy" decoding="async" className="rounded-3xl hidden lg:block" />
+            <img src={canada} alt="" loading="lazy" decoding="async" className="block lg:hidden" />
           </div>
           <div className="">
             <p className="text-3xl mb-4 text-white">Why choose RapidStylers?</p>
@@ -309,6 +310,8 @@ const LandingPage = () => {
               <img
                 src={elevateLook}
                 alt="Style gallery"
+                loading="lazy"
+                decoding="async"
                 className="w-full rounded-2xl shadow-[0_20px_60px_rgba(147,129,255,0.3)]"
               />
             </div>
@@ -343,56 +346,87 @@ const LandingPage = () => {
         </div>
 
         {/* Book appointment / register */}
-        <div className="px-4 md:px-[50px] grid grid-cols-1 lg:grid-cols-2 gap-4 my-16">
-          <div className="rounded-lg overflow-hidden">
-            <div className="overflow-hidden">
-              <img
-                src={stylistImg1}
-                alt=""
-                className="w-full object-cover object-top hover:scale-110 transition-all"
-              />
-            </div>
-            <div className="bg-[#1e1e1e] p-4 md:p-6 text-white">
-              <p className="text-lg">Transform your style!</p>
-              <p className="text-white/60">
-                Save time and effort with in-home beauty services, from cuts
-                and color to nails and lashes.
-              </p>
-              <div className="flex">
-                <Link
-                  to={"/login"}
-                  className="bg-white rounded-md text-sm text-[#1e1e1e] font-semibold mt-6 py-4 px-8 inline-block hover:opacity-90 transition"
-                >
-                  Book an appointment
-                </Link>
+        <section className="bg-[#f7f7f8] px-4 py-16 sm:px-6 md:px-[50px] md:py-20">
+          <div className="mx-auto max-w-7xl">
+            <div className="mb-10 flex flex-col gap-4 md:mb-12 md:flex-row md:items-end md:justify-between">
+              <div className="max-w-2xl">
+                <p className="text-xs font-bold uppercase tracking-[0.25em] text-brand">
+                  Your next move
+                </p>
+                <h2 className="mt-3 font-serif text-3xl font-bold leading-tight text-[#171717] sm:text-4xl md:text-5xl">
+                  Beauty that fits your life.
+                </h2>
               </div>
+              <p className="max-w-md text-base leading-relaxed text-black/55 md:text-right">
+                Whether you are booking a fresh look or building your beauty business, there is a place for you here.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+              <article className="group overflow-hidden rounded-2xl bg-[#1e1e1e] text-white shadow-[0_18px_45px_rgba(0,0,0,0.12)] transition-shadow duration-300 hover:shadow-[0_24px_55px_rgba(0,0,0,0.18)]">
+                <div className="relative aspect-[4/3] overflow-hidden sm:aspect-[16/10]">
+                  <img
+                    src={stylistImg1}
+                    alt="Client receiving an in-home hairstyling service"
+                    className="h-full w-full object-cover object-top transition-transform duration-700 group-hover:scale-105"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent"></div>
+                  <span className="absolute left-5 top-5 rounded-full border border-white/30 bg-black/25 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-white backdrop-blur-sm sm:left-6 sm:top-6">
+                    For clients
+                  </span>
+                </div>
+                <div className="flex min-h-[242px] flex-col p-6 sm:p-8">
+                  <h3 className="font-serif text-2xl font-bold leading-tight sm:text-3xl">
+                    Your best look, at home.
+                  </h3>
+                  <p className="mt-3 max-w-lg text-sm leading-relaxed text-white/65 sm:text-base">
+                    Save time and effort with trusted beauty professionals who bring cuts, colour, nails, lashes, and more to your door.
+                  </p>
+                  <Link
+                    to="/login"
+                    className="mt-auto inline-flex min-h-[50px] w-full items-center justify-center gap-2 rounded-md bg-white px-6 py-3 text-sm font-semibold text-[#1e1e1e] transition hover:bg-brand hover:text-white sm:w-fit"
+                  >
+                    Book an appointment
+                    <span aria-hidden="true" className="text-base">→</span>
+                  </Link>
+                </div>
+              </article>
+
+              <article className="group overflow-hidden rounded-2xl bg-[#1e1e1e] text-white shadow-[0_18px_45px_rgba(0,0,0,0.12)] transition-shadow duration-300 hover:shadow-[0_24px_55px_rgba(0,0,0,0.18)]">
+                <div className="relative aspect-[4/3] overflow-hidden sm:aspect-[16/10]">
+                  <img
+                    src={stylistImg2}
+                    alt="Beauty professional ready to serve a client"
+                    className="h-full w-full object-cover object-top transition-transform duration-700 group-hover:scale-105"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent"></div>
+                  <span className="absolute left-5 top-5 rounded-full border border-white/30 bg-black/25 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-white backdrop-blur-sm sm:left-6 sm:top-6">
+                    For professionals
+                  </span>
+                </div>
+                <div className="flex min-h-[242px] flex-col p-6 sm:p-8">
+                  <h3 className="font-serif text-2xl font-bold leading-tight sm:text-3xl">
+                    Turn your talent into a business.
+                  </h3>
+                  <p className="mt-3 max-w-lg text-sm leading-relaxed text-white/65 sm:text-base">
+                    Grow your client base, manage bookings, and offer in-home services with the support of the RapidStylers community.
+                  </p>
+                  <Link
+                    to="/styler-signup"
+                    className="mt-auto inline-flex min-h-[50px] w-full items-center justify-center gap-2 rounded-md bg-white px-6 py-3 text-sm font-semibold text-[#1e1e1e] transition hover:bg-brand hover:text-white sm:w-fit"
+                  >
+                    Register as a beauty professional
+                    <span aria-hidden="true" className="text-base">→</span>
+                  </Link>
+                </div>
+              </article>
             </div>
           </div>
-          <div className="rounded-lg overflow-hidden">
-            <div className="overflow-hidden">
-              <img
-                src={stylistImg2}
-                alt=""
-                className="w-full object-cover object-top hover:scale-110 transition-all"
-              />
-            </div>
-            <div className="bg-[#1e1e1e] p-4 md:p-6 text-white">
-              <p className="text-lg">Become a RapidStylers professional.</p>
-              <p className="text-white/60">
-                Join our community of beauty professionals offering in-home
-                services.
-              </p>
-              <div className="flex">
-                <Link
-                  to={"/styler-signup"}
-                  className="inline-flex min-h-[52px] w-full sm:w-auto items-center justify-center bg-white rounded-md text-sm text-[#1e1e1e] font-semibold mt-6 py-3 px-6 sm:px-8 hover:opacity-90 transition"
-                >
-                  Register as a beauty professional
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
+        </section>
 
         {/* Ad unit (renders nothing until REACT_APP_ADSENSE_CLIENT is configured) */}
         <div className="px-4 md:px-[50px] max-w-5xl mx-auto w-full">

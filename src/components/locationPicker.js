@@ -3,6 +3,7 @@ import Modal from "./modals";
 import HeroSelect from "./heroSelect";
 import Input from "./input";
 import { useUserLocation } from "../context/LocationContext";
+import { cityProvinceOf } from "../utils/canadaCities";
 
 const PROVINCES = [
   "Alberta",
@@ -28,15 +29,30 @@ const LocationPicker = ({ onClose }) => {
   const [province, setProvince] = useState(location?.province || "");
   const [city, setCity] = useState(location?.city || "");
 
+  // When the typed city is a known Canadian city that belongs to a different
+  // province (e.g. Calgary with Saskatchewan selected), tell the user and let
+  // Save correct it instead of silently saving a contradiction.
+  const resolvedProvince = cityProvinceOf(city);
+  const cityMismatch =
+    resolvedProvince && province && resolvedProvince !== province
+      ? {
+          message: `${city.trim()} is in ${resolvedProvince}. We'll save it as ${resolvedProvince}.`,
+          resolvedProvince,
+        }
+      : null;
+
   const handleSave = () => {
-    if (!province) {
-      return; // Province is required — the select defaults to the current one.
+    // The city's real province wins when it is known; otherwise keep the
+    // selected province. Province is required, so fall back to the current one.
+    const effectiveProvince = resolvedProvince || province;
+    if (!effectiveProvince) {
+      return;
     }
     // A manual choice has no reliable coordinates: drop lat/lng so searches
     // fall back to the province/city endpoints instead of a stale GPS radius.
     updateLocation({
       city: city.trim(),
-      province,
+      province: effectiveProvince,
       country: "Canada",
       source: "manual",
     });
@@ -73,15 +89,20 @@ const LocationPicker = ({ onClose }) => {
         placeholder={"e.g. Calgary"}
         onChange={(e) => setCity(e.target.value)}
       />
-      <div className="flex items-center justify-between pt-2">
+      {cityMismatch && (
+        <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
+          {cityMismatch.message}
+        </p>
+      )}
+      <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between pt-2 gap-3">
         <button
           type="button"
           onClick={handleDetect}
-          className="text-xs text-brand underline"
+          className="text-xs text-brand underline self-start sm:self-auto"
         >
           Use my current location
         </button>
-        <div className="flex gap-3">
+        <div className="flex gap-3 justify-end sm:justify-start">
           <button
             type="button"
             onClick={onClose}
@@ -92,7 +113,7 @@ const LocationPicker = ({ onClose }) => {
           <button
             type="button"
             onClick={handleSave}
-            disabled={!province}
+            disabled={!province && !resolvedProvince}
             className="px-6 py-2.5 rounded-md bg-brand text-white text-sm font-semibold disabled:opacity-50"
           >
             Save location

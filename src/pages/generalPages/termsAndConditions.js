@@ -139,7 +139,7 @@ const TermsAndConditions = () => {
           <section>
             <h2 className="text-lg font-bold text-gray-900 mb-2">15. Contact</h2>
             <p>
-              For questions about these terms, contact us at support@rapidstylers.com.
+              For questions about these terms, contact us at support@rapidstylers.ca.
             </p>
           </section>
         </div>

@@ -1,4 +1,4 @@
-import close from "../../../assets/svg-icons/closeBlack.svg";
+import Modal from "../../../components/modals";
 
 const PendingAppointments = ({
   appointment,
@@ -15,15 +15,8 @@ const PendingAppointments = ({
   const statusCode = appointment?.statusCode;
 
   return (
-    <div className="h-screen fixed top-0 left-0 bg-black/50 w-full z-50 p-4 flex justify-center items-center">
-      <div className="bg-white max-h-[90%] overflow-auto w-full md:w-1/2 lg:w-1/3 rounded-md">
-        <div className="p-4 md:p-6 border-b font-medium bg-white sticky top-0 flex justify-between items-center text-sm">
-          <div>Appointment details</div>
-          <div className="cursor-pointer">
-            <img src={close} alt="" className="h-4" onClick={onclose} />
-          </div>
-        </div>
-        <div className="p-4 md:p-6 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-4">
+    <Modal isVisible onClose={onclose} modalTitle="Appointment details" width="md:w-1/2 lg:w-1/3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-4">
           <div className="text-sm md:col-span-2">
             <div className="text-gray-400">Client name:</div>
             <div>
@@ -103,7 +96,7 @@ const PendingAppointments = ({
             </div>
           </div>
         </div>
-        <div className="p-4 sticky bottom-0 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="sticky bottom-0 bg-white p-4 grid grid-cols-1 md:grid-cols-2 gap-4 -mx-6 -mb-8">
           {statusCode === "1" ? (
             <>
               <div
@@ -135,8 +128,7 @@ const PendingAppointments = ({
             </div>
           )}
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 };
 
