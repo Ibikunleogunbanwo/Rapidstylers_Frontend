@@ -143,15 +143,12 @@ export function useDigitInput() {
   export const decryptData = (encryptedString) => {
     const key = generateSecretKey(DECRYPT_KEY);
     const raw = CryptoJS.enc.Base64.parse(encryptedString);
-    const rawBytes = CryptoJS.lib.WordArray.create(raw.words.slice(0), raw.sigBytes);
 
     // CBC-encrypted data starts with a 16-byte IV prefix.
-    // Detect by checking if the first 16 bytes look like a valid IV
-    // (heuristic: if raw length > 16 bytes and first 32 hex chars are not
-    // purely hex, treat as CBC). A more robust approach: always use encryptData()
-    // for new data which includes a magic prefix.
-    const firstWord = raw.words[0] >>> 0;
-    const hasIvPrefix = encryptedString.length > 44; // base64(IV + ciphertext) > 32 bytes
+    // Detect by checking if the raw length indicates an IV was prepended
+    // (base64 of IV + ciphertext > 32 chars). A more robust approach:
+    // always use encryptData() for new data which prepends the IV.
+    const hasIvPrefix = encryptedString.length > 44;
 
     if (hasIvPrefix) {
       // AES-CBC: first 16 bytes are the IV
