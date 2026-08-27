@@ -37,6 +37,18 @@ const StylerAppointments = () => {
     ["0", "2", "4"].includes(a.statusCode)
   );
 
+  // Must match app.booking.styler-cancel-window-hours on the backend — the
+  // server remains authoritative; this only hides the button outside the window.
+  const STYLER_CANCEL_WINDOW_HOURS = 24;
+  const completedCancelAllowed = (a) => {
+    if (a.statusCode !== "0" || !a.completedAt) return false;
+    const completed = new Date(a.completedAt).getTime();
+    return (
+      Number.isFinite(completed) &&
+      Date.now() - completed <= STYLER_CANCEL_WINDOW_HOURS * 60 * 60 * 1000
+    );
+  };
+
   const runAction = async (appointmentId, action) => {
     setActionLoading(true);
     try {
@@ -49,6 +61,13 @@ const StylerAppointments = () => {
       } else if (action === "complete") {
         await APIService.completeAppointment(appointmentId);
         showSuccessToastMessage("Appointment marked as completed");
+      } else if (action === "cancel") {
+        if (!window.confirm("Cancel this booking and refund the client? This cannot be undone.")) {
+          setActionLoading(false);
+          return;
+        }
+        await APIService.stylerCancelAppointment(appointmentId);
+        showSuccessToastMessage("Appointment cancelled — payment refunded");
       }
       setSelectedAppointment(null);
       await loadAppointments();
@@ -171,12 +190,24 @@ const StylerAppointments = () => {
                     </span>
                   </div>
                 </div>
-                <div
-                  className={`cursor-pointer col-span-2 md:col-span-1 flex justify-end text-sm font-semibold ${statusColor(
-                    appointment.statusCode
-                  )}`}
-                >
-                  {statusLabel(appointment.statusCode)}
+                <div className="col-span-2 md:col-span-1 flex items-center justify-end gap-2">
+                  <span
+                    className={`text-sm font-semibold ${statusColor(
+                      appointment.statusCode
+                    )}`}
+                  >
+                    {statusLabel(appointment.statusCode)}
+                  </span>
+                  {completedCancelAllowed(appointment) && (
+                    <button
+                      type="button"
+                      disabled={actionLoading}
+                      onClick={() => runAction(appointment.appointmentId, "cancel")}
+                      className="rounded-md border border-rose-300 px-3 py-1 text-xs font-semibold text-rose-600 hover:bg-rose-50"
+                    >
+                      {actionLoading ? "…" : "Cancel & refund"}
+                    </button>
+                  )}
                 </div>
               </div>
             ))}

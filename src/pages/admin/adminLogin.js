@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate, Navigate } from "react-router-dom";
 import { APIService } from "../../hooks/remote/apiService";
-import { getAuthToken, isAdminRole, setAuthToken, setAdminRole, showSuccessToastMessage } from "../../utils/constant";
+import { getAuthToken, isAdminRole, setAuthToken, setRefreshToken, setAdminRole, showSuccessToastMessage } from "../../utils/constant";
 
 const AdminLogin = () => {
   document.title = "Admin | RapidStylers";
@@ -22,8 +22,12 @@ const AdminLogin = () => {
     try {
       const res = await APIService.adminSignIn({ emailAddress, password });
       const token = res.data?.token;
+      const refreshToken = res.data?.refreshToken;
       if (token) {
         setAuthToken(token);
+        if (refreshToken) {
+          setRefreshToken(refreshToken);
+        }
         setAdminRole();
         showSuccessToastMessage("Welcome, admin");
         navigate("/admin/categories");

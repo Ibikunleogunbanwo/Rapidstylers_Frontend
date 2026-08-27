@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice, isAnyOf } from "@reduxjs/toolkit";
-import { retrieveFromLocalStorage, showErrorToastMessage, showSuccessToastMessage, setAuthToken, clearAuthToken } from "../../utils/constant";
+import { retrieveFromLocalStorage, showErrorToastMessage, showSuccessToastMessage, setAuthToken, clearAuthToken, setRefreshToken, clearRefreshToken, getRefreshToken } from "../../utils/constant";
 import { APIService } from "../remote/apiService";
 
 const initialState = {
@@ -52,6 +52,9 @@ export const userAuthenticate = createAsyncThunk(
         saveToLocalStorage("userSessionData", JSON.stringify(response.data));
         if (response.token) {
             setAuthToken(response.token);
+        }
+        if (response.refreshToken) {
+            setRefreshToken(response.refreshToken);
         }
         return response;
     }
@@ -152,11 +155,17 @@ export const addUserFeedBack = createAsyncThunk(
     }
 )
 
-const logOutSession = () =>{
+const logOutSession = async () =>{
+    // Best-effort server-side revocation (fire-and-forget).
+    const refreshToken = getRefreshToken();
+    if (refreshToken) {
+        try { await APIService.logout(refreshToken); } catch (_) { /* ignore */ }
+    }
     localStorage.removeItem("user");
     localStorage.removeItem("userSessionData"); 
     localStorage.removeItem("userDetailsData");
     clearAuthToken();
+    clearRefreshToken();
 }
 
 export const userLogOut = createAsyncThunk(

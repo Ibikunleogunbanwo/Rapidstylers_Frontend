@@ -548,6 +548,39 @@ export class APIService {
         }
     }
 
+    /** Admin: issue a full or partial refund for a captured booking payment. */
+    static async adminRefund(data){
+        try{
+            return await ApiClient.post("/admin/refund", data);
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+
+    /** Admin: list all refund records, newest first. */
+    static async adminRefunds(){
+        try{
+            return await ApiClient.get("/admin/refunds");
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+
+    /** Admin: run a Stripe-to-database payment reconciliation and return the report. */
+    static async adminPaymentReconciliation(){
+        try{
+            return await ApiClient.get("/admin/payment_reconciliation");
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+
     /** Returns a Stripe SetupIntent clientSecret for saving a card in Elements. */
     static async getCardSetupIntent(){
         try{
@@ -672,6 +705,16 @@ export class APIService {
     static async completeAppointment(appointmentId){
         try{
             return await ApiClient.post("/complete_appointment", { appointmentId });
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+    /** Stylist cancels their own appointment — a completed booking is refunded automatically. */
+    static async stylerCancelAppointment(appointmentId){
+        try{
+            return await ApiClient.post("/styler_cancel_appointment", { appointmentId });
         }
         catch(error){
             APIService.extractError(error);
@@ -844,6 +887,8 @@ export class APIService {
         if(filters.requestedTime) body.requestedTime = filters.requestedTime;
         if(filters.durationMinutes) body.durationMinutes = filters.durationMinutes;
         if(filters.openNow) body.openNow = true;
+        if(filters.page) body.page = filters.page;
+        if(filters.pageSize) body.pageSize = filters.pageSize;
             return await ApiClient.post("/search_nearby", body);
         }
         catch(error){
@@ -910,6 +955,28 @@ export class APIService {
         catch(error){
             APIService.extractError(error);
             throw(error);
+        }
+    }
+
+    // ── Auth lifecycle ────────────────────────────────────────────────────────
+    /** Exchange an expired access token + refresh token for a new pair. */
+    static async refresh(refreshToken){
+        try{
+            return await ApiClient.post("/auth/refresh", { refreshToken });
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+    /** Revoke the refresh token server-side and clear local session. */
+    static async logout(refreshToken){
+        try{
+            return await ApiClient.post("/auth/logout", { refreshToken });
+        }
+        catch(error){
+            // Best-effort: even if the backend call fails, clear local state.
+            return null;
         }
     }
 }
