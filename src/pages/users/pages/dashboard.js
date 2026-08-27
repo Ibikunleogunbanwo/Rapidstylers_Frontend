@@ -52,6 +52,10 @@ const Dashboard = ({ setPageTitle }) => {
                           statusCode={val?.statusCode}
                           paymentStatus={val?.paymentStatus}
                           paymentFailureCode={val?.paymentFailureCode}
+                          refundId={val?.refundId}
+                          refundStatus={val?.refundStatus}
+                          refundAmount={val?.refundAmount}
+                          refundCompletedAt={val?.refundCompletedAt}
                           key={key}
                           />
           ))}
@@ -73,6 +77,11 @@ const Dashboard = ({ setPageTitle }) => {
                         <span className="text-[15px] truncate">{val.stylerData?.businessName}</span>
                         <div><span className="font-semibold text-black/50 text-sm">Service:</span> <span className=" text-gray-400 text-sm">{val.subServiceData?.name}</span></div>
                         <div><span className="font-semibold text-black/50 text-sm">Appointment Status:</span> <span className=" text-gray-400 text-sm">{val?.status}</span></div>
+                        {val?.refundStatus === "COMPLETED" && (
+                          <div className="text-xs font-semibold text-emerald-600">
+                            Refunded {val?.refundAmount ? `$${val.refundAmount} CAD` : ""} {val?.refundCompletedAt ? `on ${val.refundCompletedAt}` : ""}
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="col-span-4 text-end  grid">

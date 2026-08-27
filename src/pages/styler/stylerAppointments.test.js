@@ -10,6 +10,7 @@ jest.mock("../../hooks/remote/apiService", () => ({
     acceptAppointment: jest.fn(),
     declineAppointment: jest.fn(),
     completeAppointment: jest.fn(),
+    stylerCancelAppointment: jest.fn(),
   },
 }));
 

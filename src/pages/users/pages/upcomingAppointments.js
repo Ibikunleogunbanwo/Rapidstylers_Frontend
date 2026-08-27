@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { APIService } from "../../../hooks/remote/apiService";
 import { showSuccessToastMessage } from "../../../utils/constant";
 
-const Appointments = ({appointmentDate, arrivalTime, serviceProvider, serviceType, businessAddress,serviceName, numberOfPeople, appointmentStatus, appointmentPrice, servicePrice, travelFee, includedTravelKm, billableTravelKm, travelDistanceKm, extraTravelRatePerKm, appointmentId, statusCode, paymentStatus, paymentFailureCode}) => {
+const Appointments = ({appointmentDate, arrivalTime, serviceProvider, serviceType, businessAddress,serviceName, numberOfPeople, appointmentStatus, appointmentPrice, servicePrice, travelFee, includedTravelKm, billableTravelKm, travelDistanceKm, extraTravelRatePerKm, appointmentId, statusCode, paymentStatus, paymentFailureCode, refundStatus, refundAmount, refundCompletedAt}) => {
   const [menuVisible, setMenuVisible] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [retryingPayment, setRetryingPayment] = useState(false);
@@ -166,7 +166,13 @@ const Appointments = ({appointmentDate, arrivalTime, serviceProvider, serviceTyp
                 <span className="text-black/50">Appointment status:</span>
                 <span className="">{appointmentStatus}</span>
               </div>
-              {paymentStatus && (
+              {refundStatus === "COMPLETED" ? (
+                <div className="col-span-2 rounded-md bg-emerald-50 border border-emerald-200 px-3 py-2 text-emerald-800">
+                  <span className="font-semibold">Refunded: </span>
+                  {refundAmount ? `$${refundAmount} CAD` : "Your payment"}
+                  {refundCompletedAt ? ` on ${refundCompletedAt}` : ""} — refunds appear on your statement within 5-10 business days.
+                </div>
+              ) : paymentStatus ? (
                 <div className="col-span-2 rounded-md bg-amber-50 border border-amber-200 px-3 py-2 text-amber-800">
                   <span className="font-semibold">Payment: </span>
                   {paymentStatus === "PAYMENT_ACCEPTED_SCHEDULED"
@@ -187,7 +193,7 @@ const Appointments = ({appointmentDate, arrivalTime, serviceProvider, serviceTyp
                     </button>
                   )}
                 </div>
-              )}
+              ) : null}
               <div className="col-span-2 mt-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {canCancel && (

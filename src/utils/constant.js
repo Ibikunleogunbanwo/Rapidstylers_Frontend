@@ -30,6 +30,14 @@ export const ADMIN_ROLE_KEY = "rapidstylers_admin_role";
 export const getAuthToken = () => sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY) || "";
 export const setAuthToken = (token) => sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, token);
 export const clearAuthToken = () => sessionStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
+
+// Refresh token — stored in sessionStorage alongside the access token.
+// Backend issues a new one on every /auth/refresh call (rotation).
+const REFRESH_TOKEN_STORAGE_KEY = "rapidstylers_refresh_token";
+export const getRefreshToken = () => sessionStorage.getItem(REFRESH_TOKEN_STORAGE_KEY) || "";
+export const setRefreshToken = (token) => sessionStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, token);
+export const clearRefreshToken = () => sessionStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY);
+
 export const isAdminRole = () => sessionStorage.getItem(ADMIN_ROLE_KEY) === "admin";
 export const setAdminRole = () => sessionStorage.setItem(ADMIN_ROLE_KEY, "admin");
 export const clearAdminRole = () => sessionStorage.removeItem(ADMIN_ROLE_KEY);

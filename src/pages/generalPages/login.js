@@ -3,7 +3,7 @@ import { Link, useNavigate, Navigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { APIService } from "../../hooks/remote/apiService";
 import { setUserSession, getUserDetails } from "../../hooks/local/userReducer";
-import { getAuthToken, setAuthToken, showSuccessToastMessage } from "../../utils/constant";
+import { getAuthToken, setAuthToken, setRefreshToken, showSuccessToastMessage } from "../../utils/constant";
 import logo from "../../assets/svg-icons/colouredLogo.svg";
 import InputWithLabel from "../../components/inputWithLabel";
 import PasswordInput from "../../components/passwordInput";
@@ -40,10 +40,14 @@ const Login = () => {
     try {
       const res = await APIService.signIn({ emailAddress, password });
       const token = res.data?.token;
+      const refreshToken = res.data?.refreshToken;
       const role = res.data?.data?.role;
       const account = res.data?.data?.account;
       if (token) {
         setAuthToken(token);
+        if (refreshToken) {
+          setRefreshToken(refreshToken);
+        }
         if (role === "CUSTOMER" && account) {
           // Persist the session (store + localStorage) so the dashboard guard
           // passes without a reload, then fetch the full profile in the
