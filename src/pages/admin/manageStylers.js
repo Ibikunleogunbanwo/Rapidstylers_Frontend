@@ -3,7 +3,9 @@ import { Navigate, Link } from "react-router-dom";
 import { APIService } from "../../hooks/remote/apiService";
 import {
   getAuthToken,
+  isAdminRole,
   clearAuthToken,
+  clearAdminRole,
   showSuccessToastMessage,
 } from "../../utils/constant";
 
@@ -68,7 +70,7 @@ const ManageStylers = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab]);
 
-  if (!getAuthToken()) {
+  if (!getAuthToken() || !isAdminRole()) {
     return <Navigate to="/admin/login" replace />;
   }
 
@@ -103,6 +105,7 @@ const ManageStylers = () => {
           <button
             onClick={() => {
               clearAuthToken();
+              clearAdminRole();
               window.location.href = "/admin/login";
             }}
             className="text-sm text-gray-500 hover:text-gray-800 font-semibold"

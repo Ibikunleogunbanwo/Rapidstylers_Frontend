@@ -78,8 +78,8 @@ describe("RapidStylers API contracts", () => {
     await APIService.removeSavedStylist("STYLER1");
 
     expect(ApiClient.get).toHaveBeenCalledWith("/saved_stylists");
-    expect(ApiClient.post).toHaveBeenNthCalledWith(1, "/save_stylist?stylerId=STYLER1");
-    expect(ApiClient.post).toHaveBeenNthCalledWith(2, "/remove_saved_stylist?stylerId=STYLER1");
+    expect(ApiClient.post).toHaveBeenNthCalledWith(1, "/save_stylist", { stylerId: "STYLER1" });
+    expect(ApiClient.post).toHaveBeenNthCalledWith(2, "/remove_saved_stylist", { stylerId: "STYLER1" });
   });
 
   test("notification inbox, read actions, preferences, and service updates use protected contracts", async () => {
@@ -113,7 +113,7 @@ describe("RapidStylers API contracts", () => {
     expect(ApiClient.post).toHaveBeenCalledWith("/support_tickets", { subject: "Booking issue", message: "Please help" });
     expect(ApiClient.get).toHaveBeenCalledWith("/support_tickets");
     expect(ApiClient.get).toHaveBeenCalledWith("/loyalty_account");
-    expect(ApiClient.post).toHaveBeenCalledWith("/apply_referral?referralCode=RS-ABC12345");
+    expect(ApiClient.post).toHaveBeenCalledWith("/apply_referral", { referralCode: "RS-ABC12345" });
     expect(ApiClient.get).toHaveBeenCalledWith("/admin/support_tickets");
     expect(ApiClient.post).toHaveBeenCalledWith("/admin/update_support_ticket", { ticketId: 3, status: "RESOLVED", adminResponse: "Resolved" });
     expect(ApiClient.get).toHaveBeenCalledWith("/admin/kpis");
@@ -122,32 +122,36 @@ describe("RapidStylers API contracts", () => {
     expect(ApiClient.post).toHaveBeenCalledWith("/admin/update_review_moderation", { reviewId: 8, action: "APPROVED" });
   });
 
-  test("search queries URL-encode city, name, and service ids so special characters stay conformant", async () => {
+  test("search queries encode params correctly in POST bodies", async () => {
     await APIService.searchNearby(43.7, -79.4, 25, "SV&C2", " Toronto & Suburbs ", { openNow: true });
     await APIService.searchForStyler("Men's & Women's Cuts");
     await APIService.searchByProvince("British Columbia");
     await APIService.stylersBaseOnCategory("CAT-1");
     await APIService.singleStylerData("STYLER-1");
 
-    expect(ApiClient.get).toHaveBeenNthCalledWith(
-      1,
-      "/search_nearby?lat=43.7&lng=-79.4&radius=25&serviceTypeId=SV%26C2&city=Toronto%20%26%20Suburbs&openNow=true"
-    );
+    expect(ApiClient.post).toHaveBeenCalledWith("/search_nearby", {
+      lat: 43.7,
+      lng: -79.4,
+      radius: 25,
+      serviceTypeId: "SV&C2",
+      city: "Toronto & Suburbs",
+      openNow: true,
+    });
     // encodeURIComponent preserves apostrophes; spaces and & are percent-encoded.
     expect(ApiClient.get).toHaveBeenNthCalledWith(
-      2,
+      1,
       "/search_styler?businessName=Men's%20%26%20Women's%20Cuts"
     );
     expect(ApiClient.get).toHaveBeenNthCalledWith(
-      3,
+      2,
       "/search_by_province?province=British%20Columbia"
     );
     expect(ApiClient.get).toHaveBeenNthCalledWith(
-      4,
+      3,
       "/search_by_service?serviceTypeId=CAT-1"
     );
     expect(ApiClient.get).toHaveBeenNthCalledWith(
-      5,
+      4,
       "/single_styler?stylerId=STYLER-1"
     );
   });

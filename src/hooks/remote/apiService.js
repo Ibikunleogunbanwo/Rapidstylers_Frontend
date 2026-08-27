@@ -43,7 +43,7 @@ export class APIService {
     }
     static async stylerVerifyOtp(otpCode){
         try{
-            return await ApiClient.get(`/styler_verify_otp?otpCode=${otpCode}`);
+            return await ApiClient.post("/styler_verify_otp", { otpCode });
         }
         catch(error){
             APIService.extractError(error);
@@ -70,7 +70,7 @@ export class APIService {
     }
     static async verifyOtpCode(otpCode){
         try{
-            return await ApiClient.get(`/verify_otp_code?otpCode=${otpCode}`)
+            return await ApiClient.post("/verify_otp_code", { otpCode })
         }
         catch(error){
             APIService.extractError(error);
@@ -172,7 +172,7 @@ export class APIService {
     }
     static async adminDeleteService(id){
         try{
-            return await ApiClient.get(`/delete_service?id=${id}`);
+            return await ApiClient.post("/delete_service", { id });
         }
         catch(error){
             APIService.extractError(error);
@@ -354,7 +354,7 @@ export class APIService {
 
     static async saveStylist(stylerId){
         try{
-            return await ApiClient.post(`/save_stylist?stylerId=${encodeURIComponent(stylerId)}`);
+            return await ApiClient.post("/save_stylist", { stylerId });
         }
         catch(error){
             APIService.extractError(error);
@@ -364,7 +364,7 @@ export class APIService {
 
     static async removeSavedStylist(stylerId){
         try{
-            return await ApiClient.post(`/remove_saved_stylist?stylerId=${encodeURIComponent(stylerId)}`);
+            return await ApiClient.post("/remove_saved_stylist", { stylerId });
         }
         catch(error){
             APIService.extractError(error);
@@ -779,7 +779,7 @@ export class APIService {
     }
     static async applyReferral(referralCode){
         try{
-            return await ApiClient.post(`/apply_referral?referralCode=${encodeURIComponent(referralCode)}`);
+            return await ApiClient.post("/apply_referral", { referralCode });
         }
         catch(error){
             APIService.extractError(error);
@@ -828,7 +828,7 @@ export class APIService {
     }
     static async reverseGeocode(lat, lng){
         try{
-            return await ApiClient.get(`/reverse-geocode?lat=${lat}&lng=${lng}`);
+            return await ApiClient.post("/reverse-geocode", { lat, lng });
         }
         catch(error){
             APIService.extractError(error);
@@ -837,14 +837,14 @@ export class APIService {
     }
     static async searchNearby(lat, lng, radius = 25, serviceTypeId = "", city = "", filters = {}){
         try{
-            let url = `/search_nearby?lat=${encodeURIComponent(lat)}&lng=${encodeURIComponent(lng)}&radius=${encodeURIComponent(radius)}`;
-        if(serviceTypeId) url += `&serviceTypeId=${encodeURIComponent(serviceTypeId)}`;
-        if(city) url += `&city=${encodeURIComponent(String(city).trim())}`;
-        if(filters.requestedDate) url += `&requestedDate=${encodeURIComponent(filters.requestedDate)}`;
-        if(filters.requestedTime) url += `&requestedTime=${encodeURIComponent(filters.requestedTime)}`;
-        if(filters.durationMinutes) url += `&durationMinutes=${encodeURIComponent(filters.durationMinutes)}`;
-        if(filters.openNow) url += `&openNow=true`;
-            return await ApiClient.get(url);
+            const body = { lat, lng, radius };
+        if(serviceTypeId) body.serviceTypeId = serviceTypeId;
+        if(city) body.city = String(city).trim();
+        if(filters.requestedDate) body.requestedDate = filters.requestedDate;
+        if(filters.requestedTime) body.requestedTime = filters.requestedTime;
+        if(filters.durationMinutes) body.durationMinutes = filters.durationMinutes;
+        if(filters.openNow) body.openNow = true;
+            return await ApiClient.post("/search_nearby", body);
         }
         catch(error){
             APIService.extractError(error);
@@ -905,7 +905,7 @@ export class APIService {
     }
     static async adminDeleteBlog(id){
         try{
-            return await ApiClient.get(`/delete_blog?id=${id}`);
+            return await ApiClient.post("/delete_blog", { id });
         }
         catch(error){
             APIService.extractError(error);

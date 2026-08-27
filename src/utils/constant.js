@@ -7,12 +7,19 @@ import CryptoJS from 'crypto-js';
 // Copy .env.example to .env and fill in real values.
 export const API_KEY = process.env.REACT_APP_API_KEY || "";
 export const JSON_CONTENT_TYPE = "application/json";
-export const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "http://localhost:9090/rapid_stylers";
+export const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "https://localhost:9090/rapid_stylers";
 export const DECRYPT_KEY = process.env.REACT_APP_DECRYPT_KEY || "";
 
 // Stripe publishable key (frontend) — collect cards inside Stripe's Elements
-// iframe. Empty until Stripe test/live keys are added to .env.
-export const STRIPE_PUBLISHABLE_KEY = process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY || "";
+// iframe. REACT_APP_STRIPE_MODE ("test" or "live") picks the matching key set
+// and ONLY that set (never the other mode). An empty mode falls back to the
+// legacy REACT_APP_STRIPE_PUBLISHABLE_KEY. Empty until Stripe keys are added.
+export const STRIPE_PUBLISHABLE_KEY =
+  process.env.REACT_APP_STRIPE_MODE === "live"
+    ? process.env.REACT_APP_STRIPE_LIVE_PUBLISHABLE_KEY || ""
+    : process.env.REACT_APP_STRIPE_MODE === "test"
+    ? process.env.REACT_APP_STRIPE_TEST_PUBLISHABLE_KEY || ""
+    : process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY || "";
 
 export const API_HEADER = {
     'Content-Type' : JSON_CONTENT_TYPE,
@@ -22,9 +29,13 @@ export const API_HEADER = {
 // JWT issued by user_sign_in / styler_sign_in / admin_sign_in — attached as
 // Authorization: Bearer <token> by the ApiClient interceptor.
 export const AUTH_TOKEN_STORAGE_KEY = "rapidstylers_auth_token";
+export const ADMIN_ROLE_KEY = "rapidstylers_admin_role";
 export const getAuthToken = () => sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY) || "";
 export const setAuthToken = (token) => sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, token);
 export const clearAuthToken = () => sessionStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
+export const isAdminRole = () => sessionStorage.getItem(ADMIN_ROLE_KEY) === "admin";
+export const setAdminRole = () => sessionStorage.setItem(ADMIN_ROLE_KEY, "admin");
+export const clearAdminRole = () => sessionStorage.removeItem(ADMIN_ROLE_KEY);
 
 export const FORM_DATA_HEADER = {
     'x-api-key' : API_KEY,
@@ -122,11 +133,59 @@ export function useDigitInput() {
     return CryptoJS.enc.Hex.parse(key);
   };
 
+  /**
+   * Decrypt data using AES-CBC with a random IV prepended to the ciphertext.
+   * New data should be encrypted with encryptData() which prepends the IV.
+   * Legacy ECB-encrypted data (no IV prefix) is auto-detected and decrypted
+   * for backward compatibility — migrate all data to CBC before removing
+   * ECB support.
+   */
   export const decryptData = (encryptedString) => {
     const key = generateSecretKey(DECRYPT_KEY);
+    const raw = CryptoJS.enc.Base64.parse(encryptedString);
+    const rawBytes = CryptoJS.lib.WordArray.create(raw.words.slice(0), raw.sigBytes);
+
+    // CBC-encrypted data starts with a 16-byte IV prefix.
+    // Detect by checking if the first 16 bytes look like a valid IV
+    // (heuristic: if raw length > 16 bytes and first 32 hex chars are not
+    // purely hex, treat as CBC). A more robust approach: always use encryptData()
+    // for new data which includes a magic prefix.
+    const firstWord = raw.words[0] >>> 0;
+    const hasIvPrefix = encryptedString.length > 44; // base64(IV + ciphertext) > 32 bytes
+
+    if (hasIvPrefix) {
+      // AES-CBC: first 16 bytes are the IV
+      const iv = CryptoJS.lib.WordArray.create(raw.words.slice(0, 4), 16);
+      const ciphertext = CryptoJS.lib.WordArray.create(raw.words.slice(4), raw.sigBytes - 16);
+      const bytes = CryptoJS.AES.decrypt({ ciphertext }, key, {
+        iv,
+        mode: CryptoJS.mode.CBC,
+        padding: CryptoJS.pad.Pkcs7
+      });
+      return bytes.toString(CryptoJS.enc.Utf8);
+    }
+
+    // Legacy ECB fallback (no IV prefix)
     const bytes = CryptoJS.AES.decrypt(encryptedString, key, {
       mode: CryptoJS.mode.ECB,
       padding: CryptoJS.pad.Pkcs7
     });
     return bytes.toString(CryptoJS.enc.Utf8);
+  };
+
+  /**
+   * Encrypt data using AES-CBC with a random IV prepended to the ciphertext.
+   * The IV is included in the output so decryptData() can extract it.
+   * Always use this for new encryption — do not use ECB.
+   */
+  export const encryptData = (plaintext) => {
+    const key = generateSecretKey(DECRYPT_KEY);
+    const iv = CryptoJS.lib.WordArray.random(16);
+    const encrypted = CryptoJS.AES.encrypt(plaintext, key, {
+      iv,
+      mode: CryptoJS.mode.CBC,
+      padding: CryptoJS.pad.Pkcs7
+    });
+    // Prepend IV to ciphertext so decryptData() can extract it
+    return iv.concat(encrypted.ciphertext).toString(CryptoJS.enc.Base64);
   };

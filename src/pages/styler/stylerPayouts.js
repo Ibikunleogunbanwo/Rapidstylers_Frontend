@@ -4,6 +4,8 @@ import Spinner from "../../components/spinner";
 import { APIService } from "../../hooks/remote/apiService";
 import { humanizeConnectReason, showErrorToastMessage } from "../../utils/constant";
 
+const ALLOWED_ONBOARDING_HOSTS = ["connect.stripe.com", "connect.stripe.ca"];
+
 const StylerPayouts = () => {
   const [payouts, setPayouts] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -30,6 +32,11 @@ const StylerPayouts = () => {
         // The backend answers HTTP 200 with the error in the body (no
         // exception thrown), so surface it explicitly instead of failing silent.
         showErrorToastMessage(data?.message || "Could not start Stripe Connect. Please try again.");
+        return;
+      }
+      const onboardingUrl = new URL(data.data.onboardingUrl);
+      if (!ALLOWED_ONBOARDING_HOSTS.includes(onboardingUrl.hostname)) {
+        showErrorToastMessage("Invalid onboarding URL. Please try again.");
         return;
       }
       window.location.href = data.data.onboardingUrl;
