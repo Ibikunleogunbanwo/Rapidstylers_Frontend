@@ -1,20 +1,31 @@
 
 import Featured from "../../components/featuredStylists";
-import elevateLook from "../../assets/images/elevate-look.webp";
 import scissors from "../../assets/svg-icons/scissors.svg";
+// Real work from the RapidStylers gallery, shown in the Elevate-your-style grid.
+import elevate1 from "../../assets/images/gallery/g-makeup-1.jpg";
+import elevate2 from "../../assets/images/gallery/g-lashes-1.jpg";
+import elevate3 from "../../assets/images/gallery/g-braids-1.jpg";
+import elevate4 from "../../assets/images/gallery/g-barber-1.jpg";
 import Footer from "../../components/footer";
 import canada from "../../assets/images/canada.webp";
 import canada2 from "../../assets/images/signup.jpg";
 import { Link } from "react-router-dom";
 import Hero from "./newHeroSection";
 // import rapidGIF from "../../assets/Videos/stylers.gif";
-import about from "../../assets/images/about-landing.webp"
-import stylistImg1 from "../../assets/images/stylist-1.webp"
-import stylistImg2 from "../../assets/images/stylist-2.webp"
+import about from "../../assets/images/about-landing.jpg"
+import stylistImg1 from "../../assets/images/stylist-1.jpg"
+import stylistImg2 from "../../assets/images/stylist-2.jpg"
 import ScrollContainer from "../../components/img-slider";
 import AdSlot from "../../components/adSlot";
 import { useEffect, useState } from "react";
 import { APIService } from "../../hooks/remote/apiService";
+
+const GALLERY_GRID = [
+  { src: elevate1, alt: "Professional makeup application" },
+  { src: elevate2, alt: "Eyelash extension application" },
+  { src: elevate3, alt: "Hair braiding" },
+  { src: elevate4, alt: "Precision barber trim" },
+];
 
 const PROVINCES = [
   "Alberta",
@@ -306,14 +317,17 @@ const LandingPage = () => {
                 </Link>
               </div>
             </div>
-            <div className="relative">
-              <img
-                src={elevateLook}
-                alt="Style gallery"
-                loading="lazy"
-                decoding="async"
-                className="w-full rounded-2xl shadow-[0_20px_60px_rgba(147,129,255,0.3)]"
-              />
+            <div className="relative grid grid-cols-2 gap-3 md:gap-4">
+              {GALLERY_GRID.map((img) => (
+                <img
+                  key={img.src}
+                  src={img.src}
+                  alt={img.alt}
+                  loading="lazy"
+                  decoding="async"
+                  className="w-full aspect-square object-cover rounded-2xl shadow-[0_20px_60px_rgba(147,129,255,0.3)]"
+                />
+              ))}
             </div>
           </div>
         </div>

@@ -4,6 +4,31 @@ import AdSlot from "../../components/adSlot";
 import React, { useState, useEffect } from "react";
 import { APIService } from "../../hooks/remote/apiService";
 
+// Curated work: real photos provided by the RapidStylers team. They lead the
+// grid (replacing stock imagery) while approved stylist uploads still render
+// alongside them via the API, and searches use live results.
+import curatedMakeup1 from "../../assets/images/gallery/g-makeup-1.jpg";
+import curatedMakeup2 from "../../assets/images/gallery/g-makeup-2.jpg";
+import curatedBraids1 from "../../assets/images/gallery/g-braids-1.jpg";
+import curatedBraids2 from "../../assets/images/gallery/g-braids-2.jpg";
+import curatedLashes1 from "../../assets/images/gallery/g-lashes-1.jpg";
+import curatedLashes2 from "../../assets/images/gallery/g-lashes-2.jpg";
+import curatedLashes3 from "../../assets/images/gallery/g-lashes-3.jpg";
+import curatedLashes4 from "../../assets/images/gallery/g-lashes-4.jpg";
+import curatedBarber1 from "../../assets/images/gallery/g-barber-1.jpg";
+
+const CURATED = [
+  { src: curatedMakeup1, alt: "Professional makeup application", photographer: "RapidStylers", category: "Makeup" },
+  { src: curatedMakeup2, alt: "Makeup artistry close-up", photographer: "RapidStylers", category: "Makeup" },
+  { src: curatedLashes1, alt: "Eyelash extension application", photographer: "RapidStylers", category: "Eyelash extensions" },
+  { src: curatedLashes2, alt: "Lash extension close-up", photographer: "RapidStylers", category: "Eyelash extensions" },
+  { src: curatedLashes3, alt: "Lash extension detail", photographer: "RapidStylers", category: "Eyelash extensions" },
+  { src: curatedLashes4, alt: "Eyelash extensions", photographer: "RapidStylers", category: "Eyelash extensions" },
+  { src: curatedBraids1, alt: "Hair braiding", photographer: "RapidStylers", category: "Braids" },
+  { src: curatedBraids2, alt: "Cornrow braiding", photographer: "RapidStylers", category: "Cornrows" },
+  { src: curatedBarber1, alt: "Precision barber trim", photographer: "RapidStylers", category: "Buzz cut" },
+];
+
 // Must stay in sync with the backend GALLERY_CATEGORIES allowlist.
 const CATEGORIES = [
   "Dreadlocks",
@@ -44,18 +69,30 @@ const ElevateLooks = () => {
     APIService.searchGallery(category, PER_PAGE, pageNum, query)
       .then((res) => {
         const photos = res.data?.data;
+        let mapped = [];
         if (Array.isArray(photos) && photos.length > 0) {
-          let mapped = photos.map((p) => ({
+          mapped = photos.map((p) => ({
             src: p.src?.medium || p.src?.large || p.src?.original || "",
             alt: p.alt || category,
             photographer: p.photographer || "",
             stylerId: p.stylerId || "",
             source: p.source || "pexels",
           }));
+        }
+        // Curated RapidStylers work leads the grid instead of stock photos: the
+        // first view shows the whole curated set, then each category surfaces its
+        // own curated photos. Approved stylist uploads still render alongside, and
+        // searches bypass curation to use live results.
+        const needle = (query || "").trim().toLowerCase();
+        if (!needle && pageNum === 1) {
+          const inCategory = CURATED.filter((p) => p.category === category);
+          const curated = images === null ? CURATED : inCategory;
+          mapped = [...curated, ...mapped];
+        }
+        if (mapped.length > 0) {
           // Pexels returns relevance-ranked results even for gibberish, so a strict
           // text pass keeps the keyword visibly meaningful: exact matches win, and
           // only when none exist do we fall back to the API's closest matches.
-          const needle = (query || "").trim().toLowerCase();
           let isFuzzy = false;
           if (needle) {
             const strict = mapped.filter((p) =>
@@ -71,7 +108,7 @@ const ElevateLooks = () => {
           setLoadError(false);
           setImages((prev) => (append && Array.isArray(prev) ? [...prev, ...mapped] : mapped));
           // A full page means there may be more — a short page means we reached the end.
-          setHasMore(photos.length >= PER_PAGE);
+          setHasMore(Array.isArray(photos) && photos.length >= PER_PAGE);
         } else if (!append) {
           // No uploads for this category/query — show the empty state.
           setFuzzy(false);
@@ -303,11 +340,12 @@ const ElevateLooks = () => {
               );
             })}
           </div>
-          {images && images.length > 0 && (
-            <p className="text-xs text-gray-400 mt-2">
-              Work posted by verified professionals
-            </p>
-          )}
+          {images &&
+            images.some((img) => typeof img === "object" && img.source === "stylist") && (
+              <p className="text-xs text-gray-400 mt-2">
+                Work posted by verified professionals
+              </p>
+            )}
           {images && hasMore && (
             <div className="flex justify-center mt-8">
               <button

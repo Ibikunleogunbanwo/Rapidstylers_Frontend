@@ -78,13 +78,45 @@ describe("ElevateLooks gallery cards", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
-  test("shows the empty state when a category has no work posted", async () => {
+  test("shows the empty state when a category without curated work has no uploads", async () => {
+    APIService.searchGallery.mockResolvedValue({ data: { data: [] } });
+    render(<ElevateLooks />);
+
+    // Wait for the first (curated) view to settle before switching, so the
+    // category change runs against the populated grid.
+    await screen.findByRole("button", { name: "View Professional makeup application" });
+    fireEvent.click(screen.getByRole("button", { name: "Wigs" }));
+
+    expect(
+      await screen.findByText("No Wigs work posted yet")
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /profile$/ })).not.toBeInTheDocument();
+  });
+
+  test("leads the first view with curated RapidStylers work", async () => {
     APIService.searchGallery.mockResolvedValue({ data: { data: [] } });
     render(<ElevateLooks />);
 
     expect(
-      await screen.findByText("No Dreadlocks work posted yet")
+      await screen.findByRole("button", { name: "View Professional makeup application" })
     ).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: /profile$/ })).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "View Precision barber trim" })
+    ).toBeInTheDocument();
+  });
+
+  test("filters curated work to the selected category", async () => {
+    APIService.searchGallery.mockResolvedValue({ data: { data: [] } });
+    render(<ElevateLooks />);
+
+    await screen.findByRole("button", { name: "View Professional makeup application" });
+    fireEvent.click(screen.getByRole("button", { name: "Braids" }));
+
+    expect(
+      await screen.findByRole("button", { name: "View Hair braiding" })
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "View Professional makeup application" })
+    ).not.toBeInTheDocument();
   });
 });
