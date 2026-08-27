@@ -8,6 +8,8 @@ import AppointmentDetails from './stylerComponents/appointmentDetails';
 import { APIService } from "../../hooks/remote/apiService";
 import { humanizeConnectReason, showErrorToastMessage } from "../../utils/constant";
 
+const ALLOWED_ONBOARDING_HOSTS = ["connect.stripe.com", "connect.stripe.ca"];
+
 const timeSlots = {
   morning: [
     '6:00-7:00am',
@@ -82,7 +84,12 @@ const StylerDashboard = () => {
         return;
       }
       if (data?.data?.onboardingUrl) {
-        window.location.href = data.data.onboardingUrl;
+        const onboardingUrl = new URL(data.data.onboardingUrl);
+        if (!ALLOWED_ONBOARDING_HOSTS.includes(onboardingUrl.hostname)) {
+          showErrorToastMessage("Invalid onboarding URL. Please try again.");
+        } else {
+          window.location.href = data.data.onboardingUrl;
+        }
       } else if (data?.data?.status) {
         setConnectStatus(data.data.status);
       }

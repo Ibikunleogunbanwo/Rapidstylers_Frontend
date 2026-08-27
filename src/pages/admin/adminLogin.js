@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate, Navigate } from "react-router-dom";
 import { APIService } from "../../hooks/remote/apiService";
-import { getAuthToken, setAuthToken, showSuccessToastMessage } from "../../utils/constant";
+import { getAuthToken, isAdminRole, setAuthToken, setAdminRole, showSuccessToastMessage } from "../../utils/constant";
 
 const AdminLogin = () => {
   document.title = "Admin | RapidStylers";
@@ -11,7 +11,7 @@ const AdminLogin = () => {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  if (getAuthToken()) {
+  if (getAuthToken() && isAdminRole()) {
     return <Navigate to="/admin/categories" replace />;
   }
 
@@ -24,6 +24,7 @@ const AdminLogin = () => {
       const token = res.data?.token;
       if (token) {
         setAuthToken(token);
+        setAdminRole();
         showSuccessToastMessage("Welcome, admin");
         navigate("/admin/categories");
       }

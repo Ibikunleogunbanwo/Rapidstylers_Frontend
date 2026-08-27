@@ -47,7 +47,8 @@ export async function deleteCloudinaryImage(publicId) {
   if (!publicId) return;
   try {
     await ApiClient.post(
-      `/delete_cloudinary_image?publicId=${encodeURIComponent(publicId)}`
+      "/delete_cloudinary_image",
+      { publicId }
     );
   } catch {
     // Ignore — orphan cleanup is best-effort.
