@@ -1,14 +1,11 @@
 import { useEffect } from "react";
 import { toast } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
-import CryptoJS from 'crypto-js';
-
 // Secrets come from the local .env file (gitignored) via CRA's REACT_APP_ vars.
 // Copy .env.example to .env and fill in real values.
 export const API_KEY = process.env.REACT_APP_API_KEY || "";
 export const JSON_CONTENT_TYPE = "application/json";
 export const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "https://localhost:9090/rapid_stylers";
-export const DECRYPT_KEY = process.env.REACT_APP_DECRYPT_KEY || "";
 
 // Stripe publishable key (frontend) — collect cards inside Stripe's Elements
 // iframe. REACT_APP_STRIPE_MODE ("test" or "live") picks the matching key set
@@ -126,63 +123,4 @@ export function useDigitInput() {
     }, []);
   }
 
-  export const generateSecretKey = (keyString) => {
-    let key = CryptoJS.enc.Utf8.parse(keyString);
-    key = CryptoJS.SHA256(key);
-    key = key.toString(CryptoJS.enc.Hex).substr(0, 32); 
-    return CryptoJS.enc.Hex.parse(key);
-  };
 
-  /**
-   * Decrypt data using AES-CBC with a random IV prepended to the ciphertext.
-   * New data should be encrypted with encryptData() which prepends the IV.
-   * Legacy ECB-encrypted data (no IV prefix) is auto-detected and decrypted
-   * for backward compatibility — migrate all data to CBC before removing
-   * ECB support.
-   */
-  export const decryptData = (encryptedString) => {
-    const key = generateSecretKey(DECRYPT_KEY);
-    const raw = CryptoJS.enc.Base64.parse(encryptedString);
-
-    // CBC-encrypted data starts with a 16-byte IV prefix.
-    // Detect by checking if the raw length indicates an IV was prepended
-    // (base64 of IV + ciphertext > 32 chars). A more robust approach:
-    // always use encryptData() for new data which prepends the IV.
-    const hasIvPrefix = encryptedString.length > 44;
-
-    if (hasIvPrefix) {
-      // AES-CBC: first 16 bytes are the IV
-      const iv = CryptoJS.lib.WordArray.create(raw.words.slice(0, 4), 16);
-      const ciphertext = CryptoJS.lib.WordArray.create(raw.words.slice(4), raw.sigBytes - 16);
-      const bytes = CryptoJS.AES.decrypt({ ciphertext }, key, {
-        iv,
-        mode: CryptoJS.mode.CBC,
-        padding: CryptoJS.pad.Pkcs7
-      });
-      return bytes.toString(CryptoJS.enc.Utf8);
-    }
-
-    // Legacy ECB fallback (no IV prefix)
-    const bytes = CryptoJS.AES.decrypt(encryptedString, key, {
-      mode: CryptoJS.mode.ECB,
-      padding: CryptoJS.pad.Pkcs7
-    });
-    return bytes.toString(CryptoJS.enc.Utf8);
-  };
-
-  /**
-   * Encrypt data using AES-CBC with a random IV prepended to the ciphertext.
-   * The IV is included in the output so decryptData() can extract it.
-   * Always use this for new encryption — do not use ECB.
-   */
-  export const encryptData = (plaintext) => {
-    const key = generateSecretKey(DECRYPT_KEY);
-    const iv = CryptoJS.lib.WordArray.random(16);
-    const encrypted = CryptoJS.AES.encrypt(plaintext, key, {
-      iv,
-      mode: CryptoJS.mode.CBC,
-      padding: CryptoJS.pad.Pkcs7
-    });
-    // Prepend IV to ciphertext so decryptData() can extract it
-    return iv.concat(encrypted.ciphertext).toString(CryptoJS.enc.Base64);
-  };
