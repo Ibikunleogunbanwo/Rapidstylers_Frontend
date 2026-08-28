@@ -21,10 +21,22 @@ const steps = [
 const SecureAccount = () => {
   useEffect(() => {
     document.title = "Secure Account | RapidStylers";
-    document.querySelector('meta[name="description"]').content = "Join RapidStylers: Start your beautification journey with a personalized account.";
+    // Optional chaining: never crash the page if the meta tag is missing.
+    document
+      .querySelector('meta[name="description"]')
+      ?.setAttribute("content", "Join RapidStylers: Start your beautification journey with a personalized account.");
   }, []);
 
-  const userProfileData = JSON.parse(sessionStorage.getItem('userProfileData') || 'null');
+  // Corrupted/absent session data (or storage being unavailable in private
+  // mode) must never blank the page — fall back to null so the form still
+  // renders and the submit handler shows the "session expired" message.
+  const userProfileData = (() => {
+    try {
+      return JSON.parse(sessionStorage.getItem('userProfileData') || 'null');
+    } catch (e) {
+      return null;
+    }
+  })();
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [dashboardModal, setDashboardModal] = useState(false);

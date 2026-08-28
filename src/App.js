@@ -3,6 +3,7 @@ import './App.css';
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ToastContainer } from 'react-toastify';
 import { LocationProvider } from './context/LocationContext';
+import ScrollToTop from './components/scrollToTop';
 
 const LandingPage = lazy(() => import('./pages/generalPages/landing'));
 const Login = lazy(() => import('./pages/generalPages/login'));
@@ -65,7 +66,15 @@ function App() {
       />
       <LocationProvider>
       <BrowserRouter>
-      <Suspense fallback={<div className="min-h-screen" />}>
+      <ScrollToTop />
+      <Suspense
+        fallback={
+          <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-[#f5f5f5]">
+            <div className="h-10 w-10 animate-spin rounded-full border-[3px] border-brand/20 border-t-brand" />
+            <p className="text-sm font-semibold text-gray-500">Loading RapidStylers…</p>
+          </div>
+        }
+      >
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />

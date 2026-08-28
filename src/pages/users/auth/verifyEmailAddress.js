@@ -1,13 +1,14 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import logo from "../../../assets/svg-icons/colouredLogo.svg";
 import OtpInputs from "../../../components/otpInputs";
-import { clearOTP, handleInput } from "../../../utils/utility";
 import { useFormik } from "formik";
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import Buttons from "../../../components/button";
 import { verifyOtpCode } from "../../../hooks/local/userReducer";
 import Spinner from "../../../components/spinner";
+import { APIService } from "../../../hooks/remote/apiService";
+import { showSuccessToastMessage, showErrorToastMessage } from "../../../utils/constant";
 
 const steps = [
   "Register email address",
@@ -19,7 +20,10 @@ const steps = [
 const VerifyUserEmailAddress = () => {
   useEffect(() => {
     document.title = "Verify Email Address | RapidStylers";
-    document.querySelector('meta[name="description"]').content = "Verify Email Address to validate your account for your beautification";
+    // Optional chaining: never crash the page if the meta tag is missing.
+    document
+      .querySelector('meta[name="description"]')
+      ?.setAttribute("content", "Verify Email Address to validate your account for your beautification");
 }, []);
 
 const location  = useLocation();
@@ -28,14 +32,90 @@ const dispatch = useDispatch();
 
 const userEmailAddress = location.state?.emailAddress || sessionStorage.getItem('signupEmail') || '';
 
-  const handleOTPCodeChange = (currentInput)=>{
-    const userInput = handleInput(currentInput);
-    verifyUserEmail.setFieldValue('otpCode', userInput);
-  }
+  // Controlled OTP digits — the digit you type is rendered by React from state
+  // on every keystroke, so it is always visible and can never be wiped or
+  // hidden by a re-render.
+  const [digits, setDigits] = React.useState(["", "", "", "", "", ""]);
+  const otpRefs = React.useRef([]);
+  // Countdown before the code can be resent (emails can be slow).
+  const [resendIn, setResendIn] = React.useState(60);
+  const [resending, setResending] = React.useState(false);
+
+  const handleOTPDigitChange = (index, event) => {
+    const raw = event.target.value.replace(/\D/g, "");
+    const next = [...digits];
+    if (raw) {
+      next[index] = raw.slice(-1);
+    } else {
+      // Backspace on a filled box clears it and moves back.
+      next[index] = "";
+      if (index > 0) otpRefs.current[index - 1]?.focus();
+    }
+    setDigits(next);
+    verifyUserEmail.setFieldValue("otpCode", next.join(""));
+    // Auto-advance to the next box after a digit is entered.
+    if (raw && index < digits.length - 1) otpRefs.current[index + 1]?.focus();
+  };
+
+  const handleOTPDigitKeyDown = (index, event) => {
+    // Backspace on an empty box moves back to the previous digit.
+    if (event.key === "Backspace" && !digits[index] && index > 0) {
+      otpRefs.current[index - 1]?.focus();
+    }
+  };
+
+  // Paste a full code from the email in one go: digits are spread across the
+  // boxes starting at the box being pasted into (garbage/non-digits ignored),
+  // then focus lands after the last filled box.
+  const handleOTPPaste = (index, event) => {
+    const pasted = (event.clipboardData || window.clipboardData || {}).getData
+      ? (event.clipboardData || window.clipboardData).getData("text")
+      : "";
+    const cleaned = pasted.replace(/\D/g, "").slice(0, 6 - index);
+    if (!cleaned) return;
+    event.preventDefault();
+    const next = [...digits];
+    cleaned.split("").forEach((digit, i) => {
+      next[index + i] = digit;
+    });
+    setDigits(next);
+    verifyUserEmail.setFieldValue("otpCode", next.join(""));
+    const targetIndex = Math.min(index + cleaned.length, digits.length - 1);
+    otpRefs.current[targetIndex]?.focus();
+  };
+
   const clearUserOTP = () => {
-    clearOTP();
-    document.getElementById('userInput').value = "";
-}
+    setDigits(["", "", "", "", "", ""]);
+    verifyUserEmail.setFieldValue("otpCode", "");
+    otpRefs.current[0]?.focus();
+  };
+
+  // Tick the resend countdown down once per second.
+  React.useEffect(() => {
+    if (resendIn <= 0) return undefined;
+    const timer = setInterval(() => setResendIn((s) => s - 1), 1000);
+    return () => clearInterval(timer);
+  }, [resendIn]);
+
+  const handleResendCode = async () => {
+    if (!userEmailAddress) {
+      showErrorToastMessage("We don't have your email on file — please restart registration.");
+      return;
+    }
+    setResending(true);
+    try {
+      await APIService.generateSignUpOtpCode({ emailAddress: userEmailAddress });
+      showSuccessToastMessage("A new verification code was sent to your email.");
+      clearUserOTP(); // the old digits no longer match the fresh code
+      setResendIn(60);
+    } catch (error) {
+      // APIService displays the server error.
+    } finally {
+      setResending(false);
+    }
+  };
+
+  const resendLabel = `${Math.floor(resendIn / 60)}:${String(resendIn % 60).padStart(2, "0")}`;
   const verifyUserEmail = useFormik({
     initialValues: {
       otpCode: "",
@@ -52,6 +132,18 @@ const userEmailAddress = location.state?.emailAddress || sessionStorage.getItem(
       }
     },
   })
+
+  // Auto-submit as soon as the code is complete (typed or pasted). The effect
+  // fires on the incomplete -> complete transition only, so a failed attempt
+  // does not re-submit on every re-render. Clearing a box (backspace / Clear
+  // code) makes it incomplete, so retyping the code re-arms the submit.
+  const otpComplete = verifyUserEmail.values.otpCode.length === 6;
+  React.useEffect(() => {
+    if (otpComplete) {
+      verifyUserEmail.handleSubmit();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [otpComplete])
   return (
     <React.Fragment>
        <Spinner loading={useSelector((state)=>state.user).loading}/>
@@ -91,14 +183,31 @@ const userEmailAddress = location.state?.emailAddress || sessionStorage.getItem(
             </p>
             <div className="flex justify-between items-center">
               <p className="text-sm font-semibold text-primary/50 cursor-pointer" onClick={clearUserOTP}>Clear code</p>
+              {resendIn > 0 ? (
+                <p className="text-sm font-semibold text-black/40">Resend code in {resendLabel}</p>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleResendCode}
+                  disabled={resending}
+                  className="text-sm font-semibold text-brand hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {resending ? "Sending…" : "Resend code"}
+                </button>
+              )}
             </div>
             <div className="w-full grid grid-cols-6 md:grid-cols-10 gap-4 mt-8">
-              <OtpInputs id={'digit1'} onChange={handleOTPCodeChange}/>
-              <OtpInputs id={'digit2'} onChange={handleOTPCodeChange}/>
-              <OtpInputs id={'digit3'} onChange={handleOTPCodeChange}/>
-              <OtpInputs id={'digit4'} onChange={handleOTPCodeChange}/>
-              <OtpInputs id={'digit5'} onChange={handleOTPCodeChange}/>
-              <OtpInputs id={'digit6'} onChange={handleOTPCodeChange}/>
+              {digits.map((digit, index) => (
+                <OtpInputs
+                  key={`digit${index + 1}`}
+                  id={`digit${index + 1}`}
+                  value={digit}
+                  onChange={(event) => handleOTPDigitChange(index, event)}
+                  onKeyDown={(event) => handleOTPDigitKeyDown(index, event)}
+                  onPaste={(event) => handleOTPPaste(index, event)}
+                  inputRef={(el) => (otpRefs.current[index] = el)}
+                />
+              ))}
             </div>
             <div className="mt-6">
               <form onSubmit={verifyUserEmail.handleSubmit}>

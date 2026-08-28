@@ -17,9 +17,9 @@ const NavItems = () => {
       </div>
       <div>
         <Link
-          to="/dashboard/book-appointment"
+          to="/bookAppointment"
           className={`py-4 px-4 rounded-md ${
-            location.pathname === "/dashboard/book-appointment"
+            location.pathname === "/bookAppointment"
               ? "bg-brand text-white cursor-default"
               : "cursor-pointer"
           }`}
@@ -29,9 +29,9 @@ const NavItems = () => {
       </div>
       <div>
         <Link
-          to="/dashboard/account-settings"
+          to="/accountSettings"
           className={`py-4 px-4 rounded-md ${
-            location.pathname === "/dashboard/account-settings"
+            location.pathname === "/accountSettings"
               ? "bg-brand text-white cursor-default"
               : "cursor-pointer"
           }`}
@@ -41,9 +41,9 @@ const NavItems = () => {
       </div>
       <div>
         <Link
-          to="/dashboard/feedback"
+          to="/feedback"
           className={`py-4 px-4 rounded-md ${
-            location.pathname === "/dashboard/feedback"
+            location.pathname === "/feedback"
               ? "bg-brand text-white cursor-default"
               : "cursor-pointer"
           }`}
