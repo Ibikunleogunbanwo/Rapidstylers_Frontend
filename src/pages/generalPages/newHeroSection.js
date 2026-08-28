@@ -16,6 +16,7 @@ import LocationPicker from "../../components/locationPicker";
 import { APIService } from "../../hooks/remote/apiService";
 import { useUserLocation } from "../../context/LocationContext";
 import largeVideo from "../../assets/Videos/large video.mp4";
+import smallVideo from "../../assets/Videos/small video.mp4";
 
 const Hero = ({ height }) => {
   const [services, setServices] = useState([]);
@@ -75,13 +76,19 @@ const Hero = ({ height }) => {
           <div className={`relative flex flex-col w-full lg:block lg:h-full ${document.title === "Welcome - RapidStylers" ? "" : "hidden"}`}>
             {/* Video band: full 16:9 frame so the entire video is visible (incl. both people
                 in the scene), uncropped on small/medium; full-bleed overlay on large */}
-            <div className="relative w-full aspect-video shrink-0 overflow-hidden lg:h-full lg:aspect-auto">
-              <video autoPlay loop muted playsInline className="h-full w-full object-cover object-center">
+            <div className="relative w-full aspect-[3/4] shrink-0 overflow-hidden md:h-[58vh] md:aspect-auto lg:h-full lg:aspect-auto">
+              {/* Mobile: portrait full-body clip so the seated person is fully visible */}
+              <video autoPlay loop muted playsInline className="md:hidden h-full w-full object-cover object-center">
+                <source src={smallVideo} type="video/mp4" />
+                Your browser does not support the video tag.
+              </video>
+              {/* Medium+: landscape clip, shown whole */}
+              <video autoPlay loop muted playsInline className="hidden md:block h-full w-full object-cover object-center md:object-contain lg:object-cover">
                 <source src={largeVideo} type="video/mp4" />
                 Your browser does not support the video tag.
               </video>
               {/* Soft blend into the dark text section below (stacked layout only) */}
-              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black to-transparent lg:hidden" aria-hidden="true" />
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-black/90 to-transparent lg:hidden" aria-hidden="true" />
             </div>
             {/* Text: below the image on small/medium; overlaid on the video on large */}
             <div className="grow bg-black lg:bg-transparent lg:grow-0 lg:absolute lg:inset-0 lg:flex lg:items-end lg:justify-start">
