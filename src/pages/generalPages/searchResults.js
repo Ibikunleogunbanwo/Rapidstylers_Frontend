@@ -171,7 +171,9 @@ const SearchResults = () => {
       }
     };
     run();
-  }, [lat, lng, radius, serviceTypeId, name, province, city, openNow, page, isOpenNow]);
+    // navigate/searchParams are stable (React Router v6) and the URL is the
+    // source of truth for every search input, so including them is safe.
+  }, [lat, lng, radius, serviceTypeId, name, province, city, openNow, page, isOpenNow, navigate, searchParams]);
 
   // Re-filter by service type from the dropdown on the results page
   const handleServiceFilter = (e) => {
