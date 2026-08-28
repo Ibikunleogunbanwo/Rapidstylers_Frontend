@@ -1,0 +1,88 @@
+name: CI Failure Digest
+
+on:
+  schedule:
+    # Weekly, Monday 08:00 MDT (14:00 UTC). Adjust to your timezone.
+    - cron: '0 14 * * 1'
+  workflow_dispatch: {}
+
+permissions:
+  actions: read
+  issues: write
+
+jobs:
+  digest:
+    name: Publish weekly CI failure digest
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build and publish the digest
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const DAYS = 7;
+            const TITLE = 'CI Failure Digest';
+            const since = new Date(Date.now() - DAYS * 24 * 60 * 60 * 1000);
+
+            const { data: runsPage } = await github.rest.actions.listWorkflowRunsForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 100,
+            });
+            const failed = (runsPage.workflow_runs || [])
+              .filter((r) => r.conclusion === 'failure' && new Date(r.created_at) >= since)
+              .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+            const lines = [
+              `## CI failures — last ${DAYS} days (generated ${new Date().toISOString().slice(0, 10)})`,
+              '',
+            ];
+            if (failed.length === 0) {
+              lines.push('✅ **No failed workflow runs this week.**');
+            } else {
+              lines.push(`🔴 **${failed.length} failed run${failed.length === 1 ? '' : 's'}** in the last ${DAYS} days:`);
+              lines.push('');
+              for (const r of failed.slice(0, 30)) {
+                lines.push(
+                  `- **${r.name}** — ${r.head_branch || 'no branch'} @ \`${r.head_sha.slice(0, 7)}\`` +
+                  ` — ${new Date(r.created_at).toISOString().slice(0, 16)} UTC` +
+                  ` — [run #${r.run_number}](${r.html_url})`
+                );
+              }
+              if (failed.length > 30) lines.push(`\n_…and ${failed.length - 30} more._`);
+            }
+            const body = lines.join('\n');
+
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              per_page: 100,
+            });
+            const existing = issues.find((i) => i.title === TITLE);
+
+            if (existing) {
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existing.number,
+                body,
+              });
+              // A comment notifies watchers — the body edit alone is easy to miss.
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existing.number,
+                body: failed.length === 0
+                  ? 'Weekly digest updated — all green this week. 🎉'
+                  : `Weekly digest updated — ${failed.length} failed run(s) to review.`,
+              });
+              core.notice(`Updated digest issue #${existing.number}`);
+            } else {
+              const created = await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: TITLE,
+                body,
+              });
+              core.notice(`Created digest issue #${created.data.number}`);
+            }
