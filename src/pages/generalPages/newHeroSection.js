@@ -73,7 +73,7 @@ const Hero = ({ height }) => {
       <div className="h-[100%] absolute w-full flex items-center overflow-hidden">
         <div className="w-full h-full relative">
           {/* Landing */}
-          <div className={`h-full text- bg-emerald-300 relative ${document.title === "Welcome - RapidStylers" ? "block" : "hidden"}`}>
+          <div className={`h-full bg-black relative ${document.title === "Welcome - RapidStylers" ? "block" : "hidden"}`}>
             <video autoPlay loop muted className="hidden md:block h-full w-full object-cover">
               <source src={largeVideo} type="video/mp4" />
               Your browser does not support the video tag.
