@@ -73,12 +73,15 @@ const Hero = ({ height }) => {
         <div className="w-full lg:h-full relative">
           {/* Landing */}
           <div className={`relative flex flex-col w-full lg:block lg:h-full ${document.title === "Welcome - RapidStylers" ? "" : "hidden"}`}>
-            {/* Video band: 16:9 frame so the video is always well-framed (no awkward crop); full-bleed on large */}
-            <div className="relative w-full aspect-video shrink-0 lg:h-full lg:aspect-auto">
-              <video autoPlay loop muted playsInline className="h-full w-full object-cover">
+            {/* Video band: full 16:9 frame so the entire video is visible (incl. both people
+                in the scene), uncropped on small/medium; full-bleed overlay on large */}
+            <div className="relative w-full aspect-video shrink-0 overflow-hidden lg:h-full lg:aspect-auto">
+              <video autoPlay loop muted playsInline className="h-full w-full object-cover object-center">
                 <source src={largeVideo} type="video/mp4" />
                 Your browser does not support the video tag.
               </video>
+              {/* Soft blend into the dark text section below (stacked layout only) */}
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black to-transparent lg:hidden" aria-hidden="true" />
             </div>
             {/* Text: below the image on small/medium; overlaid on the video on large */}
             <div className="grow bg-black lg:bg-transparent lg:grow-0 lg:absolute lg:inset-0 lg:flex lg:items-end lg:justify-start">
