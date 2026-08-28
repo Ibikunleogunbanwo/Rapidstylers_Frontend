@@ -16,7 +16,6 @@ import LocationPicker from "../../components/locationPicker";
 import { APIService } from "../../hooks/remote/apiService";
 import { useUserLocation } from "../../context/LocationContext";
 import largeVideo from "../../assets/Videos/large video.mp4";
-import smallVideo from "../../assets/Videos/small video.mp4";
 
 const Hero = ({ height }) => {
   const [services, setServices] = useState([]);
@@ -67,31 +66,31 @@ const Hero = ({ height }) => {
   });
 
   return (
-    <div style={{ height }} className="relative z-10">
+    <div className="relative z-10 lg:h-[var(--hero-h)]" style={{ "--hero-h": height }}>
       <Spinner loading={useSelector((state) => state.user).loading} />
 
-      <div className="h-[100%] absolute w-full flex items-center overflow-hidden">
-        <div className="w-full h-full relative">
+      <div className="w-full lg:h-full overflow-hidden">
+        <div className="w-full lg:h-full relative">
           {/* Landing */}
-          <div className={`h-full bg-black relative ${document.title === "Welcome - RapidStylers" ? "block" : "hidden"}`}>
-            <video autoPlay loop muted className="hidden md:block h-full w-full object-cover">
-              <source src={largeVideo} type="video/mp4" />
-              Your browser does not support the video tag.
-            </video>
-            <video autoPlay loop muted className="md:hidden h-full w-full object-cover">
-              <source src={smallVideo} type="video/mp4" />
-              Your browser does not support the video tag.
-            </video>
-            <div className="absolute top-0 w-full h-full bg-black/70 flex items-end justify-center md:justify-start">
-              <div className="w-full md:w-[70%] lg:w-[50%] px-4 pb-6 pt-8 sm:px-6 sm:pb-10 md:ps-20 md:pb-20">
-                <div className="text-[22px] sm:text-xl md:text-2xl lg:text-[28px] font-bold text-white text-center md:text-start mb-2 leading-snug">
+          <div className={`relative flex flex-col w-full lg:block lg:h-full ${document.title === "Welcome - RapidStylers" ? "" : "hidden"}`}>
+            {/* Video band: 16:9 frame so the video is always well-framed (no awkward crop); full-bleed on large */}
+            <div className="relative w-full aspect-video shrink-0 lg:h-full lg:aspect-auto">
+              <video autoPlay loop muted playsInline className="h-full w-full object-cover">
+                <source src={largeVideo} type="video/mp4" />
+                Your browser does not support the video tag.
+              </video>
+            </div>
+            {/* Text: below the image on small/medium; overlaid on the video on large */}
+            <div className="grow bg-black lg:bg-transparent lg:grow-0 lg:absolute lg:inset-0 lg:flex lg:items-end lg:justify-start">
+              <div className="px-4 py-10 sm:px-8 md:px-12 text-center lg:w-[72%] xl:w-[55%] lg:px-0 lg:ps-20 lg:pb-20 lg:text-start">
+                <div className="text-[22px] sm:text-xl md:text-2xl lg:text-[28px] font-bold text-white text-center lg:text-start mb-2 leading-snug">
                   Get convenient, <span className="text-brand">high-quality beauty services</span> without leaving your home
                 </div>
-                <div className="text-white/70 text-xs sm:text-sm md:text-base text-center md:text-start max-w-md mx-auto md:mx-0">
+                <div className="text-white/70 text-xs sm:text-sm md:text-base text-center lg:text-start max-w-md mx-auto lg:mx-0">
                   Our platform connects you with top-rated local beauty professionals for in-home appointments.
                 </div>
                 {services.length > 0 && (
-                  <div className="mt-3 flex flex-wrap justify-center md:justify-start gap-1.5 sm:gap-2">
+                  <div className="mt-3 flex flex-wrap justify-center lg:justify-start gap-1.5 sm:gap-2">
                     {services.map((service) => (
                       <span
                         key={service}
