@@ -42,6 +42,9 @@ const SecureAccount = () => {
   const [dashboardModal, setDashboardModal] = useState(false);
   const [userEmailAddress, setUserEmailAddress] = useState('');
   const [userPassword, setUserPassword] = useState('');
+  // Inline server-rejection errors (shown under the form / inside the modal).
+  const [submitError, setSubmitError] = useState(null);
+  const [loginError, setLoginError] = useState(null);
   const createAccountForm = useFormik(
     {
       initialValues: {
@@ -69,22 +72,37 @@ const SecureAccount = () => {
         const { firstname, lastname, country, address, state, phoneNumber, emailAddress, agreeToTerms } = userProfileData;
         const finalEmailAddress = emailAddress || sessionStorage.getItem('signupEmail') || '';
         let userRegistrationData = { firstname, lastname, country, address, state, emailAddress: finalEmailAddress, phoneNumber, password, agreeToTerms: agreeToTerms === true };
-        const { payload } = await dispatch(createUserAccount(userRegistrationData));
-        if(payload.statusCode === "200"){
-          setDashboardModal(true);
-          setUserEmailAddress(finalEmailAddress);
-          setUserPassword(password);
+        try {
+          const { payload } = await dispatch(createUserAccount(userRegistrationData));
+          if(payload.statusCode === "200"){
+            setSubmitError(null);
+            setLoginError(null);
+            setDashboardModal(true);
+            setUserEmailAddress(finalEmailAddress);
+            setUserPassword(password);
+          } else {
+            setSubmitError(payload.message || "We couldn't create your account right now. Please try again.");
+          }
+        } catch (error) {
+          // APIService.extractError already surfaced network/server errors as a toast.
+          setSubmitError("We couldn't create your account right now. Please try again.");
         }
       }
     }
   )
   const proceedToDashboard = async() => {
       let userSignInData = {emailAddress: userEmailAddress, password: userPassword}
-      const { payload} = await dispatch(userAuthenticate(userSignInData));
-      if(payload.statusCode === "200"){
-        dispatch(getUserDetails(payload.data.userId));
-        setDashboardModal(false);
-        navigate("/dashboard")
+      try {
+        const { payload} = await dispatch(userAuthenticate(userSignInData));
+        if(payload.statusCode === "200"){
+          dispatch(getUserDetails(payload.data.userId));
+          setDashboardModal(false);
+          navigate("/dashboard")
+        } else {
+          setLoginError(payload.message || "We couldn't sign you in. Please try again.");
+        }
+      } catch (error) {
+        setLoginError("We couldn't sign you in right now. Please try again.");
       }
   }
   return (
@@ -126,16 +144,24 @@ const SecureAccount = () => {
                 inputType={"password"}
                 inputName={"password"}
                 inputOnBlur={createAccountForm.handleBlur}
-                inputOnChange={createAccountForm.handleChange}
+                inputOnChange={(event) => { setSubmitError(null); createAccountForm.handleChange(event); }}
                 inputValue={createAccountForm.values.password}
                 inputError={createAccountForm.touched.password && createAccountForm.errors.password ? createAccountForm.errors.password : null} />
               <PasswordInput labelName={"Confirm Password"}
                 inputType={"password"}
                 inputName={"confirmPassword"}
                 inputOnBlur={createAccountForm.handleBlur}
-                inputOnChange={createAccountForm.handleChange}
+                inputOnChange={(event) => { setSubmitError(null); createAccountForm.handleChange(event); }}
                 inputValue={createAccountForm.values.confirmPassword}
                 inputError={createAccountForm.touched.confirmPassword && createAccountForm.errors.confirmPassword ? createAccountForm.errors.confirmPassword : null} />
+              {submitError && (
+                <p role="alert" className="text-xs text-red-500 flex items-center gap-1.5">
+                  <svg className="h-3.5 w-3.5 shrink-0" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                  </svg>
+                  <span>{submitError}</span>
+                </p>
+              )}
               <Buttons btnText={"Create Account"} btnType={"primary"} type={"submit"} />
             </form>
           </div>
@@ -151,6 +177,14 @@ const SecureAccount = () => {
         </div>
       <p className="-mt-8 text-center px-4">Account created successfully. Proceed to your dashboard.</p>
         <div className="px-6 py-8 grid gap-4">
+          {loginError && (
+            <p role="alert" className="text-xs text-red-500 flex items-center gap-1.5">
+              <svg className="h-3.5 w-3.5 shrink-0" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+              </svg>
+              <span>{loginError}</span>
+            </p>
+          )}
           <Buttons btnText={"Go to Dashboard"} btnType={"primary"} type={"button"} onClick={()=>proceedToDashboard()}  />
         </div>
       </div>

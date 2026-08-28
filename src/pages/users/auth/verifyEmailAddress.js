@@ -42,6 +42,8 @@ const userEmailAddress = location.state?.emailAddress || sessionStorage.getItem(
   const [resending, setResending] = React.useState(false);
   // Inline error shown under the boxes when the submitted code is rejected.
   const [otpError, setOtpError] = React.useState(null);
+  // Shakes the boxes on rejection; cleared when the animation finishes.
+  const [shaking, setShaking] = React.useState(false);
 
   const handleOTPDigitChange = (index, event) => {
     setOtpError(null);
@@ -102,6 +104,15 @@ const userEmailAddress = location.state?.emailAddress || sessionStorage.getItem(
     return () => clearInterval(timer);
   }, [resendIn]);
 
+  // Fallback clear for the shake: some environments (reduced motion, this
+  // preview) never fire animationend, so also clear on a timer. Each new
+  // rejection resets the timer, so a rapid re-reject keeps the full shake.
+  React.useEffect(() => {
+    if (!shaking) return undefined;
+    const timer = setTimeout(() => setShaking(false), 500);
+    return () => clearTimeout(timer);
+  }, [shaking]);
+
   const handleResendCode = async () => {
     setOtpError(null);
     if (!userEmailAddress) {
@@ -138,11 +149,18 @@ const userEmailAddress = location.state?.emailAddress || sessionStorage.getItem(
           sessionStorage.setItem('signupEmail', verifiedEmail);
           navigate("/personalDetails", {state : {userEmailAddress: verifiedEmail}});
         } else {
+          // Clear first: clearUserOTP resets the error too, and React batches
+          // these updates in call order, so the message below wins and the
+          // empty boxes are ready for an immediate retype.
+          clearUserOTP();
           setOtpError(payload.message || "The code you entered is incorrect or has expired. Check your email and try again, or request a new code.");
+          setShaking(true);
         }
       } catch (error) {
         // APIService.extractError already surfaced network/server errors as a toast.
+        clearUserOTP();
         setOtpError("We couldn't verify that code right now. Please try again in a moment.");
+        setShaking(true);
       }
     },
   })
@@ -210,7 +228,11 @@ const userEmailAddress = location.state?.emailAddress || sessionStorage.getItem(
                 </button>
               )}
             </div>
-            <div className="w-full grid grid-cols-6 md:grid-cols-10 gap-4 mt-8">
+            <div
+              data-testid="otp-grid"
+              className={`w-full grid grid-cols-6 md:grid-cols-10 gap-4 mt-8 ${shaking ? "animate-shake" : ""}`}
+              onAnimationEnd={() => setShaking(false)}
+            >
               {digits.map((digit, index) => (
                 <OtpInputs
                   key={`digit${index + 1}`}

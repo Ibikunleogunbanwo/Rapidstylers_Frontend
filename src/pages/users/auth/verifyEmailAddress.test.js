@@ -253,4 +253,46 @@ describe("VerifyUserEmailAddress OTP inputs", () => {
     expect(alert).toHaveTextContent("We couldn't verify that code right now");
     expect(__testNavigate).not.toHaveBeenCalled();
   });
+
+  test("clears the boxes after a rejected code so the user can retype immediately", async () => {
+    __testDispatch.mockImplementation(() => ({
+      payload: { statusCode: "400", message: "The code is incorrect or has expired" },
+    }));
+    render(<VerifyUserEmailAddress />);
+    ["1", "2", "3", "4", "5", "6"].forEach((d, i) => typeDigit(i, d));
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("The code is incorrect or has expired");
+    // Every box is emptied for an immediate fresh attempt…
+    expect(otpInputs().every((el) => el.value === "")).toBe(true);
+    expect(document.getElementById("userInput").value).toBe("");
+    // …and focus lands back on the first box.
+    expect(document.activeElement).toBe(otpInputs()[0]);
+
+    // Retyping a complete code re-arms the auto-submit with the new value.
+    ["7", "8", "9", "0", "1", "2"].forEach((d, i) => typeDigit(i, d));
+    await waitFor(() => expect(__testDispatch).toHaveBeenCalledTimes(2));
+    expect(__testDispatch).toHaveBeenLastCalledWith("789012");
+  });
+
+  test("shakes the OTP boxes when the code is rejected", async () => {
+    __testDispatch.mockImplementation(() => ({
+      payload: { statusCode: "400", message: "The code is incorrect or has expired" },
+    }));
+    render(<VerifyUserEmailAddress />);
+
+    // No shake before a rejection.
+    expect(screen.getByTestId("otp-grid")).not.toHaveClass("animate-shake");
+
+    ["1", "2", "3", "4", "5", "6"].forEach((d, i) => typeDigit(i, d));
+    await screen.findByRole("alert");
+
+    // The shake class is applied to the grid alongside the inline error.
+    const grid = screen.getByTestId("otp-grid");
+    expect(grid).toHaveClass("animate-shake");
+
+    // The class is removed once the animation finishes.
+    fireEvent.animationEnd(grid);
+    expect(grid).not.toHaveClass("animate-shake");
+  });
 });

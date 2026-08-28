@@ -1,12 +1,17 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import SecureAccount from "./secureAccount";
+import { __testDispatch } from "react-redux";
 
 // The page dispatches the account-creation action and shows the success modal
 // only when it returns statusCode 200. Mock the redux plumbing so the form
 // submission resolves successfully in the test.
-jest.mock("react-redux", () => ({
-  useDispatch: () => jest.fn().mockResolvedValue({ payload: { statusCode: "200" } }),
-}));
+jest.mock("react-redux", () => {
+  const dispatch = jest.fn();
+  return {
+    useDispatch: () => dispatch,
+    __testDispatch: dispatch,
+  };
+});
 jest.mock("react-router-dom", () => ({ useNavigate: () => jest.fn() }));
 jest.mock("lottie-react", () => ({
   __esModule: true,
@@ -32,6 +37,16 @@ const PROFILE = {
   agreeToTerms: true,
 };
 
+const fillPasswordForm = () => {
+  fireEvent.change(document.querySelector('input[name="password"]'), {
+    target: { value: "StrongPass1!" },
+  });
+  fireEvent.change(document.querySelector('input[name="confirmPassword"]'), {
+    target: { value: "StrongPass1!" },
+  });
+  fireEvent.click(screen.getByText("Create Account"));
+};
+
 describe("SecureAccount success modal viewport containment", () => {
   beforeEach(() => {
     // The page writes its description into this meta tag on mount; jsdom has
@@ -40,6 +55,9 @@ describe("SecureAccount success modal viewport containment", () => {
     meta.name = "description";
     document.head.appendChild(meta);
     sessionStorage.setItem("userProfileData", JSON.stringify(PROFILE));
+    __testDispatch.mockClear();
+    // Default: account creation succeeds.
+    __testDispatch.mockResolvedValue({ payload: { statusCode: "200" } });
   });
 
   test("the success modal anchors to the viewport after account creation", async () => {
@@ -112,5 +130,73 @@ describe("SecureAccount success modal viewport containment", () => {
     // with no offsets, which could place the dialog below the fold.
     const overlay = document.querySelector(".fixed.inset-0");
     expect(overlay.className).not.toContain("h-screen");
+  });
+});
+
+describe("SecureAccount inline server errors", () => {
+  beforeEach(() => {
+    const meta = document.createElement("meta");
+    meta.name = "description";
+    document.head.appendChild(meta);
+    sessionStorage.setItem("userProfileData", JSON.stringify(PROFILE));
+    __testDispatch.mockClear();
+    __testDispatch.mockResolvedValue({ payload: { statusCode: "200" } });
+  });
+
+  test("shows an inline error under the form when account creation is rejected", async () => {
+    __testDispatch.mockResolvedValue({
+      payload: { statusCode: "400", message: "Email address is already registered" },
+    });
+    render(<SecureAccount />);
+    fillPasswordForm();
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("Email address is already registered");
+    // No success modal on rejection.
+    expect(screen.queryByText(/Account created successfully/)).not.toBeInTheDocument();
+  });
+
+  test("clears the inline error as soon as the user edits a field", async () => {
+    __testDispatch.mockResolvedValue({
+      payload: { statusCode: "400", message: "Email address is already registered" },
+    });
+    render(<SecureAccount />);
+    fillPasswordForm();
+    await screen.findByRole("alert");
+
+    fireEvent.change(document.querySelector('input[name="password"]'), {
+      target: { value: "AnotherPass1!" },
+    });
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  test("shows a generic inline error when account creation fails at the network level", async () => {
+    __testDispatch.mockRejectedValue(new Error("Network Error"));
+    render(<SecureAccount />);
+    fillPasswordForm();
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("We couldn't create your account right now");
+  });
+
+  test("shows an inline error inside the modal when auto-sign-in is rejected", async () => {
+    // Account creation succeeds, then the follow-up sign-in is rejected.
+    __testDispatch
+      .mockResolvedValueOnce({ payload: { statusCode: "200" } })
+      .mockResolvedValueOnce({
+        payload: { statusCode: "401", message: "Invalid credentials" },
+      });
+    render(<SecureAccount />);
+    fillPasswordForm();
+
+    await waitFor(() => {
+      expect(screen.getByText(/Account created successfully/)).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByText("Go to Dashboard"));
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("Invalid credentials");
+    // The modal stays open on failure.
+    expect(screen.getByText(/Account created successfully/)).toBeInTheDocument();
   });
 });
