@@ -83,9 +83,9 @@ const AdminLayout = () => {
             </div>
             <div onClick={closeMenu}>
             <Link
-              to="/dashboard/book-appointment"
+              to="/bookAppointment"
               className={`py-4 rounded-md ${
-                location.pathname === "/dashboard/book-appointment"
+                location.pathname === "/bookAppointment"
                   ? "text-brand cursor-default font-medium"
                   : "cursor-pointer text-black/50"
               }`}
@@ -95,9 +95,9 @@ const AdminLayout = () => {
             </div>
             <div onClick={closeMenu}>
             <Link
-              to="/dashboard/account-settings"
+              to="/accountSettings"
               className={`py-4 rounded-md ${
-                location.pathname === "/dashboard/account-settings"
+                location.pathname === "/accountSettings"
                   ? "text-brand cursor-default font-medium"
                   : "cursor-pointer text-black/50"
               }`}
@@ -107,9 +107,9 @@ const AdminLayout = () => {
             </div>
             <div onClick={closeMenu}>
             <Link
-              to="/dashboard/feedback"
+              to="/feedback"
               className={`py-4 rounded-md ${
-                location.pathname === "/dashboard/feedback"
+                location.pathname === "/feedback"
                   ? "text-brand cursor-default font-medium"
                   : "cursor-pointer text-black/50"
               }`}

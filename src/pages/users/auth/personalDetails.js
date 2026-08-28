@@ -40,7 +40,10 @@ const phoneDigits = (value) => (value || "").replace(/\D/g, "").replace(/^1(?=\d
 const PersonalDetails = () => {
   useEffect(() => {
     document.title = "Personal Details | RapidStylers";
-    document.querySelector('meta[name="description"]').content = "Complete the form to create your personalized profile.";
+    // Optional chaining: never crash the page if the meta tag is missing.
+    document
+      .querySelector('meta[name="description"]')
+      ?.setAttribute("content", "Complete the form to create your personalized profile.");
 }, []);
 
   const location  = useLocation();

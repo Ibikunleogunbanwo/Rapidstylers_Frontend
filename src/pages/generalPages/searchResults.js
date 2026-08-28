@@ -10,6 +10,10 @@ const displayServiceName = (value) => {
   return /^b?hairstylist$/i.test(label) ? "Hair Stylist" : label;
 };
 
+// Results are paginated client-side (after filtering/enrichment) so the total
+// count stays accurate and one code path serves every search type.
+const PAGE_SIZE = 12;
+
 /**
  * Search results — supports radius + city + service type + name + province.
  * Shows active filter pills and a service type dropdown for re-filtering.
@@ -28,6 +32,10 @@ const SearchResults = () => {
   const province = searchParams.get("province") || "";
   const city = searchParams.get("city") || "";
   const openNow = searchParams.get("openNow") === "true";
+  // Page lives in the URL (?page=2) so refresh and back/forward navigation keep
+  // the same page of results.
+  const rawPage = Number.parseInt(searchParams.get("page") || "", 10);
+  const page = Number.isFinite(rawPage) && rawPage >= 1 ? rawPage : 1;
 
   const isOpenNow = React.useCallback((stylist) => {
     if (!openNow) return true;
@@ -49,6 +57,9 @@ const SearchResults = () => {
   const [categories, setCategories] = useState([]);
   const [activeServiceId, setActiveServiceId] = useState(serviceTypeId);
   const [openNowFilter, setOpenNowFilter] = useState(openNow);
+  // Set only when the backend paginated the nearby search; null means the full
+  // list was fetched and pagination happens client-side.
+  const [totalCount, setTotalCount] = useState(null);
   const { savedIds, loading: savedLoading, toggleSaved } = useSavedStylists();
 
   // Load service type categories for the filter dropdown
@@ -66,25 +77,51 @@ const SearchResults = () => {
       .catch(() => {});
   }, []);
 
-  // Fetch results when params change
+  // Fetch results when params or page change. The nearby search uses backend
+  // page/pageSize only when no client-side filter is applied after the fetch
+  // (the province filter is the only one that can affect the lat/lng path).
   useEffect(() => {
     setActiveServiceId(serviceTypeId);
     setOpenNowFilter(openNow);
     const run = async () => {
       setLoading(true);
+      setTotalCount(null);
       try {
         let results = [];
 
         if (lat && lng) {
+          const filters = { openNow };
+          if (lat && lng && !province) {
+            filters.page = page;
+            filters.pageSize = PAGE_SIZE;
+          }
           const res = await APIService.searchNearby(
             parseFloat(lat),
             parseFloat(lng),
             parseFloat(radius),
             serviceTypeId,
             city,
-            { openNow }
+            filters
           );
-          results = res.data?.data || [];
+          const data = res.data?.data;
+          if (lat && lng && !province && data && Array.isArray(data.items)) {
+            // Backend already sliced this page — use its totals directly.
+            results = data.items;
+            if (typeof data.total === "number") setTotalCount(data.total);
+            // A stale ?page= beyond the last page comes back empty — correct
+            // the URL to the last valid page so the grid isn't blank.
+            if (data.items.length === 0 && data.total > 0 && page > 1) {
+              const lastPage = Math.max(1, Math.ceil(data.total / PAGE_SIZE));
+              if (lastPage !== page) {
+                const params = new URLSearchParams(searchParams);
+                params.set("page", String(lastPage));
+                navigate(`/search?${params.toString()}`, { replace: true });
+              }
+            }
+          } else {
+            // Older/array response or client-filter path: slice client-side.
+            results = Array.isArray(data) ? data : [];
+          }
         } else if (serviceTypeId) {
           const res = await APIService.stylersBaseOnCategory(serviceTypeId);
           results = res.data?.data || [];
@@ -134,13 +171,14 @@ const SearchResults = () => {
       }
     };
     run();
-  }, [lat, lng, radius, serviceTypeId, name, province, city, openNow, isOpenNow]);
+  }, [lat, lng, radius, serviceTypeId, name, province, city, openNow, page, isOpenNow]);
 
   // Re-filter by service type from the dropdown on the results page
   const handleServiceFilter = (e) => {
     const newId = e.target.value;
     setActiveServiceId(newId);
     const params = new URLSearchParams(searchParams);
+    params.delete("page"); // a changed filter restarts at page 1
     if (newId) {
       params.set("serviceTypeId", newId);
       const selected = categories.find((c) => c.value === newId);
@@ -156,6 +194,7 @@ const SearchResults = () => {
     const nextValue = event.target.checked;
     setOpenNowFilter(nextValue);
     const params = new URLSearchParams(searchParams);
+    params.delete("page"); // a changed filter restarts at page 1
     if (nextValue) params.set("openNow", "true");
     else params.delete("openNow");
     navigate(`/search?${params.toString()}`);
@@ -165,6 +204,7 @@ const SearchResults = () => {
   const removeFilter = (key) => {
     const params = new URLSearchParams(searchParams);
     params.delete(key);
+    params.delete("page"); // a changed filter restarts at page 1
     navigate(`/search?${params.toString()}`);
   };
 
@@ -193,6 +233,28 @@ const SearchResults = () => {
     ...categories,
   ];
 
+  // totalCount is set only when the backend paginated the nearby search;
+  // otherwise the full list was fetched and pagination is client-side.
+  const totalFound = totalCount ?? stylists.length;
+  const totalPages = Math.max(1, Math.ceil(totalFound / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const visibleStylists =
+    totalCount === null
+      ? stylists.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
+      : stylists;
+
+  const goToPage = (next) => {
+    const target = Math.min(Math.max(1, next), totalPages);
+    if (target === safePage) return;
+    // Persist the page in the URL — refresh and back/forward keep the same
+    // page, and ScrollToTop handles the scroll reset on the route change.
+    const params = new URLSearchParams(searchParams);
+    params.set("page", String(target));
+    navigate(`/search?${params.toString()}`);
+    // Belt-and-braces scroll reset for use outside the ScrollToTop shell.
+    window.scrollTo(0, 0);
+  };
+
   return (
     <div className="min-h-screen bg-[#F4F5F7] px-4 md:px-[50px] py-10">
       <div className="max-w-6xl mx-auto">
@@ -219,10 +281,10 @@ const SearchResults = () => {
               {loading ? "Searching…" : "Find your perfect professional and book instantly."}
             </p>
           </div>
-          {!loading && stylists.length > 0 && (
+          {!loading && totalFound > 0 && (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3.5 py-1.5 text-xs font-bold text-gray-600 shadow-sm ring-1 ring-gray-100">
               <span className="h-1.5 w-1.5 rounded-full bg-[#9381FF]" />
-              {stylists.length} professional{stylists.length === 1 ? "" : "s"} found
+              {totalFound} professional{totalFound === 1 ? "" : "s"} found
             </span>
           )}
         </div>
@@ -311,25 +373,52 @@ const SearchResults = () => {
             </p>
           </div>
         ) : (
-          <div className="mt-7 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {stylists.map((stylist) => (
-              <ServiceCard
-                key={stylist.stylerId || stylist.id}
-                coverImg={stylist.profileImageUrl || ""}
-                name={stylist.businessName || stylist.name || "Professional"}
-                rating={stylist.averageRating || "0"}
-                reviews={stylist.reviewCount || "0"}
-                status={stylist.visibilityStatus === "Online" ? "Online" : "Offline"}
-                distance={stylist.distanceKm}
-                stylerId={stylist.stylerId || stylist.id}
-                businessName={stylist.businessName || stylist.name || "Professional"}
-                isSaved={savedIds.has(String(stylist.stylerId || stylist.id))}
-                onToggleSaved={toggleSaved}
-                saveLoading={savedLoading}
-                payoutReady={stylist.payoutReady}
-              />
-            ))}
-          </div>
+          <>
+            <div className="mt-7 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {visibleStylists.map((stylist) => (
+                <ServiceCard
+                  key={stylist.stylerId || stylist.id}
+                  coverImg={stylist.profileImageUrl || ""}
+                  name={stylist.businessName || stylist.name || "Professional"}
+                  rating={stylist.averageRating || "0"}
+                  reviews={stylist.reviewCount || "0"}
+                  status={stylist.visibilityStatus === "Online" ? "Online" : "Offline"}
+                  distance={stylist.distanceKm}
+                  stylerId={stylist.stylerId || stylist.id}
+                  businessName={stylist.businessName || stylist.name || "Professional"}
+                  isSaved={savedIds.has(String(stylist.stylerId || stylist.id))}
+                  onToggleSaved={toggleSaved}
+                  saveLoading={savedLoading}
+                  payoutReady={stylist.payoutReady}
+                />
+              ))}
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="mt-10 flex items-center justify-center gap-4">
+                <button
+                  type="button"
+                  onClick={() => goToPage(safePage - 1)}
+                  disabled={safePage <= 1}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition-colors hover:border-brand/40 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  ← Previous
+                </button>
+                <span className="text-sm font-semibold text-gray-600">
+                  Page {safePage} of {totalPages}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => goToPage(safePage + 1)}
+                  disabled={safePage >= totalPages}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition-colors hover:border-brand/40 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Next →
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

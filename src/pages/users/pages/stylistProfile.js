@@ -21,6 +21,37 @@ const formatAvailabilityTime = (value) => {
   return `${displayHour}:${minute} ${period}`;
 };
 
+const PORTFOLIO_PAGE_SIZE = 9;
+const REVIEW_PAGE_SIZE = 5;
+
+// Compact prev/next pager shared by the portfolio and reviews sections.
+const SectionPager = ({ page, totalPages, onPage }) => {
+  if (totalPages <= 1) return null;
+  return (
+    <div className="mt-6 flex items-center justify-center gap-4">
+      <button
+        type="button"
+        onClick={() => onPage(page - 1)}
+        disabled={page <= 1}
+        className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition-colors hover:border-brand/40 disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        ← Previous
+      </button>
+      <span className="text-sm font-semibold text-gray-600">
+        Page {page} of {totalPages}
+      </span>
+      <button
+        type="button"
+        onClick={() => onPage(page + 1)}
+        disabled={page >= totalPages}
+        className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition-colors hover:border-brand/40 disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        Next →
+      </button>
+    </div>
+  );
+};
+
 const WorkingHours = ({ availability }) => {
   const hours = [...(availability || [])].sort((a, b) => Number(a.dayOfWeek) - Number(b.dayOfWeek));
 
@@ -66,6 +97,29 @@ const StylistProfile = ({ setPageTitle }) => {
   const stylerProfile = useSingleStylerProfile(stylerId);
   const [isSaved, setIsSaved] = useState(false);
   const [saveLoading, setSaveLoading] = useState(false);
+  const [portfolioPage, setPortfolioPage] = useState(1);
+  const [reviewsPage, setReviewsPage] = useState(1);
+
+  // Reset pagination when viewing a different stylist.
+  useEffect(() => {
+    setPortfolioPage(1);
+    setReviewsPage(1);
+  }, [stylerId]);
+
+  const portfolio = stylerProfile.stylerPortfolio || [];
+  const reviews = stylerProfile.stylerReviews || [];
+  const portfolioTotalPages = Math.max(1, Math.ceil(portfolio.length / PORTFOLIO_PAGE_SIZE));
+  const reviewsTotalPages = Math.max(1, Math.ceil(reviews.length / REVIEW_PAGE_SIZE));
+  const safePortfolioPage = Math.min(portfolioPage, portfolioTotalPages);
+  const safeReviewsPage = Math.min(reviewsPage, reviewsTotalPages);
+  const visiblePortfolio = portfolio.slice(
+    (safePortfolioPage - 1) * PORTFOLIO_PAGE_SIZE,
+    safePortfolioPage * PORTFOLIO_PAGE_SIZE
+  );
+  const visibleReviews = reviews.slice(
+    (safeReviewsPage - 1) * REVIEW_PAGE_SIZE,
+    safeReviewsPage * REVIEW_PAGE_SIZE
+  );
 
   useEffect(() => {
     let mounted = true;
@@ -206,14 +260,14 @@ const StylistProfile = ({ setPageTitle }) => {
         <div className="mb-8 md:mb-4">
           <span className="font-semibold">Portfolio:</span>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
-            {stylerProfile.stylerPortfolio && stylerProfile.stylerPortfolio.length > 0 && (
-              stylerProfile.stylerPortfolio.map((val, key) => (
+            {portfolio.length > 0 &&
+              visiblePortfolio.map((val, key) => (
                 <div key={key}>
                   <img src={val.imageUrl} alt={val.name} className="aspect-square rounded-md object-cover" />
                 </div>
-              ))
-            )}
+              ))}
           </div>
+          <SectionPager page={safePortfolioPage} totalPages={portfolioTotalPages} onPage={setPortfolioPage} />
         </div>
         <div className="mb-8 md:mb-4">
           <span className="font-semibold">Reviews:</span>
@@ -228,16 +282,19 @@ const StylistProfile = ({ setPageTitle }) => {
           ) : (
             <p className="mt-4 text-sm text-black/50">No reviews yet.</p>
           )}
-          {stylerProfile.stylerReviews && stylerProfile.stylerReviews.length > 0 && (
-            stylerProfile.stylerReviews.map((val, key) => (
-              <div className="py-4 border-b" key={key}>
-                <div className="flex justify-between items-center font-semibold">
-                  <span>{val.userName}</span>
-                  <span className="text-brand">{val.ratingScore}</span>
+          {reviews.length > 0 && (
+            <>
+              {visibleReviews.map((val, key) => (
+                <div className="py-4 border-b" key={key}>
+                  <div className="flex justify-between items-center font-semibold">
+                    <span>{val.userName}</span>
+                    <span className="text-brand">{val.ratingScore}</span>
+                  </div>
+                  <p className="text-black/50">{val.message}</p>
                 </div>
-                <p className="text-black/50">{val.message}</p>
-              </div>
-            ))
+              ))}
+              <SectionPager page={safeReviewsPage} totalPages={reviewsTotalPages} onPage={setReviewsPage} />
+            </>
           )}
         </div>
       </div>
