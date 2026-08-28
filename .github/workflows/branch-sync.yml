@@ -1,0 +1,166 @@
+name: Branch Sync Check
+
+on:
+  schedule:
+    # Every 6 hours. Adjust to your timezone.
+    - cron: '0 */6 * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    name: Alert on dev/main divergence
+    runs-on: ubuntu-latest
+    steps:
+      - name: Compare dev vs main and publish the alert
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const TITLE = 'Branch sync: dev vs main';
+
+            // status: identical | ahead (dev ahead) | behind (main ahead) | diverged
+            const compare = await github.rest.repos.compareCommitsWithBasehead({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              basehead: 'main...dev',
+            });
+            const { status, ahead_by, behind_by, commits, base_commit } = compare.data;
+            const baseSha = base_commit.sha.slice(0, 7);
+
+            const fmt = (list) => (list || [])
+              .slice(0, 15)
+              .map((c) => `- \`${c.sha.slice(0, 7)}\` ${c.commit.message.split('\n')[0]}`)
+              .join('\n') || '_(none)_';
+
+            let state;
+            if (status === 'identical') state = 'ok';
+            else if (status === 'ahead') state = 'dev-ahead';
+            else if (status === 'behind') state = 'main-ahead';
+            else state = 'diverged';
+
+            const stamp = new Date().toISOString().replace('T', ' ').slice(0, 16) + ' UTC';
+            const shipLoop = [
+              '```bash',
+              'git checkout main && git pull origin main',
+              'git merge --ff-only dev && git push origin main',
+              'git checkout dev',
+              '```',
+            ].join('\n');
+
+            const bodies = {
+              'dev-ahead': [
+                `🔶 **dev is ahead of main** (${ahead_by} commit${ahead_by === 1 ? '' : 's'}) — generated ${stamp}`,
+                '',
+                'Normal state between ships — this is the "dev had recent pushes" banner. Ship it when ready:',
+                '',
+                shipLoop,
+                '',
+                'Commits waiting to ship:',
+                '',
+                fmt(commits),
+                '',
+                '_This issue closes automatically once main catches up._',
+              ].join('\n'),
+              'main-ahead': [
+                `🔴 **main is ahead of dev** (${behind_by} commit${behind_by === 1 ? '' : 's'}) — generated ${stamp}`,
+                '',
+                'Workflow violation: work happens on `dev` and ships to `main` — `main` should never be ahead. Someone likely pushed directly to `main`.',
+                '',
+                'Recover (no data loss):',
+                '',
+                '```bash',
+                'git checkout dev && git pull origin main && git push origin dev',
+                '```',
+                '',
+                'Commits on `main` not in `dev`:',
+                '',
+                fmt(commits),
+                '',
+                '_This issue closes automatically once `dev` catches up to `main`._',
+              ].join('\n'),
+              diverged: [
+                `🚨 **Branches diverged** — ` +
+                  `main is ${behind_by} ahead of dev, dev is ${ahead_by} ahead of main (generated ${stamp})`,
+                '',
+                'Fast-forward is impossible — needs manual reconciliation:',
+                '',
+                '```bash',
+                'git checkout dev && git fetch origin main',
+                'git merge origin/main   # resolve conflicts, test, commit',
+                'git push origin dev',
+                'git checkout main && git pull origin main',
+                'git merge --ff-only dev && git push origin main',
+                '```',
+                '',
+                'Commits on `main` not in `dev`:',
+                '',
+                fmt(commits),
+                '',
+                '_This issue closes automatically once the branches are in sync._',
+              ].join('\n'),
+            };
+
+            // Find the open alert issue, if any.
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              per_page: 100,
+            });
+            let issue = issues.find((i) => i.title === TITLE);
+
+            if (state === 'ok') {
+              if (issue) {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.number,
+                  body: `✅ main and dev are in sync (both at \`${baseSha}\`). Closing.`,
+                });
+                await github.rest.issues.update({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.number,
+                  state: 'closed',
+                  labels: [],
+                });
+                core.notice(`Closed branch-sync issue #${issue.number}`);
+              }
+              core.notice('Branches in sync — no alert needed');
+              return;
+            }
+
+            if (!issue) {
+              const created = await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: TITLE,
+                body: bodies[state],
+                labels: [`branch-sync:${state}`],
+              });
+              core.notice(`Created branch-sync issue #${created.data.number}: ${state}`);
+            } else {
+              const prevState = (issue.labels || [])
+                .map((l) => l.name)
+                .find((n) => n.startsWith('branch-sync:'))
+                ?.split(':')[1];
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: bodies[state],
+                labels: [`branch-sync:${state}`],
+              });
+              if (prevState && prevState !== state) {
+                // Comment only on state transitions, so watchers aren't spammed every run.
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.number,
+                  body: `⚠️ State changed: \`${prevState}\` → \`${state}\`.`,
+                });
+              }
+            }
