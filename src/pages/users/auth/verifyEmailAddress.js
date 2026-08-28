@@ -40,8 +40,11 @@ const userEmailAddress = location.state?.emailAddress || sessionStorage.getItem(
   // Countdown before the code can be resent (emails can be slow).
   const [resendIn, setResendIn] = React.useState(60);
   const [resending, setResending] = React.useState(false);
+  // Inline error shown under the boxes when the submitted code is rejected.
+  const [otpError, setOtpError] = React.useState(null);
 
   const handleOTPDigitChange = (index, event) => {
+    setOtpError(null);
     const raw = event.target.value.replace(/\D/g, "");
     const next = [...digits];
     if (raw) {
@@ -68,6 +71,7 @@ const userEmailAddress = location.state?.emailAddress || sessionStorage.getItem(
   // boxes starting at the box being pasted into (garbage/non-digits ignored),
   // then focus lands after the last filled box.
   const handleOTPPaste = (index, event) => {
+    setOtpError(null);
     const pasted = (event.clipboardData || window.clipboardData || {}).getData
       ? (event.clipboardData || window.clipboardData).getData("text")
       : "";
@@ -85,6 +89,7 @@ const userEmailAddress = location.state?.emailAddress || sessionStorage.getItem(
   };
 
   const clearUserOTP = () => {
+    setOtpError(null);
     setDigits(["", "", "", "", "", ""]);
     verifyUserEmail.setFieldValue("otpCode", "");
     otpRefs.current[0]?.focus();
@@ -98,6 +103,7 @@ const userEmailAddress = location.state?.emailAddress || sessionStorage.getItem(
   }, [resendIn]);
 
   const handleResendCode = async () => {
+    setOtpError(null);
     if (!userEmailAddress) {
       showErrorToastMessage("We don't have your email on file — please restart registration.");
       return;
@@ -122,13 +128,21 @@ const userEmailAddress = location.state?.emailAddress || sessionStorage.getItem(
     },
     onSubmit: async (values) => {
       const {otpCode} = values
-      const {payload} = await dispatch(verifyOtpCode(otpCode));
-      if(payload.statusCode === "200") {
-        // Use the email from the backend response (source of truth) and persist
-        // it so a refresh on the next step keeps the flow working.
-        const verifiedEmail = payload.data?.emailAddress || userEmailAddress;
-        sessionStorage.setItem('signupEmail', verifiedEmail);
-        navigate("/personalDetails", {state : {userEmailAddress: verifiedEmail}});
+      try {
+        const {payload} = await dispatch(verifyOtpCode(otpCode));
+        if(payload.statusCode === "200") {
+          setOtpError(null);
+          // Use the email from the backend response (source of truth) and persist
+          // it so a refresh on the next step keeps the flow working.
+          const verifiedEmail = payload.data?.emailAddress || userEmailAddress;
+          sessionStorage.setItem('signupEmail', verifiedEmail);
+          navigate("/personalDetails", {state : {userEmailAddress: verifiedEmail}});
+        } else {
+          setOtpError(payload.message || "The code you entered is incorrect or has expired. Check your email and try again, or request a new code.");
+        }
+      } catch (error) {
+        // APIService.extractError already surfaced network/server errors as a toast.
+        setOtpError("We couldn't verify that code right now. Please try again in a moment.");
       }
     },
   })
@@ -209,6 +223,14 @@ const userEmailAddress = location.state?.emailAddress || sessionStorage.getItem(
                 />
               ))}
             </div>
+            {otpError && (
+              <p role="alert" className="text-xs text-red-500 mt-3 flex items-center gap-1.5">
+                <svg className="h-3.5 w-3.5 shrink-0" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                </svg>
+                <span>{otpError}</span>
+              </p>
+            )}
             <div className="mt-6">
               <form onSubmit={verifyUserEmail.handleSubmit}>
                 <input name="otpCode" type="text" id="userInput" hidden  value={verifyUserEmail.values.otpCode} onChange={verifyUserEmail.handleChange} onBlur={verifyUserEmail.handleBlur} />

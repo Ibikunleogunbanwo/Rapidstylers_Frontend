@@ -8,6 +8,7 @@ import Spinner from "../../../components/spinner";
 import { useSelector } from "react-redux";
 import { APIService } from "../../../hooks/remote/apiService";
 import { getAuthToken, showErrorToastMessage, showSuccessToastMessage } from "../../../utils/constant";
+import SectionPager from "../../../components/sectionPager";
 
 const WEEKDAY_LABELS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
@@ -24,30 +25,84 @@ const formatAvailabilityTime = (value) => {
 const PORTFOLIO_PAGE_SIZE = 9;
 const REVIEW_PAGE_SIZE = 5;
 
-// Compact prev/next pager shared by the portfolio and reviews sections.
-const SectionPager = ({ page, totalPages, onPage }) => {
-  if (totalPages <= 1) return null;
+// Full-size portfolio photo viewer with prev/next across the whole set.
+// Closes on Escape, click-outside, or the close button; arrows navigate.
+const PortfolioLightbox = ({ images, index, onClose, onPrev, onNext }) => {
+  useEffect(() => {
+    if (index === null) return undefined;
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") onClose();
+      else if (event.key === "ArrowRight") onNext();
+      else if (event.key === "ArrowLeft") onPrev();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    // Lock body scroll while the lightbox is open.
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [index, onClose, onPrev, onNext]);
+
+  if (index === null || !images[index]) return null;
+  const image = images[index];
+  const hasMultiple = images.length > 1;
+
   return (
-    <div className="mt-6 flex items-center justify-center gap-4">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Portfolio photo viewer"
+      onClick={onClose}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 md:p-10"
+    >
       <button
         type="button"
-        onClick={() => onPage(page - 1)}
-        disabled={page <= 1}
-        className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition-colors hover:border-brand/40 disabled:cursor-not-allowed disabled:opacity-40"
+        onClick={onClose}
+        aria-label="Close photo viewer"
+        className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-xl text-white transition-colors hover:bg-white/20"
       >
-        ← Previous
+        ✕
       </button>
-      <span className="text-sm font-semibold text-gray-600">
-        Page {page} of {totalPages}
-      </span>
-      <button
-        type="button"
-        onClick={() => onPage(page + 1)}
-        disabled={page >= totalPages}
-        className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition-colors hover:border-brand/40 disabled:cursor-not-allowed disabled:opacity-40"
+      {hasMultiple && (
+        <button
+          type="button"
+          onClick={(event) => { event.stopPropagation(); onPrev(); }}
+          aria-label="Previous photo"
+          className="absolute left-3 md:left-6 flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-2xl text-white transition-colors hover:bg-white/20"
+        >
+          ←
+        </button>
+      )}
+      <figure
+        onClick={(event) => event.stopPropagation()}
+        className="flex max-h-full max-w-full flex-col items-center"
       >
-        Next →
-      </button>
+        <img
+          src={image.imageUrl}
+          alt={image.name}
+          className="max-h-[78vh] max-w-full rounded-md object-contain"
+        />
+        <figcaption className="mt-4 text-center text-sm text-white/80">
+          {image.name}
+          {hasMultiple && (
+            <span className="ml-2 text-white/50">
+              {index + 1} / {images.length}
+            </span>
+          )}
+        </figcaption>
+      </figure>
+      {hasMultiple && (
+        <button
+          type="button"
+          onClick={(event) => { event.stopPropagation(); onNext(); }}
+          aria-label="Next photo"
+          className="absolute right-3 md:right-6 flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-2xl text-white transition-colors hover:bg-white/20"
+        >
+          →
+        </button>
+      )}
     </div>
   );
 };
@@ -99,6 +154,8 @@ const StylistProfile = ({ setPageTitle }) => {
   const [saveLoading, setSaveLoading] = useState(false);
   const [portfolioPage, setPortfolioPage] = useState(1);
   const [reviewsPage, setReviewsPage] = useState(1);
+  // Index into the full portfolio array of the photo shown in the lightbox.
+  const [lightboxIndex, setLightboxIndex] = useState(null);
 
   // Reset pagination when viewing a different stylist.
   useEffect(() => {
@@ -263,11 +320,43 @@ const StylistProfile = ({ setPageTitle }) => {
             {portfolio.length > 0 &&
               visiblePortfolio.map((val, key) => (
                 <div key={key}>
-                  <img src={val.imageUrl} alt={val.name} className="aspect-square rounded-md object-cover" />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setLightboxIndex((safePortfolioPage - 1) * PORTFOLIO_PAGE_SIZE + key)
+                    }
+                    aria-label={`View ${val.name} full size`}
+                    className="block w-full cursor-zoom-in overflow-hidden rounded-md"
+                  >
+                    <img
+                      src={val.imageUrl}
+                      alt={val.name}
+                      className="aspect-square w-full rounded-md object-cover transition-transform duration-300 hover:scale-105"
+                    />
+                  </button>
                 </div>
               ))}
           </div>
-          <SectionPager page={safePortfolioPage} totalPages={portfolioTotalPages} onPage={setPortfolioPage} />
+          <SectionPager
+            page={safePortfolioPage}
+            totalPages={portfolioTotalPages}
+            totalItems={portfolio.length}
+            pageSize={PORTFOLIO_PAGE_SIZE}
+            onPage={setPortfolioPage}
+          />
+          <PortfolioLightbox
+            images={portfolio}
+            index={lightboxIndex}
+            onClose={() => setLightboxIndex(null)}
+            onPrev={() =>
+              setLightboxIndex((i) =>
+                i === null ? null : (i - 1 + portfolio.length) % portfolio.length
+              )
+            }
+            onNext={() =>
+              setLightboxIndex((i) => (i === null ? null : (i + 1) % portfolio.length))
+            }
+          />
         </div>
         <div className="mb-8 md:mb-4">
           <span className="font-semibold">Reviews:</span>
@@ -293,7 +382,13 @@ const StylistProfile = ({ setPageTitle }) => {
                   <p className="text-black/50">{val.message}</p>
                 </div>
               ))}
-              <SectionPager page={safeReviewsPage} totalPages={reviewsTotalPages} onPage={setReviewsPage} />
+              <SectionPager
+                page={safeReviewsPage}
+                totalPages={reviewsTotalPages}
+                totalItems={reviews.length}
+                pageSize={REVIEW_PAGE_SIZE}
+                onPage={setReviewsPage}
+              />
             </>
           )}
         </div>

@@ -3,6 +3,9 @@ import more from "../../assets/svg-icons/more.svg";
 import { APIService } from "../../hooks/remote/apiService";
 import { getAuthToken, showSuccessToastMessage } from "../../utils/constant";
 import PendingAppointments from "./stylerComponents/pendingAppointments";
+import SectionPager from "../../components/sectionPager";
+
+const APPOINTMENT_PAGE_SIZE = 10;
 
 const StylerAppointments = () => {
   const [appointments, setAppointments] = useState([]);
@@ -10,6 +13,9 @@ const StylerAppointments = () => {
   const [view, setView] = useState("pending"); // "pending" | "past"
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
+  // Independent page per view so switching tabs keeps each list's position.
+  const [pendingPage, setPendingPage] = useState(1);
+  const [pastPage, setPastPage] = useState(1);
 
   const loadAppointments = async () => {
     setLoading(true);
@@ -35,6 +41,18 @@ const StylerAppointments = () => {
   );
   const past = appointments.filter((a) =>
     ["0", "2", "4"].includes(a.statusCode)
+  );
+  const pendingTotalPages = Math.max(1, Math.ceil(pending.length / APPOINTMENT_PAGE_SIZE));
+  const pastTotalPages = Math.max(1, Math.ceil(past.length / APPOINTMENT_PAGE_SIZE));
+  const safePendingPage = Math.min(pendingPage, pendingTotalPages);
+  const safePastPage = Math.min(pastPage, pastTotalPages);
+  const visiblePending = pending.slice(
+    (safePendingPage - 1) * APPOINTMENT_PAGE_SIZE,
+    safePendingPage * APPOINTMENT_PAGE_SIZE
+  );
+  const visiblePast = past.slice(
+    (safePastPage - 1) * APPOINTMENT_PAGE_SIZE,
+    safePastPage * APPOINTMENT_PAGE_SIZE
   );
 
   // Must match app.booking.styler-cancel-window-hours on the backend — the
@@ -132,8 +150,9 @@ const StylerAppointments = () => {
               No pending appointments. New booking requests will appear here.
             </div>
           ) : (
-            <div className="mt-10 grid gap-6">
-              {pending.map((appointment) => (
+            <>
+              <div className="mt-10 grid gap-6">
+                {visiblePending.map((appointment) => (
                 <div
                   key={appointment.appointmentId}
                   className="grid grid-cols-12 gap-4 pb-3 border-b last:border-0"
@@ -167,15 +186,24 @@ const StylerAppointments = () => {
                   </div>
                 </div>
               ))}
-            </div>
+              </div>
+              <SectionPager
+                page={safePendingPage}
+                totalPages={pendingTotalPages}
+                totalItems={pending.length}
+                pageSize={APPOINTMENT_PAGE_SIZE}
+                onPage={setPendingPage}
+              />
+            </>
           )
         ) : past.length === 0 ? (
           <div className="mt-10 text-sm text-gray-500">
             No past appointments yet.
           </div>
         ) : (
-          <div className="mt-10 grid gap-6">
-            {past.map((appointment) => (
+          <>
+            <div className="mt-10 grid gap-6">
+              {visiblePast.map((appointment) => (
               <div
                 key={appointment.appointmentId}
                 className="flex justify-between gap-4 pb-3 border-b last:border-0"
@@ -211,7 +239,15 @@ const StylerAppointments = () => {
                 </div>
               </div>
             ))}
-          </div>
+            </div>
+            <SectionPager
+              page={safePastPage}
+              totalPages={pastTotalPages}
+              totalItems={past.length}
+              pageSize={APPOINTMENT_PAGE_SIZE}
+              onPage={setPastPage}
+            />
+          </>
         )}
       </div>
       {selectedAppointment && (

@@ -194,6 +194,9 @@ describe("VerifyUserEmailAddress OTP inputs", () => {
   test("resending requests a fresh code, clears the boxes, and restarts the countdown", async () => {
     jest.useFakeTimers();
     render(<VerifyUserEmailAddress />);
+    // Type a partial code so the clear-on-resend is actually observable.
+    typeDigit(0, "5");
+    typeDigit(1, "4");
 
     act(() => {
       jest.advanceTimersByTime(60_000);
@@ -206,9 +209,48 @@ describe("VerifyUserEmailAddress OTP inputs", () => {
         emailAddress: "test@example.com",
       })
     );
-    // Fresh code -> old digits cleared and the countdown restarts.
-    expect(otpInputs().every((el) => el.value === "")).toBe(true);
-    expect(screen.queryByRole("button", { name: "Resend code" })).not.toBeInTheDocument();
-    expect(screen.getByText(/Resend code in/)).toBeInTheDocument();
+    // Wait for the async resend to settle: the fresh code clears the old
+    // digits and the countdown restarts.
+    await waitFor(() => {
+      expect(otpInputs().every((el) => el.value === "")).toBe(true);
+      expect(screen.queryByRole("button", { name: "Resend code" })).not.toBeInTheDocument();
+      expect(screen.getByText(/Resend code in/)).toBeInTheDocument();
+    });
+  });
+
+  test("shows an inline error under the boxes when the code is rejected", async () => {
+    __testDispatch.mockImplementation(() => ({
+      payload: { statusCode: "400", message: "The code is incorrect or has expired" },
+    }));
+    render(<VerifyUserEmailAddress />);
+    ["1", "2", "3", "4", "5", "6"].forEach((d, i) => typeDigit(i, d));
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("The code is incorrect or has expired");
+    // A rejected code must NOT navigate to the next step.
+    expect(__testNavigate).not.toHaveBeenCalled();
+  });
+
+  test("clears the inline error as soon as the user edits the code", async () => {
+    __testDispatch.mockImplementation(() => ({
+      payload: { statusCode: "400", message: "The code is incorrect or has expired" },
+    }));
+    render(<VerifyUserEmailAddress />);
+    ["1", "2", "3", "4", "5", "6"].forEach((d, i) => typeDigit(i, d));
+    await screen.findByRole("alert");
+
+    // Edit the first box — the error must disappear immediately.
+    typeDigit(0, "9");
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  test("shows a generic inline error when verification fails at the network level", async () => {
+    __testDispatch.mockImplementation(() => Promise.reject(new Error("Network Error")));
+    render(<VerifyUserEmailAddress />);
+    ["1", "2", "3", "4", "5", "6"].forEach((d, i) => typeDigit(i, d));
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("We couldn't verify that code right now");
+    expect(__testNavigate).not.toHaveBeenCalled();
   });
 });
