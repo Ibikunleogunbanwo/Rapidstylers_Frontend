@@ -8,11 +8,17 @@ import logo from "../../assets/svg-icons/colouredLogo.svg";
 import InputWithLabel from "../../components/inputWithLabel";
 import PasswordInput from "../../components/passwordInput";
 import Buttons from "../../components/button";
+import GoogleSignInButton from "../../components/googleSignInButton";
+
+// Google Sign-In client id (public). Empty disables the Google button + divider.
+const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || "";
 
 /**
  * Unified login for all three roles. The backend /sign_in endpoint detects
  * whether the credentials belong to an admin, stylist or customer and returns
  * the role with a role-scoped JWT; this page routes to the matching area.
+ * "Continue with Google" is customer-only and hidden unless a client id is
+ * configured.
  */
 const Login = () => {
   document.title = "Sign In | RapidStylers";
@@ -23,14 +29,36 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  if (getAuthToken()) {
-    return <Navigate to="/" replace />;
-  }
-
   const routeByRole = (role) => {
     if (role === "ADMIN") return "/admin/categories";
     if (role === "STYLER") return "/styler-dashboard";
     return "/dashboard";
+  };
+
+  const completeAuth = async (res) => {
+    const token = res.data?.token;
+    const refreshToken = res.data?.refreshToken;
+    const role = res.data?.data?.role;
+    const account = res.data?.data?.account;
+    if (token) {
+      setAuthToken(token);
+      if (refreshToken) {
+        setRefreshToken(refreshToken);
+      }
+      if (role === "CUSTOMER" && account) {
+        // Persist the session (store + localStorage) so the dashboard guard
+        // passes without a reload, then fetch the full profile in the
+        // background — same behavior as the hero-section login path.
+        dispatch(setUserSession(res.data));
+        dispatch(getUserDetails(account.userId));
+      }
+      showSuccessToastMessage(
+        role === "ADMIN" ? "Welcome, admin" : "Welcome back"
+      );
+      navigate(routeByRole(role));
+    } else {
+      setErrorMsg("Sign in did not return a session. Please try again.");
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -39,27 +67,7 @@ const Login = () => {
     setLoading(true);
     try {
       const res = await APIService.signIn({ emailAddress, password });
-      const token = res.data?.token;
-      const refreshToken = res.data?.refreshToken;
-      const role = res.data?.data?.role;
-      const account = res.data?.data?.account;
-      if (token) {
-        setAuthToken(token);
-        if (refreshToken) {
-          setRefreshToken(refreshToken);
-        }
-        if (role === "CUSTOMER" && account) {
-          // Persist the session (store + localStorage) so the dashboard guard
-          // passes without a reload, then fetch the full profile in the
-          // background — same behavior as the hero-section login path.
-          dispatch(setUserSession(res.data));
-          dispatch(getUserDetails(account.userId));
-        }
-        showSuccessToastMessage(
-          role === "ADMIN" ? "Welcome, admin" : "Welcome back"
-        );
-        navigate(routeByRole(role));
-      }
+      await completeAuth(res);
     } catch (error) {
       // Error toasts are handled in APIService; also show inline
       const msg = error?.response?.data?.message || error?.message || "Sign in failed";
@@ -68,6 +76,10 @@ const Login = () => {
       setLoading(false);
     }
   };
+
+  if (getAuthToken()) {
+    return <Navigate to="/" replace />;
+  }
 
   return (
     <div className="h-screen grid grid-cols-1 lg:grid-cols-12 bg-white">
@@ -97,7 +109,20 @@ const Login = () => {
             <p className="text-2xl font-bold text-gray-900">Welcome back</p>
             <p className="text-sm text-gray-500 mt-1">Sign in to your account</p>
 
-            <form onSubmit={handleSubmit} className="mt-6 grid gap-4">
+            {GOOGLE_CLIENT_ID && (
+              <>
+                <div className="mt-6">
+                  <GoogleSignInButton onSuccess={completeAuth} onError={setErrorMsg} />
+                </div>
+                <div className="flex items-center gap-3 my-4">
+                  <span className="flex-1 border-t border-gray-200" />
+                  <span className="text-xs text-gray-400 uppercase tracking-wide">or</span>
+                  <span className="flex-1 border-t border-gray-200" />
+                </div>
+              </>
+            )}
+
+            <form onSubmit={handleSubmit} className="grid gap-4">
               <InputWithLabel
                 labelName={"Email address"}
                 inputType={"email"}

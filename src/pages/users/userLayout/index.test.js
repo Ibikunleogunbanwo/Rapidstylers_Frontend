@@ -16,7 +16,6 @@ jest.mock("../pages/accountsettings", () => () => <div data-testid="page-account
 jest.mock("../pages/updatePersonal", () => () => <div data-testid="page-updatePersonal" />);
 jest.mock("../pages/savedStylists", () => () => <div data-testid="page-savedStylist" />);
 jest.mock("../pages/changePassword", () => () => <div data-testid="page-changePassword" />);
-jest.mock("../pages/cardDetails", () => () => <div data-testid="page-cardDetails" />);
 jest.mock("../pages/notificationSettings", () => () => <div data-testid="page-notificationSettings" />);
 jest.mock("../pages/notifications", () => () => <div data-testid="page-notifications" />);
 jest.mock("../pages/support", () => () => <div data-testid="page-support" />);
@@ -66,8 +65,6 @@ describe("UserLayout customer-area routing", () => {
     ["/updatePersonalInformation", "page-updatePersonal"],
     ["/savedStylist", "page-savedStylist"],
     ["/changePassword", "page-changePassword"],
-    ["/CardDetails", "page-cardDetails"],
-    ["/cardDetails", "page-cardDetails"],
     ["/notificationSettings", "page-notificationSettings"],
     ["/notifications", "page-notifications"],
     ["/support", "page-support"],

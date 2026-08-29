@@ -1,10 +1,12 @@
 import { useEffect } from "react";
+import { Link } from "react-router-dom";
 import brandIco from "../../../assets/svg-icons/brand-appointment-icon.svg";
 import Appointments from "./upcomingAppointments";
 import ReviewForm from "../../../components/reviewForm";
 import { useAllUserAppointments, useUserPendingAppointments } from "../userLayout/functionalEffects";
 import Spinner from "../../../components/spinner";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import { getUserDetails } from "../../../hooks/local/userReducer";
 import { formatTime12 } from "../../../utils/constant";
 
 const Dashboard = ({ setPageTitle }) => {
@@ -13,14 +15,27 @@ const Dashboard = ({ setPageTitle }) => {
     document.title = "Dashboard | RapidStylers";
   }));
 
+  const dispatch = useDispatch();
   const pendingAppointment = useUserPendingAppointments();
   const allAppointment = useAllUserAppointments();
+  const userDetails = useSelector((state) => state.user.userDetailsData)?.userData || null;
   const today = new Date().toLocaleDateString("en-US", {
     weekday: "long",
     month: "short",
     day: "numeric",
     year: "numeric",
   });
+  useEffect(() => {
+    if (userDetails) return;
+    dispatch(getUserDetails()).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // A minimal (email+password) account has no name/phone/address yet.
+  const missingName = !userDetails?.firstname || !userDetails?.lastname;
+  const missingPhone = !userDetails?.phoneNumber;
+  const missingAddress = !userDetails?.address;
+
   return (
     <div className="bg-white border border-[#1d1d1d0a] rounded-2xl shadow-sm overflow-hidden">
       <Spinner loading={useSelector((state) => state.user).loading} />
@@ -28,6 +43,28 @@ const Dashboard = ({ setPageTitle }) => {
         <p className="text-[15px] font-bold">Dashboard</p>
         <p className="text-xs text-gray-400">{today}</p>
       </div>
+      {(missingName || missingPhone || missingAddress) && userDetails && (
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-amber-100 bg-amber-50 px-5 py-3.5">
+          <div className="flex items-start gap-2.5">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#B45309" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 shrink-0 mt-0.5 text-amber-600" aria-hidden="true">
+              <path d="M12 15v2m0 4h.01M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z" />
+              <path d="M12 7v5" />
+            </svg>
+            <div>
+              <p className="text-sm font-semibold text-amber-900">Complete your profile</p>
+              <p className="text-xs text-amber-800 mt-0.5">
+                Add your {[missingName && "name", missingPhone && "phone", missingAddress && "address"].filter(Boolean).join(", ") || "name, phone and address"} so stylists can reach you about bookings.
+              </p>
+            </div>
+          </div>
+          <Link
+            to="/updatePersonal"
+            className="shrink-0 rounded-lg bg-amber-600 px-4 py-2 text-center text-sm font-semibold text-white transition hover:bg-amber-700"
+          >
+            Complete profile
+          </Link>
+        </div>
+      )}
       {pendingAppointment.length > 0 && (
         <div className="p-4">
           <p className="text-sm font-semibold">Upcoming appointments:</p>

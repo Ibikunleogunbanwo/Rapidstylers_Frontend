@@ -12,11 +12,27 @@ jest.mock("../hooks/remote/apiService", () => ({
   },
 }));
 jest.mock("react-router-dom", () => ({ useNavigate: () => jest.fn() }));
+jest.mock("react-redux", () => {
+  const dispatch = jest.fn(() => ({ payload: { statusCode: "200" } }));
+  return { useDispatch: () => dispatch, __testDispatch: dispatch };
+});
+jest.mock("../hooks/local/userReducer", () => ({
+  verifySignUpEmailAddress: jest.fn(),
+  verifyOtpCode: jest.fn(),
+  createUserAccount: jest.fn(),
+  userAuthenticate: jest.fn(),
+}));
 jest.mock("../context/LocationContext", () => ({
   useUserLocation: () => ({ location: { latitude: null, longitude: null } }),
 }));
 jest.mock("../utils/constant", () => ({
   getAuthToken: () => null,
+  getRefreshToken: () => null,
+  setAuthToken: jest.fn(),
+  setRefreshToken: jest.fn(),
+  clearAuthToken: jest.fn(),
+  clearRefreshToken: jest.fn(),
+  retrieveFromLocalStorage: () => ({}),
   showErrorToastMessage: jest.fn(),
   showSuccessToastMessage: jest.fn(),
 }));

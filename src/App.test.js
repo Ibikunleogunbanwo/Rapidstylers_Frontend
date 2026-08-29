@@ -34,7 +34,6 @@ jest.mock("./pages/users/pages/accountsettings", () => () => <div data-testid="p
 jest.mock("./pages/users/pages/updatePersonal", () => () => <div data-testid="page-updatePersonal" />);
 jest.mock("./pages/users/pages/savedStylists", () => () => <div data-testid="page-savedStylist" />);
 jest.mock("./pages/users/pages/changePassword", () => () => <div data-testid="page-changePassword" />);
-jest.mock("./pages/users/pages/cardDetails", () => () => <div data-testid="page-cardDetails" />);
 jest.mock("./pages/users/pages/notificationSettings", () => () => <div data-testid="page-notificationSettings" />);
 jest.mock("./pages/users/pages/notifications", () => () => <div data-testid="page-notifications" />);
 jest.mock("./pages/users/pages/support", () => () => <div data-testid="page-support" />);
@@ -93,8 +92,6 @@ describe("customer-area routes render inside the dashboard shell", () => {
     ["/updatePersonalInformation", "page-updatePersonal"],
     ["/savedStylist", "page-savedStylist"],
     ["/changePassword", "page-changePassword"],
-    ["/CardDetails", "page-cardDetails"],
-    ["/cardDetails", "page-cardDetails"],
     ["/notificationSettings", "page-notificationSettings"],
     ["/notifications", "page-notifications"],
     ["/support", "page-support"],

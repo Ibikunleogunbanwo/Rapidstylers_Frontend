@@ -138,14 +138,6 @@ export const changeUserPassword = createAsyncThunk(
     }
 )
 
-export const updateCardDetail = createAsyncThunk(
-    "user/updateCardDetail",
-    async(data)=>{
-        const updateCardDetailAPI = await APIService.updateUserCardDetails(data);
-        const response = await updateCardDetailAPI.data;
-        return response;
-    }
-)
 export const addUserFeedBack = createAsyncThunk(
     "user/Feedback",
     async(data)=>{
@@ -235,7 +227,6 @@ const userSlice = createSlice({
             verifySignUpEmailAddress.fulfilled,
             updateUserDetails.fulfilled,
             changeUserPassword.fulfilled,
-            updateCardDetail.fulfilled,
             addUserFeedBack.fulfilled
         ),(state,action)=>{
             if(action.payload.statusCode === "200"){
@@ -279,7 +270,6 @@ const userSlice = createSlice({
             getUserDetails.pending,
             updateUserDetails.pending,
             changeUserPassword.pending,
-            updateCardDetail.pending,
             addUserFeedBack.pending,
         ), (state)=>{
             state.loading = true;
@@ -301,7 +291,6 @@ const userSlice = createSlice({
             getUserDetails.rejected,
             updateUserDetails.rejected,
             changeUserPassword.rejected,
-            updateCardDetail.rejected,
             addUserFeedBack.rejected
         ), (state,action)=>{
             state.loading = false;

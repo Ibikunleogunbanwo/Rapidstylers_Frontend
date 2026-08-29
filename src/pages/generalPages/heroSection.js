@@ -10,12 +10,16 @@ import { useFormik } from "formik";
 import * as Yup from "yup";
 import Spinner from "../../components/spinner";
 import { useDispatch, useSelector } from "react-redux";
-import { getUserDetails, userAuthenticate, verifySignUpEmailAddress } from "../../hooks/local/userReducer";
+import { getUserDetails, setUserSession, userAuthenticate, verifySignUpEmailAddress } from "../../hooks/local/userReducer";
 import PasswordInput from "../../components/passwordInput";
 import SearchForStyler from "../../components/searchForStyler";
+import GoogleSignInButton from "../../components/googleSignInButton";
+
 import elevate from "../../assets/images/elevate.webp"
-import { showSuccessToastMessage } from "../../utils/constant";
+import { setAuthToken, setRefreshToken, showSuccessToastMessage } from "../../utils/constant";
 import { getPeriodOfDay } from "../../utils/utility";
+// Google Sign-In client id (public). Empty hides the Google button + divider.
+const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || "";
 
 const Hero = ({ height }) => {
   const dispatch = useDispatch();
@@ -24,6 +28,7 @@ const Hero = ({ height }) => {
 
   const [signInVisible, setSignInVisible] = useState(false);
   const [signUpVisible, setSignUpVisible] = useState(false);
+  const [googleError, setGoogleError] = useState("");
 
   const toggleSignIn = () => {
     setSignInVisible(!signInVisible);
@@ -74,6 +79,30 @@ const Hero = ({ height }) => {
       }
     }
   })
+
+  // Google sign-in (customer-only on the backend). Reuses the unified session
+  // shape so the dashboard guard passes exactly like the password path.
+  const handleGoogleSuccess = async (res) => {
+    const token = res.data?.token;
+    const refreshToken = res.data?.refreshToken;
+    const account = res.data?.data?.account;
+    if (!token || !account) {
+      setGoogleError("Google sign-in did not return a session. Please try again.");
+      return;
+    }
+    setAuthToken(token);
+    if (refreshToken) {
+      setRefreshToken(refreshToken);
+    }
+    dispatch(setUserSession(res.data));
+    dispatch(getUserDetails(account.userId));
+    showSuccessToastMessage(
+      `Good ${periodOfTheDay}${account.firstname ? ", " + account.firstname : ""}`
+    );
+    setSignInVisible(false);
+    setGoogleError("");
+    navigate('/dashboard');
+  };
   return (
     <div style={{ height }} className="relative z-10">
       <Spinner loading={useSelector((state) => state.user).loading} />
@@ -151,6 +180,16 @@ const Hero = ({ height }) => {
         onClose={() => setSignInVisible(false)}
         width={"md:w-[40%] lg:w-[35%]"}
       >
+        {GOOGLE_CLIENT_ID && (
+          <div className="grid gap-3 mb-4">
+            <GoogleSignInButton onSuccess={handleGoogleSuccess} onError={setGoogleError} />
+            <div className="flex items-center gap-3 my-1">
+              <span className="flex-1 border-t border-gray-200" />
+              <span className="text-xs text-gray-400 uppercase tracking-wide">or</span>
+              <span className="flex-1 border-t border-gray-200" />
+            </div>
+          </div>
+        )}
         <form onSubmit={userSignIn.handleSubmit}>
           <div className="flex gap-3 flex-col">
             <InputWithLabel
@@ -182,10 +221,10 @@ const Hero = ({ height }) => {
             />
           </div>
 
-          {userError && (
+          {(userError || googleError) && (
             <div className="mt-3 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700 flex items-start gap-2">
               <svg className="w-4 h-4 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
-              <span>{userError}</span>
+              <span>{googleError || userError}</span>
             </div>
           )}
           <div className="flex justify-between items-center pt-4">

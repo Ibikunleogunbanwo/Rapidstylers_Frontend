@@ -15,7 +15,6 @@ import ChangePassword from "../pages/changePassword";
 import NotificationSettings from "../pages/notificationSettings";
 import Feedback from "../pages/feedback";
 import SearchStyler from "../pages/searchStylers";
-import CardDetails from "../pages/cardDetails";
 import AccountSettings from "../pages/accountsettings";
 import Notifications from "../pages/notifications";
 import Support from "../pages/support";
@@ -45,8 +44,6 @@ const UserLayout = () => {
             case "/updatePersonalInformation": return <UpdateInformation setPageTitle={setPageTitle} />;
             case "/savedStylist": return <SavedStylist setPageTitle={setPageTitle} />;
             case "/changePassword": return <ChangePassword setPageTitle={setPageTitle} />;
-            case "/CardDetails":
-            case "/cardDetails": return <CardDetails setPageTitle={setPageTitle} />;
             case "/notificationSettings": return <NotificationSettings setPageTitle={setPageTitle} />;
             case "/notifications": return <Notifications setPageTitle={setPageTitle} />;
             case "/support": return <Support setPageTitle={setPageTitle} />;

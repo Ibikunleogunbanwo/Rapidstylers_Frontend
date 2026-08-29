@@ -8,9 +8,12 @@ const AccountSettings = ({setPageTitle}) => {
       document.title = "Account settings | RapidStylers";
     }));
     return ( 
-      <div className="bg-white border rounded-lg">
-        <div className="flex gap-1 items-center border-b p-4 text-[15px] font-bold bg-[#1d1d1d08] rounded-t-lg">
-          Account settings
+      <div className="rounded-xl border border-gray-100 bg-white shadow-sm overflow-hidden">
+        <div className="flex items-center gap-3 border-b border-gray-100 bg-gradient-to-r from-brand/5 to-white px-4 py-4 sm:px-5">
+          <div>
+            <h1 className="text-[15px] font-bold text-gray-900">Account settings</h1>
+            <p className="mt-0.5 text-xs text-gray-500">Manage your account details and preferences</p>
+          </div>
         </div>
         <div className="p-4 grid gap-4">
           <Link to={"/updatePersonalInformation"}>
@@ -32,14 +35,6 @@ const AccountSettings = ({setPageTitle}) => {
           <Link to={"/changePassword"}>
           <div className="flex items-center justify-between py-3">
             <span className="">Change password</span>
-            <div>
-              <img src={arrow} alt="" className="h-5"/>
-            </div>
-          </div>
-          </Link>
-          <Link to={"/cardDetails"}>
-          <div className="flex items-center justify-between py-3">
-            <span className="">Add Card details</span>
             <div>
               <img src={arrow} alt="" className="h-5"/>
             </div>

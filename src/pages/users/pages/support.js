@@ -47,8 +47,16 @@ const Support = ({ setPageTitle }) => {
   };
 
   return (
-    <div className="rounded-lg border bg-white">
-      <div className="flex items-center gap-1 border-b bg-[#1d1d1d08] p-4 text-[15px] font-bold"><Back /><span>Support</span></div>
+    <div className="rounded-xl border border-gray-100 bg-white shadow-sm overflow-hidden">
+      <div className="flex items-center gap-3 border-b border-gray-100 bg-gradient-to-r from-brand/5 to-white px-4 py-4 sm:px-5">
+        <div className="flex items-center gap-2">
+          <Back />
+          <div>
+            <h1 className="text-[15px] font-bold text-gray-900">Support</h1>
+            <p className="mt-0.5 text-xs text-gray-500">We are here to help</p>
+          </div>
+        </div>
+      </div>
       <div className="grid gap-6 p-4">
         {!getAuthToken() ? <p className="text-sm text-gray-500">Please sign in to contact support.</p> : <>
           <form onSubmit={submit} className="grid gap-3">

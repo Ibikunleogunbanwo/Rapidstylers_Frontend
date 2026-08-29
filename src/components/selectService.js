@@ -1,14 +1,26 @@
 import close from "../assets/svg-icons/closeBlack.svg";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import Input from "../components/input";
 import { APIService } from "../hooks/remote/apiService";
-import { getAuthToken, showErrorToastMessage, showSuccessToastMessage } from "../utils/constant";
-import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { verifySignUpEmailAddress, verifyOtpCode, createUserAccount, userAuthenticate, setUserSession } from "../hooks/local/userReducer";
+import { getAuthToken, setAuthToken, setRefreshToken, showErrorToastMessage, showSuccessToastMessage } from "../utils/constant";
 import { useUserLocation } from "../context/LocationContext";
+import OtpInputs from "./otpInputs";
+import GoogleSignInButton from "./googleSignInButton";
+
+// Google Sign-In client id (public). Empty hides the Google option in the quick-account step.
+const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || "";
+
+// Steps of the in-modal "create a quick account" flow shown when a signed-out
+// customer tries to book. Identity is required (bookings/tokens/payments are
+// keyed to an account), so we collect the minimum — email, one-time code,
+// password — and defer name/address/phone to a later profile step.
+const SIGNUP_STEPS = Object.freeze({ EMAIL: "email", OTP: "otp", PASSWORD: "password" });
 
 const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerId, subServiceId, stylerLatitude, stylerLongitude}) => {
   const [bookAppointmentForm, setBookAppointmentForm] = useState(false);
-  const navigate = useNavigate();
+  const dispatch = useDispatch();
   const { location: userLocation } = useUserLocation() || {};
   // Weekly availability from single_styler: [{dayOfWeek 0-6, startTime, endTime}] or
   // null while loading (nothing blocked) / [] when the stylist hasn't set hours.
@@ -16,6 +28,15 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
   // Active bookings [{appointmentDate, arrivalTime, durationMinutes, status}] —
   // their service windows are blocked until cancelled or rejected.
   const [bookedSlots, setBookedSlots] = useState([]);
+
+  // ── In-modal quick-account flow (signed-out customers) ────────────────
+  const [signupStep, setSignupStep] = useState(null);           // null | "email" | "otp" | "password"
+  const [signupEmail, setSignupEmail] = useState("");
+  const [signupPassword, setSignupPassword] = useState("");
+  const [signupOtp, setSignupOtp] = useState(["", "", "", "", "", ""]);
+  const [signupBusy, setSignupBusy] = useState(false);
+  const [signupError, setSignupError] = useState("");
+  const signupOtpRefs = useRef([]);
 
   const toMinutes = (value) => {
     const m = /^(\d{1,2}):(\d{2})\s*(am|pm)?$/i.exec((value || "").trim());
@@ -185,9 +206,6 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
   const [estimateLoading, setEstimateLoading] = useState(false);
   const [isBooking, setIsBooking] = useState(false);
   const [bookingError, setBookingError] = useState("");
-  // When booking is blocked by the saved card (missing / expired / declined),
-  // prompt the customer to fix it from the card page instead of a generic error.
-  const [cardAction, setCardAction] = useState(null); // null | "add" | "update" | "check"
 
   const travelDistanceKm = (() => {
     const userLat = Number(userLocation?.latitude);
@@ -241,22 +259,8 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
 
   // Submits the booking request to the marketplace endpoint. The backend
   // re-validates the stylist/service and derives the price server-side.
-  const handleBookAppointment = async () => {
-    if (!getAuthToken()) {
-      showErrorToastMessage("Please sign in to book an appointment");
-      navigate("/login");
-      return;
-    }
-    if (!selectedDay || !selectedTime) {
-      showErrorToastMessage("Please select a date and arrival time");
-      return;
-    }
-    if (selectedOption === "homeService" && travelDistanceKm === null) {
-      showErrorToastMessage("We could not calculate the travel distance for home service. Please update your location and try again.");
-      return;
-    }
+  const performBooking = async () => {
     setBookingError("");
-    setCardAction(null);
     setIsBooking(true);
     try {
       const appointmentDate = `${currentYear}-${String(months.indexOf(selectedMonth) + 1).padStart(2, "0")}-${String(selectedDay).padStart(2, "0")}`;
@@ -272,17 +276,161 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
       showSuccessToastMessage("Booking request sent. The stylist will confirm shortly.");
       closeBookingForm();
     } catch (error) {
-      const paymentError = error?.paymentError || error?.response?.data?.data?.paymentError;
       const message = error?.response?.data?.message || error?.message || "Booking failed. Please try again.";
       setBookingError(message);
-      if (paymentError === "NO_PAYMENT_METHOD") setCardAction("add");
-      else if (paymentError === "CARD_EXPIRED" || paymentError === "CARD_DECLINED") setCardAction("update");
-      else if (paymentError === "PAYMENT_ERROR") setCardAction("check");
-      else if (/card|payment/i.test(message)) setCardAction("update");
-      else setCardAction(null);
     } finally {
       setIsBooking(false);
     }
+  };
+
+  // Signed-in customers book directly. Signed-out customers get the in-modal
+  // quick-account flow (email -> OTP -> password) first; identity is required
+  // because bookings, auth tokens and payments are all keyed to an account.
+  const handleBookAppointment = async () => {
+    if (!selectedDay || !selectedTime) {
+      showErrorToastMessage("Please select a date and arrival time");
+      return;
+    }
+    if (selectedOption === "homeService" && travelDistanceKm === null) {
+      showErrorToastMessage("We could not calculate the travel distance for home service. Please update your location and try again.");
+      return;
+    }
+    if (!getAuthToken()) {
+      setSignupError("");
+      setSignupStep(SIGNUP_STEPS.EMAIL);
+      return;
+    }
+    performBooking();
+  };
+
+  // ── Quick-account flow handlers ──────────────────────────────────────────
+  const handleSignupEmailSubmit = async (e) => {
+    e.preventDefault();
+    const email = signupEmail.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setSignupError("Enter a valid email address");
+      return;
+    }
+    setSignupError("");
+    setSignupBusy(true);
+    try {
+      const { payload } = await dispatch(verifySignUpEmailAddress({ emailAddress: email }));
+      if (payload.statusCode === "200") {
+        setSignupStep(SIGNUP_STEPS.OTP);
+      } else {
+        setSignupError(payload.message || "We couldn't start registration. Please try again.");
+      }
+    } catch (error) {
+      setSignupError("We couldn't reach the server. Please try again.");
+    } finally {
+      setSignupBusy(false);
+    }
+  };
+
+  const handleOtpDigitChange = (index, value) => {
+    setSignupError("");
+    const raw = (value || "").replace(/\D/g, "").slice(-1);
+    const next = [...signupOtp];
+    next[index] = raw;
+    setSignupOtp(next);
+    if (raw && index < next.length - 1) signupOtpRefs.current[index + 1]?.focus();
+  };
+
+  const handleOtpPaste = (e) => {
+    setSignupError("");
+    const pasted = (e.clipboardData || window.clipboardData || {}).getData ? (e.clipboardData || window.clipboardData).getData("text") : "";
+    const cleaned = pasted.replace(/\D/g, "").slice(0, 6);
+    if (!cleaned) return;
+    e.preventDefault();
+    setSignupOtp(cleaned.split(""));
+    if (cleaned.length === 6) verifySignupOtp(cleaned);
+  };
+
+  const verifySignupOtp = async (code) => {
+    setSignupBusy(true);
+    try {
+      const { payload } = await dispatch(verifyOtpCode(code));
+      if (payload.statusCode === "200") {
+        setSignupStep(SIGNUP_STEPS.PASSWORD);
+      } else {
+        setSignupError(payload.message || "That code is incorrect or has expired. Try again.");
+        setSignupOtp(["", "", "", "", "", ""]);
+      }
+    } catch (error) {
+      setSignupError("We couldn't verify that code right now.");
+      setSignupOtp(["", "", "", "", "", ""]);
+    } finally {
+      setSignupBusy(false);
+    }
+  };
+
+  // Auto-submit the OTP once all six digits are present.
+  React.useEffect(() => {
+    if (signupStep === SIGNUP_STEPS.OTP && !signupBusy && signupOtp.every((d) => d !== "")) {
+      verifySignupOtp(signupOtp.join(""));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [signupOtp.join(""), signupStep]);
+
+  const handleSignupPasswordSubmit = async (e) => {
+    e.preventDefault();
+    setSignupError("");
+    if (signupPassword.length < 8) {
+      setSignupError("Password must be at least 8 characters");
+      return;
+    }
+    setSignupBusy(true);
+    try {
+      const { payload } = await dispatch(createUserAccount({
+        emailAddress: signupEmail.trim(),
+        password: signupPassword,
+        agreeToTerms: true,
+      }));
+      if (payload.statusCode !== "200") {
+        setSignupError(payload.message || "We couldn't create your account right now.");
+        return;
+      }
+      // Now sign in so the booking request below carries a valid JWT.
+      const signInRes = await dispatch(userAuthenticate({ emailAddress: signupEmail.trim(), password: signupPassword }));
+      if (signInRes.payload?.statusCode !== "200") {
+        setSignupError("Account created — please sign in to finish your booking.");
+        return;
+      }
+      setSignupStep(null);
+      setSignupPassword("");
+      performBooking();
+    } catch (error) {
+      setSignupError("We couldn't finish setting up your account right now.");
+    } finally {
+      setSignupBusy(false);
+    }
+  };
+
+  const closeSignup = () => {
+    setSignupStep(null);
+    setSignupError("");
+    setSignupPassword("");
+    setSignupOtp(["", "", "", "", "", ""]);
+  };
+
+  // Google sign-in (customer-only on the backend). Auto-creates the customer
+  // account when needed, signs them in, then books the selected slot with the
+  // carried booking intent — no email/OTP/password steps required.
+  const handleGoogleSuccess = async (res) => {
+    const token = res.data?.token;
+    const refreshToken = res.data?.refreshToken;
+    const account = res.data?.data?.account;
+    if (!token || !account) {
+      setSignupError("Google sign-in did not return a session. Please try again.");
+      return;
+    }
+    setAuthToken(token);
+    if (refreshToken) {
+      setRefreshToken(refreshToken);
+    }
+    dispatch(setUserSession(res.data));
+    setSignupStep(null);
+    performBooking();
   };
 
   return (
@@ -527,6 +675,87 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
               </div>
             </div>
             </div>
+            {signupStep && (
+              <div className="border-b px-6 py-5 bg-[#9381FF08]">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <p className="font-semibold text-[15px] text-gray-900">
+                      {signupStep === SIGNUP_STEPS.PASSWORD ? "Finish creating your account" : "Quick account to book"}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      {signupStep === SIGNUP_STEPS.EMAIL
+                        ? "We just need your email to set up a secure booking account."
+                        : signupStep === SIGNUP_STEPS.OTP
+                        ? `Enter the code we sent to ${signupEmail}`
+                        : "Choose a password for your new account."}
+                    </p>
+                  </div>
+                  <button type="button" onClick={closeSignup}
+                    className="text-xs font-semibold text-gray-400 hover:text-gray-600 cursor-pointer">
+                    Cancel
+                  </button>
+                </div>
+
+                {signupStep === SIGNUP_STEPS.EMAIL && (
+                  <form onSubmit={handleSignupEmailSubmit} className="grid gap-3">
+                    {GOOGLE_CLIENT_ID && (
+                      <>
+                        <GoogleSignInButton onSuccess={handleGoogleSuccess} onError={setSignupError} text="signup_with" />
+                        <div className="flex items-center gap-3 my-1">
+                          <span className="flex-1 border-t border-gray-200" />
+                          <span className="text-xs text-gray-400 uppercase tracking-wide">or use your email</span>
+                          <span className="flex-1 border-t border-gray-200" />
+                        </div>
+                      </>
+                    )}
+                    <Input label={"Email address"} type={"email"} value={signupEmail}
+                      onChange={(e) => setSignupEmail(e.target.value)} placeholder={"you@example.com"} />
+                    {signupError && <p className="text-xs text-red-500">{signupError}</p>}
+                    <button type="submit" disabled={signupBusy}
+                      className="rounded-md bg-brand text-white text-sm py-3 font-medium disabled:opacity-60">
+                      {signupBusy ? "Checking…" : "Continue"}
+                    </button>
+                  </form>
+                )}
+
+                {signupStep === SIGNUP_STEPS.OTP && (
+                  <div className="grid gap-3">
+                    <div className="w-full grid grid-cols-6 gap-2">
+                      {signupOtp.map((d, i) => (
+                        <OtpInputs
+                          key={`quickotp${i}`}
+                          id={`quickotp${i + 1}`}
+                          value={d}
+                          onChange={(e) => handleOtpDigitChange(i, e.target.value)}
+                          onPaste={handleOtpPaste}
+                          inputRef={(el) => (signupOtpRefs.current[i] = el)}
+                        />
+                      ))}
+                    </div>
+                    {signupError && <p className="text-xs text-red-500">{signupError}</p>}
+                    <button type="button" onClick={() => setSignupStep(SIGNUP_STEPS.EMAIL)}
+                      className="text-xs font-semibold text-brand underline text-left w-max">
+                      Use a different email
+                    </button>
+                  </div>
+                )}
+
+                {signupStep === SIGNUP_STEPS.PASSWORD && (
+                  <form onSubmit={handleSignupPasswordSubmit} className="grid gap-3">
+                    <Input label={"Password"} type={"password"} value={signupPassword}
+                      onChange={(e) => setSignupPassword(e.target.value)} placeholder={"At least 8 characters"} />
+                    {signupError && <p className="text-xs text-red-500">{signupError}</p>}
+                    <button type="submit" disabled={signupBusy}
+                      className="rounded-md bg-brand text-white text-sm py-3 font-medium disabled:opacity-60">
+                      {signupBusy ? "Creating account…" : "Create account & book"}
+                    </button>
+                    <p className="text-[11px] text-gray-400">
+                      The stylist receives your booking, and you can finish your profile any time from your dashboard.
+                    </p>
+                  </form>
+                )}
+              </div>
+            )}
             <div className="border-t sticky w-full bottom-0 bg-white flex justify-between items-center px-6 py-4">
              <div>
               <p className="text-sm text-slate-400">Total estimate:</p>
@@ -538,17 +767,6 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
                     <svg className="w-3.5 h-3.5 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
                     <div className="flex-1">
                       <span>{bookingError}</span>
-                      {cardAction && (
-                        <div className="mt-1.5">
-                          <button
-                            type="button"
-                            className="underline font-semibold"
-                            onClick={() => navigate("/CardDetails")}
-                          >
-                            {cardAction === "add" ? "Add a card" : cardAction === "update" ? "Update card" : "Manage card"}
-                          </button>
-                        </div>
-                      )}
                     </div>
                   </div>
                 )}

@@ -55,9 +55,15 @@ const Notifications = ({ setPageTitle }) => {
   const unread = items.filter((item) => !item.read).length;
 
   return (
-    <div className="rounded-lg border bg-white">
-      <div className="flex items-center justify-between gap-3 border-b bg-[#1d1d1d08] p-4">
-        <div className="flex items-center gap-1 text-[15px] font-bold"><Back /><span>Notifications</span></div>
+    <div className="rounded-xl border border-gray-100 bg-white shadow-sm overflow-hidden">
+      <div className="flex items-center justify-between gap-3 border-b border-gray-100 bg-gradient-to-r from-brand/5 to-white px-4 py-4 sm:px-5">
+        <div className="flex items-center gap-2">
+          <Back />
+          <div>
+            <h1 className="text-[15px] font-bold text-gray-900">Notifications</h1>
+            <p className="mt-0.5 text-xs text-gray-500">In-app updates from RapidStylers</p>
+          </div>
+        </div>
         {unread > 0 && <button type="button" onClick={markAllRead} disabled={markingAll} className="text-xs font-semibold text-brand disabled:opacity-50">{markingAll ? "Updating..." : "Mark all read"}</button>}
       </div>
       <div className="p-4">

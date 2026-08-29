@@ -128,8 +128,6 @@ function App() {
         <Route path="/updatePersonalInformation" element={<UserLayout />} />
         <Route path="/savedStylist" element={<UserLayout />} />
         <Route path="/changePassword" element={<UserLayout />} />
-        <Route path="/CardDetails" element={<UserLayout />} />
-        <Route path="/cardDetails" element={<UserLayout />} />
         <Route path="/notificationSettings" element={<UserLayout />} />
         <Route path="/notifications" element={<UserLayout />} />
         <Route path="/support" element={<UserLayout />} />

@@ -37,8 +37,16 @@ const Loyalty = ({ setPageTitle }) => {
   };
 
   return (
-    <div className="rounded-lg border bg-white">
-      <div className="flex items-center gap-1 border-b bg-[#1d1d1d08] p-4 text-[15px] font-bold"><Back /><span>Loyalty and referrals</span></div>
+    <div className="rounded-xl border border-gray-100 bg-white shadow-sm overflow-hidden">
+      <div className="flex items-center gap-3 border-b border-gray-100 bg-gradient-to-r from-brand/5 to-white px-4 py-4 sm:px-5">
+        <div className="flex items-center gap-2">
+          <Back />
+          <div>
+            <h1 className="text-[15px] font-bold text-gray-900">Loyalty and referrals</h1>
+            <p className="mt-0.5 text-xs text-gray-500">Earn points and share your code</p>
+          </div>
+        </div>
+      </div>
       <div className="grid gap-6 p-4">
         {!getAuthToken() ? <p className="text-sm text-gray-500">Please sign in to view loyalty benefits.</p> : loading ? <p className="text-sm text-gray-500">Loading loyalty account...</p> : <>
           <div className="rounded-lg bg-[#1d1d1d] p-5 text-white"><p className="text-sm text-white/60">Available points</p><p className="mt-1 text-4xl font-bold">{account?.points || 0}</p><p className="mt-2 text-xs text-white/60">Earn points when completed appointments are recorded.</p></div>

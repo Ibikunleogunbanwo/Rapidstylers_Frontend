@@ -81,11 +81,16 @@ const UpdateInformation = ({ setPageTitle }) => {
   }, []);
 
   return (
-    <div className="bg-white rounded-lg border">
+    <div className="rounded-xl border border-gray-100 bg-white shadow-sm overflow-hidden">
       <Spinner loading={useSelector((state) => state.user).loading} />
-      <div className="flex gap-1 items-center border-b p-4 text-[15px] font-bold bg-[#1d1d1d08] rounded-t-lg">
-        <Back />
-        <span>Update personal information.</span>
+      <div className="flex items-center gap-3 border-b border-gray-100 bg-gradient-to-r from-brand/5 to-white px-4 py-4 sm:px-5">
+        <div className="flex items-center gap-2">
+          <Back />
+          <div>
+            <h1 className="text-[15px] font-bold text-gray-900">Update personal information</h1>
+            <p className="mt-0.5 text-xs text-gray-500">Update your contact and address details</p>
+          </div>
+        </div>
       </div>
 
       {!userDetails && fetching && (

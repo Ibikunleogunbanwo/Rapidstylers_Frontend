@@ -133,6 +133,30 @@ export class APIService {
         }
     }
 
+    /**
+     * Sign in with Google. The frontend sends the Google ID token (credential)
+     * from Sign in with Google; the backend verifies it and issues our JWT +
+     * refresh token, auto-creating an account if needed.
+     */
+    static async googleSignIn(idToken){
+        try{
+            const response = await ApiClient.post("/google_sign_in", { idToken });
+            if(response.data?.statusCode && response.data.statusCode !== "200"){
+                const error = new Error(response.data?.message || "Google sign in failed");
+                error.handledByApiService = true;
+                APIService.extractError(error);
+                throw error;
+            }
+            return response;
+        }
+        catch(error){
+            if(!error.handledByApiService){
+                APIService.extractError(error);
+            }
+            throw(error);
+        }
+    }
+
     // ── Admin-only endpoints (require an ADMIN-role JWT via the interceptor) ─
     static async adminSignIn(data){
         try{
@@ -453,16 +477,6 @@ export class APIService {
     }
 
     
-    static async updateUserCardDetails(data){
-        try{
-            return await ApiClient.post("/update_card_details", data);
-        }
-        catch(error){
-            APIService.extractError(error);
-            throw(error);
-        }
-    }
-
     /** Stripe Connect Express onboarding — creates/reuses the stylist account and returns the hosted link. */
     static async createStylerConnectAccount(data){
         try{
@@ -574,17 +588,6 @@ export class APIService {
     static async adminPaymentReconciliation(){
         try{
             return await ApiClient.get("/admin/payment_reconciliation");
-        }
-        catch(error){
-            APIService.extractError(error);
-            throw(error);
-        }
-    }
-
-    /** Returns a Stripe SetupIntent clientSecret for saving a card in Elements. */
-    static async getCardSetupIntent(){
-        try{
-            return await ApiClient.get("/card_setup_intent");
         }
         catch(error){
             APIService.extractError(error);
