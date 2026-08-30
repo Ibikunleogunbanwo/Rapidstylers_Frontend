@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import InputWithLabel from "../../../components/inputWithLabel";
 import AddressAutocomplete from "../../../components/AddressAutocomplete";
 import Buttons from "../../../components/button";
+import GoodToKnow from "../../../components/goodToKnow";
 import { APIService } from "../../../hooks/remote/apiService";
 import { useStylerSignup } from "../../../context/StylerSignupContext";
 
@@ -221,6 +222,12 @@ const BusinessDetails = () => {
                 inputError={touched.postalCode && errors.postalCode ? errors.postalCode : ""}
               />
             </div>
+          </div>
+
+          {/* Pricing & payout basics — shown during onboarding so pros know the
+              economics before they finish signing up. */}
+          <div className="mt-8">
+            <GoodToKnow variant="styler" />
           </div>
 
           <div className="mt-8 flex gap-3">

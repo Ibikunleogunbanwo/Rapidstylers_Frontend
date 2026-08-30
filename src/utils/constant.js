@@ -30,6 +30,14 @@ export const ADMIN_ROLE_KEY = "rapidstylers_admin_role";
 export const getAuthToken = () => sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY) || "";
 export const setAuthToken = (token) => sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, token);
 
+// Role of the signed-in user (CUSTOMER / STYLER / ADMIN), persisted at login so
+// the header/footer and route guards can tell which area a session belongs to.
+// Unlike ADMIN_ROLE_KEY this covers every role, not just admins.
+export const USER_ROLE_STORAGE_KEY = "rapidstylers_user_role";
+export const getUserRole = () => sessionStorage.getItem(USER_ROLE_STORAGE_KEY) || "";
+export const setUserRole = (role) => sessionStorage.setItem(USER_ROLE_STORAGE_KEY, role);
+export const clearUserRole = () => sessionStorage.removeItem(USER_ROLE_STORAGE_KEY);
+
 // User-picked location (lat/lng/city/province) persists in localStorage so it
 // survives reloads while logged in, but it is SESSION-scoped: on logout OR a
 // token timeout it must be dropped so the next login re-detects from the
@@ -48,6 +56,20 @@ export const clearSavedUserLocation = () => {
 
 export const clearAuthToken = () => {
   sessionStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
+  clearSavedUserLocation();
+};
+
+/**
+ * Full session teardown for logout paths: access token, refresh token, admin
+ * flag, user role and the saved location. Without clearing the refresh token
+ * the ApiClient 401 auto-refresh silently resurrects the session after
+ * sign-out, and stale role flags leave the header showing a signed-in user.
+ */
+export const clearAllSessionTokens = () => {
+  sessionStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
+  sessionStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY);
+  sessionStorage.removeItem(ADMIN_ROLE_KEY);
+  sessionStorage.removeItem(USER_ROLE_STORAGE_KEY);
   clearSavedUserLocation();
 };
 

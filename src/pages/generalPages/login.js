@@ -3,7 +3,7 @@ import { Link, useNavigate, Navigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { APIService } from "../../hooks/remote/apiService";
 import { setUserSession, getUserDetails } from "../../hooks/local/userReducer";
-import { getAuthToken, setAuthToken, setRefreshToken, showSuccessToastMessage } from "../../utils/constant";
+import { getAuthToken, setAuthToken, setRefreshToken, setUserRole, setAdminRole, showSuccessToastMessage } from "../../utils/constant";
 import logo from "../../assets/svg-icons/colouredLogo.svg";
 import InputWithLabel from "../../components/inputWithLabel";
 import PasswordInput from "../../components/passwordInput";
@@ -44,6 +44,14 @@ const Login = () => {
       setAuthToken(token);
       if (refreshToken) {
         setRefreshToken(refreshToken);
+      }
+      // Persist the role so route guards and the header/footer know which area
+      // this session belongs to (stylers/admins get no userSessionData).
+      if (role) {
+        setUserRole(role);
+      }
+      if (role === "ADMIN") {
+        setAdminRole();
       }
       if (role === "CUSTOMER" && account) {
         // Persist the session (store + localStorage) so the dashboard guard

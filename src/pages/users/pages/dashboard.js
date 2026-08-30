@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import brandIco from "../../../assets/svg-icons/brand-appointment-icon.svg";
 import Appointments from "./upcomingAppointments";
 import ReviewForm from "../../../components/reviewForm";
+import GoodToKnow from "../../../components/goodToKnow";
 import { useAllUserAppointments, useUserPendingAppointments } from "../userLayout/functionalEffects";
 import Spinner from "../../../components/spinner";
 import { useDispatch, useSelector } from "react-redux";
@@ -153,6 +154,10 @@ const Dashboard = ({ setPageTitle }) => {
               )
           }
         </div>
+      </div>
+      {/* Pricing & cancellation basics — visible right where bookings live. */}
+      <div className="p-4 border-t border-[#1d1d1d0a]">
+        <GoodToKnow />
       </div>
     </div>
   );

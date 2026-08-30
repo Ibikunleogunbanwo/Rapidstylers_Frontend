@@ -4,8 +4,7 @@ import { APIService } from "../../hooks/remote/apiService";
 import {
   getAuthToken,
   isAdminRole,
-  clearAuthToken,
-  clearAdminRole,
+  clearAllSessionTokens,
   showSuccessToastMessage,
 } from "../../utils/constant";
 
@@ -92,7 +91,7 @@ const ManageCategories = () => {
         <div className="flex items-center justify-between mb-6">
           <p className="text-2xl font-bold text-gray-900">Manage Categories</p>
           <button
-            onClick={() => { clearAuthToken(); clearAdminRole(); window.location.href = "/admin/login"; }}
+            onClick={() => { clearAllSessionTokens(); window.location.href = "/admin/login"; }}
             className="text-sm text-gray-500 hover:text-gray-800 font-semibold"
           >
             Sign out

@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice, isAnyOf } from "@reduxjs/toolkit";
-import { retrieveFromLocalStorage, showErrorToastMessage, showSuccessToastMessage, setAuthToken, clearAuthToken, setRefreshToken, clearRefreshToken, getRefreshToken } from "../../utils/constant";
+import { retrieveFromLocalStorage, showErrorToastMessage, showSuccessToastMessage, setAuthToken, setRefreshToken, setUserRole, clearAllSessionTokens, getRefreshToken } from "../../utils/constant";
 import { APIService } from "../remote/apiService";
 
 const initialState = {
@@ -56,6 +56,8 @@ export const userAuthenticate = createAsyncThunk(
         if (response.refreshToken) {
             setRefreshToken(response.refreshToken);
         }
+        // Hero / legacy login path is always a customer session.
+        setUserRole("CUSTOMER");
         return response;
     }
 )
@@ -156,8 +158,7 @@ const logOutSession = async () =>{
     localStorage.removeItem("user");
     localStorage.removeItem("userSessionData"); 
     localStorage.removeItem("userDetailsData");
-    clearAuthToken();
-    clearRefreshToken();
+    clearAllSessionTokens();
 }
 
 export const userLogOut = createAsyncThunk(

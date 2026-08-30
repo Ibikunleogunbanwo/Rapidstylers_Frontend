@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
 import logo from "../assets/svg-icons/logo.svg";
 import instagram from "../assets/svg-icons/instagram.svg";
 import x from "../assets/svg-icons/x.svg";
@@ -7,11 +8,32 @@ import Input from "./input";
 import mockup from "../assets/images/Mockup.svg";
 import playstore from "../assets/images/google_play-en-us.svg";
 import appstore from "../assets/images/app_store_en-us.svg";
-import { showSuccessToastMessage } from "../utils/constant";
+import { showSuccessToastMessage, getAuthToken, getUserRole } from "../utils/constant";
+import { userLogOut } from "../hooks/local/userReducer";
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
   const [email, setEmail] = useState("");
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  // Same auth-driven links as the header: logged-out users get Login / Sign up /
+  // Register as a stylist; logged-in users get My Account (role-routed) + Log out.
+  const userSessionData = useSelector((state) => state.user.userSessionData);
+  const isLoggedIn = Boolean(getAuthToken() || userSessionData);
+  const accountRole =
+    getUserRole() || userSessionData?.role || (userSessionData ? "CUSTOMER" : "");
+  const dashboardPath =
+    accountRole === "STYLER"
+      ? "/styler-dashboard"
+      : accountRole === "ADMIN"
+      ? "/admin/categories"
+      : "/dashboard";
+
+  const handleLogout = async () => {
+    await dispatch(userLogOut());
+    navigate("/");
+  };
 
   const joinNewsletter = (event) => {
     event.preventDefault();
@@ -109,6 +131,8 @@ const Footer = () => {
                 <div className="grid gap-2.5 mt-4 text-sm text-white/60">
                   <Link to="/blog" className="hover:text-brand transition">Blog</Link>
                   <Link to="/faqs" className="hover:text-brand transition">FAQs</Link>
+                  <Link to="/faqs#for-customers" className="hover:text-brand transition pl-3 text-xs">For customers</Link>
+                  <Link to="/faqs#for-beauty-professionals" className="hover:text-brand transition pl-3 text-xs">For beauty professionals</Link>
                   <Link to="/contact-support" className="hover:text-brand transition">Support</Link>
                 </div>
               </div>
@@ -116,7 +140,18 @@ const Footer = () => {
                 <p className="text-[15px] font-semibold uppercase text-white/80 tracking-wide text-sm">Company</p>
                 <div className="grid gap-2.5 mt-4 text-sm text-white/60">
                   <Link to="/about" className="hover:text-brand transition">About RapidStylers</Link>
-                  <Link to="/styler-signup" className="hover:text-brand transition">Register as a stylist</Link>
+                  {isLoggedIn ? (
+                    <>
+                      <Link to={dashboardPath} className="hover:text-brand transition">My Account</Link>
+                      <button type="button" onClick={handleLogout} className="text-left hover:text-brand transition cursor-pointer">Log out</button>
+                    </>
+                  ) : (
+                    <>
+                      <Link to="/login" className="hover:text-brand transition">Login</Link>
+                      <Link to="/?signup=1" className="hover:text-brand transition">Sign up</Link>
+                      <Link to="/styler-signup" className="hover:text-brand transition">Register as a stylist</Link>
+                    </>
+                  )}
                 </div>
               </div>
             </div>

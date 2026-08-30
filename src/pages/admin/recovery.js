@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { APIService } from "../../hooks/remote/apiService";
-import { clearAuthToken, clearAdminRole, getAuthToken, isAdminRole } from "../../utils/constant";
+import { clearAllSessionTokens, getAuthToken, isAdminRole } from "../../utils/constant";
 
 const AdminNav = () => (
   <div className="mb-6 flex flex-wrap gap-4 text-sm font-semibold">
@@ -64,7 +64,7 @@ const Recovery = () => {
             </button>
             <button
               type="button"
-              onClick={() => { clearAuthToken(); clearAdminRole(); window.location.href = "/admin/login"; }}
+              onClick={() => { clearAllSessionTokens(); window.location.href = "/admin/login"; }}
               className="text-sm font-semibold text-gray-500"
             >
               Sign out

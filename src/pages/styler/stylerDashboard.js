@@ -5,6 +5,7 @@ import { format, addDays, isToday } from 'date-fns';
 import calendar from "../../assets/svg-icons/calendar.svg";
 import arrow from "../../assets/svg-icons/darkArrow.svg";
 import AppointmentDetails from './stylerComponents/appointmentDetails';
+import GoodToKnow from "../../components/goodToKnow";
 import { APIService } from "../../hooks/remote/apiService";
 import { humanizeConnectReason, showErrorToastMessage } from "../../utils/constant";
 
@@ -119,6 +120,7 @@ const StylerDashboard = () => {
   };
 
   return (
+    <>
     <div className='border rounded-md relative'>
       <div className="border-b p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 bg-[#fafaff]">
         <div>
@@ -195,6 +197,11 @@ const StylerDashboard = () => {
       {/* Appointment details */}
       {isDetailsOpen && <AppointmentDetails onclose={closeDetails} />}
     </div>
+    {/* Pricing & cancellation basics — right under the get-paid card. */}
+    <div className="mt-4">
+      <GoodToKnow variant="styler" />
+    </div>
+    </>
   );
 };
 

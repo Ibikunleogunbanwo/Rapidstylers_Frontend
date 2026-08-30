@@ -10,11 +10,12 @@ import { useFormik } from "formik";
 import * as Yup from "yup";
 import Spinner from "../../components/spinner";
 import { useDispatch, useSelector } from "react-redux";
-import { verifySignUpEmailAddress } from "../../hooks/local/userReducer";
+import { verifySignUpEmailAddress, userLogOut } from "../../hooks/local/userReducer";
 import SearchForStyler from "../../components/searchForStyler";
 import LocationPicker from "../../components/locationPicker";
 import { APIService } from "../../hooks/remote/apiService";
 import { useUserLocation } from "../../context/LocationContext";
+import { getAuthToken, getUserRole } from "../../utils/constant";
 import largeVideo from "../../assets/Videos/large video.mp4";
 import smallVideo from "../../assets/Videos/small video.mp4";
 
@@ -22,6 +23,37 @@ const Hero = ({ height }) => {
   const [services, setServices] = useState([]);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+
+  // Session state drives which nav options to show. Customers persist
+  // userSessionData, but stylers/admins only hold a JWT + role flag in
+  // sessionStorage — so logged-in means "token present OR session data".
+  const userSessionData = useSelector((state) => state.user.userSessionData);
+  const isLoggedIn = Boolean(getAuthToken() || userSessionData);
+  const accountRole =
+    getUserRole() || userSessionData?.role || (userSessionData ? "CUSTOMER" : "");
+  const dashboardPath =
+    accountRole === "STYLER"
+      ? "/styler-dashboard"
+      : accountRole === "ADMIN"
+      ? "/admin/categories"
+      : "/dashboard";
+  const appointmentsPath =
+    accountRole === "STYLER" ? "/styler-dashboard/appointments" : "/dashboard";
+
+  // Personalize the account menu: first name (or business name for stylists)
+  // with a fallback label, plus a circular avatar showing the initial.
+  const displayName =
+    userSessionData?.firstname ||
+    userSessionData?.businessName ||
+    (accountRole === "STYLER" ? "Professional" : accountRole === "ADMIN" ? "Admin" : "Account");
+  const avatarInitial = (displayName.trim().charAt(0) || "?").toUpperCase();
+
+  const handleLogout = async () => {
+    setMobileMenuOpen(false);
+    setAccountMenuOpen(false);
+    await dispatch(userLogOut());
+    navigate("/");
+  };
 
   useEffect(() => {
     APIService.getStylerType()
@@ -34,6 +66,7 @@ const Hero = ({ height }) => {
 
   const [signUpVisible, setSignUpVisible] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [signUpRole, setSignUpRole] = useState("customer"); // customer | stylist | admin
   const [searchParams] = useSearchParams();
 
@@ -149,9 +182,46 @@ const Hero = ({ height }) => {
           <div className="flex items-center gap-3 sm:gap-5 md:gap-8">
             <LocationBadge />
             <nav className="hidden items-center gap-4 text-sm md:flex md:gap-6" aria-label="Primary navigation">
-              <button type="button" className="cursor-pointer transition hover:text-white/80" onClick={() => navigate('/login')}>Login</button>
-              <button type="button" className="cursor-pointer transition hover:text-white/80" onClick={toggleSignUp}>Sign up</button>
-              <button type="button" className="cursor-pointer whitespace-nowrap transition hover:text-white/80" onClick={() => navigate('/styler-signup')}>Register as a beauty professional</button>
+              {isLoggedIn ? (
+                <div className="relative">
+                  <button
+                    type="button"
+                    aria-label="Account menu"
+                    aria-haspopup="menu"
+                    aria-expanded={accountMenuOpen}
+                    onClick={() => setAccountMenuOpen((open) => !open)}
+                    className="flex cursor-pointer items-center gap-2 transition hover:text-white/80"
+                  >
+                    <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand text-xs font-bold text-white">{avatarInitial}</span>
+                    <span className="hidden lg:inline text-sm">My Account</span>
+                    <svg className="h-3.5 w-3.5 text-white/70" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                      <path d="M6 9l6 6 6-6" />
+                    </svg>
+                  </button>
+                  {accountMenuOpen && (
+                    <>
+                      <button type="button" aria-hidden="true" tabIndex={-1} className="fixed inset-0 z-40 cursor-default" onClick={() => setAccountMenuOpen(false)} />
+                      <div role="menu" className="absolute right-0 top-full z-50 mt-2 w-56 rounded-xl border border-white/10 bg-black/95 p-1.5 text-sm shadow-2xl">
+                        <button type="button" role="menuitem" className="w-full rounded-lg px-3 py-2.5 text-left hover:bg-white/10" onClick={() => { setAccountMenuOpen(false); navigate(dashboardPath); }}>My Account</button>
+                        {(accountRole === "CUSTOMER" || accountRole === "STYLER") && (
+                          <button type="button" role="menuitem" className="w-full rounded-lg px-3 py-2.5 text-left hover:bg-white/10" onClick={() => { setAccountMenuOpen(false); navigate(appointmentsPath); }}>Appointments</button>
+                        )}
+                        {accountRole === "CUSTOMER" && (
+                          <button type="button" role="menuitem" className="w-full rounded-lg px-3 py-2.5 text-left hover:bg-white/10" onClick={() => { setAccountMenuOpen(false); navigate("/savedStylist"); }}>Saved stylists</button>
+                        )}
+                        <div className="my-1.5 h-px bg-white/10" aria-hidden="true" />
+                        <button type="button" role="menuitem" className="w-full rounded-lg px-3 py-2.5 text-left text-brand hover:bg-white/10" onClick={handleLogout}>Log out</button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              ) : (
+                <>
+                  <button type="button" className="cursor-pointer transition hover:text-white/80" onClick={() => navigate('/login')}>Login</button>
+                  <button type="button" className="cursor-pointer transition hover:text-white/80" onClick={toggleSignUp}>Sign up</button>
+                  <button type="button" className="cursor-pointer whitespace-nowrap transition hover:text-white/80" onClick={() => navigate('/styler-signup')}>Register as a beauty professional</button>
+                </>
+              )}
             </nav>
             <button
               type="button"
@@ -168,9 +238,27 @@ const Hero = ({ height }) => {
         {mobileMenuOpen && (
           <nav className="border-t border-white/10 bg-black/90 px-4 py-3 md:hidden" aria-label="Mobile navigation">
             <div className="mx-auto grid max-w-[1600px] gap-1">
-              <button type="button" className="rounded-lg px-3 py-3 text-left text-sm font-semibold hover:bg-white/10" onClick={() => { setMobileMenuOpen(false); navigate('/login'); }}>Login</button>
-              <button type="button" className="rounded-lg px-3 py-3 text-left text-sm font-semibold hover:bg-white/10" onClick={toggleSignUp}>Sign up</button>
-              <button type="button" className="rounded-lg px-3 py-3 text-left text-sm font-semibold text-brand hover:bg-white/10" onClick={() => { setMobileMenuOpen(false); navigate('/styler-signup'); }}>Register as a beauty professional</button>
+              {isLoggedIn ? (
+                <>
+                  <button type="button" className="flex items-center gap-2 rounded-lg px-3 py-3 text-left text-sm font-semibold hover:bg-white/10" onClick={() => { setMobileMenuOpen(false); navigate(dashboardPath); }}>
+                    <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand text-xs font-bold text-white">{avatarInitial}</span>
+                    My Account
+                  </button>
+                  {(accountRole === "CUSTOMER" || accountRole === "STYLER") && (
+                    <button type="button" className="rounded-lg px-3 py-3 text-left text-sm font-semibold hover:bg-white/10" onClick={() => { setMobileMenuOpen(false); navigate(appointmentsPath); }}>Appointments</button>
+                  )}
+                  {accountRole === "CUSTOMER" && (
+                    <button type="button" className="rounded-lg px-3 py-3 text-left text-sm font-semibold hover:bg-white/10" onClick={() => { setMobileMenuOpen(false); navigate("/savedStylist"); }}>Saved stylists</button>
+                  )}
+                  <button type="button" className="rounded-lg px-3 py-3 text-left text-sm font-semibold text-brand hover:bg-white/10" onClick={handleLogout}>Log out</button>
+                </>
+              ) : (
+                <>
+                  <button type="button" className="rounded-lg px-3 py-3 text-left text-sm font-semibold hover:bg-white/10" onClick={() => { setMobileMenuOpen(false); navigate('/login'); }}>Login</button>
+                  <button type="button" className="rounded-lg px-3 py-3 text-left text-sm font-semibold hover:bg-white/10" onClick={toggleSignUp}>Sign up</button>
+                  <button type="button" className="rounded-lg px-3 py-3 text-left text-sm font-semibold text-brand hover:bg-white/10" onClick={() => { setMobileMenuOpen(false); navigate('/styler-signup'); }}>Register as a beauty professional</button>
+                </>
+              )}
             </div>
           </nav>
         )}

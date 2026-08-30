@@ -1,7 +1,7 @@
 import logo from "../../../assets/svg-icons/colouredLogo.svg";
 import menu from "../../../assets/svg-icons/menu-brand.svg";
 import { CurrentDateTime } from "../../../utils/utility";
-import { clearAuthToken } from "../../../utils/constant";
+import { clearAllSessionTokens } from "../../../utils/constant";
 import { APIService } from "../../../hooks/remote/apiService";
 
 const StylerTopBar = ({toggleSideBar}) => {
@@ -10,7 +10,7 @@ const StylerTopBar = ({toggleSideBar}) => {
         // local token — without this the browser stays locked in the styler
         // session because /login redirects while any token exists.
         APIService.stylerSignOut();
-        clearAuthToken();
+        clearAllSessionTokens();
         window.location.href = "/";
     };
 

@@ -1,11 +1,16 @@
-import { Link, Outlet, useLocation } from "react-router-dom";
+import { Link, Navigate, Outlet, useLocation } from "react-router-dom";
 import StylerTopBar from "./topNav";
 import BusinessSummary from "../stylerComponents/businessSummary";
-import { clearAuthToken } from "../../../utils/constant";
+import { getAuthToken, getUserRole, clearAllSessionTokens } from "../../../utils/constant";
 import { APIService } from "../../../hooks/remote/apiService";
 
 const StylerLayout = () => {
   const location = useLocation();
+  // Role gate: the whole /styler-dashboard area is styler-only. Without this a
+  // logged-out visitor or a customer can open the shell and its sidebar.
+  if (!getAuthToken() || getUserRole() !== "STYLER") {
+    return <Navigate to="/login" replace />;
+  }
   return (
     <div className="bg-white min-h-screen">
       <StylerTopBar />
@@ -112,7 +117,7 @@ const StylerLayout = () => {
               <button
                 onClick={() => {
                   APIService.stylerSignOut();
-                  clearAuthToken();
+                  clearAllSessionTokens();
                   window.location.href = "/";
                 }}
                 className="py-4 px-4 rounded-md cursor-pointer text-left w-full"

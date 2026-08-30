@@ -1,5 +1,5 @@
 import Axios from "axios";
-import { API_BASE_URL, API_HEADER, FORM_DATA_HEADER, getAuthToken, setAuthToken, getRefreshToken, setRefreshToken, clearSavedUserLocation } from "../../utils/constant";
+import { API_BASE_URL, API_HEADER, FORM_DATA_HEADER, getAuthToken, setAuthToken, getRefreshToken, setRefreshToken, clearSavedUserLocation, clearAllSessionTokens } from "../../utils/constant";
 
 // Attach the signed-in user's JWT to every request. Role-protected endpoints
 // (create_service, book_appointment, …) reject requests without a valid token;
@@ -89,13 +89,21 @@ const handle401 = async (error) => {
             return ApiClient(originalRequest);
         }
 
-        // Refresh failed — the session timed out. Drop the saved location so a
-        // fresh login polls the browser/IP instead of reusing a stale position.
-        clearSavedUserLocation();
+        // Refresh failed — the server rejected the refresh token (revoked or
+        // expired session). Tear the whole session down so the UI drops the
+        // stale token/role and a 401 loop can't silently resurrect it.
+        clearAllSessionTokens();
         processQueue(error, null);
         return Promise.reject(error);
     } catch (refreshError) {
-        clearSavedUserLocation();
+        if (refreshError?.response) {
+            // Server answered non-2xx — the refresh token is dead, clear it all.
+            clearAllSessionTokens();
+        } else {
+            // Network-level failure: keep the tokens so a transient blip does
+            // not log the user out, but drop the stale saved location.
+            clearSavedUserLocation();
+        }
         processQueue(refreshError, null);
         return Promise.reject(refreshError);
     } finally {
