@@ -9,6 +9,7 @@ const AdminNav = () => (
     <Link to="/admin/blog" className="text-gray-500 hover:text-gray-800">Blog</Link>
     <Link to="/admin/stylers" className="text-gray-500 hover:text-gray-800">Stylists</Link>
     <Link to="/admin/operations" className="text-gray-500 hover:text-gray-800">Operations</Link>
+    <Link to="/admin/recovery" className="text-gray-500 hover:text-gray-800">Recovery</Link>
     <span className="text-brand underline">Payments</span>
   </div>
 );

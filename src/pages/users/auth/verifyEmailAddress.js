@@ -5,10 +5,14 @@ import { useFormik } from "formik";
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import Buttons from "../../../components/button";
-import { verifyOtpCode } from "../../../hooks/local/userReducer";
+import { setUserSession, getUserDetails, verifyOtpCode } from "../../../hooks/local/userReducer";
 import Spinner from "../../../components/spinner";
 import { APIService } from "../../../hooks/remote/apiService";
-import { showSuccessToastMessage, showErrorToastMessage } from "../../../utils/constant";
+import GoogleSignInButton from "../../../components/googleSignInButton";
+import { showSuccessToastMessage, showErrorToastMessage, setAuthToken, setRefreshToken } from "../../../utils/constant";
+
+// Google Sign-In client id (public). When absent, the Google sign-up option is hidden.
+const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || "";
 
 const steps = [
   "Register email address",
@@ -31,6 +35,38 @@ const navigate = useNavigate();
 const dispatch = useDispatch();
 
 const userEmailAddress = location.state?.emailAddress || sessionStorage.getItem('signupEmail') || '';
+
+  // "Sign up with Google" — the backend auto-creates the customer from the
+  // verified id_token, so no OTP/password steps are needed. Mirrors the
+  // completeAuth handler used on the sign-in page (customer-only).
+  const handleGoogleAuth = async (res) => {
+    const token = res.data?.token;
+    const refreshToken = res.data?.refreshToken;
+    const role = res.data?.data?.role;
+    const account = res.data?.data?.account;
+    if (!token) {
+      showErrorToastMessage("Google sign up did not return a session. Please try again.");
+      return;
+    }
+    setAuthToken(token);
+    if (refreshToken) {
+      setRefreshToken(refreshToken);
+    }
+    if (role === "CUSTOMER" && account) {
+      // Persist the session (store + localStorage) so the dashboard guard
+      // passes without a reload, then fetch the profile in the background.
+      dispatch(setUserSession(res.data));
+      dispatch(getUserDetails(account.userId));
+    }
+    showSuccessToastMessage("Welcome to RapidStylers");
+    if (role === "ADMIN") {
+      navigate("/admin/categories");
+    } else if (role === "STYLER") {
+      navigate("/styler-dashboard");
+    } else {
+      navigate("/dashboard");
+    }
+  };
 
   // Controlled OTP digits — the digit you type is rendered by React from state
   // on every keystroke, so it is always visible and can never be wiped or
@@ -213,6 +249,18 @@ const userEmailAddress = location.state?.emailAddress || sessionStorage.getItem(
               A verification code was sent to your email address ({userEmailAddress}).
               Please provide the code and click on verify.
             </p>
+            {GOOGLE_CLIENT_ID && (
+              <>
+                <div className="mt-6">
+                  <GoogleSignInButton onSuccess={handleGoogleAuth} onError={(message) => showErrorToastMessage(message)} text="signup_with" />
+                </div>
+                <div className="flex items-center gap-3 my-4">
+                  <span className="flex-1 border-t border-gray-200" />
+                  <span className="text-xs text-gray-400 uppercase tracking-wide">or</span>
+                  <span className="flex-1 border-t border-gray-200" />
+                </div>
+              </>
+            )}
             <div className="flex justify-between items-center">
               <p className="text-sm font-semibold text-primary/50 cursor-pointer" onClick={clearUserOTP}>Clear code</p>
               {resendIn > 0 ? (

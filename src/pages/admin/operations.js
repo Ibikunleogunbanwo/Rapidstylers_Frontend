@@ -3,7 +3,7 @@ import { Link, Navigate } from "react-router-dom";
 import { APIService } from "../../hooks/remote/apiService";
 import { clearAuthToken, clearAdminRole, getAuthToken, isAdminRole, showErrorToastMessage, showSuccessToastMessage } from "../../utils/constant";
 
-const AdminNav = () => <div className="mb-6 flex flex-wrap gap-4 text-sm font-semibold"><Link to="/admin/categories" className="text-gray-500 hover:text-gray-800">Categories</Link><Link to="/admin/blog" className="text-gray-500 hover:text-gray-800">Blog</Link><Link to="/admin/stylers" className="text-gray-500 hover:text-gray-800">Stylists</Link><Link to="/admin/payments" className="text-gray-500 hover:text-gray-800">Payments</Link><span className="text-brand underline">Operations</span></div>;
+const AdminNav = () => <div className="mb-6 flex flex-wrap gap-4 text-sm font-semibold"><Link to="/admin/categories" className="text-gray-500 hover:text-gray-800">Categories</Link><Link to="/admin/blog" className="text-gray-500 hover:text-gray-800">Blog</Link><Link to="/admin/stylers" className="text-gray-500 hover:text-gray-800">Stylists</Link><Link to="/admin/payments" className="text-gray-500 hover:text-gray-800">Payments</Link><Link to="/admin/recovery" className="text-gray-500 hover:text-gray-800">Recovery</Link><span className="text-brand underline">Operations</span></div>;
 
 const Operations = () => {
   const [tab, setTab] = useState("overview");

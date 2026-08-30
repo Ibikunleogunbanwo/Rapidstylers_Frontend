@@ -42,6 +42,7 @@ const ManageBlog = lazy(() => import('./pages/admin/manageBlog'));
 const ManageStylers = lazy(() => import('./pages/admin/manageStylers'));
 const AdminOperations = lazy(() => import('./pages/admin/operations'));
 const AdminPayments = lazy(() => import('./pages/admin/payments'));
+const AdminRecovery = lazy(() => import('./pages/admin/recovery'));
 const PublicStylist = lazy(() => import('./pages/users/pages/stylist'));
 const PublicStylistProfile = lazy(() => import('./pages/users/pages/stylistProfile'));
 const NotFound = lazy(() => import('./pages/generalPages/notFound'));
@@ -121,6 +122,7 @@ function App() {
         <Route path="/admin/stylers" element={<ManageStylers />} />
         <Route path="/admin/operations" element={<AdminOperations />} />
         <Route path="/admin/payments" element={<AdminPayments />} />
+        <Route path="/admin/recovery" element={<AdminRecovery />} />
         {/* Customer area. Only known account workflows mount the authenticated shell. */}
         <Route path="/dashboard/*" element={<UserLayout />} />
         <Route path="/bookAppointment" element={<UserLayout />} />

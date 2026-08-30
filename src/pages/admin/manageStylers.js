@@ -32,6 +32,9 @@ const AdminNav = () => (
     <Link to="/admin/operations" className="text-gray-500 hover:text-gray-800">
       Operations
     </Link>
+    <Link to="/admin/recovery" className="text-gray-500 hover:text-gray-800">
+      Recovery
+    </Link>
   </div>
 );
 

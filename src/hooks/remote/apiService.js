@@ -778,6 +778,14 @@ export class APIService {
             throw(error);
         }
     }
+    static async adminRecoveryCampaigns(){
+            try {
+                return await ApiClient.get("/admin/recovery_campaigns");
+            } catch (error) {
+                throw error;
+            }
+    }
+
     static async adminKpis(){
         try{
             return await ApiClient.get("/admin/kpis");

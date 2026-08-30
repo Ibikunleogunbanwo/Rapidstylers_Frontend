@@ -111,7 +111,7 @@ const ManageBlog = () => {
         <div className="flex gap-4 mb-6 text-sm font-semibold">
           <Link to="/admin/categories" className="text-gray-500 hover:text-gray-800">Categories</Link>
           <span className="text-brand underline">Blog</span>
-          <Link to="/admin/stylers" className="text-gray-500 hover:text-gray-800">Stylist verification</Link><Link to="/admin/operations" className="text-gray-500 hover:text-gray-800">Operations</Link>
+          <Link to="/admin/stylers" className="text-gray-500 hover:text-gray-800">Stylist verification</Link><Link to="/admin/operations" className="text-gray-500 hover:text-gray-800">Operations</Link><Link to="/admin/recovery" className="text-gray-500 hover:text-gray-800">Recovery</Link>
         </div>
 
         {/* Create */}
