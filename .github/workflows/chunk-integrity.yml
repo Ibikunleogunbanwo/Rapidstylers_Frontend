@@ -1,0 +1,56 @@
+name: Chunk integrity check
+
+# Catches stale-reference / missing-chunk bugs in CI, before they reach
+# Vercel. CRA splits routes into content-hashed chunks (e.g. 8604.a60f250b).
+# Two failure classes this catches:
+#
+#   1. Dangling manifest: the built main.js references a chunk id+hash that has
+#      no matching file under build/static/js (would 404 on the live site as a
+#      "Loading chunk N failed" ChunkLoadError once the chunk is requested).
+#   2. Broken page shell: index.html references a main bundle that is not the
+#      one listed in asset-manifest.json (a stale/dead main would leave the
+#      page bricked after redeploy).
+#
+# It runs a tiny Node script (no deps) that cross-checks the emitted manifest
+# against the actual files on disk. It is informational (failures don't block
+# CI) so a missing chunk surfaces as a loud warning in the checks tab rather
+# than silently shipping.
+
+on:
+  push:
+    branches: [dev, main]
+  pull_request:
+    branches: [dev, main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Verify emitted chunks match the manifest
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Production build
+        env:
+          CI: 'true'
+        run: npm run build
+
+      - name: Cross-check chunks and page shell against the manifest
+        run: node scripts/verify-build-chunks.js
+        env:
+          # Never fail the pipeline on a dangling reference; just report it so
+          # stale-cache failures show up loudly in CI instead of silently.
+          BUILD_VERIFY_REQUIRE_PRESENT: 'false'
