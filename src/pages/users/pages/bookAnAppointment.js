@@ -20,7 +20,7 @@ const BookAppointment = ({ setPageTitle, setStylerSearchName }) => {
   const [locationPickerOpen, setLocationPickerOpen] = useState(false);
 
   const displayLocation = userLocation
-    ? [userLocation.city, userLocation.province].filter(Boolean).join(", ") || "Unknown"
+    ? [userLocation.city, userLocation.province].filter(Boolean).join(", ") || "Set your location"
     : "Detecting...";
 
   const searchStyler = () => {

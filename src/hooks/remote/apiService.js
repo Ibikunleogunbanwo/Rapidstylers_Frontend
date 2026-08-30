@@ -643,6 +643,24 @@ export class APIService {
             throw(error);
         }
     }
+    static async stylerTravelSettings(){
+        try{
+            return await ApiClient.get(`/styler/travel_settings`);
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+    static async updateStylerTravelSettings(includedTravelKm, baseTravelFee){
+        try{
+            return await ApiClient.post("/update_styler_travel_settings", { includedTravelKm, baseTravelFee });
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
     static async updateStylerAvailability(slots){
         try{
             return await ApiClient.post("/update_styler_availability", { slots });
@@ -687,18 +705,25 @@ export class APIService {
             // Best-effort — local sign-out must succeed even if the call fails.
         }
     }
-    static async acceptAppointment(appointmentId){
+    static buildActionBody(appointmentId, decisionNote = ""){
+        const body = { appointmentId };
+        if (decisionNote && String(decisionNote).trim()) {
+            body.decisionNote = String(decisionNote).trim();
+        }
+        return body;
+    }
+    static async acceptAppointment(appointmentId, decisionNote = ""){
         try{
-            return await ApiClient.post("/accept_appointment", { appointmentId });
+            return await ApiClient.post("/accept_appointment", APIService.buildActionBody(appointmentId, decisionNote));
         }
         catch(error){
             APIService.extractError(error);
             throw(error);
         }
     }
-    static async declineAppointment(appointmentId){
+    static async declineAppointment(appointmentId, decisionNote = ""){
         try{
-            return await ApiClient.post("/decline_appointment", { appointmentId });
+            return await ApiClient.post("/decline_appointment", APIService.buildActionBody(appointmentId, decisionNote));
         }
         catch(error){
             APIService.extractError(error);

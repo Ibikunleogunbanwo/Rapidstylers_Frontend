@@ -61,14 +61,14 @@ const StylerCalendar = () => {
     );
   }
 
-  const runAction = async (appointmentId, action) => {
+  const runAction = async (appointmentId, action, note = "") => {
     setActionLoading(true);
     try {
       if (action === "accept") {
-        await APIService.acceptAppointment(appointmentId);
+        await APIService.acceptAppointment(appointmentId, note);
         showSuccessToastMessage("Appointment confirmed");
       } else if (action === "decline") {
-        await APIService.declineAppointment(appointmentId);
+        await APIService.declineAppointment(appointmentId, note);
         showSuccessToastMessage("Appointment rejected");
       } else if (action === "complete") {
         await APIService.completeAppointment(appointmentId);
@@ -290,8 +290,8 @@ const StylerCalendar = () => {
           appointment={selectedAppointment}
           onclose={() => setSelectedAppointment(null)}
           actionLoading={actionLoading}
-          onAccept={() => runAction(selectedAppointment.appointmentId, "accept")}
-          onDecline={() => runAction(selectedAppointment.appointmentId, "decline")}
+          onAccept={(note) => runAction(selectedAppointment.appointmentId, "accept", note)}
+          onDecline={(note) => runAction(selectedAppointment.appointmentId, "decline", note)}
           onComplete={() => runAction(selectedAppointment.appointmentId, "complete")}
         />
       )}

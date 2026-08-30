@@ -5,7 +5,9 @@ import {
   getAuthToken,
   setAuthToken,
   clearAuthToken,
+  clearSavedUserLocation,
   AUTH_TOKEN_STORAGE_KEY,
+  SAVED_LOCATION_KEY,
 } from "./constant";
 
 jest.mock("react-toastify", () => ({
@@ -67,5 +69,23 @@ describe("Auth token helpers", () => {
     sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, "to-delete");
     clearAuthToken();
     expect(sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY)).toBeNull();
+  });
+
+  test("logout / timeout clears the saved location so the next login re-detects", () => {
+    localStorage.setItem(SAVED_LOCATION_KEY, JSON.stringify({ latitude: 1, longitude: 2 }));
+    clearAuthToken();
+    expect(localStorage.getItem(SAVED_LOCATION_KEY)).toBeNull();
+  });
+
+  test("clearSavedUserLocation removes the location and notifies re-detection", () => {
+    const dispatched = jest.fn();
+    window.addEventListener("rapidstylers:location-reset", dispatched);
+    localStorage.setItem(SAVED_LOCATION_KEY, JSON.stringify({ latitude: 9, longitude: 9 }));
+
+    clearSavedUserLocation();
+
+    expect(localStorage.getItem(SAVED_LOCATION_KEY)).toBeNull();
+    expect(dispatched).toHaveBeenCalledTimes(1);
+    window.removeEventListener("rapidstylers:location-reset", dispatched);
   });
 });

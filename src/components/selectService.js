@@ -652,7 +652,7 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
                         Travel fee
                         {selectedOption === "homeService" && (
                           <span className="block text-xs">
-                            First {bookingEstimate.includedTravelKm}km included; {bookingEstimate.billableTravelKm}km billable
+                            Free within {bookingEstimate.includedTravelKm}km, then a flat home-visit fee
                           </span>
                         )}
                       </span>

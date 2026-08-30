@@ -29,7 +29,27 @@ export const AUTH_TOKEN_STORAGE_KEY = "rapidstylers_auth_token";
 export const ADMIN_ROLE_KEY = "rapidstylers_admin_role";
 export const getAuthToken = () => sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY) || "";
 export const setAuthToken = (token) => sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, token);
-export const clearAuthToken = () => sessionStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
+
+// User-picked location (lat/lng/city/province) persists in localStorage so it
+// survives reloads while logged in, but it is SESSION-scoped: on logout OR a
+// token timeout it must be dropped so the next login re-detects from the
+// browser/IP instead of reusing a stale position.
+export const SAVED_LOCATION_KEY = "userLocation";
+
+/** Clears the saved location and tells LocationProvider to reset and re-detect. */
+export const clearSavedUserLocation = () => {
+  try {
+    localStorage.removeItem(SAVED_LOCATION_KEY);
+  } catch (_) {}
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event("rapidstylers:location-reset"));
+  }
+};
+
+export const clearAuthToken = () => {
+  sessionStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
+  clearSavedUserLocation();
+};
 
 // Refresh token — stored in sessionStorage alongside the access token.
 // Backend issues a new one on every /auth/refresh call (rotation).

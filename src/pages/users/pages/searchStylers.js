@@ -22,7 +22,7 @@ const SearchStyler = ({ setPageTitle, stylerSearchName }) => {
   const { savedIds, loading: savedLoading, toggleSaved } = useSavedStylists();
 
   const displayLocation = userLocation
-    ? [userLocation.city, userLocation.province].filter(Boolean).join(", ") || "Unknown"
+    ? [userLocation.city, userLocation.province].filter(Boolean).join(", ") || "Set your location"
     : "Detecting...";
 
   // Respect the chosen area: when a location is set, narrow results to that

@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { APIService } from "../../../hooks/remote/apiService";
 import { showSuccessToastMessage } from "../../../utils/constant";
 
-const Appointments = ({appointmentDate, arrivalTime, serviceProvider, serviceType, businessAddress,serviceName, numberOfPeople, appointmentStatus, appointmentPrice, servicePrice, travelFee, includedTravelKm, billableTravelKm, travelDistanceKm, extraTravelRatePerKm, appointmentId, statusCode, paymentStatus, paymentFailureCode, refundStatus, refundAmount, refundCompletedAt}) => {
+const Appointments = ({appointmentDate, arrivalTime, serviceProvider, serviceType, businessAddress,serviceName, numberOfPeople, appointmentStatus, appointmentPrice, servicePrice, travelFee, includedTravelKm, travelDistanceKm, appointmentId, statusCode, paymentStatus, paymentFailureCode, refundStatus, refundAmount, refundCompletedAt}) => {
   const [menuVisible, setMenuVisible] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [retryingPayment, setRetryingPayment] = useState(false);
@@ -143,7 +143,7 @@ const Appointments = ({appointmentDate, arrivalTime, serviceProvider, serviceTyp
                   {travelFee || "0.00"} CAD
                   {travelFee && (
                     <span className="block text-xs text-gray-500">
-                      {billableTravelKm || 0}km billable after {includedTravelKm || 15}km included
+                      Free within {includedTravelKm || 15}km, then a flat home-visit fee
                     </span>
                   )}
                 </span>
@@ -155,7 +155,7 @@ const Appointments = ({appointmentDate, arrivalTime, serviceProvider, serviceTyp
               {travelDistanceKm != null && (
                 <div className="grid">
                   <span className="text-black/50">Estimated distance:</span>
-                  <span>{travelDistanceKm}km at ${extraTravelRatePerKm || "0.00"}/km above included distance</span>
+                  <span>{travelDistanceKm}km away</span>
                 </div>
               )}
               <div className="grid">

@@ -30,13 +30,18 @@ const StylerAvailability = () => {
   const [exceptionDate, setExceptionDate] = useState("");
   const [exceptionReason, setExceptionReason] = useState("Vacation");
   const [exceptionLoading, setExceptionLoading] = useState(false);
+  // Home-visit travel settings
+  const [includedTravelKm, setIncludedTravelKm] = useState("15");
+  const [baseTravelFee, setBaseTravelFee] = useState("0.00");
+  const [travelSaving, setTravelSaving] = useState(false);
 
   const loadAvailability = async () => {
     setLoading(true);
     try {
-      const [slotsRes, exceptionsRes] = await Promise.all([
+      const [slotsRes, exceptionsRes, travelRes] = await Promise.all([
         APIService.stylerAvailability(),
         APIService.stylerAvailabilityExceptions(),
+        APIService.stylerTravelSettings(),
       ]);
       const existing = slotsRes.data?.data || [];
       setSlots((prev) =>
@@ -48,6 +53,9 @@ const StylerAvailability = () => {
         })
       );
       setExceptions(exceptionsRes.data?.data || []);
+      const travel = travelRes.data?.data || {};
+      setIncludedTravelKm(String(travel.includedTravelKm ?? 15));
+      setBaseTravelFee(travel.baseTravelFee ?? "0.00");
     } catch (error) {
       // Error toasts are handled inside APIService.
     } finally {
@@ -118,6 +126,28 @@ const StylerAvailability = () => {
       showSuccessToastMessage("Date restored to available");
     } catch (error) {
       // Error toasts are handled inside APIService.
+    }
+  };
+
+  const handleTravelSave = async () => {
+    const km = Number(includedTravelKm);
+    const fee = Number(baseTravelFee);
+    if (Number.isNaN(km) || km < 0) {
+      showErrorToastMessage("Included travel distance must be 0 or more");
+      return;
+    }
+    if (Number.isNaN(fee) || fee < 0) {
+      showErrorToastMessage("Home visit fee must be 0 or more");
+      return;
+    }
+    setTravelSaving(true);
+    try {
+      const res = await APIService.updateStylerTravelSettings(km, baseTravelFee);
+      showSuccessToastMessage(res.data?.message || "Home visit settings updated");
+    } catch (error) {
+      showErrorToastMessage(error?.response?.data?.message || error?.message || "Failed to save home visit settings");
+    } finally {
+      setTravelSaving(false);
     }
   };
 
@@ -209,6 +239,49 @@ const StylerAvailability = () => {
             className="rounded-md bg-brand px-6 py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
           >
             {saving ? "Saving…" : "Save hours"}
+          </button>
+        </div>
+      </div>
+
+      {/* Home visits — flat travel fee */}
+      <div className="bg-white rounded-2xl border border-[#1d1d1d0a] shadow-sm p-6">
+        <div className="mb-5">
+          <p className="text-lg font-bold">Home Visits</p>
+          <p className="text-sm text-gray-400">
+            Set a flat home-visit fee and your included free radius. Customers within the radius pay no travel fee; beyond it they pay the flat fee once. You stay free to accept or decline any booking based on how far it is.
+          </p>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 mb-1">Included free distance (km)</label>
+            <input
+              type="number"
+              min="0"
+              step="0.1"
+              value={includedTravelKm}
+              onChange={(e) => setIncludedTravelKm(e.target.value)}
+              className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:border-brand focus:outline-none"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 mb-1">Home visit fee ($, flat)</label>
+            <input
+              type="number"
+              min="0"
+              step="0.5"
+              value={baseTravelFee}
+              onChange={(e) => setBaseTravelFee(e.target.value)}
+              className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:border-brand focus:outline-none"
+            />
+          </div>
+        </div>
+        <div className="mt-5 flex justify-end">
+          <button
+            onClick={handleTravelSave}
+            disabled={travelSaving}
+            className="rounded-md bg-brand px-6 py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
+          >
+            {travelSaving ? "Saving…" : "Save home visit settings"}
           </button>
         </div>
       </div>

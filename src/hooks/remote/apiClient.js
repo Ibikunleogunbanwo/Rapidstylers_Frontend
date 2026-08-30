@@ -1,5 +1,5 @@
 import Axios from "axios";
-import { API_BASE_URL, API_HEADER, FORM_DATA_HEADER, getAuthToken, setAuthToken, getRefreshToken, setRefreshToken } from "../../utils/constant";
+import { API_BASE_URL, API_HEADER, FORM_DATA_HEADER, getAuthToken, setAuthToken, getRefreshToken, setRefreshToken, clearSavedUserLocation } from "../../utils/constant";
 
 // Attach the signed-in user's JWT to every request. Role-protected endpoints
 // (create_service, book_appointment, …) reject requests without a valid token;
@@ -89,10 +89,13 @@ const handle401 = async (error) => {
             return ApiClient(originalRequest);
         }
 
-        // Refresh failed — clear tokens and reject.
+        // Refresh failed — the session timed out. Drop the saved location so a
+        // fresh login polls the browser/IP instead of reusing a stale position.
+        clearSavedUserLocation();
         processQueue(error, null);
         return Promise.reject(error);
     } catch (refreshError) {
+        clearSavedUserLocation();
         processQueue(refreshError, null);
         return Promise.reject(refreshError);
     } finally {

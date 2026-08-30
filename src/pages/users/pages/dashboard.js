@@ -84,7 +84,7 @@ const Dashboard = ({ setPageTitle }) => {
                           includedTravelKm={val?.includedTravelKm}
                           billableTravelKm={val?.billableTravelKm}
                           travelDistanceKm={val?.travelDistanceKm}
-                          extraTravelRatePerKm={val?.extraTravelRatePerKm}
+                          baseTravelFee={val?.baseTravelFee}
                           appointmentId={val?.appointmentId}
                           statusCode={val?.statusCode}
                           paymentStatus={val?.paymentStatus}

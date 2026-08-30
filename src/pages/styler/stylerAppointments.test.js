@@ -51,7 +51,7 @@ test("stylist can open a pending booking and accept it", async () => {
   });
 
   await waitFor(() => {
-    expect(APIService.acceptAppointment).toHaveBeenCalledWith("APPT-1");
+    expect(APIService.acceptAppointment).toHaveBeenCalledWith("APPT-1", "");
   });
 });
 

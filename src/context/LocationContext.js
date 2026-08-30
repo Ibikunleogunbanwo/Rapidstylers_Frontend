@@ -1,9 +1,8 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import { APIService } from "../hooks/remote/apiService";
+import { SAVED_LOCATION_KEY } from "../utils/constant";
 
 const LocationContext = createContext(null);
-
-const SAVED_LOCATION_KEY = "userLocation";
 
 // A manually chosen location (via the Change-location picker) is persisted so
 // it survives navigation and reloads — auto-detection only runs when there is
@@ -22,15 +21,29 @@ const savedLocation = loadSavedLocation();
 /**
  * Provides the user's location (lat/lng/city/province) globally.
  * Auto-detects from GPS/IP on first mount; the user can override it and the
- * choice persists.
+ * choice persists for the session. On logout or session timeout the location
+ * is reset (via clearAuthToken -> clearSavedUserLocation) so a fresh login
+ * polls the browser/IP again instead of reusing a stale position.
  */
 export function LocationProvider({ children }) {
   const [location, setLocation] = useState(savedLocation);
   const [loading, setLoading] = useState(!savedLocation);
+  const [nonce, setNonce] = useState(0);
+
+  // Reset + re-detect whenever the saved location is cleared (logout / timeout).
+  useEffect(() => {
+    const onReset = () => {
+      setLocation(null);
+      setLoading(true);
+      setNonce((n) => n + 1);
+    };
+    window.addEventListener("rapidstylers:location-reset", onReset);
+    return () => window.removeEventListener("rapidstylers:location-reset", onReset);
+  }, []);
 
   useEffect(() => {
     // A saved override (manual choice) takes precedence — skip detection.
-    if (savedLocation) return;
+    if (location) return;
 
     // Try browser geolocation first (precise GPS), reverse-geocode it to a
     // city/province, and fall back to IP detection if that fails.
@@ -44,22 +57,20 @@ export function LocationProvider({ children }) {
               const data = res.data?.data;
               if (data && data.city) {
                 setLocation({ ...data, latitude, longitude, source: "gps" });
+                setLoading(false);
               } else {
-                setLocation({
-                  latitude,
-                  longitude,
-                  city: "",
-                  province: "",
-                  source: "browser",
-                });
+                // Reverse geocoding returned no city (Google key unconfigured,
+                // or the point isn't resolvable). Fall back to IP to get a
+                // city/province label while KEEPING the precise GPS coords, so
+                // the radius search stays accurate instead of showing "Unknown".
+                detectFromIP({ latitude, longitude });
               }
             })
             .catch(() => {
-              // Reverse geocoding unavailable (no key / backend down) — keep
-              // the raw GPS coords so radius search still works.
-              setLocation({ latitude, longitude, city: "", province: "", source: "browser" });
-            })
-            .finally(() => setLoading(false));
+              // Reverse geocoding unavailable (no key / backend down) — get a
+              // city/province from IP while keeping the precise GPS coords.
+              detectFromIP({ latitude, longitude });
+            });
         },
         () => {
           // Browser denied — fall back to IP
@@ -71,12 +82,17 @@ export function LocationProvider({ children }) {
       detectFromIP();
     }
 
-    function detectFromIP() {
+    function detectFromIP(chosenCoords = null) {
       APIService.detectLocation()
         .then((res) => {
           const data = res.data?.data;
           if (data && data.latitude) {
-            setLocation({ ...data, source: "ip" });
+            setLocation({
+              ...data,
+              ...(chosenCoords
+                ? { latitude: chosenCoords.latitude, longitude: chosenCoords.longitude, source: "gps+ip" }
+                : { source: "ip" }),
+            });
           }
         })
         .catch(() => {
@@ -93,7 +109,7 @@ export function LocationProvider({ children }) {
         .finally(() => setLoading(false));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [nonce]);
 
   const updateLocation = (newLoc) => {
     setLocation(newLoc);

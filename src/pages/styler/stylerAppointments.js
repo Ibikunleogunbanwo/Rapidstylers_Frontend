@@ -67,14 +67,14 @@ const StylerAppointments = () => {
     );
   };
 
-  const runAction = async (appointmentId, action) => {
+  const runAction = async (appointmentId, action, note = "") => {
     setActionLoading(true);
     try {
       if (action === "accept") {
-        await APIService.acceptAppointment(appointmentId);
+        await APIService.acceptAppointment(appointmentId, note);
         showSuccessToastMessage("Appointment confirmed");
       } else if (action === "decline") {
-        await APIService.declineAppointment(appointmentId);
+        await APIService.declineAppointment(appointmentId, note);
         showSuccessToastMessage("Appointment rejected");
       } else if (action === "complete") {
         await APIService.completeAppointment(appointmentId);
@@ -164,6 +164,11 @@ const StylerAppointments = () => {
                       </span>
                       <span className="text-sm text-black/50">
                         {clientName(appointment)} · {dateTime(appointment)}
+                        {appointment.serviceTime === "homeService" && appointment.travelDistanceKm != null && (
+                          <span className="text-amber-600 font-medium ml-1">
+                            · {appointment.travelDistanceKm}km away
+                          </span>
+                        )}
                       </span>
                       <span
                         className={`text-xs font-medium mt-1 ${
@@ -255,8 +260,8 @@ const StylerAppointments = () => {
           appointment={selectedAppointment}
           onclose={() => setSelectedAppointment(null)}
           actionLoading={actionLoading}
-          onAccept={() => runAction(selectedAppointment.appointmentId, "accept")}
-          onDecline={() => runAction(selectedAppointment.appointmentId, "decline")}
+          onAccept={(note) => runAction(selectedAppointment.appointmentId, "accept", note)}
+          onDecline={(note) => runAction(selectedAppointment.appointmentId, "decline", note)}
           onComplete={() => runAction(selectedAppointment.appointmentId, "complete")}
         />
       )}
