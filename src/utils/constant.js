@@ -38,6 +38,14 @@ export const getUserRole = () => sessionStorage.getItem(USER_ROLE_STORAGE_KEY) |
 export const setUserRole = (role) => sessionStorage.setItem(USER_ROLE_STORAGE_KEY, role);
 export const clearUserRole = () => sessionStorage.removeItem(USER_ROLE_STORAGE_KEY);
 
+// Page a signed-out user was about to use (path + query). Stored when we bounce
+// them to /login so we can return them there after a successful sign-in instead
+// of always dumping them on the dashboard. SESSION-scoped; cleared on logout.
+export const INTENDED_ROUTE_KEY = "rapidstylers_intended_route";
+export const getIntendedRoute = () => sessionStorage.getItem(INTENDED_ROUTE_KEY) || "";
+export const setIntendedRoute = (route) => sessionStorage.setItem(INTENDED_ROUTE_KEY, route);
+export const clearIntendedRoute = () => sessionStorage.removeItem(INTENDED_ROUTE_KEY);
+
 // User-picked location (lat/lng/city/province) persists in localStorage so it
 // survives reloads while logged in, but it is SESSION-scoped: on logout OR a
 // token timeout it must be dropped so the next login re-detects from the
@@ -70,6 +78,7 @@ export const clearAllSessionTokens = () => {
   sessionStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY);
   sessionStorage.removeItem(ADMIN_ROLE_KEY);
   sessionStorage.removeItem(USER_ROLE_STORAGE_KEY);
+  clearIntendedRoute();
   clearSavedUserLocation();
 };
 

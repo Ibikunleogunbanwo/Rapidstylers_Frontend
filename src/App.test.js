@@ -1,9 +1,10 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { act } from "react-dom/test-utils";
 import App from "./App";
 import { Provider } from "react-redux";
 import store from "./hooks/local/store";
 import { setUserSession } from "./hooks/local/userReducer";
+import { APIService } from "./hooks/remote/apiService";
 
 jest.mock("./context/LocationContext", () => ({
   LocationProvider: ({ children }) => children,
@@ -119,4 +120,59 @@ describe("customer-area routes render inside the dashboard shell", () => {
     expect(await screen.findByTestId("page-notfound")).toBeInTheDocument();
     expect(screen.queryByTestId("topbar")).not.toBeInTheDocument();
   });
+});
+
+// Full happy-path through the real App routes: a signed-out customer who signs
+// in lands on /dashboard (the role dashboard), never the public home page.
+test("a signed-out customer signs in through App and lands on /dashboard, not home", async () => {
+  // Start genuinely signed out so the login route shows the form, not a redirect.
+  localStorage.clear();
+  sessionStorage.clear();
+
+  // Backend /sign_in returns a customer session; the login page routes by role.
+  const signInMock = jest
+    .spyOn(APIService, "signIn")
+    .mockResolvedValue({
+      data: {
+        token: "jwt-customer",
+        refreshToken: "refresh-customer",
+        data: {
+          role: "CUSTOMER",
+          account: { userId: 7, firstName: "Ada", emailAddress: "ada@example.com" },
+        },
+      },
+    });
+
+  try {
+    // A signed-out visitor lands on /login (from browsing, e.g. /search, and
+    // choosing to sign in directly) — the form renders because there is no token.
+    window.history.pushState({}, "", "/login");
+
+    render(
+      <Provider store={store}>
+        <App />
+      </Provider>
+    );
+
+    // Still signed out: the sign-in form is present and no dashboard shell.
+    expect(await screen.findByText("Welcome back")).toBeInTheDocument();
+    expect(screen.queryByTestId("page-dashboard")).not.toBeInTheDocument();
+
+    // Submit real credentials through the form → completeAuth → role routing.
+    fireEvent.change(screen.getByPlaceholderText("you@example.com"), {
+      target: { value: "ada@example.com" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("Enter your password"), {
+      target: { value: "secret-pass" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
+
+    // Lands on the customer dashboard inside the app shell — not the public home.
+    // (The "Welcome back" success toast is expected, so assert the login *form* is gone.)
+    expect(await screen.findByTestId("page-dashboard")).toBeInTheDocument();
+    expect(screen.queryByPlaceholderText("Enter your password")).toBeNull();
+    expect(window.location.pathname).toBe("/dashboard");
+  } finally {
+    signInMock.mockRestore();
+  }
 });

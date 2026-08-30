@@ -1,4 +1,4 @@
-import { useLocation } from "react-router-dom";
+import { useLocation, Navigate } from "react-router-dom";
 import NotFound from "../../generalPages/notFound";
 import Dashboard from "../pages/dashboard";
 import UserTopBar from "./topBar";
@@ -8,6 +8,7 @@ import Advert from "../../../components/advert";
 import { useState } from "react";
 import { useSelector } from "react-redux";
 import LogOut from "../auth/logout";
+import { setIntendedRoute } from "../../../utils/constant";
 import BookAppointment from "../pages/bookAnAppointment";
 import UpdateInformation from "../pages/updatePersonal";
 import SavedStylist from "../pages/savedStylists";
@@ -54,8 +55,12 @@ const UserLayout = () => {
             default: return <NotFound />;
         }
     })();
+    // Signed-out visitors on a customer route are sent to /login (remembering
+    // the page they wanted) so signing in returns them there — not bounced to
+    // the public home page.
     if(!userSession){
-        return <LogOut/>;
+        setIntendedRoute(pathname);
+        return <Navigate to="/login" replace />;
     }
     return (
         <div>

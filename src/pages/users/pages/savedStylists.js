@@ -10,7 +10,7 @@ const SavedStylist = ({ setPageTitle }) => {
   const [removingId, setRemovingId] = useState(null);
 
   useEffect(() => {
-    setPageTitle("Account Settings");
+    setPageTitle("Saved Stylists");
     document.title = "Saved professionals | RapidStylers";
   }, [setPageTitle]);
 

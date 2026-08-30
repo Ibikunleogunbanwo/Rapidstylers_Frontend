@@ -1,7 +1,7 @@
 import { Link, Navigate, Outlet, useLocation } from "react-router-dom";
 import StylerTopBar from "./topNav";
 import BusinessSummary from "../stylerComponents/businessSummary";
-import { getAuthToken, getUserRole, clearAllSessionTokens } from "../../../utils/constant";
+import { getAuthToken, getUserRole, clearAllSessionTokens, setIntendedRoute } from "../../../utils/constant";
 import { APIService } from "../../../hooks/remote/apiService";
 
 const StylerLayout = () => {
@@ -9,6 +9,7 @@ const StylerLayout = () => {
   // Role gate: the whole /styler-dashboard area is styler-only. Without this a
   // logged-out visitor or a customer can open the shell and its sidebar.
   if (!getAuthToken() || getUserRole() !== "STYLER") {
+    setIntendedRoute(location.pathname + location.search);
     return <Navigate to="/login" replace />;
   }
   return (

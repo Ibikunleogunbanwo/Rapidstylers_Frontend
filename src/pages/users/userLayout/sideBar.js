@@ -24,6 +24,11 @@ const UserSideBar = ({ sideBarVisibility, sideBarTitle, closeSideBar }) => {
                                 : "cursor-pointer"}`}>Account Settings</Link>
                 </div>
                 <div> 
+                    <Link to="/savedStylist" className={`py-4 px-4 rounded-md ${sideBarTitle === "Saved Stylists"
+                                ? "bg-brand text-white cursor-default"
+                                : "cursor-pointer"}`}>Saved Stylists</Link>
+                </div>
+                <div> 
                     <Link to="/feedback" className={`py-4 px-4 rounded-md ${sideBarTitle === "Feedback"
                                 ? "bg-brand text-white cursor-default"
                                 : "cursor-pointer"}`}>UserFeedbacks</Link>
@@ -58,6 +63,11 @@ const UserSideBar = ({ sideBarVisibility, sideBarTitle, closeSideBar }) => {
                             <Link to="/accountSettings" className={`py-4 rounded-md ${sideBarTitle === "Account Settings"
                                 ? "text-brand cursor-default font-medium"
                                 : "cursor-pointer text-black/50"}`}>Account settings</Link>
+                        </div>
+                        <div onClick={closeSideBar}>
+                            <Link to="/savedStylist" className={`py-4 rounded-md ${sideBarTitle === "Saved Stylists"
+                                ? "text-brand cursor-default font-medium"
+                                : "cursor-pointer text-black/50"}`}>Saved stylists</Link>
                         </div>
                         <div onClick={closeSideBar}>
                             <Link to="/feedback" className={`py-4 rounded-md ${sideBarTitle === "Feedback"

@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, Routes, Route } from "react-router-dom";
+import { useSelector } from "react-redux";
 import UserLayout from "./index";
 
 // Stub the chrome (top bar, sidebar, cards) and every page module so the test
@@ -26,12 +27,14 @@ jest.mock("../pages/searchStylers", () => () => <div data-testid="page-searchASt
 jest.mock("react-redux", () => ({
   useSelector: jest.fn(),
 }));
-import { useSelector } from "react-redux";
 
 const renderAt = (path) =>
   render(
     <MemoryRouter initialEntries={[path]}>
-      <UserLayout />
+      <Routes>
+        <Route path="*" element={<UserLayout />} />
+        <Route path="/login" element={<div data-testid="page-login" />} />
+      </Routes>
     </MemoryRouter>
   );
 
@@ -83,9 +86,12 @@ describe("UserLayout customer-area routing", () => {
     expect(screen.getByTestId("page-notfound")).toBeInTheDocument();
   });
 
-  test("shows LogOut when there is no session", () => {
+  test("directs a signed-out visitor to /login (not the public home page)", () => {
     useSelector.mockReturnValue(null);
     renderAt("/dashboard");
-    expect(screen.getByTestId("page-logout")).toBeInTheDocument();
+    // Remembered route is set so a later sign-in returns to the requested page.
+    expect(sessionStorage.getItem("rapidstylers_intended_route")).toBe("/dashboard");
+    expect(screen.getByTestId("page-login")).toBeInTheDocument();
+    expect(screen.queryByTestId("page-logout")).not.toBeInTheDocument();
   });
 });

@@ -15,7 +15,7 @@ import SearchForStyler from "../../components/searchForStyler";
 import LocationPicker from "../../components/locationPicker";
 import { APIService } from "../../hooks/remote/apiService";
 import { useUserLocation } from "../../context/LocationContext";
-import { getAuthToken, getUserRole } from "../../utils/constant";
+import { getAuthToken, getUserRole, setIntendedRoute } from "../../utils/constant";
 import largeVideo from "../../assets/Videos/large video.mp4";
 import smallVideo from "../../assets/Videos/small video.mp4";
 
@@ -53,6 +53,13 @@ const Hero = ({ height }) => {
     setAccountMenuOpen(false);
     await dispatch(userLogOut());
     navigate("/");
+  };
+
+  // Remember where the visitor was before asking them to sign in, so a fresh
+  // login can return them there instead of always dropping them on the dashboard.
+  const goToLogin = () => {
+    setIntendedRoute(window.location.pathname + window.location.search);
+    navigate("/login");
   };
 
   useEffect(() => {
@@ -217,7 +224,7 @@ const Hero = ({ height }) => {
                 </div>
               ) : (
                 <>
-                  <button type="button" className="cursor-pointer transition hover:text-white/80" onClick={() => navigate('/login')}>Login</button>
+                  <button type="button" className="cursor-pointer transition hover:text-white/80" onClick={goToLogin}>Login</button>
                   <button type="button" className="cursor-pointer transition hover:text-white/80" onClick={toggleSignUp}>Sign up</button>
                   <button type="button" className="cursor-pointer whitespace-nowrap transition hover:text-white/80" onClick={() => navigate('/styler-signup')}>Register as a beauty professional</button>
                 </>
@@ -254,7 +261,7 @@ const Hero = ({ height }) => {
                 </>
               ) : (
                 <>
-                  <button type="button" className="rounded-lg px-3 py-3 text-left text-sm font-semibold hover:bg-white/10" onClick={() => { setMobileMenuOpen(false); navigate('/login'); }}>Login</button>
+                  <button type="button" className="rounded-lg px-3 py-3 text-left text-sm font-semibold hover:bg-white/10" onClick={() => { setMobileMenuOpen(false); goToLogin(); }}>Login</button>
                   <button type="button" className="rounded-lg px-3 py-3 text-left text-sm font-semibold hover:bg-white/10" onClick={toggleSignUp}>Sign up</button>
                   <button type="button" className="rounded-lg px-3 py-3 text-left text-sm font-semibold text-brand hover:bg-white/10" onClick={() => { setMobileMenuOpen(false); navigate('/styler-signup'); }}>Register as a beauty professional</button>
                 </>
@@ -335,7 +342,7 @@ const Hero = ({ height }) => {
               btnText={signUpRole === "customer" ? "Verify Email" : "Continue"}
               type={"submit"}
             />
-            <p className="text-sm" onClick={() => navigate('/login')}>
+            <p className="text-sm" onClick={goToLogin}>
               {" "}
               Return to {""}{" "}
               <span className="text-brand underline cursor-pointer">

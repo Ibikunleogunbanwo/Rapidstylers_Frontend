@@ -3,7 +3,7 @@ import { Link, useNavigate, Navigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { APIService } from "../../hooks/remote/apiService";
 import { setUserSession, getUserDetails } from "../../hooks/local/userReducer";
-import { getAuthToken, setAuthToken, setRefreshToken, setUserRole, getUserRole, setAdminRole, showSuccessToastMessage } from "../../utils/constant";
+import { getAuthToken, setAuthToken, setRefreshToken, setUserRole, getUserRole, setAdminRole, getIntendedRoute, clearIntendedRoute, showSuccessToastMessage } from "../../utils/constant";
 import logo from "../../assets/svg-icons/colouredLogo.svg";
 import InputWithLabel from "../../components/inputWithLabel";
 import PasswordInput from "../../components/passwordInput";
@@ -63,7 +63,17 @@ const Login = () => {
       showSuccessToastMessage(
         role === "ADMIN" ? "Welcome, admin" : "Welcome back"
       );
-      navigate(routeByRole(role));
+      // Return the user to the page they were trying to reach before being
+      // asked to sign in (e.g. /search or a customer route), falling back to
+      // their role dashboard. Customers always get a destination that makes
+      // sense; stylers/admins keep their own area.
+      const intended = getIntendedRoute();
+      if (role === "CUSTOMER") {
+        clearIntendedRoute();
+        navigate(intended || routeByRole(role));
+      } else {
+        navigate(routeByRole(role));
+      }
     } else {
       setErrorMsg("Sign in did not return a session. Please try again.");
     }
@@ -90,7 +100,12 @@ const Login = () => {
   // both loses the dashboard destination and (at sign-in time, once the token
   // is written) races the post-login navigate('/dashboard') below.
   if (getAuthToken()) {
-    return <Navigate to={routeByRole(getUserRole())} replace />;
+    // A stored intended route (set when the visitor was bounced to /login)
+    // wins so a returning session lands where the user was going. Clear it once
+    // consumed so it can't re-apply later.
+    const intended = getIntendedRoute();
+    if (intended) clearIntendedRoute();
+    return <Navigate to={intended || routeByRole(getUserRole())} replace />;
   }
 
   return (

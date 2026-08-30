@@ -24,14 +24,6 @@ const AccountSettings = ({setPageTitle}) => {
             </div>
           </div>
           </Link>
-          <Link to={"/savedStylist"}>
-          <div className="flex items-center justify-between py-3">
-            <span className="">Saved stylists</span>
-            <div>
-              <img src={arrow} alt="" className="h-5"/>
-            </div>
-          </div>
-          </Link>
           <Link to={"/changePassword"}>
           <div className="flex items-center justify-between py-3">
             <span className="">Change password</span>

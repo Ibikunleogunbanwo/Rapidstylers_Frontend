@@ -105,4 +105,26 @@ describe("Login signed-in redirect guard", () => {
     expect(window.sessionStorage.getItem(SESSION_KEY)).toBe("jwt-token-CUSTOMER");
     expect(window.__locationAfterRender).toBe("/dashboard");
   });
+
+  it("a stored intended route wins in the signed-in guard, returning the visitor there instead of the default dashboard", () => {
+    window.sessionStorage.setItem(SESSION_KEY, "jwt-token-CUSTOMER");
+    window.sessionStorage.setItem(ROLE_KEY, "CUSTOMER");
+    window.sessionStorage.setItem("rapidstylers_intended_route", "/savedStylist");
+    renderLogin();
+    expect(window.__locationAfterRender).toBe("/savedStylist");
+    // Consumed after use so it can't re-apply on the next visit.
+    expect(window.sessionStorage.getItem("rapidstylers_intended_route")).toBeNull();
+  });
+
+  it("the intended route survives the auth re-render race and still returns the visitor there", () => {
+    // A customer on /search clicks Login (intended stored), signs in; the token
+    // write re-renders before completeAuth's navigate runs. The guard honors the
+    // stored route so they land back on /search, not the dashboard.
+    window.sessionStorage.setItem(SESSION_KEY, "jwt-token-CUSTOMER");
+    window.sessionStorage.setItem(ROLE_KEY, "CUSTOMER");
+    window.sessionStorage.setItem("rapidstylers_intended_route", "/search?province=Alberta&city=Calgary");
+    renderLogin();
+    expect(window.__locationAfterRender).toBe("/search");
+    expect(window.sessionStorage.getItem("rapidstylers_intended_route")).toBeNull();
+  });
 });
