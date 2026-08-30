@@ -3,7 +3,7 @@ import { Link, useNavigate, Navigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { APIService } from "../../hooks/remote/apiService";
 import { setUserSession, getUserDetails } from "../../hooks/local/userReducer";
-import { getAuthToken, setAuthToken, setRefreshToken, setUserRole, setAdminRole, showSuccessToastMessage } from "../../utils/constant";
+import { getAuthToken, setAuthToken, setRefreshToken, setUserRole, getUserRole, setAdminRole, showSuccessToastMessage } from "../../utils/constant";
 import logo from "../../assets/svg-icons/colouredLogo.svg";
 import InputWithLabel from "../../components/inputWithLabel";
 import PasswordInput from "../../components/passwordInput";
@@ -85,8 +85,12 @@ const Login = () => {
     }
   };
 
+  // Signed-in visitors landing on the login page should go to their dashboard
+  // area for the persisted role, not the public home page — sending them to "/"
+  // both loses the dashboard destination and (at sign-in time, once the token
+  // is written) races the post-login navigate('/dashboard') below.
   if (getAuthToken()) {
-    return <Navigate to="/" replace />;
+    return <Navigate to={routeByRole(getUserRole())} replace />;
   }
 
   return (
