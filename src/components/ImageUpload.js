@@ -1,6 +1,20 @@
 import { useState, useRef, useEffect } from "react";
 import { uploadToCloudinary } from "../utils/cloudinaryUpload";
 
+// Subtle two-tone checkerboard used behind object-contain upload previews so the
+// letterboxed margins read as a deliberate 'image preview' area rather than a
+// flat white bar.
+const CHECKERBOARD = {
+  backgroundColor: "#fafafa",
+  backgroundImage:
+    "linear-gradient(45deg,#e8e8e8 25%,transparent 25%)," +
+    "linear-gradient(-45deg,#e8e8e8 25%,transparent 25%)," +
+    "linear-gradient(45deg,transparent 75%,#e8e8e8 75%)," +
+    "linear-gradient(-45deg,transparent 75%,#e8e8e8 75%)",
+  backgroundSize: "20px 20px",
+  backgroundPosition: "0 0, 0 10px, 10px -10px, -10px 0",
+};
+
 /**
  * Reusable image uploader that uploads directly to Cloudinary
  * via a backend-signed URL (never proxies bytes through the server).
@@ -37,6 +51,9 @@ const ImageUpload = ({
   deferUpload = false,
   onFileSelected,
   file,
+  // Controls the drop-zone proportions. Defaults to a wide 160px box; pass
+  // something like "aspect-square" to make the preview a (larger) square.
+  aspectClass = "h-40",
 }) => {
   const [preview, setPreview] = useState(previewUrl || "");
   const [uploading, setUploading] = useState(false);
@@ -94,7 +111,7 @@ const ImageUpload = ({
       <span className="font-medium text-sm pb-1">{label}:</span>
       <div
         onClick={() => !uploading && inputRef.current?.click()}
-        className={`relative w-full h-40 rounded-md border-2 border-dashed cursor-pointer overflow-hidden transition-colors ${
+        className={`relative w-full ${aspectClass} rounded-md border-2 border-dashed cursor-pointer overflow-hidden transition-colors ${
           error ? "border-red-400 bg-red-50/30" : "border-gray-300 hover:border-brand/50 bg-gray-50"
         } ${uploading ? "opacity-60 cursor-wait" : ""}`}
       >
@@ -102,7 +119,13 @@ const ImageUpload = ({
           <img
             src={preview}
             alt={label}
-            className="w-full h-full object-cover"
+            // object-contain (not cover) so the whole image is visible in the drop
+            // zone — profile photos are not chopped and ID documents stay in full
+            // view rather than being cropped into a wide box. The letterboxed edges
+            // use a subtle checkerboard (the standard transparency indicator) so the
+            // preview area looks intentional instead of a flat white slab.
+            className="w-full h-full object-contain"
+            style={CHECKERBOARD}
           />
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-gray-400">

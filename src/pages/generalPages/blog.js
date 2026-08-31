@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Footer from "../../components/footer";
 import { APIService } from "../../hooks/remote/apiService";
+import { cloudinaryBlog } from "../../utils/cloudinaryImage";
 
 // Fallback used only when the backend is unreachable — mirrors the seeded posts.
 const FALLBACK_POSTS = [
@@ -85,7 +86,7 @@ const Blog = () => {
             >
               <div className="h-48 overflow-hidden">
                 <img
-                  src={post.img}
+                  src={cloudinaryBlog(post.img)}
                   alt=""
                   className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-500"
                   loading="lazy"

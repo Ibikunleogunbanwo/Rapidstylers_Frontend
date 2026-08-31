@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Navigate } from "react-router-dom";
 import { APIService } from "../../hooks/remote/apiService";
 import { uploadToCloudinary } from "../../utils/cloudinaryUpload";
+import { cloudinaryPortrait } from "../../utils/cloudinaryImage";
 import {
   getAuthToken,
   showSuccessToastMessage,
@@ -159,7 +160,7 @@ const MyWork = () => {
             {portfolio.map((item, i) => (
               <div key={i} className="group relative aspect-[4/5] rounded-md overflow-hidden bg-gray-100">
                 <img
-                  src={item.imageUrl}
+                  src={cloudinaryPortrait(item.imageUrl)}
                   alt={item.name || item.category}
                   className="absolute inset-0 h-full w-full object-cover"
                   loading="lazy"

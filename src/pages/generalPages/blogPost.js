@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import Footer from "../../components/footer";
 import AdSlot from "../../components/adSlot";
 import { APIService } from "../../hooks/remote/apiService";
+import { cloudinaryBlog } from "../../utils/cloudinaryImage";
 
 // Fallback used only when the backend is unreachable — mirrors the seeded posts.
 const FALLBACK_POSTS = [
@@ -111,7 +112,7 @@ const BlogPost = () => {
         </p>
         {post.imageUrl && (
           <img
-            src={post.imageUrl}
+            src={cloudinaryBlog(post.imageUrl)}
             alt=""
             className="mt-8 rounded-2xl w-full h-64 md:h-80 object-cover shadow-[0_10px_40px_rgba(147,129,255,0.25)]"
           />

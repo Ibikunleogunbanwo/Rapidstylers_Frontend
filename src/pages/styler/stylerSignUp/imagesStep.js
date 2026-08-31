@@ -81,6 +81,7 @@ const ImagesStep = () => {
               label="Profile photo"
               deferUpload
               file={values.profileImageFile}
+              aspectClass="aspect-square max-w-[420px] mx-auto"
               onFileSelected={(file) => {
                 setFieldValue("profileImageFile", file);
                 updateImageFiles({ profileImageFile: file });

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Navigate, Link } from "react-router-dom";
 import { APIService } from "../../hooks/remote/apiService";
+import { cloudinaryAvatar } from "../../utils/cloudinaryImage";
 import {
   getAuthToken,
   isAdminRole,
@@ -233,7 +234,7 @@ const ManageStylers = () => {
                       <div className="flex items-start gap-4">
                         {s.profileImageUrl ? (
                           <img
-                            src={s.profileImageUrl}
+                            src={cloudinaryAvatar(s.profileImageUrl)}
                             alt=""
                             className="h-14 w-14 rounded-full object-cover bg-gray-100"
                           />

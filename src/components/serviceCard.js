@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import bookmark from "../assets/svg-icons/bookmark.svg";
+import { cloudinaryCard } from "../utils/cloudinaryImage";
 
 /**
  * Professional card used across search / category / saved pages.
@@ -8,6 +9,7 @@ import bookmark from "../assets/svg-icons/bookmark.svg";
  * a status pill, rating chip, and optional save control.
  */
 const ServiceCard = ({ coverImg, name, rating, reviews, status, distance, stylerId, businessName, isSaved = false, onToggleSaved, saveLoading = false, payoutReady = true }) => {
+  const cropped = cloudinaryCard(coverImg);
   const [imgFailed, setImgFailed] = useState(false);
   const hasImg = coverImg && !imgFailed;
   const hasRating = rating != null && Number(rating) > 0;
@@ -31,7 +33,7 @@ const ServiceCard = ({ coverImg, name, rating, reviews, status, distance, styler
     <div className="group flex h-full flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-[0_1px_3px_rgba(20,20,43,0.06)] transition-all duration-300 hover:-translate-y-1 hover:border-brand/30 hover:shadow-[0_14px_36px_rgba(147,129,255,0.22)]">
       <div className="relative h-[190px] overflow-hidden">
         {hasImg ? (
-          <img src={coverImg} alt={name} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" onError={() => setImgFailed(true)} />
+          <img src={cropped} alt={name} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" onError={() => setImgFailed(true)} />
         ) : (
           <div className="relative flex h-full w-full items-center justify-center overflow-hidden bg-gradient-to-br from-[#9381FF]/25 via-[#EBE6FF] to-[#F6F3FF]">
             <div className="relative text-center">

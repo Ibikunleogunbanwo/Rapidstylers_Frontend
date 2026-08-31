@@ -8,6 +8,7 @@ import Spinner from "../../../components/spinner";
 import { useSelector } from "react-redux";
 import { APIService } from "../../../hooks/remote/apiService";
 import { getAuthToken, showErrorToastMessage, showSuccessToastMessage } from "../../../utils/constant";
+import { cloudinarySquare } from "../../../utils/cloudinaryImage";
 import SectionPager from "../../../components/sectionPager";
 
 const WEEKDAY_LABELS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -329,7 +330,7 @@ const StylistProfile = ({ setPageTitle }) => {
                     className="block w-full cursor-zoom-in overflow-hidden rounded-md"
                   >
                     <img
-                      src={val.imageUrl}
+                      src={cloudinarySquare(val.imageUrl)}
                       alt={val.name}
                       className="aspect-square w-full rounded-md object-cover transition-transform duration-300 hover:scale-105"
                     />
