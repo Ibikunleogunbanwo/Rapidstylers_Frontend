@@ -1,16 +1,23 @@
 import close from "../assets/svg-icons/closeBlack.svg";
 import React, { useEffect, useState, useRef } from "react";
+import { loadStripe } from "@stripe/stripe-js";
+import { Elements } from "@stripe/react-stripe-js";
 import Input from "../components/input";
 import { APIService } from "../hooks/remote/apiService";
 import { useDispatch } from "react-redux";
 import { verifySignUpEmailAddress, verifyOtpCode, createUserAccount, userAuthenticate, setUserSession } from "../hooks/local/userReducer";
-import { getAuthToken, setAuthToken, setRefreshToken, showErrorToastMessage, showSuccessToastMessage } from "../utils/constant";
+import { STRIPE_PUBLISHABLE_KEY, getAuthToken, setAuthToken, setRefreshToken, showErrorToastMessage, showSuccessToastMessage } from "../utils/constant";
 import { useUserLocation } from "../context/LocationContext";
 import OtpInputs from "./otpInputs";
 import GoogleSignInButton from "./googleSignInButton";
+import BookingCardField from "./bookingCardField";
 
 // Google Sign-In client id (public). Empty hides the Google option in the quick-account step.
 const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || "";
+
+// Stripe publishable key for paying at booking. Empty => card collection is
+// hidden and bookings proceed without authorization (preview/staging builds).
+const stripePromise = STRIPE_PUBLISHABLE_KEY ? loadStripe(STRIPE_PUBLISHABLE_KEY) : null;
 
 // Steps of the in-modal "create a quick account" flow shown when a signed-out
 // customer tries to book. Identity is required (bookings/tokens/payments are
@@ -206,6 +213,9 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
   const [estimateLoading, setEstimateLoading] = useState(false);
   const [isBooking, setIsBooking] = useState(false);
   const [bookingError, setBookingError] = useState("");
+  // One-time Stripe card element, mounted inside <Elements> when a publishable
+  // key is configured. Empty when Stripe is disabled (preview/staging builds).
+  const bookingCardRef = useRef(null);
 
   const travelDistanceKm = (() => {
     const userLat = Number(userLocation?.latitude);
@@ -257,13 +267,27 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
     };
   }, [bookAppointmentForm, selectedOption, numberOfPeople, stylerId, subServiceId, travelDistanceKm]);
 
+  // Collects a one-time Stripe payment method from the card element (only used
+  // when a publishable key is configured). Returns a pm_ id or the original
+  // paymentMethodId for legacy/preview callers.
+  const collectPaymentMethodId = async () => {
+    if (!stripePromise || !STRIPE_PUBLISHABLE_KEY || !bookingCardRef.current) {
+      return null;
+    }
+    return bookingCardRef.current.createPaymentMethod();
+  };
+
   // Submits the booking request to the marketplace endpoint. The backend
   // re-validates the stylist/service and derives the price server-side.
+  // When Stripe is configured, the booking modal's card element produces a
+  // one-time payment method that is authorized immediately for near-term
+  // bookings and kept as a token reference for far-future ones.
   const performBooking = async () => {
     setBookingError("");
     setIsBooking(true);
     try {
       const appointmentDate = `${currentYear}-${String(months.indexOf(selectedMonth) + 1).padStart(2, "0")}-${String(selectedDay).padStart(2, "0")}`;
+      const paymentMethodId = await collectPaymentMethodId();
       await APIService.bookAppointment({
         stylerId,
         subServiceId,
@@ -272,10 +296,13 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
         serviceTime: selectedOption,
         noOfPeople: String(numberOfPeople),
         travelDistanceKm: selectedOption === "homeService" ? travelDistanceKm : 0,
+        paymentMethodId,
       });
       showSuccessToastMessage("Booking request sent. The stylist will confirm shortly.");
       closeBookingForm();
     } catch (error) {
+      // Card collection errors (thrown by createPaymentMethod) and booking
+      // errors from the backend both land here and surface in the footer.
       const message = error?.response?.data?.message || error?.message || "Booking failed. Please try again.";
       setBookingError(message);
     } finally {
@@ -754,6 +781,19 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
                     </p>
                   </form>
                 )}
+              </div>
+            )}
+            {stripePromise && STRIPE_PUBLISHABLE_KEY && (
+              <div className="px-6 pb-2">
+                <p className="font-semibold text-[15px] mb-2">Payment details:</p>
+                <div className="rounded-md border border-gray-200 bg-white p-3">
+                  <Elements stripe={stripePromise}>
+                    <BookingCardField ref={bookingCardRef} />
+                  </Elements>
+                </div>
+                <p className="text-[11px] text-gray-400 mt-2">
+                  Your card is collected securely by Stripe and is never stored by us.
+                </p>
               </div>
             )}
             <div className="border-t sticky w-full bottom-0 bg-white flex justify-between items-center px-6 py-4">
