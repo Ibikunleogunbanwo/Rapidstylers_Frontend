@@ -28,7 +28,7 @@ const formatMoney = (value) => {
 const Payments = () => {
   const [tab, setTab] = useState("refunds");
   const [refunds, setRefunds] = useState([]);
-  const [refundForm, setRefundForm] = useState({ appointmentId: "", amount: "", reason: "" });
+  const [refundForm, setRefundForm] = useState({ appointmentId: "", amount: "", reason: "", password: "" });
   const [submitting, setSubmitting] = useState(false);
   const [report, setReport] = useState(null);
   const [reconciling, setReconciling] = useState(false);
@@ -60,16 +60,22 @@ const Payments = () => {
       showErrorToastMessage("Refund amount must be a positive number — leave blank for a full refund");
       return;
     }
+    // Step-up: refunds move money, so re-prove the admin password on each request.
+    const adminPassword = refundForm.password;
+    if (!adminPassword.trim()) {
+      showErrorToastMessage("Re-authentication required — please re-enter your admin password");
+      return;
+    }
     setSubmitting(true);
     try {
       const response = await APIService.adminRefund({
         appointmentId,
         amount: refundForm.amount.trim() || null,
         reason: refundForm.reason.trim() || null,
-      });
+      }, adminPassword);
       if (response.data?.statusCode === "200") {
         showSuccessToastMessage(`Refund ${response.data?.data?.amount ? `of ${formatMoney(response.data.data.amount)} ` : ""}processed`);
-        setRefundForm({ appointmentId: "", amount: "", reason: "" });
+        setRefundForm({ appointmentId: "", amount: "", reason: "", password: "" });
         loadRefunds();
       } else {
         showErrorToastMessage(response.data?.message || "Refund failed");
@@ -156,6 +162,18 @@ const Payments = () => {
                     placeholder="e.g. Client cancellation"
                     className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm"
                   />
+                </div>
+                <div className="mt-3">
+                  <label className="block mb-1 text-xs text-gray-500">Re-authenticate (admin password)</label>
+                  <input
+                    type="password"
+                    value={refundForm.password}
+                    onChange={(e) => setRefundForm({ ...refundForm, password: e.target.value })}
+                    placeholder="Re-enter your admin password"
+                    autoComplete="current-password"
+                    className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm"
+                  />
+                  <p className="mt-1 text-[11px] text-gray-400">Refunds move money — you must re-prove your password on each refund.</p>
                 </div>
               </div>
               <button

@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ToastContainer } from 'react-toastify';
 import { LocationProvider } from './context/LocationContext';
 import ScrollToTop from './components/scrollToTop';
+import IdleTimeout from './components/IdleTimeout';
 
 const LandingPage = lazy(() => import('./pages/generalPages/landing'));
 const Login = lazy(() => import('./pages/generalPages/login'));
@@ -68,6 +69,7 @@ function App() {
       <LocationProvider>
       <BrowserRouter>
       <ScrollToTop />
+      <IdleTimeout />
       <Suspense
         fallback={
           <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-[#f5f5f5]">

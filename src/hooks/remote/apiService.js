@@ -563,9 +563,15 @@ export class APIService {
     }
 
     /** Admin: issue a full or partial refund for a captured booking payment. */
-    static async adminRefund(data){
+    static async adminRefund(data, stepUpPassword){
         try{
-            return await ApiClient.post("/admin/refund", data);
+            // Refunds require step-up re-auth: the acting admin re-proves their
+            // password, sent as the X-Step-Up-Password header so it isn't logged in
+            // the request body.
+            const config = stepUpPassword
+                ? { headers: { "X-Step-Up-Password": stepUpPassword } }
+                : undefined;
+            return await ApiClient.post("/admin/refund", data, config);
         }
         catch(error){
             APIService.extractError(error);
