@@ -1,16 +1,18 @@
 import { useCallback, useEffect, useRef } from "react";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import { userLogOut } from "../hooks/local/userReducer";
 import { getAuthToken, getUserRole, isAdminRole } from "../utils/constant";
 
 // Role-based inactivity windows (ms) before a session is automatically ended.
-// Admins get the shortest window (sensitive area), stylers mid, customers the
-// longest — the industry-standard ordering for an app with privileged roles.
+// Kept in lockstep with the backend SESSION_IDLE_*_MINUTES values — the backend
+// is the enforcement of record (it revokes the refresh-token family at
+// /auth/refresh), so these windows must match the server's, never be shorter.
 export const IDLE_TIMEOUT_MS = {
-  ADMIN: 15 * 60 * 1000,   // 15 min
-  STYLER: 30 * 60 * 1000,  // 30 min
-  CUSTOMER: 60 * 60 * 1000 // 60 min
+  ADMIN: 30 * 60 * 1000,   // 30 min — matches SESSION_IDLE_ADMIN_MINUTES
+  STYLER: 30 * 60 * 1000,  // 30 min — matches SESSION_IDLE_STYLER_MINUTES
+  CUSTOMER: 60 * 60 * 1000 // 60 min — matches SESSION_IDLE_CUSTOMER_MINUTES
 };
 
 const DEFAULT_IDLE_TIMEOUT_MS = IDLE_TIMEOUT_MS.CUSTOMER;
@@ -20,9 +22,17 @@ const ACTIVITY_EVENTS = [
   "mousedown",
   "keydown",
   "touchstart",
-  "wheel",
-  "scroll"
+  "wheel"
+  // NOTE: "scroll" is deliberately excluded — programmatic scrolling from
+  // carousels / auto-scrolling containers fires scroll events with no user
+  // input, which would silently keep the session alive forever.
 ];
+
+// Role is read from sessionStorage LIVE (each check / sign-out), never captured
+// at mount: the app usually loads signed-out, so a component that snapshots the
+// role at first render would apply the 60-min default to every session and
+// always redirect to /login, even for admins and stylers who sign in later.
+const readRole = () => getUserRole() || (isAdminRole() ? "ADMIN" : "");
 
 /**
  * Auto signs a user out after a role-specific period of inactivity. On timeout it
@@ -37,17 +47,17 @@ export default function IdleTimeout() {
   const lastActivityRef = useRef(Date.now());
   const signedOutRef = useRef(false);
 
-  const role = getUserRole() || (isAdminRole() ? "ADMIN" : "");
-  const idleMs = IDLE_TIMEOUT_MS[role] || DEFAULT_IDLE_TIMEOUT_MS;
-
   const signOut = useCallback(() => {
     if (signedOutRef.current) return;
     signedOutRef.current = true;
     // Fire-and-forget revoke + teardown; logOutSession catches its own errors.
     dispatch(userLogOut());
-    const target = role === "ADMIN" ? "/admin/login" : "/login";
+    // Role read live so a session that signed in after mount still redirects
+    // to the right login page.
+    const target = readRole() === "ADMIN" ? "/admin/login" : "/login";
+    toast.info("You've been signed out due to inactivity.", { autoClose: 5000 });
     navigate(target, { replace: true });
-  }, [role, dispatch, navigate]);
+  }, [dispatch, navigate]);
 
   useEffect(() => {
     const bump = () => {
@@ -66,6 +76,9 @@ export default function IdleTimeout() {
         signedOutRef.current = false;
         return;
       }
+      // Role is resolved on every tick so the correct window applies even when
+      // the user signed in after this component mounted.
+      const idleMs = IDLE_TIMEOUT_MS[readRole()] || DEFAULT_IDLE_TIMEOUT_MS;
       if (Date.now() - lastActivityRef.current >= idleMs) {
         signOut();
       }
@@ -75,7 +88,7 @@ export default function IdleTimeout() {
       ACTIVITY_EVENTS.forEach((event) => window.removeEventListener(event, bump));
       clearInterval(checkInterval);
     };
-  }, [idleMs, signOut]);
+  }, [signOut]);
 
   return null;
 }

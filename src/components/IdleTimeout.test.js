@@ -80,11 +80,12 @@ describe("IdleTimeout role-based session timeout", () => {
     expect(window.__idlePath).toBe("/login");
   });
 
-  test("ADMIN is signed out to /admin/login after the shorter 15 min idle window", async () => {
+  test("ADMIN is signed out to /admin/login after the 30 min idle window", async () => {
     seedSession("ADMIN");
     renderIdle();
     expect(window.__idlePath).toBe("/dashboard");
-    // Admin idle window is 15 min; staying under it keeps the session.
+    // Admin idle window is 30 min (aligned with the backend SESSION_IDLE_ADMIN_MINUTES);
+    // staying under it keeps the session.
     await advance(IDLE_TIMEOUT_MS.ADMIN - 1000);
     expect(window.__idlePath).toBe("/dashboard");
     await advance(2 * 30 * 1000);
@@ -96,5 +97,40 @@ describe("IdleTimeout role-based session timeout", () => {
     await advance(60 * 60 * 1000);
     expect(window.__idlePath).toBe("/dashboard");
     expect(APIService.logout).not.toHaveBeenCalled();
+  });
+
+  test("role is read live after mount: signing in as ADMIN after load still gets the 30 min window and /admin/login", async () => {
+    // The app is typically loaded signed-out, so the component mounts with no
+    // role. A later login must be picked up on the next tick, not snapshotted.
+    renderIdle();
+    await advance(60 * 1000);
+    seedSession("ADMIN");
+    await advance(IDLE_TIMEOUT_MS.ADMIN - 1000);
+    expect(window.__idlePath).toBe("/dashboard");
+    await advance(2 * 30 * 1000);
+    expect(window.__idlePath).toBe("/admin/login");
+  });
+
+  test("programmatic scroll does not count as activity (auto-scrolling carousels can't hold the session open)", async () => {
+    seedSession("STYLER");
+    renderIdle();
+    await advance(IDLE_TIMEOUT_MS.STYLER - 30 * 1000);
+    // A scroll event with no other input (e.g. an auto-scrolling carousel) must
+    // not reset the idle clock.
+    window.dispatchEvent(new Event("scroll"));
+    await advance(2 * 30 * 1000);
+    expect(window.__idlePath).toBe("/login");
+  });
+
+  test("real user input resets the idle clock", async () => {
+    seedSession("STYLER");
+    renderIdle();
+    await advance(IDLE_TIMEOUT_MS.STYLER - 30 * 1000);
+    window.dispatchEvent(new KeyboardEvent("keydown"));
+    await advance(2 * 30 * 1000);
+    expect(window.__idlePath).toBe("/dashboard");
+    // ...but with no further input the window eventually elapses.
+    await advance(IDLE_TIMEOUT_MS.STYLER);
+    expect(window.__idlePath).toBe("/login");
   });
 });
