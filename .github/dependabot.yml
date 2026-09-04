@@ -16,6 +16,15 @@ updates:
     commit-message:
       prefix: "deps"
       prefix-development: "deps(dev)"
+    # React 19 cannot land as a lone major bump (react-dom 19 peers react ^19;
+    # MUI 5 peers react-dom ^17||^18). Suppressed until the coordinated migration
+    # tracked in https://github.com/Ibikunleogunbanwo/Rapidstylers_Frontend/issues/20
+    # lands; minors/patches inside 18.x still flow normally.
+    ignore:
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react-dom"
+        update-types: ["version-update:semver-major"]
 
   # GitHub Actions used by the CI workflows (branch-sync, chunk-integrity, ...).
   - package-ecosystem: "github-actions"
