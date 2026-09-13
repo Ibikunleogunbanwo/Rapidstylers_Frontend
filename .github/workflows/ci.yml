@@ -24,7 +24,7 @@ jobs:
 
       # Fails the build if any commit in the pushed history contains a secret,
       # so a leaked API key or password can never land in this public repo.
-      - uses: gitleaks/gitleaks-action@v2
+      - uses: gitleaks/gitleaks-action@v3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
