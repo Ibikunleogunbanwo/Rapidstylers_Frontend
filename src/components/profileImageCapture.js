@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { API_BASE_URL, API_HEADER, showErrorToastMessage } from '../utils/constant';
+import { assertUploadAllowed, buildSignedUploadFormData, cloudinaryUploadUrl } from '../utils/cloudinaryUpload';
 
 /**
  * Captures a photo from the camera, uploads it DIRECTLY to Cloudinary
@@ -8,7 +9,7 @@ import { API_BASE_URL, API_HEADER, showErrorToastMessage } from '../utils/consta
  * the DB and rendered by the frontend.
  *
  * Flow:
- *   1. backend  GET /rapid_stylers/get_upload_signature  → cloudName, apiKey, timestamp, folder, signature
+ *   1. backend  GET /rapid_stylers/get_upload_signature  → cloudName + the signed params
  *   2. frontend POST https://api.cloudinary.com/v1_1/{cloudName}/image/upload (multipart, signed) → secure_url
  *   3. parent   onCapture(secure_url)
  */
@@ -70,9 +71,10 @@ const PhotoCaptureForm = ({ onCapture }) => {
         headers: API_HEADER,
       });
       const signatureData = await signatureResponse.json();
-      const { cloudName, apiKey, timestamp, folder, signature } = signatureData.data || {};
+      const sig = signatureData.data || {};
+      const signedParams = sig.params || sig;
 
-      if (!cloudName || !signature) {
+      if (!sig.cloudName || !signedParams.signature) {
         // Cloudinary isn't configured — fall back to the raw data URL so the flow never blocks.
         showErrorToastMessage('Cloudinary is not configured. Uploaded locally instead.');
         onCapture(imageSrc);
@@ -80,16 +82,13 @@ const PhotoCaptureForm = ({ onCapture }) => {
       }
 
       const blob = await (await fetch(imageSrc)).blob();
-      const formData = new FormData();
-      formData.append('file', blob, 'profile.png');
-      formData.append('api_key', apiKey);
-      formData.append('timestamp', timestamp);
-      formData.append('folder', folder);
-      formData.append('signature', signature);
+      // The camera capture is always a PNG, but the backend signs the allowed
+      // formats/size, so the same fast-fail guard applies here.
+      assertUploadAllowed({ size: blob.size, type: blob.type, name: 'profile.png' }, sig);
 
       const uploadResponse = await fetch(
-        `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-        { method: 'POST', body: formData }
+        cloudinaryUploadUrl(sig),
+        { method: 'POST', body: buildSignedUploadFormData(blob, sig, 'profile.png') }
       );
       const uploadData = await uploadResponse.json();
 
