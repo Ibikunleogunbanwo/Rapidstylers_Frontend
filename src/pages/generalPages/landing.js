@@ -1,11 +1,7 @@
 
 import Featured from "../../components/featuredStylists";
 import scissors from "../../assets/svg-icons/scissors.svg";
-// Real work from the RapidStylers gallery, shown in the Elevate-your-style grid.
-import elevate1 from "../../assets/images/gallery/g-makeup-1.jpg";
-import elevate2 from "../../assets/images/gallery/g-lashes-1.jpg";
-import elevate3 from "../../assets/images/gallery/g-braids-1.jpg";
-import elevate4 from "../../assets/images/gallery/g-barber-1.jpg";
+
 import Footer from "../../components/footer";
 import canada from "../../assets/images/canada.webp";
 import canada2 from "../../assets/images/signup.jpg";
@@ -19,13 +15,11 @@ import ScrollContainer from "../../components/img-slider";
 import AdSlot from "../../components/adSlot";
 import { useEffect, useState } from "react";
 import { APIService } from "../../hooks/remote/apiService";
+import { ELEVATE_GRID } from "../../utils/curatedGallery";
 
-const GALLERY_GRID = [
-  { src: elevate1, alt: "Professional makeup application" },
-  { src: elevate2, alt: "Eyelash extension application" },
-  { src: elevate3, alt: "Hair braiding" },
-  { src: elevate4, alt: "Precision barber trim" },
-];
+// The same curated photos the gallery page leads with, resolved from its list so
+// the two cannot drift (they previously kept separate copies of the paths).
+const GALLERY_GRID = ELEVATE_GRID;
 
 const PROVINCES = [
   "Alberta",

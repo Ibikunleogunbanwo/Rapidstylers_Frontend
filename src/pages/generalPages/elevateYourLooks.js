@@ -6,28 +6,10 @@ import { APIService } from "../../hooks/remote/apiService";
 
 // Curated work: real photos provided by the RapidStylers team. They lead the
 // grid (replacing stock imagery) while approved stylist uploads still render
-// alongside them via the API, and searches use live results.
-import curatedMakeup1 from "../../assets/images/gallery/g-makeup-1.jpg";
-import curatedMakeup2 from "../../assets/images/gallery/g-makeup-2.jpg";
-import curatedBraids1 from "../../assets/images/gallery/g-braids-1.jpg";
-import curatedBraids2 from "../../assets/images/gallery/g-braids-2.jpg";
-import curatedLashes1 from "../../assets/images/gallery/g-lashes-1.jpg";
-import curatedLashes2 from "../../assets/images/gallery/g-lashes-2.jpg";
-import curatedLashes3 from "../../assets/images/gallery/g-lashes-3.jpg";
-import curatedLashes4 from "../../assets/images/gallery/g-lashes-4.jpg";
-import curatedBarber1 from "../../assets/images/gallery/g-barber-1.jpg";
-
-const CURATED = [
-  { src: curatedMakeup1, alt: "Professional makeup application", photographer: "RapidStylers", category: "Makeup" },
-  { src: curatedMakeup2, alt: "Makeup artistry close-up", photographer: "RapidStylers", category: "Makeup" },
-  { src: curatedLashes1, alt: "Eyelash extension application", photographer: "RapidStylers", category: "Eyelash extensions" },
-  { src: curatedLashes2, alt: "Lash extension close-up", photographer: "RapidStylers", category: "Eyelash extensions" },
-  { src: curatedLashes3, alt: "Lash extension detail", photographer: "RapidStylers", category: "Eyelash extensions" },
-  { src: curatedLashes4, alt: "Eyelash extensions", photographer: "RapidStylers", category: "Eyelash extensions" },
-  { src: curatedBraids1, alt: "Hair braiding", photographer: "RapidStylers", category: "Braids" },
-  { src: curatedBraids2, alt: "Cornrow braiding", photographer: "RapidStylers", category: "Cornrows" },
-  { src: curatedBarber1, alt: "Precision barber trim", photographer: "RapidStylers", category: "Buzz cut" },
-];
+// alongside them via the API, and searches use live results. The list itself
+// lives in one place — the landing strip reads the same source — and the images
+// are plain static files under public/images/gallery/ (see curatedGallery.js).
+import { CURATED_GALLERY as CURATED } from "../../utils/curatedGallery";
 
 // Must stay in sync with the backend GALLERY_CATEGORIES allowlist.
 const CATEGORIES = [
