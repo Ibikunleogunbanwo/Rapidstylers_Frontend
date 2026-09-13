@@ -85,7 +85,7 @@ const StylerPayouts = () => {
           <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 mb-6">
             <p className="font-semibold">Connect a Stripe account to receive payouts</p>
             <p className="mt-1 text-amber-700/80">
-              Your ID and bank details are collected securely by Stripe — RapidStylers never stores them.
+              Your ID and bank details are collected securely by Stripe. RapidStylers never stores them.
             </p>
             <button
               type="button"
@@ -108,7 +108,7 @@ const StylerPayouts = () => {
                   Stripe could not verify your payout account: <span className="font-medium">{humanizeConnectReason(payouts.disabledReason)}</span>.
                 </p>
                 <p className="mt-1 text-red-700/70">
-                  Reconnect below to re-enter your details — no new account is created, and your earnings stay safe until it's sorted.
+                  Reconnect below to re-enter your details. No new account is created, and your earnings stay safe until it's sorted.
                 </p>
               </div>
               <button
@@ -127,7 +127,7 @@ const StylerPayouts = () => {
               <p className="font-semibold">
                 {payouts.status === "COMPLETE"
                   ? "Ready for payouts"
-                  : "Payout setup in progress — complete onboarding in Stripe"}
+                  : "Payout setup in progress. Complete onboarding in Stripe."}
               </p>
               <p className="mt-1 text-emerald-700/80">
                 Your share of completed appointments is paid to your connected Stripe account on Stripe's payout schedule.
@@ -154,7 +154,7 @@ const StylerPayouts = () => {
           <p className="text-sm font-semibold mb-3">Completed appointments</p>
           {rows.length === 0 ? (
             <div className="text-sm text-black/40 py-6 text-center border border-dashed rounded-lg">
-              No paid appointments yet — earnings appear here after appointments are completed.
+              No paid appointments yet. Earnings appear here after appointments are completed.
             </div>
           ) : (
             <div className="overflow-x-auto border rounded-lg">

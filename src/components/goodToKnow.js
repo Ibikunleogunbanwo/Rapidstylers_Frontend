@@ -5,13 +5,13 @@ import { Link } from "react-router-dom";
 // the FAQ page. Keep in sync with src/pages/generalPages/faqs.js.
 const ITEMS = {
   styler: [
-    "You set your own service prices and can add an optional flat home-visit fee for travelling to clients — not a per-kilometre charge.",
+    "You set your own service prices and can add an optional flat home-visit fee for travelling to clients, not a per-kilometre charge.",
     "On each completed booking, a 12% platform commission plus Stripe processing fees are deducted before your payout.",
     "Payouts go to your connected Stripe account after an appointment is completed.",
-    "You review every request — including the client's distance — before accepting, and a completed booking can only be cancelled within a short window after it ends, refunding the client automatically.",
+    "You review every request, including the client's distance, before accepting. A completed booking can only be cancelled within a short window after it ends, refunding the client automatically.",
   ],
   customer: [
-    "Prices are set by the professional and shown before you confirm — some add a flat home-visit fee, with no hidden per-kilometre charges.",
+    "Prices are set by the professional and shown before you confirm. Some add a flat home-visit fee, with no hidden per-kilometre charges.",
     "Cancel before the appointment starts and your payment is refunded automatically; the refund status shows right on the booking.",
     "You can leave one review per completed booking.",
   ],

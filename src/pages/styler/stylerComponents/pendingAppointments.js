@@ -61,7 +61,7 @@ const PendingAppointments = ({
           )}
           <div className="text-sm">
             <div className="text-gray-400">Service price:</div>
-            <div>{appointment?.servicePrice ? `$${appointment.servicePrice}` : appointment?.price ? `$${appointment.price}` : "—"}</div>
+            <div>{appointment?.servicePrice ? `$${appointment.servicePrice}` : appointment?.price ? `$${appointment.price}` : "-"}</div>
           </div>
           <div className="text-sm">
             <div className="text-gray-400">Travel fee:</div>
@@ -76,7 +76,7 @@ const PendingAppointments = ({
           </div>
           <div className="text-sm">
             <div className="text-gray-400">Total estimate:</div>
-            <div>{appointment?.price ? `$${appointment.price}` : "—"}</div>
+            <div>{appointment?.price ? `$${appointment.price}` : "-"}</div>
           </div>
           {isHome && distanceKm != null && (
             <div className="md:col-span-2 rounded-xl border border-amber-200 bg-amber-50 p-4">
@@ -100,7 +100,7 @@ const PendingAppointments = ({
               </div>
               <p className="mt-2 text-xs text-gray-500">
                 {withinFreeRadius
-                  ? `No travel fee — within ${appointment.includedTravelKm}km.`
+                  ? `No travel fee within ${appointment.includedTravelKm}km.`
                   : `Flat home-visit fee of $${appointment?.baseTravelFee || "0.00"} applies (beyond ${appointment.includedTravelKm || 15}km).`}
                 {" "}Drive time is an estimate from straight-line distance.
               </p>
@@ -122,7 +122,7 @@ const PendingAppointments = ({
                 maxLength={500}
                 placeholder={
                   isHome
-                    ? "e.g. Accepted anyway — far but worth it · declined — too far for this one"
+                    ? "e.g. Accepted anyway, far but worth it · declined as too far"
                     : "e.g. Accepted this request · declined for now"
                 }
                 className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:border-brand focus:outline-none"
@@ -142,7 +142,7 @@ const PendingAppointments = ({
                 ? "Rejected"
                 : statusCode === "4"
                 ? "Cancelled"
-                : "—"}
+                : "-"}
             </div>
           </div>
         </div>

@@ -34,8 +34,14 @@ import { __testDispatch } from "react-redux";
 import { __testNavigate } from "react-router-dom";
 import { verifyOtpCode } from "../../../hooks/local/userReducer";
 import { APIService } from "../../../hooks/remote/apiService";
+// Mirrors the real Button's contract: a label from children or text, and the
+// button type forwarded (the page relies on type="submit" to submit the form).
 vi.mock("../../../components/button", () => ({
-  default: ({ btnText, type }) => <button type={type || "button"}>{btnText}</button>,
+  default: ({ text, children, type, disabled }) => (
+    <button type={type || "button"} disabled={disabled}>
+      {children ?? text}
+    </button>
+  ),
 }));
 vi.mock("../../../components/spinner", () => ({ default: () => null }));
 

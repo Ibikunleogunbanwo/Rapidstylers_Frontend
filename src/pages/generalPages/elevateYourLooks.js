@@ -256,7 +256,7 @@ const ElevateLooks = () => {
           )}
           {!loading && loadError && images !== null && images.length > 0 && (
             <p className="mb-3 text-xs text-gray-500">
-              Showing our own work — professional uploads couldn't be loaded just now.
+              Showing our own work. Professional uploads couldn't be loaded just now.
             </p>
           )}
           {!loading && images !== null && images.length === 0 && (
@@ -268,7 +268,7 @@ const ElevateLooks = () => {
                 <>
                   <p className="text-base font-bold text-gray-700">No results for "{searchQuery}"</p>
                   <p className="mt-1 text-sm text-gray-400">
-                    Nothing in the gallery matches that. Try "braids", "nails" or "locs" — or
+                    Nothing in the gallery matches that. Try "braids", "nails" or "locs", or
                     clear the search to browse everything.
                   </p>
                   {loadError && (

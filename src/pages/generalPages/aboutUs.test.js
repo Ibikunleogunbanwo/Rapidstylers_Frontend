@@ -66,6 +66,16 @@ describe("About page", () => {
     );
   });
 
+  test("reads as plain sentences, with no dashes doing the work of punctuation", () => {
+    // Em dashes were the loudest tell on the page this replaced, and they are
+    // easy to reintroduce by pasting copy from a model. The rendered text is
+    // checked, not the source, so a dash can only get through by actually
+    // reaching the reader.
+    const { container } = renderPage();
+
+    expect(container.textContent).not.toMatch(/[\u2012\u2013\u2014\u2015]/);
+  });
+
   test("keeps the generic filler out", () => {
     // The page this replaced leaned on empty claims ("Unwavering quality",
     // "Effortless trust", "A thriving community"). They are the thing that made

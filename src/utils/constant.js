@@ -7,6 +7,26 @@ export const API_KEY = process.env.REACT_APP_API_KEY || "";
 export const JSON_CONTENT_TYPE = "application/json";
 export const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "https://localhost:9090/rapid_stylers";
 
+/**
+ * The support address we publish. It appears on the support page, in the terms,
+ * in the privacy policy and in the footer, and it used to be retyped in each of
+ * those places — which is how the footer ended up advertising
+ * `contact@rapidstylers.com`, a domain we do not own. Reference this instead of
+ * typing an address, and there is only one value to get right.
+ */
+export const SUPPORT_EMAIL = "support@rapidstylers.ca";
+
+/**
+ * The real contact details we publish in the footer. Until these were provided
+ * the footer deliberately printed nothing there, after an invented street
+ * address and a non-existent phone number had shipped. Like SUPPORT_EMAIL,
+ * reference these constants rather than retyping them.
+ */
+export const SUPPORT_ADDRESS = "Carrington, Northwest Calgary, Alberta";
+export const SUPPORT_PHONE = "+1 (639) 384-0942";
+/** Machine-readable form of SUPPORT_PHONE for `tel:` links. */
+export const SUPPORT_PHONE_TEL = "+16393840942";
+
 // Stripe publishable key (frontend) — collect cards inside Stripe's Elements
 // iframe. REACT_APP_STRIPE_MODE ("test" or "live") picks the matching key set
 // and ONLY that set (never the other mode). An empty mode falls back to the
@@ -99,7 +119,9 @@ export const FORM_DATA_HEADER = {
 }
 
 export const showSuccessToastMessage  = (successMessage)=>{
-    toast.success(successMessage);
+    // Same reasoning as the error helper below: identical messages replace the
+    // toast already on screen instead of stacking a copy under it.
+    toast.success(successMessage, { toastId: `rs-success:${successMessage}` });
     return null;
 }
 
@@ -111,8 +133,22 @@ export const humanizeConnectReason = (reason) => {
   return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
 };
 
+/**
+ * Reports a failure once, however many callers hit it.
+ *
+ * A single backend outage used to stack up to six identical toasts on the home
+ * page, because the toast is raised per failed request and the same request is
+ * made more than once: three components ask for the service list independently
+ * (the hero, its search and the featured carousel), and React StrictMode runs
+ * each mount effect twice in development.
+ *
+ * Reusing the message as the toast id makes the library REPLACE the toast it is
+ * already showing rather than add another, and a dismissal clears the id so the
+ * next genuine failure still shows. Deduping here rather than at the call sites
+ * means every endpoint gets it.
+ */
 export const showErrorToastMessage  = (errorMessage)=>{
-    toast.error(errorMessage);
+    toast.error(errorMessage, { toastId: `rs-error:${errorMessage}` });
     return null;
 }
 

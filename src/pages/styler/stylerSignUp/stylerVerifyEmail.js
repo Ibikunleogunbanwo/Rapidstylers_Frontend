@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import Buttons from "../../../components/button";
+import Button from "../../../components/button";
 import { useStylerSignup } from "../../../context/StylerSignupContext";
 import { APIService } from "../../../hooks/remote/apiService";
 import { showSuccessToastMessage } from "../../../utils/constant";
@@ -129,9 +129,9 @@ const StylerVerifyEmail = () => {
           >
             Back
           </button>
-          <Buttons
-            btnText={verifying ? "Verifying..." : "Verify"}
-            btnType="primary"
+          <Button
+            text={verifying ? "Verifying..." : "Verify"}
+            variant="primary"
             type="submit"
             disabled={verifying}
           />

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import Back from "../../components/goBack";
 import photo from "../../assets/images/photoIllustration.png";
-import Buttons from "../../components/button";
+import Button from "../../components/button";
 
 const UpdateCoverPhoto = () => {
   const [selectedImage, setSelectedImage] = useState(null);
@@ -44,7 +44,7 @@ const UpdateCoverPhoto = () => {
                   </div>
                   <div onClick={removeImage}>Remove image</div>
               </div>
-              <Buttons btnText={"Update cover photo"} btnType={"primary"} />
+              <Button text={"Update cover photo"} variant={"primary"} />
           </div>
         )}
       </div>

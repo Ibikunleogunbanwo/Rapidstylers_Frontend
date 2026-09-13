@@ -420,7 +420,7 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
       // Now sign in so the booking request below carries a valid JWT.
       const signInRes = await dispatch(userAuthenticate({ emailAddress: signupEmail.trim(), password: signupPassword }));
       if (signInRes.payload?.statusCode !== "200") {
-        setSignupError("Account created — please sign in to finish your booking.");
+        setSignupError("Account created. Please sign in to finish your booking.");
         return;
       }
       setSignupStep(null);

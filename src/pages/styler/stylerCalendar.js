@@ -218,7 +218,7 @@ const StylerCalendar = () => {
                             className={`block truncate rounded px-1 py-0.5 text-[10px] font-semibold border ${meta.chip}`}
                             title={`${selectedService(a)} · ${a.arrivalTime || ""} · ${meta.label}`}
                           >
-                            {a.arrivalTime || "—"} {selectedService(a)}
+                            {a.arrivalTime || "-"} {selectedService(a)}
                           </span>
                         );
                       })}
@@ -269,7 +269,7 @@ const StylerCalendar = () => {
                         {selectedService(a)}
                       </p>
                       <p className="text-xs text-gray-500 truncate">
-                        {selectedClient(a)} · {a.price || "—"}
+                        {selectedClient(a)} · {a.price || "-"}
                       </p>
                     </div>
                     <span

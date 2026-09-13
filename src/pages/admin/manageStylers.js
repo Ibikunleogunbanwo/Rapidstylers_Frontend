@@ -163,7 +163,7 @@ const ManageStylers = () => {
                         className="h-full w-full object-cover"
                       />
                       <span className="absolute top-2 left-2 rounded-full bg-black/60 text-white text-[10px] font-bold px-2 py-0.5 uppercase">
-                        {img.category || "—"}
+                        {img.category || "-"}
                       </span>
                     </div>
                     <div className="p-3">
@@ -249,13 +249,13 @@ const ManageStylers = () => {
                             {s.firstname} {s.lastname}
                           </p>
                           <p className="text-sm text-gray-500">
-                            {s.businessName || "—"} | {s.serviceTypeName || "Service"}
+                            {s.businessName || "-"} | {s.serviceTypeName || "Service"}
                           </p>
                           <p className="text-sm text-gray-500">
-                            {s.city ? `${s.city}, ${s.province || ""}` : s.province || "—"}
+                            {s.city ? `${s.city}, ${s.province || ""}` : s.province || "-"}
                           </p>
                           <p className="text-sm text-gray-400">
-                            {s.emailAddress} | {s.phoneNumber || "—"}
+                            {s.emailAddress} | {s.phoneNumber || "-"}
                           </p>
                           {s.dateRegistered && (
                             <p className="text-xs text-gray-400">
@@ -267,7 +267,7 @@ const ManageStylers = () => {
                       <span
                         className={`px-3 py-1 rounded-full text-xs font-bold ${STATUS_STYLES[s.verificationStatus] || "bg-gray-100 text-gray-600"}`}
                       >
-                        {s.verificationStatus || "—"}
+                        {s.verificationStatus || "-"}
                       </span>
                     </div>
 

@@ -170,7 +170,8 @@ const Appointments = ({appointmentDate, arrivalTime, serviceProvider, serviceTyp
                 <div className="col-span-2 rounded-md bg-emerald-50 border border-emerald-200 px-3 py-2 text-emerald-800">
                   <span className="font-semibold">Refunded: </span>
                   {refundAmount ? `$${refundAmount} CAD` : "Your payment"}
-                  {refundCompletedAt ? ` on ${refundCompletedAt}` : ""} — refunds appear on your statement within 5-10 business days.
+                  {refundCompletedAt ? ` on ${refundCompletedAt}` : ""}{" "}
+                  Refunds appear on your statement within 5-10 business days.
                 </div>
               ) : paymentStatus ? (
                 <div className="col-span-2 rounded-md bg-amber-50 border border-amber-200 px-3 py-2 text-amber-800">

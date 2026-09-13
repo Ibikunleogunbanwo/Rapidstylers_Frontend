@@ -1,5 +1,11 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import {
+  SUPPORT_ADDRESS,
+  SUPPORT_EMAIL,
+  SUPPORT_PHONE,
+  SUPPORT_PHONE_TEL,
+} from "../../utils/constant";
 
 const NotFound = () => {
   document.title = "Page Not Found | RapidStylers";
@@ -17,6 +23,15 @@ const NotFound = () => {
         >
           Go Home
         </Link>
+        <div className="mt-10 pt-6 border-t border-gray-200 text-xs text-gray-500 leading-relaxed">
+          <p className="font-semibold text-gray-700">Need a hand? Reach us</p>
+          <p className="mt-1">
+            <a href={`mailto:${SUPPORT_EMAIL}`} className="hover:text-brand transition-colors">{SUPPORT_EMAIL}</a>
+            {" \u00b7 "}
+            <a href={`tel:${SUPPORT_PHONE_TEL}`} className="hover:text-brand transition-colors">{SUPPORT_PHONE}</a>
+          </p>
+          <p className="mt-0.5">{SUPPORT_ADDRESS}</p>
+        </div>
       </div>
     </div>
   );

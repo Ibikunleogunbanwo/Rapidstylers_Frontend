@@ -4,7 +4,7 @@ import Input from "../../../components/input";
 import AddressAutocomplete from "../../../components/AddressAutocomplete";
 import { useFormik } from "formik";
 import * as Yup from "yup";
-import Buttons from "../../../components/button";
+import Button from "../../../components/button";
 import { useDispatch, useSelector } from "react-redux";
 import Spinner from "../../../components/spinner";
 import { getUserDetails, updateUserDetails } from "../../../hooks/local/userReducer";
@@ -252,7 +252,7 @@ const UpdatePersonalForm = ({ userDetails }) => {
           onChange={updatePersonalInformation.handleChange}
           onError={updatePersonalInformation.errors.country && updatePersonalInformation.touched.country ? updatePersonalInformation.errors.country : null} />
         <div>
-          <Buttons btnType={"light"} btnText={"Update Information"} type={"submit"} /></div>
+          <Button variant="primary" text={"Update Information"} type={"submit"} /></div>
       </div>
     </form>
   );

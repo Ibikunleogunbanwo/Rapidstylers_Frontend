@@ -76,8 +76,48 @@ describe("RapidStylers API contracts", () => {
     ).rejects.toThrow("Invalid Email Address or Password");
 
     expect(toast.error).toHaveBeenCalledWith(
-      "Invalid Email Address or Password"
+      "Invalid Email Address or Password",
+      // The options carry the toast id that collapses duplicate reports.
+      expect.objectContaining({ toastId: expect.any(String) })
     );
+  });
+
+  test("the home page's three askers share one service-list request", async () => {
+    // The hero, the hero's search box and the featured carousel each request this
+    // list on mount. A page load must not fire three identical requests.
+    await Promise.all([
+      APIService.getStylerType(),
+      APIService.getStylerType(),
+      APIService.getStylerType(),
+    ]);
+
+    expect(ApiClient.get).toHaveBeenCalledTimes(1);
+    expect(ApiClient.get).toHaveBeenCalledWith("/list_service");
+  });
+
+  test("a failed service list is requested once, not once per asker", async () => {
+    ApiClient.get.mockRejectedValueOnce({ isAxiosError: true, request: {} });
+
+    const results = await Promise.allSettled([
+      APIService.getStylerType(),
+      APIService.getStylerType(),
+      APIService.getStylerType(),
+    ]);
+
+    // Every caller still sees the failure…
+    expect(results.every((r) => r.status === "rejected")).toBe(true);
+    // …but it was attempted once. 
+    expect(ApiClient.get).toHaveBeenCalledTimes(1);
+  });
+
+  test("a caller arriving after a failure retries rather than reusing the rejection", async () => {
+    ApiClient.get.mockRejectedValueOnce({ isAxiosError: true, request: {} });
+    await expect(APIService.getStylerType()).rejects.toBeTruthy();
+
+    ApiClient.get.mockResolvedValueOnce({ data: { statusCode: "200", data: [] } });
+    await expect(APIService.getStylerType()).resolves.toBeTruthy();
+
+    expect(ApiClient.get).toHaveBeenCalledTimes(2);
   });
 
   test("saved stylist actions target customer-owned endpoints", async () => {

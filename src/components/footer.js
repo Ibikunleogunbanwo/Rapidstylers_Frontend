@@ -5,10 +5,11 @@ import logo from "../assets/svg-icons/logo.svg";
 import instagram from "../assets/svg-icons/instagram.svg";
 import x from "../assets/svg-icons/x.svg";
 import Input from "./input";
+import Button from "./button";
 import mockup from "../assets/images/Mockup.svg";
 import playstore from "../assets/images/google_play-en-us.svg";
 import appstore from "../assets/images/app_store_en-us.svg";
-import { showSuccessToastMessage, getAuthToken, getUserRole } from "../utils/constant";
+import { showSuccessToastMessage, getAuthToken, getUserRole, SUPPORT_EMAIL, SUPPORT_ADDRESS, SUPPORT_PHONE, SUPPORT_PHONE_TEL } from "../utils/constant";
 import { userLogOut } from "../hooks/local/userReducer";
 
 const Footer = () => {
@@ -108,12 +109,7 @@ const Footer = () => {
                     onChange={(event) => setEmail(event.target.value)}
                   />
                 </div>
-                <button
-                  type="submit"
-                  className="shrink-0 px-6 py-[13px] text-sm font-semibold bg-brand rounded-md text-white hover:bg-brand/85 transition shadow-lg shadow-brand/20"
-                >
-                  Join!
-                </button>
+                <Button variant="primary" type="submit">Join!</Button>
               </form>
             </div>
           </div>
@@ -169,7 +165,7 @@ const Footer = () => {
         </div>
         <div className="flex gap-3">
           <a
-            href="https://www.instagram.com/"
+            href="https://www.instagram.com/rapidstylers"
             target="_blank"
             rel="noopener noreferrer"
             aria-label="RapidStylers on Instagram"
@@ -178,13 +174,32 @@ const Footer = () => {
             <img src={instagram} alt="Instagram" className="h-4 w-4 opacity-80" />
           </a>
           <a
-            href="https://x.com/"
+            href="https://x.com/rapidstylers"
             target="_blank"
             rel="noopener noreferrer"
             aria-label="RapidStylers on X"
             className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 text-white/80 transition hover:border-brand hover:bg-brand/10 hover:text-brand"
           >
             <img src={x} alt="X" className="h-4 w-4 opacity-80" />
+          </a>
+        </div>
+        {/* Real contact details: the address and phone the business answers on.
+            This bar used to carry "123 Style Street, Fashion District" and
+            "+1 (234) 567-890" — invented values that shipped once before. These
+            come from constants, so retyping one of them wrong stays impossible. */}
+        <div className="text-white/60 text-sm text-center sm:text-right">
+          <div>{SUPPORT_ADDRESS}</div>
+          <a
+            href={`tel:${SUPPORT_PHONE_TEL}`}
+            className="hover:underline opacity-80 transition block"
+          >
+            {SUPPORT_PHONE}
+          </a>
+          <a
+            href={`mailto:${SUPPORT_EMAIL}`}
+            className="hover:underline opacity-80 transition"
+          >
+            {SUPPORT_EMAIL}
           </a>
         </div>
       </div>

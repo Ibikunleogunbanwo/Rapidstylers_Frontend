@@ -22,7 +22,7 @@ const BusinessSummary = () => {
     setRevenueVisible(!revenueVisible);
   };
 
-  const value = (n) => (summary ? Number(n || 0).toLocaleString() : "–");
+  const value = (n) => (summary ? Number(n || 0).toLocaleString() : "-");
   const popularServices = summary?.popularServices || [];
 
     return ( 
@@ -61,7 +61,7 @@ const BusinessSummary = () => {
                         <img src={revenueVisible? show : hidden} alt="" className="h-[18px] mt-[2px]"/>
                     </div>
                   </div>
-                  <span className="font-semibold">{revenueVisible ? (summary ? formatMoney(summary.netRevenue) : "–") : '********'}</span>
+                  <span className="font-semibold">{revenueVisible ? (summary ? formatMoney(summary.netRevenue) : "-") : '********'}</span>
                   {revenueVisible && summary && (
                     <p className="text-[11px] text-gray-400 mt-0.5">Gross {formatMoney(summary.totalRevenue)} − commission {formatMoney(summary.totalCommission)}</p>
                   )}
@@ -71,7 +71,7 @@ const BusinessSummary = () => {
             <div className="rounded-md border overflow-hidden">
               <p className="p-4 border-b text-sm font-bold">Popular services:</p>
               {popularServices.length === 0 ? (
-                <p className="p-4 text-sm text-gray-500">{summary ? "No bookings yet — services will appear here once clients book them." : "Loading…"}</p>
+                <p className="p-4 text-sm text-gray-500">{summary ? "No bookings yet. Services will appear here once clients book them." : "Loading…"}</p>
               ) : (
                 <div className="p-4 grid gap-4">
                   {popularServices.map((service, index) => (

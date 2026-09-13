@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import InputWithLabel from "../../../components/inputWithLabel";
 import AddressAutocomplete from "../../../components/AddressAutocomplete";
-import Buttons from "../../../components/button";
+import Button from "../../../components/button";
 import GoodToKnow from "../../../components/goodToKnow";
 import { APIService } from "../../../hooks/remote/apiService";
 import { useStylerSignup } from "../../../context/StylerSignupContext";
@@ -238,7 +238,7 @@ const BusinessDetails = () => {
             >
               Back
             </button>
-            <Buttons btnText="Continue" btnType="primary" type="submit" disabled={isSubmitting} />
+            <Button text="Continue" variant="primary" type="submit" disabled={isSubmitting} />
           </div>
         </Form>
       )}

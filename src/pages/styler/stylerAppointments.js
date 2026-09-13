@@ -85,7 +85,7 @@ const StylerAppointments = () => {
           return;
         }
         await APIService.stylerCancelAppointment(appointmentId);
-        showSuccessToastMessage("Appointment cancelled — payment refunded");
+        showSuccessToastMessage("Appointment cancelled. Payment refunded");
       }
       setSelectedAppointment(null);
       await loadAppointments();

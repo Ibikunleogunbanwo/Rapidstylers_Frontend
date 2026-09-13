@@ -3,7 +3,7 @@ import logo from "../../assets/svg-icons/logo.svg";
 import React, { useState, useEffect } from "react";
 import info from "../../assets/svg-icons/info.svg";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import Buttons from "../../components/button";
+import Button from "../../components/button";
 import InputWithLabel from "../../components/inputWithLabel";
 import Modal from "../../components/modals";
 import { useFormik } from "formik";
@@ -227,6 +227,7 @@ const Hero = ({ height }) => {
                   <button type="button" className="cursor-pointer transition hover:text-white/80" onClick={goToLogin}>Login</button>
                   <button type="button" className="cursor-pointer transition hover:text-white/80" onClick={toggleSignUp}>Sign up</button>
                   <button type="button" className="cursor-pointer whitespace-nowrap transition hover:text-white/80" onClick={() => navigate('/styler-signup')}>Register as a beauty professional</button>
+                  <Link to="/contact-support" className="cursor-pointer transition hover:text-white/80">Support</Link>
                 </>
               )}
             </nav>
@@ -264,6 +265,7 @@ const Hero = ({ height }) => {
                   <button type="button" className="rounded-lg px-3 py-3 text-left text-sm font-semibold hover:bg-white/10" onClick={() => { setMobileMenuOpen(false); goToLogin(); }}>Login</button>
                   <button type="button" className="rounded-lg px-3 py-3 text-left text-sm font-semibold hover:bg-white/10" onClick={toggleSignUp}>Sign up</button>
                   <button type="button" className="rounded-lg px-3 py-3 text-left text-sm font-semibold text-brand hover:bg-white/10" onClick={() => { setMobileMenuOpen(false); navigate('/styler-signup'); }}>Register as a beauty professional</button>
+                  <Link to="/contact-support" className="rounded-lg px-3 py-3 text-left text-sm font-semibold hover:bg-white/10" onClick={() => setMobileMenuOpen(false)}>Support</Link>
                 </>
               )}
             </div>
@@ -337,9 +339,9 @@ const Hero = ({ height }) => {
             </span>
           </div>
           <div className="flex justify-between items-center mt-8">
-            <Buttons
-              btnType={"primary"}
-              btnText={signUpRole === "customer" ? "Verify Email" : "Continue"}
+            <Button
+              variant={"primary"}
+              text={signUpRole === "customer" ? "Verify Email" : "Continue"}
               type={"submit"}
             />
             <p className="text-sm" onClick={goToLogin}>

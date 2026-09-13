@@ -137,10 +137,10 @@ const Hero = ({ height }) => {
                     <span className="text-white/40">salon struggle.</span>
                   </h1>
                   <p className="mt-6 max-w-[520px] text-[13px] leading-[1.55] text-white/60">
-                    Search by service or by professional, look at real portfolios
-                    and reviews, then book a time that works for you. The
-                    professional accepts, and the appointment happens on your
-                    schedule — not a salon's opening hours.
+                    Search by service or by professional, read reviews from real
+                    clients, look through their work, then book a time that suits
+                    you. The professional accepts, and the appointment happens on
+                    your schedule, not during salon hours.
                   </p>
                 </div>
               </div>
@@ -176,6 +176,9 @@ const Hero = ({ height }) => {
               </span>
               <span className="hidden sm:inline md:ps-3 cursor-pointer hover:text-white/80 transition" onClick={() => navigate('/styler-signup')}>                 Register as a beauty professional
               </span>
+              <Link to="/contact-support" className="px-2 sm:px-3 md:ps-3 cursor-pointer hover:text-white/80 transition">
+                Support
+              </Link>
             </div>
           </div>
         </div>

@@ -1,6 +1,11 @@
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import Footer from "../../components/footer";
+import {
+  SUPPORT_EMAIL,
+  SUPPORT_PHONE,
+  SUPPORT_PHONE_TEL,
+} from "../../utils/constant";
 
 const ContactSupport = () => {
   useEffect(() => {
@@ -37,7 +42,7 @@ const ContactSupport = () => {
 
         <div className="grid gap-4">
           <a
-            href="mailto:support@rapidstylers.ca"
+            href={`mailto:${SUPPORT_EMAIL}`}
             className="rounded-2xl border border-gray-100 bg-[#faf9ff] p-6 hover:border-brand/60 hover:shadow-[0_8px_30px_rgba(147,129,255,0.18)] transition-all group"
           >
             <div className="flex items-start gap-4">
@@ -50,7 +55,26 @@ const ContactSupport = () => {
               <div>
                 <p className="font-bold text-gray-900">Email us</p>
                 <p className="mt-1 text-sm text-gray-600">
-                  Write to us at support@rapidstylers.ca and tell us what happened.
+                  Write to us at {SUPPORT_EMAIL} and tell us what happened.
+                </p>
+              </div>
+            </div>
+          </a>
+
+          <a
+            href={`tel:${SUPPORT_PHONE_TEL}`}
+            className="rounded-2xl border border-gray-100 bg-[#faf9ff] p-6 hover:border-brand/60 hover:shadow-[0_8px_30px_rgba(147,129,255,0.18)] transition-all group"
+          >
+            <div className="flex items-start gap-4">
+              <div className="shrink-0 h-11 w-11 rounded-xl bg-brand/15 text-brand flex items-center justify-center">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
+                  <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z" />
+                </svg>
+              </div>
+              <div>
+                <p className="font-bold text-gray-900">Call us</p>
+                <p className="mt-1 text-sm text-gray-600">
+                  {SUPPORT_PHONE}, Monday to Friday.
                 </p>
               </div>
             </div>

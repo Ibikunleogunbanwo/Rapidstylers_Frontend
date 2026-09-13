@@ -4,7 +4,7 @@ import OtpInputs from "../../../components/otpInputs";
 import { useFormik } from "formik";
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import Buttons from "../../../components/button";
+import Button from "../../../components/button";
 import { setUserSession, getUserDetails, verifyOtpCode } from "../../../hooks/local/userReducer";
 import Spinner from "../../../components/spinner";
 import { APIService } from "../../../hooks/remote/apiService";
@@ -152,7 +152,7 @@ const userEmailAddress = location.state?.emailAddress || sessionStorage.getItem(
   const handleResendCode = async () => {
     setOtpError(null);
     if (!userEmailAddress) {
-      showErrorToastMessage("We don't have your email on file — please restart registration.");
+      showErrorToastMessage("We don't have your email on file. Please restart registration.");
       return;
     }
     setResending(true);
@@ -304,7 +304,7 @@ const userEmailAddress = location.state?.emailAddress || sessionStorage.getItem(
             <div className="mt-6">
               <form onSubmit={verifyUserEmail.handleSubmit}>
                 <input name="otpCode" type="text" id="userInput" hidden  value={verifyUserEmail.values.otpCode} onChange={verifyUserEmail.handleChange} onBlur={verifyUserEmail.handleBlur} />
-                <Buttons btnType={"primary"} type={"submit"} btnText={"Verify"} />
+                <Button variant={"primary"} type={"submit"} text={"Verify"} />
               </form>
             </div>
           </div>

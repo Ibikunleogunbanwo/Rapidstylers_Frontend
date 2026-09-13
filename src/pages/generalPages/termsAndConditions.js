@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
+import { SUPPORT_EMAIL } from "../../utils/constant";
 
 const TermsAndConditions = () => {
   useEffect(() => {
@@ -139,7 +140,7 @@ const TermsAndConditions = () => {
           <section>
             <h2 className="text-lg font-bold text-gray-900 mb-2">15. Contact</h2>
             <p>
-              For questions about these terms, contact us at support@rapidstylers.ca.
+              For questions about these terms, contact us at {SUPPORT_EMAIL}.
             </p>
           </section>
         </div>

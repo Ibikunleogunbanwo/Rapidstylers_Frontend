@@ -2,7 +2,7 @@ import { Formik, Form } from "formik";
 import { z } from "zod";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import Buttons from "../../../components/button";
+import Button from "../../../components/button";
 import ImageUpload from "../../../components/ImageUpload";
 import { useStylerSignup } from "../../../context/StylerSignupContext";
 import { APIService } from "../../../hooks/remote/apiService";
@@ -158,9 +158,9 @@ const ImagesStep = () => {
             >
               Back
             </button>
-            <Buttons
-              btnText="Continue"
-              btnType="primary"
+            <Button
+              text="Continue"
+              variant="primary"
               type="submit"
               disabled={isSubmitting}
             />

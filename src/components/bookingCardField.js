@@ -15,7 +15,7 @@ const BookingCardField = forwardRef(function BookingCardField(_props, ref) {
     createPaymentMethod: async () => {
       setError("");
       if (!stripe || !elements) {
-        throw new Error("Payment is still loading — please try again.");
+        throw new Error("Payment is still loading. Please try again.");
       }
       const cardElement = elements.getElement(CardElement);
       const { paymentMethod, error: pmError } = await stripe.createPaymentMethod({

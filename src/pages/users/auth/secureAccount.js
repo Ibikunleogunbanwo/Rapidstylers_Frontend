@@ -1,5 +1,5 @@
 import logo from "../../../assets/svg-icons/colouredLogo.svg";
-import Buttons from "../../../components/button";
+import Button from "../../../components/button";
 import { useEffect, useState } from "react";
 import { useFormik } from "formik";
 import Lottie from "lottie-react";
@@ -162,7 +162,7 @@ const SecureAccount = () => {
                   <span>{submitError}</span>
                 </p>
               )}
-              <Buttons btnText={"Create Account"} btnType={"primary"} type={"submit"} />
+              <Button text={"Create Account"} variant={"primary"} type={"submit"} />
             </form>
           </div>
           <div className="bg-stylerDoodle h-32 w-full lg:hidden"></div>
@@ -185,7 +185,7 @@ const SecureAccount = () => {
               <span>{loginError}</span>
             </p>
           )}
-          <Buttons btnText={"Go to Dashboard"} btnType={"primary"} type={"button"} onClick={()=>proceedToDashboard()}  />
+          <Button text={"Go to Dashboard"} variant={"primary"} type={"button"} onClick={()=>proceedToDashboard()}  />
         </div>
       </div>
     </div>

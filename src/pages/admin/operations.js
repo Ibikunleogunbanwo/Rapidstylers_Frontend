@@ -39,7 +39,7 @@ const Operations = () => {
 
   const moderate = async (reviewId, action) => { await APIService.adminUpdateReviewModeration({ reviewId, action }); showSuccessToastMessage(`Review ${action.toLowerCase()}d`); load(); };
   const updateTicket = async (ticket) => { const status = window.prompt("Status: OPEN, IN_PROGRESS, RESOLVED, or CLOSED", ticket.status); if (!status) return; const adminResponse = window.prompt("Response to customer", ticket.adminResponse || ""); await APIService.adminUpdateSupportTicket({ ticketId: ticket.id, status, adminResponse }); showSuccessToastMessage("Ticket updated"); load(); };
-  const saveCommission = async () => { const value = parseFloat(commission); if (Number.isNaN(value) || value < 0 || value > 100) { showErrorToastMessage("Commission must be between 0 and 100"); return; } setSavingCommission(true); try { await APIService.updateCommissionSetting(value); showSuccessToastMessage("Commission updated — applies to new bookings"); load(); } catch (error) { /* APIService displays the error. */ } finally { setSavingCommission(false); } };
+  const saveCommission = async () => { const value = parseFloat(commission); if (Number.isNaN(value) || value < 0 || value > 100) { showErrorToastMessage("Commission must be between 0 and 100"); return; } setSavingCommission(true); try { await APIService.updateCommissionSetting(value); showSuccessToastMessage("Commission updated. It applies to new bookings"); load(); } catch (error) { /* APIService displays the error. */ } finally { setSavingCommission(false); } };
 
   if (!getAuthToken() || !isAdminRole()) return <Navigate to="/admin/login" replace />;
   const cards = kpis ? [["Customers", kpis.customers], ["Stylists", kpis.stylists], ["Approved stylists", kpis.approvedStylists], ["Appointments", kpis.appointments], ["Completed", kpis.completedAppointments], ["Open tickets", kpis.openSupportTickets], ["Reviews", kpis.reviews]] : [];
@@ -97,7 +97,7 @@ const ConnectStatusTable = ({ rows }) => {
                   {String(row.connectStatus || "NOT_STARTED").replace(/_/g, " ")}
                 </span>
               </td>
-              <td className="p-3 text-xs text-gray-600">{humanizeConnectReason(row.disabledReason) || "—"}</td>
+              <td className="p-3 text-xs text-gray-600">{humanizeConnectReason(row.disabledReason) || "-"}</td>
             </tr>
           ))}
         </tbody>
@@ -152,7 +152,7 @@ const BusinessStatsTable = ({ rows }) => {
               <td className="p-3 font-semibold">{formatMoney(row.netRevenue)}</td>
               <td className="p-3 max-w-[220px]">
                 {(row.popularServices || []).length === 0 ? (
-                  <span className="text-xs text-gray-400">—</span>
+                  <span className="text-xs text-gray-400">-</span>
                 ) : (
                   <ul className="text-xs text-gray-600 space-y-0.5">
                     {(row.popularServices || []).slice(0, 3).map((service, index) => (
@@ -176,7 +176,7 @@ const CommissionSetting = ({ value, onChange, onSave, saving }) => (
   <div className="rounded-lg border bg-white p-4">
     <p className="font-semibold">Platform commission</p>
     <p className="mt-1 text-sm text-gray-600">
-      Percentage taken from each completed appointment. Applies to new bookings and the stylist payout summary — no restart needed.
+      Percentage taken from each completed appointment. Applies to new bookings and the stylist payout summary. No restart needed.
     </p>
     <div className="mt-3 flex items-end gap-3 max-w-sm">
       <div className="flex-1">

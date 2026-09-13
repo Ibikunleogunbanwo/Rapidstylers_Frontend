@@ -282,7 +282,7 @@ const StylistProfile = ({ setPageTitle }) => {
             <p className="text-sm text-black/50">Reviews</p>
           </div>
           <div className="border text-center p-3 rounded-md hover:bg-slate-50">
-            <p className="text-lg text-brand">{stylerProfile.stylerInformation?.averageRating || "—"}</p>
+            <p className="text-lg text-brand">{stylerProfile.stylerInformation?.averageRating || "-"}</p>
             <p className="text-sm text-black/50">Average rating</p>
           </div>
         </div>

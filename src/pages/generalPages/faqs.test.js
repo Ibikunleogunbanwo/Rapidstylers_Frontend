@@ -64,7 +64,7 @@ describe("FAQs page", () => {
     renderFaqs();
 
     expect(
-      screen.getByText(/The professional reviews your request — including your location and travel distance/)
+      screen.getByText(/The professional reviews your request, including your location and travel distance/)
     ).toBeInTheDocument();
   });
 

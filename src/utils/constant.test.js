@@ -30,13 +30,37 @@ describe("Toast helpers", () => {
   test("showSuccessToastMessage calls toast.success with the message", () => {
     showSuccessToastMessage("It worked");
     expect(toast.success).toHaveBeenCalledTimes(1);
-    expect(toast.success).toHaveBeenCalledWith("It worked");
+    expect(toast.success).toHaveBeenCalledWith(
+      "It worked",
+      expect.objectContaining({ toastId: expect.any(String) })
+    );
   });
 
   test("showErrorToastMessage calls toast.error with the message", () => {
     showErrorToastMessage("Something broke");
     expect(toast.error).toHaveBeenCalledTimes(1);
-    expect(toast.error).toHaveBeenCalledWith("Something broke");
+    expect(toast.error).toHaveBeenCalledWith(
+      "Something broke",
+      expect.objectContaining({ toastId: expect.any(String) })
+    );
+  });
+
+  test("the same message reuses one toast id, so repeats replace instead of stack", () => {
+    showErrorToastMessage("Network is down");
+    showErrorToastMessage("Network is down");
+
+    const [, first] = toast.error.mock.calls[0];
+    const [, second] = toast.error.mock.calls[1];
+    expect(second.toastId).toBe(first.toastId);
+  });
+
+  test("different messages keep their own toast ids", () => {
+    showErrorToastMessage("Network is down");
+    showErrorToastMessage("Please sign in again");
+
+    const [, first] = toast.error.mock.calls[0];
+    const [, second] = toast.error.mock.calls[1];
+    expect(second.toastId).not.toBe(first.toastId);
   });
 
   test("showSuccessToastMessage returns null", () => {

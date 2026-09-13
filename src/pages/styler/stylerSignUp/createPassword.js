@@ -2,7 +2,7 @@ import { Formik, Form } from "formik";
 import { z } from "zod";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import Buttons from "../../../components/button";
+import Button from "../../../components/button";
 import InputWithLabel from "../../../components/inputWithLabel";
 import { useStylerSignup } from "../../../context/StylerSignupContext";
 import { APIService } from "../../../hooks/remote/apiService";
@@ -212,15 +212,15 @@ const CreatePassword = () => {
             >
               Back
             </button>
-            <Buttons
-              btnText={
+            <Button
+              text={
                 uploadingImages
                   ? "Uploading photos…"
                   : submitting
                   ? "Creating account…"
                   : "Create account"
               }
-              btnType="primary"
+              variant="primary"
               type="submit"
               disabled={isSubmitting || submitting}
             />

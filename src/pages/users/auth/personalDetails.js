@@ -3,7 +3,7 @@ import logo from "../../../assets/svg-icons/colouredLogo.svg";
 import InputWithLabel from "../../../components/inputWithLabel";
 import SelectInput from "../../../components/selectInput";
 import AddressAutocomplete from "../../../components/AddressAutocomplete";
-import Buttons from "../../../components/button";
+import Button from "../../../components/button";
 import { useEffect } from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
@@ -247,7 +247,7 @@ const PersonalDetails = () => {
               {personalData.touched.agreeToTerms && personalData.errors.agreeToTerms && (
                 <p className="text-xs text-red-500 -mt-2">{personalData.errors.agreeToTerms}</p>
               )}
-              <Buttons btnText={'Continue'} btnType={'primary'} type={"submit"} />
+              <Button text={'Continue'} variant={'primary'} type={"submit"} />
             </form>
           </div>
           <div className="bg-stylerDoodle h-32 w-full lg:hidden"></div>

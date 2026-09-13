@@ -2,7 +2,7 @@
 // import { Link } from "react-router-dom";
 import { useEffect } from "react";
 import Input from "../../../components/input";
-import Buttons from "../../../components/button";
+import Button from "../../../components/button";
 import { useFormik } from "formik";
 import * as Yup from "yup"; 
 import SelectInput from "../../../components/selectInput";
@@ -96,7 +96,7 @@ const Feedback = ({setPageTitle}) => {
             <span className="text-xs text-red-600">{submitUserFeedback.errors.message && submitUserFeedback.touched.message ? submitUserFeedback.errors.message : null}</span>
           </div>
           <div className="col-span-1 md:col-span-2">
-            <Buttons btnText={'Submit'} type={'submit'} btnType={'light'}/>
+            <Button text={'Submit'} type={'submit'} variant="primary"/>
           </div>
           <div className="col-span-1 md:col-span-2 mt-3 text-slate-600">
             <p className=" font-semibold">Privacy note:</p>

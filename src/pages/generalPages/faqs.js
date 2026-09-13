@@ -6,17 +6,17 @@ const FAQS = [
   {
     category: "For customers",
     q: "How do I book an appointment?",
-    a: "Search for a beauty professional near you, pick the service you want, choose a time that suits you, and confirm your booking. The professional reviews your request — including your location and travel distance — and accepts or declines it. Once accepted, you are all set.",
+    a: "Search for a beauty professional near you, pick the service you want, choose a time that suits you, and confirm your booking. The professional reviews your request, including your location and travel distance, then accepts or declines it. Once accepted, you are all set.",
   },
   {
     category: "For customers",
     q: "Do I need an account to book?",
-    a: "Yes. Creating a free account lets you track your appointments, save professionals, and pay securely through the platform. You can sign up with your email (we verify it with a one-time code) or, as a customer, continue with Google — no OTP needed on the Google path.",
+    a: "Yes. Creating a free account lets you track your appointments, save professionals, and pay securely through the platform. You can sign up with your email (we verify it with a one-time code) or, as a customer, continue with Google. The Google path does not need a one-time code.",
   },
   {
     category: "For customers",
     q: "What does an appointment cost?",
-    a: "The price is set by the professional and shown to you before you confirm. Some professionals charge an optional flat home-visit fee for travelling to you, which is also displayed upfront. There are no hidden per-kilometre charges — you always see the exact total before confirming.",
+    a: "The price is set by the professional and shown to you before you confirm. Some professionals charge an optional flat home-visit fee for travelling to you, which is also displayed upfront. There are no hidden per-kilometre charges, and you always see the exact total before confirming.",
   },
   {
     category: "For customers",
@@ -57,7 +57,7 @@ const FAQS = [
   {
     category: "For beauty professionals",
     q: "How do I price my services?",
-    a: "You set the price for each service yourself, and you can also set an optional flat home-visit fee for travelling to clients — the fee is a single flat amount, not a per-kilometre charge. Clients see your prices (including the travel fee) before they book, so there are no surprises.",
+    a: "You set the price for each service yourself, and you can also set an optional flat home-visit fee for travelling to clients. That fee is a single flat amount, not a per-kilometre charge. Clients see your prices (including the travel fee) before they book, so there are no surprises.",
   },
   {
     category: "For beauty professionals",
@@ -67,7 +67,7 @@ const FAQS = [
   {
     category: "For beauty professionals",
     q: "What fees does RapidStylers charge?",
-    a: "Joining and listing your services is free. On each completed booking, a 12% platform commission plus Stripe's processing fees are deducted before the payout is sent to your connected account — the Payouts page shows the exact amounts.",
+    a: "Joining and listing your services is free. On each completed booking, a 12% platform commission plus Stripe's processing fees are deducted before the payout is sent to your connected account. The Payouts page shows the exact amounts.",
   },
   {
     category: "For beauty professionals",
@@ -77,13 +77,13 @@ const FAQS = [
   {
     category: "For beauty professionals",
     q: "Can I cancel an appointment I have accepted?",
-    a: "Yes, with limits. Cancelling far in advance is fine, but a completed booking can only be cancelled within a short window after the appointment ends — after that it is treated as delivered. Any cancellation that has been paid for triggers an automatic refund, so clients are never left hanging.",
+    a: "Yes, with limits. Cancelling far in advance is fine, but a completed booking can only be cancelled within a short window after the appointment ends. After that it is treated as delivered. Any cancellation that has been paid for triggers an automatic refund, so clients are never left hanging.",
   },
 
   {
     category: "Accounts & security",
     q: "How do I sign in?",
-    a: "Use the email and password you registered with. Customers who signed up with Google sign in with Google — the two methods are tied to your account, so choose the one you registered with.",
+    a: "Use the email and password you registered with. Customers who signed up with Google sign in with Google. The two methods are tied to your account, so choose the one you registered with.",
   },
   {
     category: "Accounts & security",
@@ -150,7 +150,7 @@ const Faqs = () => {
         </h1>
         <p className="text-sm text-gray-500 mb-8">
           Everything you need to know about booking, pricing, payouts, and getting
-          started — whether you are a client or a beauty professional. Still curious?
+          started, whether you are a client or a beauty professional. Still curious?
           Reach out through our support page.
         </p>
 

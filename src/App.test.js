@@ -85,7 +85,14 @@ test("loads the RapidStylers home route instead of the CRA starter screen", asyn
     );
   });
 
-  expect(await screen.findByText(/Tired of the salon struggle/i)).toBeInTheDocument();
+  // Anchored on the route's own title and the hero search, not on marketing
+  // copy: this guards against the CRA starter screen, and should not fail every
+  // time a heading is reworded.
+  expect(
+    await screen.findByPlaceholderText(/Search for beauty professionals/i)
+  ).toBeInTheDocument();
+  // The page sets its own title once its lazy chunk has loaded.
+  expect(document.title).toBe("Welcome - RapidStylers");
   expect(screen.queryByText(/learn react/i)).not.toBeInTheDocument();
 });
 

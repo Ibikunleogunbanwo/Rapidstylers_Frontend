@@ -8,18 +8,30 @@ import canada2 from "../../assets/images/signup.jpg";
 import { Link } from "react-router-dom";
 import Hero from "./newHeroSection";
 // import rapidGIF from "../../assets/Videos/stylers.gif";
-import about from "../../assets/images/about-landing.jpg"
-import stylistImg1 from "../../assets/images/stylist-1.jpg"
+// The "for clients" card used stylist-1.jpg, which is the same braiding close-up
+// as the gallery's natural-hair tile — a tight portrait crop that cut the
+// forehead at the card's 16:10 ratio. barbers.jpg shows a client in the chair
+// with a professional at work, crops cleanly, and appears nowhere else.
+import forClientsImg from "../../assets/images/barbers.jpg"
 import stylistImg2 from "../../assets/images/stylist-2.jpg"
 import ScrollContainer from "../../components/img-slider";
 import AdSlot from "../../components/adSlot";
 import { useEffect, useState } from "react";
 import { APIService } from "../../hooks/remote/apiService";
-import { ELEVATE_GRID } from "../../utils/curatedGallery";
+import { ELEVATE_GRID, curatedById } from "../../utils/curatedGallery";
 
 // The same curated photos the gallery page leads with, resolved from its list so
 // the two cannot drift (they previously kept separate copies of the paths).
 const GALLERY_GRID = ELEVATE_GRID;
+
+/**
+ * The brand story block used `about-landing.jpg`: a glossy manicure close-up,
+ * 3204x2304 with no EXIF, bundled in src/assets and belonging to nobody — not
+ * work we did, and not attributable to anyone we could credit. It now shows our
+ * own reviewed work, resolved by id so renaming the file fails the build rather
+ * than leaving a hole where the picture goes.
+ */
+const BRAND_STORY_PHOTO = curatedById("g-lashes-2");
 
 const PROVINCES = [
   "Alberta",
@@ -128,8 +140,8 @@ const LandingPage = () => {
             <div className="relative">
               <div className="absolute -inset-3 bg-brand/15 rounded-3xl -rotate-2"></div>
               <img
-                src={about}
-                alt="About RapidStylers"
+                src={BRAND_STORY_PHOTO.src}
+                alt={BRAND_STORY_PHOTO.alt}
                 decoding="async"
                 className="relative w-full object-cover rounded-3xl shadow-xl"
               />
@@ -146,17 +158,17 @@ const LandingPage = () => {
               </div>
             </div>
             <div>
-              <p className="text-xs uppercase tracking-[0.25em] text-brand font-bold">Our brand story</p>
+              <p className="text-xs uppercase tracking-[0.25em] text-brand font-bold">Who we are</p>
               <h2 className="text-3xl md:text-5xl font-bold mt-3 leading-tight font-serif">
-                Tired of the salon struggle?{" "}
-                <span className="text-brand">Meet RapidStylers.</span>
+                A vetted professional, at your door.{" "}
+                <span className="text-brand">You choose the time.</span>
               </h2>
               <p className="mt-5 text-black/60 leading-relaxed">
-                The clock races by, your schedule is packed, and booking the
-                appointment you need keeps slipping out of reach. Sound
-                familiar? You're not alone. Between work, errands and
-                inconvenient salon hours, finding time for yourself feels
-                like a luxury. But what if there was a better way?
+                We are a Canadian booking platform for hair, nails and beauty.
+                Search for the service you want, look through the professional's
+                work, read reviews from clients who booked them, then pick a time
+                that suits you. No phone calls, and no waiting for a salon to
+                open.
               </p>
               <Link
                 to={"/about"}
@@ -374,8 +386,8 @@ const LandingPage = () => {
               <article className="group overflow-hidden rounded-2xl bg-[#1e1e1e] text-white shadow-[0_18px_45px_rgba(0,0,0,0.12)] transition-shadow duration-300 hover:shadow-[0_24px_55px_rgba(0,0,0,0.18)]">
                 <div className="relative aspect-[4/3] overflow-hidden sm:aspect-[16/10]">
                   <img
-                    src={stylistImg1}
-                    alt="Client receiving an in-home hairstyling service"
+                    src={forClientsImg}
+                    alt="A client in the chair while a barber finishes their cut"
                     className="h-full w-full object-cover object-top transition-transform duration-700 group-hover:scale-105"
                     loading="lazy"
                     decoding="async"

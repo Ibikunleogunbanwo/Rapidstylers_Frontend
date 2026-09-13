@@ -1,4 +1,4 @@
-import Buttons from "../../components/button";
+import Button from "../../components/button";
 import Back from "../../components/goBack";
 import InputWithLabel from "../../components/inputWithLabel";
 import SelectInput from "../../components/selectInput";
@@ -51,7 +51,7 @@ const BusinessInformation = () => {
             inputName={"businessAddress"}
           /></div>
 
-          <Buttons btnText={"Update details"} btnType={"primary"} />
+          <Button text={"Update details"} variant={"primary"} />
         </div>
       </div>
     </div>

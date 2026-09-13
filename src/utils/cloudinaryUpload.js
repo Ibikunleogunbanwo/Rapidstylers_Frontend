@@ -47,7 +47,7 @@ export function buildSignedUploadFormData(file, sig, filename) {
 export function assertUploadAllowed(file, sig) {
   const maxBytes = Number(sig?.maxFileSize || 0);
   if (maxBytes > 0 && file.size > maxBytes) {
-    throw new Error(`Image is too large — the maximum is ${Math.round(maxBytes / (1024 * 1024))} MB.`);
+    throw new Error(`Image is too large. The maximum is ${Math.round(maxBytes / (1024 * 1024))} MB.`);
   }
   const formats = String(sig?.allowedFormats || "")
     .split(",")

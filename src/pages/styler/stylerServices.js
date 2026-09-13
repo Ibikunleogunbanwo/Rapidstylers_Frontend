@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import Input from "../../components/input";
-import Buttons from "../../components/button";
+import Button from "../../components/button";
 import Modal from "../../components/modals";
 import { APIService } from "../../hooks/remote/apiService";
 import { getAuthToken, showErrorToastMessage, showSuccessToastMessage } from "../../utils/constant";
@@ -167,7 +167,7 @@ const Services = () => {
             <span>{modalError}</span>
           </div>
         )}
-        <Buttons btnType="primary" btnText={saving ? "Saving..." : editingService ? "Save changes" : "Add service"} onClick={addService} disabled={saving} />
+        <Button variant="primary" text={saving ? "Saving..." : editingService ? "Save changes" : "Add service"} onClick={addService} disabled={saving} />
       </Modal>
     </div>
   );

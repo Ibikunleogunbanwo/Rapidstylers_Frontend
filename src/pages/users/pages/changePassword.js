@@ -4,7 +4,7 @@ import Back from "../../../components/goBack";
 import PasswordInput from "../../../components/passwordInput";
 import { useFormik } from "formik";
 import * as Yup from "yup";
-import Buttons from "../../../components/button";
+import Button from "../../../components/button";
 import { useDispatch, useSelector } from "react-redux";
 import Spinner from "../../../components/spinner";
 import { changeUserPassword } from "../../../hooks/local/userReducer";
@@ -79,7 +79,7 @@ const ChangePassword = ({setPageTitle}) => {
                         inputOnChange={updateUserPassword.handleChange}
                         inputError={updateUserPassword.errors.confirmPassword && updateUserPassword.touched.confirmPassword ? updateUserPassword.errors.confirmPassword : null}/>
         <div>
-          <Buttons type={"submit"} btnText={"Update Password"} btnType={"light"}/>
+          <Button type={"submit"} text={"Update Password"} variant="primary"/>
           </div>
       </div>
       </form>

@@ -1,6 +1,27 @@
 import { showErrorToastMessage } from "../../utils/constant";
 import { ApiClient } from "./apiClient";
 
+/**
+ * The service list is identical for every visitor, and three components on the
+ * home page ask for it independently — the hero, the hero's own search box and
+ * the featured carousel — so one page load fired `/list_service` three times
+ * (six in development, where StrictMode runs each mount effect twice). On a
+ * failed request that also meant one identical error toast per attempt.
+ *
+ * Sharing the promise while it is in flight collapses those into a single call.
+ * Only an in-flight request is reused, so a caller that arrives after a failure
+ * still retries rather than being handed a rejected promise forever.
+ */
+let inFlightStylerType = null;
+const stylerTypeRequest = () => {
+    if (!inFlightStylerType) {
+        inFlightStylerType = ApiClient.get(`/list_service`).finally(() => {
+            inFlightStylerType = null;
+        });
+    }
+    return inFlightStylerType;
+};
+
 export class APIService {
     static extractError(error){
         let extracted;
@@ -117,7 +138,7 @@ export class APIService {
     }
     static async getStylerType(){
         try{
-            return await ApiClient.get(`/list_service`)
+            return await stylerTypeRequest()
         }
         catch(error){
             APIService.extractError(error);

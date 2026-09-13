@@ -3,7 +3,7 @@ import { z } from "zod";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import InputWithLabel from "../../../components/inputWithLabel";
-import Buttons from "../../../components/button";
+import Button from "../../../components/button";
 import { useStylerSignup } from "../../../context/StylerSignupContext";
 import { APIService } from "../../../hooks/remote/apiService";
 
@@ -141,9 +141,9 @@ const StylerPersonalDetails = () => {
             />
           </div>
           <div className="mt-8">
-            <Buttons
-              btnText={sending ? "Sending code..." : "Continue"}
-              btnType="primary"
+            <Button
+              text={sending ? "Sending code..." : "Continue"}
+              variant="primary"
               type="submit"
               disabled={isSubmitting || sending}
             />

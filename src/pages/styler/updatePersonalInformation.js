@@ -1,5 +1,5 @@
 
-import Buttons from "../../components/button";
+import Button from "../../components/button";
 import Back from "../../components/goBack";
 import InputWithLabel from "../../components/inputWithLabel";
 
@@ -31,7 +31,7 @@ const PersonalInformation = () => {
             />
 <br />
            <div className="mt-6">
-               <Buttons btnText={"Update details"} btnType={"primary"} />
+               <Button text={"Update details"} variant={"primary"} />
            </div>
           </div>
         </div>

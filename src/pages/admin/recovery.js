@@ -108,13 +108,13 @@ const Recovery = () => {
                   return (
                     <tr key={idx} className="border-b last:border-0">
                       <td className="p-3 font-medium text-gray-900">{row.email}</td>
-                      <td className="p-3 text-gray-600">{row.attemptedAt || "—"}</td>
+                      <td className="p-3 text-gray-600">{row.attemptedAt || "-"}</td>
                       <td className="p-3">
                         <span className={`rounded-full px-2 py-1 text-xs font-semibold ${STAGE_STYLES[stage]}`}>
                           {row.stageLabel || `Stage ${stage}`}
                         </span>
                       </td>
-                      <td className="p-3 text-gray-600">{row.lastSentAt || "—"}</td>
+                      <td className="p-3 text-gray-600">{row.lastSentAt || "-"}</td>
                       <td className="p-3">
                         {row.converted ? (
                           <span className="rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-700">Converted</span>

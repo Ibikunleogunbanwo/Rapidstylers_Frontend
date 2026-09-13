@@ -57,13 +57,13 @@ const Payments = () => {
       return;
     }
     if (refundForm.amount.trim() && (Number.isNaN(Number(refundForm.amount)) || Number(refundForm.amount) <= 0)) {
-      showErrorToastMessage("Refund amount must be a positive number — leave blank for a full refund");
+      showErrorToastMessage("Refund amount must be a positive number. Leave blank for a full refund");
       return;
     }
     // Step-up: refunds move money, so re-prove the admin password on each request.
     const adminPassword = refundForm.password;
     if (!adminPassword.trim()) {
-      showErrorToastMessage("Re-authentication required — please re-enter your admin password");
+      showErrorToastMessage("Re-authentication required. Please re-enter your admin password");
       return;
     }
     setSubmitting(true);
@@ -173,7 +173,7 @@ const Payments = () => {
                     autoComplete="current-password"
                     className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm"
                   />
-                  <p className="mt-1 text-[11px] text-gray-400">Refunds move money — you must re-prove your password on each refund.</p>
+                  <p className="mt-1 text-[11px] text-gray-400">Refunds move money, so you must re-prove your password on each refund.</p>
                 </div>
               </div>
               <button
@@ -214,10 +214,10 @@ const Payments = () => {
                             {refund.status}
                           </span>
                         </td>
-                        <td className="p-3 text-gray-600">{refund.reason || "—"}</td>
+                        <td className="p-3 text-gray-600">{refund.reason || "-"}</td>
                         <td className="p-3 text-gray-600">{refund.createdBy}</td>
                         <td className="p-3 text-gray-500">{refund.createdAt}</td>
-                        <td className="p-3 text-xs text-gray-500">{refund.stripeRefundId || "—"}</td>
+                        <td className="p-3 text-xs text-gray-500">{refund.stripeRefundId || "-"}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -263,7 +263,7 @@ const Payments = () => {
                 )}
               </div>
             ) : (
-              <p className="text-sm text-gray-500">No reconciliation report yet — run one to see results.</p>
+              <p className="text-sm text-gray-500">No reconciliation report yet. Run one to see results.</p>
             )}
           </div>
         )}

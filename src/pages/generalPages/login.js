@@ -7,7 +7,7 @@ import { getAuthToken, setAuthToken, setRefreshToken, setUserRole, getUserRole, 
 import logo from "../../assets/svg-icons/colouredLogo.svg";
 import InputWithLabel from "../../components/inputWithLabel";
 import PasswordInput from "../../components/passwordInput";
-import Buttons from "../../components/button";
+import Button from "../../components/button";
 import GoogleSignInButton from "../../components/googleSignInButton";
 import TurnstileWidget from "../../components/turnstileWidget";
 
@@ -175,10 +175,10 @@ const Login = () => {
                 placeholder={"Enter your password"}
               />
               <TurnstileWidget onVerify={setCaptchaToken} resetSignal={captchaReset} />
-              <Buttons
-                btnType={"primary"}
+              <Button
+                variant={"primary"}
                 type={"submit"}
-                btnText={loading ? "Signing in..." : "Sign In"}
+                text={loading ? "Signing in..." : "Sign In"}
               />
             </form>
 

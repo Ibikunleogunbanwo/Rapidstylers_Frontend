@@ -1,6 +1,6 @@
 import HeroInput from "./heroInput"
 import HeroSelect from "./heroSelect";
-import Buttons from "./button";
+import Button from "./button";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { APIService } from "../hooks/remote/apiService";
@@ -97,7 +97,7 @@ const SearchForStyler = () => {
             />
             Open now
           </label>
-          <Buttons btnType={"primary"} btnText={"Search"} type={"submit"} />
+          <Button variant={"primary"} text={"Search"} type={"submit"} />
         </div>
       </form>
     );
