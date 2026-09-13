@@ -100,11 +100,19 @@ const ElevateLooks = () => {
         }
       })
       .catch(() => {
-        if (!append) {
-          setImages([]);
-          setLoadError(true);
-          setHasMore(false);
-        }
+        if (append) return;
+        // The curated photos are static files, so they cannot fail alongside the
+        // API. An API outage used to empty the gallery entirely; showing our own
+        // work with a note is both more useful and more truthful than a blank page.
+        const needle = (query || "").trim();
+        const fallback = needle
+          ? []
+          : images === null
+          ? CURATED
+          : CURATED.filter((p) => p.category === category);
+        setImages(fallback);
+        setLoadError(true);
+        setHasMore(false);
       })
       .finally(() => setter(false));
   };
@@ -226,6 +234,11 @@ const ElevateLooks = () => {
 
           {loading && (
             <p className="text-sm text-gray-400 py-4">Loading images…</p>
+          )}
+          {!loading && loadError && images !== null && images.length > 0 && (
+            <p className="mb-3 text-xs text-gray-500">
+              Showing our own work — professional uploads couldn't be loaded just now.
+            </p>
           )}
           {!loading && images !== null && images.length === 0 && (
             <div className="rounded-2xl border border-dashed border-gray-200 bg-white/60 py-16 text-center">
