@@ -3,7 +3,7 @@ import logo from "../../assets/svg-icons/logo.svg";
 import React, { useState } from "react";
 import info from "../../assets/svg-icons/info.svg";
 import { Link, useNavigate } from "react-router-dom";
-import Buttons from "../../components/button";
+import Button from "../../components/button";
 import InputWithLabel from "../../components/inputWithLabel";
 import Modal from "../../components/modals";
 import { useFormik } from "formik";
@@ -121,20 +121,28 @@ const Hero = ({ height }) => {
           </div>
 
           {/* About */}
+          {/* Left-aligned and type-only, against a flat near-black: the statement
+              carries the section, and the colour on this page comes from the work
+              in the photos rather than from a gradient behind the words. */}
           <div className={`relative w-full h-full ${document.title === "About us | RapidStylers" ? "block" : "hidden"}`}>
-            <div className="h-full w-full bg-black relative flex items-center justify-center overflow-hidden">
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_30%,rgba(147,129,255,0.4),transparent_55%)]"></div>
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_80%,rgba(147,129,255,0.2),transparent_50%)]"></div>
-              <div className="relative text-white text-center px-4 sm:px-6 pt-[60px] sm:pt-[80px] max-w-3xl">
-                <p className="text-[10px] sm:text-xs uppercase tracking-[0.25em] text-brand font-bold">About RapidStylers</p>
-                <h1 className="text-2xl sm:text-3xl md:text-5xl font-bold mt-4 leading-tight font-serif">
-                  Say goodbye to the <span className="text-brand">salon struggle.</span>
-                </h1>
-                <p className="mt-5 text-white/75 text-sm md:text-lg leading-relaxed">
-                  The clock races by, your schedule is packed, and booking the
-                  appointment you need keeps slipping out of reach. RapidStylers
-                  makes it simple.
-                </p>
+            {/* Bottom-aligned: the fixed navbar covers the top of this box, so
+                centred content put the eyebrow label underneath it. Anchoring to
+                the bottom keeps the statement clear of the chrome at every height. */}
+            <div className="h-full w-full bg-[#0A0A0A] relative flex items-end overflow-hidden">
+              <div className="relative w-full px-5 md:px-[50px] lg:px-[100px] pt-[120px] pb-10 md:pb-14">
+                <div className="mx-auto max-w-[1240px]">
+                  <p className="text-[11px] uppercase tracking-[0.25em] text-white/45">About RapidStylers</p>
+                  <h1 className="mt-5 max-w-[880px] text-[clamp(2rem,4.6vw,3.6rem)] font-normal leading-[1.06] tracking-[-0.02em] text-white">
+                    Say goodbye to the{" "}
+                    <span className="text-white/40">salon struggle.</span>
+                  </h1>
+                  <p className="mt-6 max-w-[520px] text-[13px] leading-[1.55] text-white/60">
+                    Search by service or by professional, look at real portfolios
+                    and reviews, then book a time that works for you. The
+                    professional accepts, and the appointment happens on your
+                    schedule — not a salon's opening hours.
+                  </p>
+                </div>
               </div>
             </div>
           </div>
@@ -228,7 +236,7 @@ const Hero = ({ height }) => {
             </div>
           )}
           <div className="flex justify-between items-center pt-4">
-            <Buttons btnText={"Continue"} btnType={"primary"} type={"submit"} />
+            <Button text={"Continue"} variant={"primary"} type={"submit"} />
             <p className="text-sm font-medium text-brand underline cursor-pointer" onClick={() => { setSignInVisible(false); navigate('/login'); }}>
               Forgot password?
             </p>
@@ -276,9 +284,9 @@ const Hero = ({ height }) => {
             </span>
           </div>
           <div className="flex justify-between items-center mt-8">
-            <Buttons
-              btnType={"primary"}
-              btnText={"Verify Email"}
+            <Button
+              variant={"primary"}
+              text={"Verify Email"}
               type={"submit"}
             />
             <p className="text-sm" onClick={toggleSignIn}>

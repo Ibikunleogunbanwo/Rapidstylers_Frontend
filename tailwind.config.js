@@ -6,14 +6,23 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        'brand': '#9381FF', 
+        brand: '#9381FF',
+        secondary: '#FF6B6B',
+        neutral: '#F5F5F5',
+        surface: '#FFFFFF',
+        onBrand: '#FFFFFF',
+        onSecondary: '#FFFFFF',
+        onNeutral: '#1A1A1A',
+        onSurface: '#1A1A1A',
+        muted: '#888888',
       },
       fontFamily: {
-        serif: ['"Crimson Pro"', 'Georgia', 'serif'],
+        sans: ['Averta', 'Averta'],
+        serif: ['"Averta"', 'Georgia', 'serif'],
       },
-      backgroundImage:{
+      backgroundImage: {
         'stylerDoodle': "url('/src/assets/images/stylerDoodle.svg')",
-        'saloonDoodle': "url('/src/assets/images/saloon_doodle.svg')"
+        'saloonDoodle': "url('/src/assets/images/saloon_doodle.svg')",
       },
       keyframes: {
         shake: {

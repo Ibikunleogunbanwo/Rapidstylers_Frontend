@@ -1,123 +1,222 @@
 import Hero from "./heroSection";
-import about1 from "../../assets/images/about-1.webp";
-import about2 from "../../assets/images/about-2.jpg"
 import Footer from "../../components/footer";
 import { Link } from "react-router-dom";
+import { curatedById } from "../../utils/curatedGallery";
+import { GALLERY_CATEGORIES } from "../../utils/galleryCategories";
 
-const features = [
-  {
-    title: "Unwavering quality",
-    body: "Discover a handpicked network of top-tier professionals, vetted for their skills and dedication. From classic cuts to bold transformations, explore a wide range of services delivered with flawless precision.",
-    icon: "M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z",
-  },
-  {
-    title: "Effortless trust",
-    body: "Our transparent rating and feedback system empowers you to choose a professional with confidence. Read real stories, discover hidden gems, and find someone who shares your passion for beauty.",
-    icon: "M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z",
-  },
-  {
-    title: "A thriving community",
-    body: "We're more than just appointments. Connect with fellow beauty enthusiasts, share experiences, and discover your next style inspiration, all within our supportive network.",
-    icon: "M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z",
-  },
-];
+/**
+ * Every photo on this page is our own reviewed work, taken from the curated
+ * gallery list rather than a stock library — this page used to carry two
+ * AI-generated portraits (`about-1.webp`, `about-2.jpg`). `curatedById` throws on
+ * an unknown id, so renaming or dropping a photo fails the build instead of
+ * shipping a hole where a face should be.
+ */
+const CORNROWS = curatedById("g-cornrows-1");
+const NAIL_TECH = curatedById("g-nails-9");
+const BARBER = curatedById("g-buzz-cut-1");
 
-const checklist = [
-  "Handpicked, vetted beauty professionals",
-  "In-home appointments on your schedule",
-  "Transparent ratings, reviews and pricing",
+/**
+ * What a visitor can actually book, one line per tab in the gallery. The list is
+ * built from GALLERY_CATEGORIES so the two pages cannot drift apart: adding a tab
+ * without adding a line here leaves a visible gap, which `aboutUs.test.js` fails
+ * on rather than letting the page quietly fall behind the marketplace.
+ */
+const SERVICE_NOTES = {
+  "Locs & dreadlocks": "Starter locs, retwists, faux and soft locs",
+  "Buzz cut": "Clipper work, fades and line-ups",
+  Braids: "Knotless, box braids, boho braids, twists",
+  Cornrows: "Straight-backs, feed-ins and braided updos",
+  Wigs: "Installs, revamps and wig construction",
+  "High-top fade": "Fades, tapers and shape-ups",
+  "Hair dye": "Colour, highlights and root touch-ups",
+  "Nail tech": "Gel, acrylic, chrome and nail art",
+  Makeup: "Soft glam, bridal and photo-ready looks",
+  "Eyelash extensions": "Classic, hybrid, volume sets and fills",
+  "Natural hair": "Silk press, twist-outs, deep conditioning",
+};
+
+const SERVICES = GALLERY_CATEGORIES.map((label) => ({ label, note: SERVICE_NOTES[label] }));
+
+/**
+ * The professional side of the marketplace, kept to things the platform really
+ * does: professionals set their own services and durations, they see the
+ * client's location and travel distance and accept or decline each request,
+ * portfolios are capped at 30 photos, and a review can only follow a completed
+ * booking. (See the stylist sign-up flow, AppConstants.MAX_STYLER_PORTFOLIO_IMAGES
+ * and the FAQ answers.)
+ */
+const PRO_POINTS = [
+  "Set your own services and prices, then accept or decline each request yourself",
+  "See the client's area and travel distance before you decide",
+  "Publish up to 30 photos of your work, reviewed before your profile goes live",
+  "Reviews come from completed bookings only, so your rating means something",
 ];
 
 const AboutUs = () => {
-  document.title="About us | RapidStylers"
+  document.title = "About us | RapidStylers";
   return (
-    <div className="grid gap-10 md:gap-14">
-      <Hero height="62vh" />
+    <div className="bg-white text-onSurface">
+      {/* The hero is bottom-anchored, so it needs a floor as well as a share of the
+          viewport — on a short screen 62vh alone would leave the statement clipped. */}
+      <Hero height="clamp(560px, 62vh, 800px)" />
 
-      {/* Intro */}
-      <div className="px-4 md:px-[50px] max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 bg-white rounded-3xl shadow-[0_2px_30px_rgba(147,129,255,0.1)] p-6 md:p-12">
-          <div className="relative h-[320px] md:h-[420px] lg:h-auto">
-            <img
-              src={about2}
-              alt="A RapidStylers professional at work"
-              className="absolute inset-0 w-full h-full object-cover rounded-2xl shadow-lg"
-            />
-          </div>
-          <div>
-            <p className="text-xs uppercase tracking-[0.25em] text-brand font-bold">Who we are</p>
-            <h2 className="text-3xl md:text-4xl font-bold mt-3 leading-tight">
-              Introducing RapidStylers, your gateway to{" "}
-              <span className="text-brand">exceptional beauty services</span>,
-              reimagined.
+      {/* Who we are — statement and narrow body columns, beside our own work. */}
+      <section className="mx-auto max-w-[1240px] px-5 py-20 md:px-[50px] md:py-28 lg:px-[100px]">
+        <div className="grid gap-12 lg:grid-cols-12 lg:gap-16">
+          <div className="lg:col-span-7">
+            <p className="text-[11px] uppercase tracking-[0.25em] text-muted">Who we are</p>
+            <h2 className="mt-6 text-[clamp(2rem,4.2vw,3.25rem)] font-normal leading-[1.06] tracking-[-0.02em]">
+              You pick the style and the time. A vetted professional takes the
+              booking, <span className="text-[#B0B0B0]">and comes to you.</span>
             </h2>
-            <p className="mt-4 text-black/60 leading-relaxed">
-              Forget battling traffic, squeezing into fully booked appointment
-              slots, or settling for "good enough" professionals. We bring the
-              quality of the salon directly to you, on your terms.
-            </p>
-            <ul className="mt-6 grid gap-3">
-              {checklist.map((item) => (
-                <li key={item} className="flex items-start gap-3">
-                  <span className="shrink-0 mt-0.5 h-6 w-6 rounded-full bg-brand/15 text-brand flex items-center justify-center">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
-                      <path d="M20 6L9 17l-5-5" />
-                    </svg>
-                  </span>
-                  <span className="text-[15px] text-black/80">{item}</span>
-                </li>
-              ))}
-            </ul>
-            <Link
-              to="/login"
-              className="inline-block mt-8 py-4 px-8 bg-brand rounded-md text-sm text-white font-semibold hover:opacity-90 transition"
-            >
-              Find a professional
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      {/* Features */}
-      <div className="px-4 md:px-[50px] max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 bg-white rounded-3xl shadow-[0_2px_30px_rgba(147,129,255,0.1)] p-6 md:p-12">
-          <div className="order-2 lg:order-1">
-            <p className="text-xs uppercase tracking-[0.25em] text-brand font-bold">What we offer</p>
-            <h2 className="text-3xl md:text-4xl font-bold mt-3">
-              Beyond convenience, RapidStylers offers
-            </h2>
-            <div className="grid gap-4 mt-8">
-              {features.map((feature) => (
-                <div
-                  key={feature.title}
-                  className="p-5 rounded-2xl border border-gray-100 bg-[#faf9ff] hover:border-brand/60 hover:bg-white hover:shadow-[0_8px_30px_rgba(147,129,255,0.18)] hover:-translate-y-0.5 transition-all cursor-default"
-                >
-                  <div className="flex gap-4">
-                    <div className="shrink-0 h-10 w-10 rounded-xl bg-brand/15 text-brand flex items-center justify-center">
-                      <svg viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
-                        <path d={feature.icon} />
-                      </svg>
-                    </div>
-                    <div>
-                      <p className="font-bold">{feature.title}</p>
-                      <p className="text-black/60 text-[15px] leading-relaxed mt-1">
-                        {feature.body}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ))}
+            <div className="mt-10 grid gap-8 sm:grid-cols-3">
+              <p className="max-w-[300px] text-[13px] leading-[1.55] text-black/60">
+                RapidStylers is a Canadian booking platform for hair, nails and
+                beauty. Search by service or by professional, look at their
+                portfolio and reviews, and book from your phone.
+              </p>
+              <p className="max-w-[300px] text-[13px] leading-[1.55] text-black/60">
+                Every professional is reviewed before their portfolio goes live,
+                and they see your area and travel distance before accepting — so
+                the person who turns up is expecting you.
+              </p>
+              <p className="max-w-[300px] text-[13px] leading-[1.55] text-black/60">
+                A review can only be left after a completed booking, and it is
+                read before it is published. No anonymous stars, no ratings from
+                people who never sat in the chair.
+              </p>
             </div>
           </div>
-          <div className="relative h-[320px] md:h-[480px] lg:h-auto order-1 lg:order-2">
+
+          <figure className="lg:col-span-5">
             <img
-              src={about1}
-              alt="The RapidStylers community"
-              className="absolute inset-0 w-full h-full object-cover rounded-2xl shadow-lg"
+              src={CORNROWS.src}
+              alt={CORNROWS.alt}
+              className="aspect-[4/5] w-full object-cover"
+              loading="lazy"
+              decoding="async"
             />
+            <figcaption className="mt-3 text-[11px] uppercase tracking-[0.15em] text-muted">
+              {CORNROWS.alt} — posted by a verified professional
+            </figcaption>
+          </figure>
+        </div>
+      </section>
+
+      {/* What you can book — a hairline list of everything the gallery covers. */}
+      <section className="bg-neutral">
+        <div className="mx-auto max-w-[1240px] px-5 py-20 md:px-[50px] md:py-28 lg:px-[100px]">
+          <div className="grid gap-12 lg:grid-cols-12 lg:gap-16">
+            <div className="lg:col-span-7">
+              <p className="text-[11px] uppercase tracking-[0.25em] text-muted">What you can book</p>
+              <h2 className="mt-6 text-[clamp(1.75rem,3vw,2.5rem)] font-normal leading-[1.1] tracking-[-0.02em]">
+                Braids to barbering, booked the same way.
+              </h2>
+              <ul className="mt-10 grid gap-x-10 sm:grid-cols-2">
+                {SERVICES.map(({ label, note }) => (
+                  <li key={label} className="border-t border-black/10 py-4">
+                    <p className="text-[15px]">{label}</p>
+                    <p className="mt-1 text-[12px] leading-[1.5] text-black/50">{note}</p>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-8 max-w-[420px] text-[12px] leading-[1.5] text-black/45">
+                Whether anyone is free near you depends on the day — search shows
+                who can take you, and what they charge, before you commit.
+              </p>
+            </div>
+
+            <figure className="lg:col-span-5">
+              <img
+                src={NAIL_TECH.src}
+                alt={NAIL_TECH.alt}
+                className="aspect-[4/5] w-full object-cover"
+                loading="lazy"
+                decoding="async"
+              />
+              <figcaption className="mt-3 text-[11px] uppercase tracking-[0.15em] text-muted">
+                {NAIL_TECH.alt} — work from a RapidStylers professional
+              </figcaption>
+            </figure>
           </div>
         </div>
-      </div>
+      </section>
+
+      {/* For professionals — the page's one inverted, full-bleed section. */}
+      <section className="bg-[#0A0A0A] text-white">
+        <div className="mx-auto max-w-[1240px] px-5 py-20 md:px-[50px] md:py-28 lg:px-[100px]">
+          <div className="grid gap-12 lg:grid-cols-12 lg:gap-16">
+            <div className="lg:col-span-6">
+              <p className="text-[11px] uppercase tracking-[0.25em] text-white/45">
+                For beauty professionals
+              </p>
+              <h2 className="mt-6 text-[clamp(1.75rem,3vw,2.5rem)] font-normal leading-[1.1] tracking-[-0.02em]">
+                Keep the clients.{" "}
+                <span className="text-white/40">Lose the admin.</span>
+              </h2>
+              <ul className="mt-10">
+                {PRO_POINTS.map((point) => (
+                  <li
+                    key={point}
+                    className="border-t border-white/15 py-4 text-[13px] leading-[1.55] text-white/70"
+                  >
+                    {point}
+                  </li>
+                ))}
+              </ul>
+              <Link
+                to="/styler-signup"
+                className="mt-10 inline-flex items-center rounded-full bg-brand px-7 py-3.5 text-[13px] font-semibold text-white transition-opacity hover:opacity-90"
+              >
+                Register as a beauty professional
+              </Link>
+              <p className="mt-4 text-[12px] text-white/40">
+                Signing up takes a few minutes. You set your services after your
+                account is reviewed.
+              </p>
+            </div>
+
+            <figure className="lg:col-span-6">
+              <img
+                src={BARBER.src}
+                alt={BARBER.alt}
+                className="aspect-[4/5] w-full object-cover"
+                loading="lazy"
+                decoding="async"
+              />
+              <figcaption className="mt-3 text-[11px] uppercase tracking-[0.15em] text-white/40">
+                {BARBER.alt} — posted by a verified professional
+              </figcaption>
+            </figure>
+          </div>
+        </div>
+      </section>
+
+      {/* Where this is going — short, factual, and it ends on the gallery. */}
+      <section className="mx-auto max-w-[1240px] px-5 py-20 md:px-[50px] md:py-28 lg:px-[100px]">
+        <p className="text-[11px] uppercase tracking-[0.25em] text-muted">Where this is going</p>
+        <h2 className="mt-6 max-w-[760px] text-[clamp(1.75rem,3vw,2.5rem)] font-normal leading-[1.1] tracking-[-0.02em]">
+          Everything here works in your browser today. The app is next.
+        </h2>
+        <p className="mt-6 max-w-[520px] text-[13px] leading-[1.55] text-black/60">
+          A RapidStylers app is in the works for Android and iOS, so bookings and
+          reminders can live on your phone. Nothing on this page waits for it.
+        </p>
+        <div className="mt-10 flex flex-wrap items-center gap-x-8 gap-y-4">
+          <Link
+            to="/elevate-your-looks"
+            className="inline-flex items-center rounded-full bg-[#1A1A1A] px-7 py-3.5 text-[13px] font-semibold text-white transition-opacity hover:opacity-85"
+          >
+            Browse the gallery
+          </Link>
+          <Link
+            to="/contact-support"
+            className="text-[13px] underline underline-offset-4 transition-colors hover:text-brand"
+          >
+            Ask us something
+          </Link>
+        </div>
+      </section>
 
       <Footer />
     </div>
