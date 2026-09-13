@@ -4,6 +4,25 @@ Every photo in `public/images/gallery/` is a static file listed in
 `src/utils/curatedGallery.js`. This file records where each one came from, so a
 licensing question later has an answer. It is documentation only — nothing reads it.
 
+## Batch 1 — the original nine
+
+These came with the site (formerly bundled from `src/assets/images/gallery/`), so
+there is no external source recorded for them. A photo-by-photo visual pass found
+that four had been filed under the wrong subject on the earlier site — a lashes /
+barbering pair the wrong way round, a braiding entry that was actually makeup, and
+a scalp twist filed as lashes — so they were renamed to say what they show:
+
+| was | is now | what the photo shows |
+| --- | --- | --- |
+| `g-lashes-1` | `g-natural-hair-3` | Hands twisting a section of hair at the scalp |
+| `g-lashes-3` | `g-buzz-cut-1` | A barber fading the sides with clippers |
+| `g-barber-1` | `g-lashes-5` | A lash extension being applied with a tool |
+| `g-braids-1` | `g-makeup-3` | Black-and-white makeup application, a brush at the lips |
+
+The id is the URL, and `/images/*` is cached for a day rather than immutably — so a
+renamed photo must get a **new** id. Reusing a freed name (`g-lashes-1`) would serve
+the old picture from cache until it expired.
+
 ## Batch 2 — 35 photos
 
 Supplied as `drive-download-20260913T104248Z-1-001` (50 files, of which 43 were
@@ -91,7 +110,30 @@ PY
 ```
 
 3. Add one line per photo to `CURATED` in `src/utils/curatedGallery.js`. The id
-   must match the filename and start with `g-`; the category must be one of the
-   twelve in the page's `CATEGORIES` list.
+   must match the filename and start with `g-`; the category must be one of those
+   listed in `src/utils/galleryCategories.js`, which is the frontend's single
+   source of truth for the tab names. A tab can cover several backend category
+   names — `Locs & dreadlocks` covers two — and the guard test passes as long as
+   some tab covers the name you used.
 4. Run `npx vitest run src/utils/curatedGallery.test.js`. It fails if a file is
-   present but unlisted, or listed but missing.
+   present but unlisted, listed but missing, or filed under a category no tab
+   can reach (a photo filed under "Barbering" instead of "Buzz cut" would only
+   ever appear in the opening "everything" view).
+
+## Doing it in one command
+
+`scripts/import-gallery-images.py` does steps 2–4 above: it EXIF-rotates,
+downscales to a 1400px long edge, strips metadata, writes
+`public/images/gallery/<prefix>-<n>.jpg` continuing the existing numbering, and
+appends the entries before the closing `];` of `CURATED`. It refuses to run on a
+category that is not a tab.
+
+```bash
+python3 scripts/import-gallery-images.py --category Wigs --source ~/incoming --dry-run
+```
+
+Alt text is the gallery's search index, and a filename is not a description, so
+supply it: `--alts-file` takes one `<filename><TAB><alt text>` line per photo.
+Without it the script derives something from the filename and prints every
+derived alt for review; files named like IDs (`b65bdcd1-5901-4f9b-…`) have
+nothing derivable and are reported instead of guessed.

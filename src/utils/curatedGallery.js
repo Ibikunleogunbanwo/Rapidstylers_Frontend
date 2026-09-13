@@ -26,6 +26,8 @@
  * that failed review: watermarked images, screenshots carrying another app's
  * interface, and a photograph of a child.
  */
+import { tabLabelsForCategory } from "./galleryCategories";
+
 export const CURATED_IMAGE_BASE = "/images/gallery";
 
 /** Every image is a JPG today; the extension is here so a future batch can differ. */
@@ -35,13 +37,17 @@ const EXTENSION = "jpg";
 const CURATED = [
   { id: "g-makeup-1", alt: "Professional makeup application", category: "Makeup" },
   { id: "g-makeup-2", alt: "Makeup artistry close-up", category: "Makeup" },
-  { id: "g-lashes-1", alt: "Eyelash extension application", category: "Eyelash extensions" },
+  // The opening set's lashes, barbering and braids entries were mismatched on an
+  // earlier site: the close-up of a lash tool at an eye was filed as a barber
+  // trim, a clipper shot as a lash detail, and a makeup brush at the lips as
+  // braiding. Each id was renamed to what the photo actually shows.
+  { id: "g-makeup-3", alt: "Makeup artistry in black and white, brush at the lips", category: "Makeup" },
+  { id: "g-natural-hair-3", alt: "Hands twisting a section of natural hair at the scalp", category: "Natural hair" },
   { id: "g-lashes-2", alt: "Lash extension close-up", category: "Eyelash extensions" },
-  { id: "g-lashes-3", alt: "Lash extension detail", category: "Eyelash extensions" },
+  { id: "g-buzz-cut-1", alt: "Barber fading the sides with clippers", category: "Buzz cut" },
   { id: "g-lashes-4", alt: "Eyelash extensions", category: "Eyelash extensions" },
-  { id: "g-braids-1", alt: "Hair braiding", category: "Braids" },
+  { id: "g-lashes-5", alt: "Eyelash extension application", category: "Eyelash extensions" },
   { id: "g-braids-2", alt: "Cornrow braiding", category: "Cornrows" },
-  { id: "g-barber-1", alt: "Precision barber trim", category: "Buzz cut" },
 
   // Second batch, reviewed photo by photo and grouped by category. The ids are
   // the filenames on disk, so the folder and this list stay in step.
@@ -92,6 +98,61 @@ export const CURATED_GALLERY = CURATED.map((entry) => ({
 }));
 
 /**
+ * Folds the plural off a word, so a search for "lashes" finds "Eyelash" and
+ * "braids" finds "braid". Deliberately not a stemmer — it only strips an
+ * English plural suffix, which is what people type at a gallery.
+ */
+const foldPlural = (word) => {
+  if (word.length > 3 && word.endsWith("ies")) return `${word.slice(0, -3)}y`;
+  if (word.length > 3 && word.endsWith("es")) return word.slice(0, -2);
+  if (word.length > 3 && word.endsWith("s")) return word.slice(0, -1);
+  return word;
+};
+
+/** Lowercase, punctuation-free words with the plural folded off. */
+const words = (value) =>
+  String(value || "")
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter((word) => word.length > 1)
+    .map(foldPlural);
+
+/**
+ * Two words match when either contains the other, so "braid" finds "braiding"
+ * and "lashes" finds "eyelash". The shortest word in the pair must be at least
+ * four characters, which keeps one prefix from matching half the gallery.
+ */
+const wordsMatch = (token, word) => {
+  const shorter = token.length <= word.length ? token : word;
+  const longer = token.length <= word.length ? word : token;
+  return shorter.length >= 4 ? longer.includes(shorter) : longer === shorter;
+};
+
+/**
+ * Keyword search over the curated list, matching the alt text, category and id
+ * — the words a visitor can actually see. Every keyword has to match, so
+ * "braided bob" is narrower than "bob".
+ *
+ * The search deliberately spans every category. Wigs, High-top fade and Hair
+ * dye have no curated photos at all, and the default tab used to be another
+ * empty one, so a search scoped to the selected tab returned nothing for the
+ * photos the visitor was looking at. Browsing still filters to the tab.
+ *
+ * A photo's tab labels are part of what it matches, so a merged tab's other
+ * name works too: searching "dreadlocks" finds the locs photos, exactly as
+ * clicking that tab does.
+ */
+export function searchCuratedPhotos(query) {
+  const tokens = words(query);
+  if (tokens.length === 0) return [];
+  return CURATED_GALLERY.filter((entry) => {
+    const labels = tabLabelsForCategory(entry.category).join(" ");
+    const haystack = words(`${entry.alt} ${entry.category} ${entry.id} ${labels}`);
+    return tokens.every((token) => haystack.some((word) => wordsMatch(token, word)));
+  });
+}
+
+/**
  * Looks an entry up by id, failing loudly. A typo used to mean a silently
  * missing image; now it means a failed build, which is the cheaper discovery.
  */
@@ -109,8 +170,15 @@ export function curatedById(id) {
  * The landing page's four-tile strip, taken from the list above rather than
  * re-importing the same files — the two pages previously drifted apart because
  * each kept its own copy of the paths.
+ *
+ * The four are chosen to read as an offer, not as four nice photos: braiding
+ * (the signature), barbering (so the strip speaks to men too — the heading says
+ * "for men and women"), nails, and locs. Each one is a colour photo whose
+ * subject survives a square centre crop, which is how the tile renders them.
+ * The two black-and-white photos that used to be here read as one repeated
+ * image, and the "braids" tile was a makeup shot.
  */
-export const ELEVATE_GRID = ["g-makeup-1", "g-lashes-1", "g-braids-1", "g-barber-1"].map((id) => {
+export const ELEVATE_GRID = ["g-cornrows-1", "g-buzz-cut-1", "g-nails-1", "g-locs-1"].map((id) => {
   const { src, alt } = curatedById(id);
   return { src, alt };
 });

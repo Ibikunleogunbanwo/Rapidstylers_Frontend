@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, within } from "@testing-library/react";
+import { render, screen, fireEvent, within, waitFor } from "@testing-library/react";
 import ElevateLooks from "./elevateYourLooks";
 import { APIService } from "../../hooks/remote/apiService";
 
@@ -101,7 +101,7 @@ describe("ElevateLooks gallery cards", () => {
       await screen.findByRole("button", { name: "View Professional makeup application" })
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "View Precision barber trim" })
+      screen.getByRole("button", { name: "View Barber fading the sides with clippers" })
     ).toBeInTheDocument();
   });
 
@@ -109,14 +109,262 @@ describe("ElevateLooks gallery cards", () => {
     APIService.searchGallery.mockResolvedValue({ data: { data: [] } });
     render(<ElevateLooks />);
 
+    // The opening view shows everything, so "a braids photo is present" proves
+    // nothing, and "the makeup photo is gone" is also true of the empty grid
+    // mid-load. Only the filtered state satisfies both at once.
     await screen.findByRole("button", { name: "View Professional makeup application" });
     fireEvent.click(screen.getByRole("button", { name: "Braids" }));
 
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: "View Long auburn knotless braids" })
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByRole("button", { name: "View Professional makeup application" })
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("button", { name: "View Long faux locs worn with statement sunglasses" })
+      ).not.toBeInTheDocument();
+    });
+  });
+
+  test("a merged tab shows the photos of every category it covers", async () => {
+    // This is also the FIRST tab, which makes it the default selection: clicking
+    // a tab that is already selected changed no value the loader watched, so the
+    // tab highlighted and the grid carried on showing the whole curated set —
+    // the reason this tab looked full of photos that were not dreadlocks.
+    APIService.searchGallery.mockResolvedValue({ data: { data: [] } });
+    render(<ElevateLooks />);
+
+    await screen.findByRole("button", { name: "View Professional makeup application" });
+    fireEvent.click(screen.getByRole("button", { name: "Locs & dreadlocks" }));
+
+    // Both locs photos live in the one tab, rather than being split off from the
+    // dreadlocks tab that used to hold nothing.
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: "View Long faux locs worn with statement sunglasses" })
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "View Soft locs styled loose past the shoulder" })
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByRole("button", { name: "View Professional makeup application" })
+      ).not.toBeInTheDocument();
+    });
+
+    // The tab's label is not a backend category, so the request must name the
+    // categories it covers — otherwise the API answers 400 and the tab looks
+    // broken the moment a stylist posts under either name.
+    await waitFor(() =>
+      expect(
+        APIService.searchGallery.mock.calls.some(([category]) => category === "Dreadlocks")
+      ).toBe(true)
+    );
+    const requested = APIService.searchGallery.mock.calls.map(([category]) => category);
+    expect(requested).toContain("Locs");
+    expect(requested).not.toContain("Locs & dreadlocks");
+
+    // One tab, not two half-tabs.
+    expect(screen.queryByRole("button", { name: "Locs" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Dreadlocks" })).not.toBeInTheDocument();
+  });
+});
+
+/**
+ * Production returns zero approved-stylist uploads, so the visible gallery is
+ * the curated list. Search used to query only the empty upload feed, which made
+ * every keyword answer "No results"; these pin it to the photos on screen.
+ */
+describe("ElevateLooks gallery search", () => {
+  // Waits out the in-flight request so no state update lands after a test ends.
+  const settle = async () => {
+    await waitFor(
+      () => expect(screen.queryByText("Loading images…")).not.toBeInTheDocument(),
+      { timeout: 2500 }
+    );
+  };
+
+  // The input is debounced, so the request lands ~400ms after typing.
+  const searchFor = async (text) => {
+    fireEvent.change(screen.getByPlaceholderText(/search the gallery/i), {
+      target: { value: text },
+    });
+    await waitFor(
+      () =>
+        expect(APIService.searchGallery).toHaveBeenCalledWith(
+          expect.any(String),
+          expect.any(Number),
+          1,
+          text
+        ),
+      { timeout: 2500 }
+    );
+    await settle();
+  };
+
+  const renderWithNoUploads = async () => {
+    APIService.searchGallery.mockResolvedValue({ data: { data: [] } });
+    render(<ElevateLooks />);
+    await screen.findByRole("button", { name: "View Professional makeup application" });
+  };
+
+  test("finds curated work by keyword rather than only the upload feed", async () => {
+    await renderWithNoUploads();
+
+    await searchFor("bob");
+
     expect(
-      await screen.findByRole("button", { name: "View Hair braiding" })
+      await screen.findByRole("button", { name: "View Blunt braided bob with a centre part" })
+    ).toBeInTheDocument();
+    expect(screen.getByText(/results? for "bob"/)).toBeInTheDocument();
+  });
+
+  test("searches every category, not just the selected tab", async () => {
+    // The default tab is Dreadlocks, which has no curated photos at all.
+    await renderWithNoUploads();
+
+    await searchFor("nails");
+
+    expect(
+      await screen.findByRole("button", { name: "View Glossy red almond nails" })
+    ).toBeInTheDocument();
+  });
+
+  test("narrows the grid to the matches while a keyword is active", async () => {
+    await renderWithNoUploads();
+
+    await searchFor("french");
+
+    expect(
+      await screen.findByRole("button", { name: "View Classic French tip almond nails" })
     ).toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: "View Professional makeup application" })
     ).not.toBeInTheDocument();
+  });
+
+  test("shows the empty state when nothing matches", async () => {
+    await renderWithNoUploads();
+
+    await searchFor("zzzqqq");
+
+    expect(await screen.findByText('No results for "zzzqqq"')).toBeInTheDocument();
+  });
+
+  test("a keyword with no match reads as no results, not a gallery outage", async () => {
+    APIService.searchGallery.mockRejectedValue(new Error("network down"));
+    render(<ElevateLooks />);
+    await screen.findByRole("button", { name: "View Professional makeup application" });
+
+    fireEvent.change(screen.getByPlaceholderText(/search the gallery/i), {
+      target: { value: "zzzqqq" },
+    });
+
+    expect(await screen.findByText('No results for "zzzqqq"')).toBeInTheDocument();
+    // The outage is a footnote — the keyword is the headline.
+    expect(
+      screen.getByText(/a match may be missing/)
+    ).toBeInTheDocument();
+    expect(screen.queryByText("Couldn't load the gallery")).not.toBeInTheDocument();
+  });
+
+  test("a slow earlier response cannot overwrite a newer search", async () => {
+    // Two searches in flight at once: the older one answering last must not win.
+    const deferred = () => {
+      const box = {};
+      box.promise = new Promise((resolve) => {
+        box.resolve = resolve;
+      });
+      return box;
+    };
+    const slow = deferred();
+    const fast = deferred();
+    // StrictMode double-invokes effects, so responses are chosen by keyword
+    // rather than by call order.
+    APIService.searchGallery.mockImplementation((category, perPage, page, query) => {
+      if (query === "bob") return slow.promise;
+      if (query === "french") return fast.promise;
+      return Promise.resolve({ data: { data: [] } });
+    });
+
+    render(<ElevateLooks />);
+    await screen.findByRole("button", { name: "View Professional makeup application" });
+
+    const input = screen.getByPlaceholderText(/search the gallery/i);
+    const requestedWith = (text) =>
+      waitFor(
+        () =>
+          expect(
+            APIService.searchGallery.mock.calls.some(([, , , query]) => query === text)
+          ).toBe(true),
+        { timeout: 2500 }
+      );
+
+    fireEvent.change(input, { target: { value: "bob" } });
+    await requestedWith("bob");
+    fireEvent.change(input, { target: { value: "french" } });
+    await requestedWith("french");
+
+    const upload = (alt, photographer) => ({
+      src: { medium: "https://img.example/x.jpg" },
+      alt,
+      photographer,
+      stylerId: "S1",
+      source: "stylist",
+    });
+
+    // Uploads are stylist work, so the card is a profile link plus an expand button.
+    fast.resolve({ data: { data: [upload("French Upload", "French Studio")] } });
+    await screen.findByRole("button", { name: "View French Upload full size" });
+
+    slow.resolve({ data: { data: [upload("Bob Upload", "Bob Studio")] } });
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    expect(
+      screen.queryByRole("button", { name: "View Bob Upload full size" })
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "View French Upload full size" })
+    ).toBeInTheDocument();
+  });
+
+  test("clearing the search restores the view you were browsing", async () => {
+    await renderWithNoUploads();
+    await searchFor("zzzqqq");
+    await screen.findByText('No results for "zzzqqq"');
+
+    fireEvent.click(screen.getByRole("button", { name: "Clear search" }));
+
+    await waitFor(
+      () => expect(screen.queryByText(/results? for/)).not.toBeInTheDocument(),
+      { timeout: 2500 }
+    );
+    await settle();
+
+    // Clearing from the opening view must bring the whole curated set back —
+    // it used to collapse to the selected tab (Dreadlocks: no photos) and empty
+    // the gallery with a "couldn't load" message.
+    expect(
+      await screen.findByRole("button", { name: "View Professional makeup application" })
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Couldn't load the gallery/)).not.toBeInTheDocument();
+  });
+
+  test("choosing a category tab leaves search mode", async () => {
+    await renderWithNoUploads();
+    await searchFor("nails");
+    await screen.findByRole("button", { name: "View Glossy red almond nails" });
+
+    fireEvent.click(screen.getByRole("button", { name: "Braids" }));
+
+    await waitFor(
+      () => expect(screen.getByPlaceholderText(/search the gallery/i).value).toBe(""),
+      { timeout: 2500 }
+    );
+    expect(
+      await screen.findByRole("button", { name: "View Long auburn knotless braids" })
+    ).toBeInTheDocument();
+    await settle();
   });
 });

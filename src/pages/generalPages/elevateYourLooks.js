@@ -1,31 +1,20 @@
 import Hero from "./newHeroSection";
 import Footer from "../../components/footer";
 import AdSlot from "../../components/adSlot";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { APIService } from "../../hooks/remote/apiService";
 
 // Curated work: real photos provided by the RapidStylers team. They lead the
 // grid (replacing stock imagery) while approved stylist uploads still render
-// alongside them via the API, and searches use live results. The list itself
-// lives in one place — the landing strip reads the same source — and the images
-// are plain static files under public/images/gallery/ (see curatedGallery.js).
-import { CURATED_GALLERY as CURATED } from "../../utils/curatedGallery";
-
-// Must stay in sync with the backend GALLERY_CATEGORIES allowlist.
-const CATEGORIES = [
-  "Dreadlocks",
-  "Buzz cut",
-  "Braids",
-  "Cornrows",
-  "Wigs",
-  "High-top fade",
-  "Hair dye",
-  "Nail tech",
-  "Makeup",
-  "Eyelash extensions",
-  "Natural hair",
-  "Locs",
-];
+// alongside them via the API. The list itself lives in one place — the landing
+// strip reads the same source — and the images are plain static files under
+// public/images/gallery/ (see curatedGallery.js).
+import { CURATED_GALLERY as CURATED, searchCuratedPhotos } from "../../utils/curatedGallery";
+import {
+  GALLERY_CATEGORIES as CATEGORIES,
+  categoriesForTab,
+  isInTab,
+} from "../../utils/galleryCategories";
 
 const PER_PAGE = 12;
 
@@ -40,81 +29,103 @@ const ElevateLooks = () => {
   // Search box: the input updates immediately, the committed query debounces 400ms.
   const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  // True when the keyword had no text-level match and the API returned closest matches.
-  const [fuzzy, setFuzzy] = useState(false);
   // True when the gallery request itself failed (network/server), vs. simply empty.
   const [loadError, setLoadError] = useState(false);
+  // The opening view shows the whole curated set; picking a category narrows it
+  // until you pick another. This is explicit state rather than a side effect of
+  // `images` being null — reading that made "show everything" collapse to the
+  // selected tab (Dreadlocks, which has no photos) as soon as you searched and
+  // cleared, emptying the gallery.
+  const [browsingAll, setBrowsingAll] = useState(true);
+
+  // Curated RapidStylers work leads the grid. Filtering goes through the tab
+  // rather than a category equality test, because a tab can cover more than one
+  // category ("Locs & dreadlocks"); comparing names directly dropped photos out
+  // of the tab that is supposed to hold them.
+  const browseCurated = (category) =>
+    browsingAll ? CURATED : CURATED.filter((p) => isInTab(p.category, category));
+
+  // Typing or switching category fires a request per change, and they can come
+  // back out of order — without this, a slow "dr" could repaint over "dreadlocks".
+  const requestSeq = useRef(0);
 
   const loadImages = (category, pageNum, append, query) => {
+    const needle = (query || "").trim();
+    const seq = ++requestSeq.current;
     const setter = append ? setLoadingMore : setLoading;
     setter(true);
-    APIService.searchGallery(category, PER_PAGE, pageNum, query)
-      .then((res) => {
-        const photos = res.data?.data;
-        let mapped = [];
-        if (Array.isArray(photos) && photos.length > 0) {
-          mapped = photos.map((p) => ({
-            src: p.src?.medium || p.src?.large || p.src?.original || "",
-            alt: p.alt || category,
-            photographer: p.photographer || "",
-            stylerId: p.stylerId || "",
-            source: p.source || "pexels",
-          }));
-        }
-        // Curated RapidStylers work leads the grid instead of stock photos: the
-        // first view shows the whole curated set, then each category surfaces its
-        // own curated photos. Approved stylist uploads still render alongside, and
-        // searches bypass curation to use live results.
-        const needle = (query || "").trim().toLowerCase();
-        if (!needle && pageNum === 1) {
-          const inCategory = CURATED.filter((p) => p.category === category);
-          const curated = images === null ? CURATED : inCategory;
-          mapped = [...curated, ...mapped];
-        }
-        if (mapped.length > 0) {
-          // Pexels returns relevance-ranked results even for gibberish, so a strict
-          // text pass keeps the keyword visibly meaningful: exact matches win, and
-          // only when none exist do we fall back to the API's closest matches.
-          let isFuzzy = false;
-          if (needle) {
-            const strict = mapped.filter((p) =>
-              `${p.alt} ${p.photographer}`.toLowerCase().includes(needle)
-            );
-            if (strict.length > 0) {
-              mapped = strict;
-            } else {
-              isFuzzy = true;
-            }
+    // A merged tab covers more than one backend category, and the API takes one
+    // category per request, so ask for each of them and merge. Sending the tab's
+    // label instead would be rejected — the backend only accepts the names in
+    // AppConstants.GALLERY_CATEGORIES, and "Locs & dreadlocks" is not one.
+    const perCategory = categoriesForTab(category);
+    Promise.all(
+      perCategory.map((name) =>
+        APIService.searchGallery(name, PER_PAGE, pageNum, needle).then(
+          (res) => {
+            const photos = res.data?.data;
+            return Array.isArray(photos) ? photos : [];
+          },
+          // null marks this category's uploads as unreachable, so the grid can say
+          // so rather than presenting an outage as "no work posted".
+          () => null
+        )
+      )
+    )
+      .then((responses) => {
+        // A newer request has already been fired; its results are the truth.
+        if (seq !== requestSeq.current) return;
+        const loadError = responses.some((photos) => photos === null);
+        // A merged tab asks once per category it covers, so the same photo could
+        // arrive from more than one request — render it once.
+        const seen = new Set();
+        const uploads = [];
+        responses
+          .filter(Array.isArray)
+          .flat()
+          .forEach((p) => {
+            const photo = {
+              src: p.src?.medium || p.src?.large || p.src?.original || "",
+              alt: p.alt || category,
+              photographer: p.photographer || "",
+              stylerId: p.stylerId || "",
+              source: p.source || "stylist",
+            };
+            const key = `${photo.stylerId}|${photo.src}`;
+            if (seen.has(key)) return;
+            seen.add(key);
+            uploads.push(photo);
+          });
+        // A full page means there may be more — a short page means we reached the end.
+        const moreWaiting = responses.some(
+          (photos) => Array.isArray(photos) && photos.length >= PER_PAGE
+        );
+        // A "Load more" page carries uploads only — the curated photos are already
+        // in the grid, so appending them again would duplicate the whole set.
+        if (append) {
+          if (uploads.length > 0) {
+            setImages((prev) => (Array.isArray(prev) ? [...prev, ...uploads] : uploads));
           }
-          setFuzzy(isFuzzy);
-          setLoadError(false);
-          setImages((prev) => (append && Array.isArray(prev) ? [...prev, ...mapped] : mapped));
-          // A full page means there may be more — a short page means we reached the end.
-          setHasMore(Array.isArray(photos) && photos.length >= PER_PAGE);
-        } else if (!append) {
-          // No uploads for this category/query — show the empty state.
-          setFuzzy(false);
-          setLoadError(false);
-          setImages([]);
-          setHasMore(false);
+          setLoadError(loadError);
+          setHasMore(moreWaiting);
+          return;
         }
-      })
-      .catch(() => {
-        if (append) return;
+        // A keyword searches the curated photos across every category; browsing
+        // (no keyword) filters them to the selected tab. Approved stylist uploads
+        // render alongside either way, matched server-side on the professional's
+        // business or full name.
+        //
         // The curated photos are static files, so they cannot fail alongside the
         // API. An API outage used to empty the gallery entirely; showing our own
         // work with a note is both more useful and more truthful than a blank page.
-        const needle = (query || "").trim();
-        const fallback = needle
-          ? []
-          : images === null
-          ? CURATED
-          : CURATED.filter((p) => p.category === category);
-        setImages(fallback);
-        setLoadError(true);
-        setHasMore(false);
+        const curated = needle ? searchCuratedPhotos(needle) : browseCurated(category);
+        setImages([...curated, ...uploads]);
+        setLoadError(loadError);
+        setHasMore(moreWaiting);
       })
-      .finally(() => setter(false));
+      .finally(() => {
+        if (seq === requestSeq.current) setter(false);
+      });
   };
 
   // Debounce the typed keyword into a committed query.
@@ -126,15 +137,19 @@ const ElevateLooks = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchInput]);
 
-  // Load whenever the category or the committed query changes (always page 1).
+  // Load whenever the category, the committed query, or the browsing mode
+  // changes (always page 1). `browsingAll` belongs in this list: the opening view
+  // is the whole curated set, so choosing the FIRST tab changed no category value
+  // and the effect never re-ran — the tab highlighted while the grid carried on
+  // showing every photo, which is why that tab looked like it was full of work
+  // from other categories.
   useEffect(() => {
     setPage(1);
     setImages(null);
     setHasMore(false);
-    setFuzzy(false);
     loadImages(activeCategory, 1, false, searchQuery);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeCategory, searchQuery]);
+  }, [activeCategory, searchQuery, browsingAll]);
 
   const loadMore = () => {
     const nextPage = page + 1;
@@ -144,6 +159,7 @@ const ElevateLooks = () => {
 
   const switchCategory = (cat) => {
     setActiveCategory(cat);
+    setBrowsingAll(false);
     setSearchInput("");
     setSearchQuery("");
   };
@@ -181,7 +197,7 @@ const ElevateLooks = () => {
                 key={cat}
                 onClick={() => switchCategory(cat)}
                 className={
-                  activeCategory === cat
+                  activeCategory === cat && !browsingAll && !searchQuery
                     ? "bg-brand text-white p-3 rounded-md text-sm text-left"
                     : "px-3 py-4 rounded-md text-sm text-slate-500 hover:text-gray-800 text-left flex-shrink-0"
                 }
@@ -210,7 +226,7 @@ const ElevateLooks = () => {
                 type="text"
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
-                placeholder={`Search ${activeCategory.toLowerCase()}…`}
+                placeholder="Search the gallery…"
                 className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-10 pr-9 text-sm text-gray-700 shadow-sm outline-none transition-colors placeholder:text-gray-400 focus:border-brand focus:ring-2 focus:ring-brand/20"
               />
               {searchInput && (
@@ -225,9 +241,11 @@ const ElevateLooks = () => {
             </div>
             {searchQuery && (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-brand/10 px-3 py-1 text-xs font-semibold text-brand ring-1 ring-brand/15">
-                {fuzzy
-                  ? `No exact matches for "${searchQuery}". Showing closest results.`
-                  : `Results for "${searchQuery}" in ${activeCategory}`}
+                {images === null
+                  ? `Searching for "${searchQuery}"…`
+                  : `${visibleImages.length} ${
+                      visibleImages.length === 1 ? "result" : "results"
+                    } for "${searchQuery}"`}
               </span>
             )}
           </div>
@@ -242,23 +260,34 @@ const ElevateLooks = () => {
           )}
           {!loading && images !== null && images.length === 0 && (
             <div className="rounded-2xl border border-dashed border-gray-200 bg-white/60 py-16 text-center">
-              {loadError ? (
+              {/* A keyword with no match is an answer about the keyword, not a
+                  gallery outage — the outage only adds a footnote, because an
+                  unreachable API could be hiding a match. */}
+              {searchQuery ? (
+                <>
+                  <p className="text-base font-bold text-gray-700">No results for "{searchQuery}"</p>
+                  <p className="mt-1 text-sm text-gray-400">
+                    Nothing in the gallery matches that. Try "braids", "nails" or "locs" — or
+                    clear the search to browse everything.
+                  </p>
+                  {loadError && (
+                    <p className="mt-2 text-xs text-gray-400">
+                      Professional uploads couldn't be loaded just now, so a match may be missing.
+                    </p>
+                  )}
+                </>
+              ) : loadError ? (
                 <>
                   <p className="text-base font-bold text-gray-700">Couldn't load the gallery</p>
                   <p className="mt-1 text-sm text-gray-400">
                     Please refresh to try again. New professional work appears here as soon as it's posted.
                   </p>
                 </>
-              ) : searchQuery ? (
-                <>
-                  <p className="text-base font-bold text-gray-700">No results for "{searchQuery}"</p>
-                  <p className="mt-1 text-sm text-gray-400">
-                    Try a different keyword, or clear the search to browse all {activeCategory} work.
-                  </p>
-                </>
               ) : (
                 <>
-                  <p className="text-base font-bold text-gray-700">No {activeCategory} work posted yet</p>
+                  <p className="text-base font-bold text-gray-700">
+                    {browsingAll ? "No work posted yet" : `No ${activeCategory} work posted yet`}
+                  </p>
                   <p className="mt-1 text-sm text-gray-400">
                     This gallery is filled by verified professionals. Be the first to share your work.
                   </p>
@@ -354,7 +383,11 @@ const ElevateLooks = () => {
           )}
           {images && !hasMore && images.length > 0 && (
             <p className="text-center text-xs text-gray-400 mt-8">
-              You've reached the end of this category.
+              {searchQuery
+                ? "That's everything matching your search."
+                : browsingAll
+                ? "That's everything in the gallery."
+                : "You've reached the end of this category."}
             </p>
           )}
         </div>
