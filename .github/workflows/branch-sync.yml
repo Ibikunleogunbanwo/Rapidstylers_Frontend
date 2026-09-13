@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Compare dev vs main and publish the alert
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const TITLE = 'Branch sync: dev vs main';
