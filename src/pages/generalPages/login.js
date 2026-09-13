@@ -9,6 +9,7 @@ import InputWithLabel from "../../components/inputWithLabel";
 import PasswordInput from "../../components/passwordInput";
 import Buttons from "../../components/button";
 import GoogleSignInButton from "../../components/googleSignInButton";
+import TurnstileWidget from "../../components/turnstileWidget";
 
 // Google Sign-In client id (public). Empty disables the Google button + divider.
 const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || "";
@@ -28,6 +29,10 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  // Cloudflare Turnstile token (empty when no site key is configured). Bumped
+  // after a failed attempt because the token is single use.
+  const [captchaToken, setCaptchaToken] = useState("");
+  const [captchaReset, setCaptchaReset] = useState(0);
 
   const routeByRole = (role) => {
     if (role === "ADMIN") return "/admin/categories";
@@ -84,12 +89,15 @@ const Login = () => {
     setErrorMsg("");
     setLoading(true);
     try {
-      const res = await APIService.signIn({ emailAddress, password });
+      const res = await APIService.signIn({ emailAddress, password, captchaToken });
       await completeAuth(res);
     } catch (error) {
       // Error toasts are handled in APIService; also show inline
       const msg = error?.response?.data?.message || error?.message || "Sign in failed";
       setErrorMsg(msg);
+      // The challenge token is spent whether or not the credentials were right,
+      // so ask for a fresh one before the next attempt.
+      setCaptchaReset((n) => n + 1);
     } finally {
       setLoading(false);
     }
@@ -166,6 +174,7 @@ const Login = () => {
                 inputOnChange={(e) => setPassword(e.target.value)}
                 placeholder={"Enter your password"}
               />
+              <TurnstileWidget onVerify={setCaptchaToken} resetSignal={captchaReset} />
               <Buttons
                 btnType={"primary"}
                 type={"submit"}

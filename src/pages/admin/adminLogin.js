@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate, Navigate } from "react-router-dom";
 import { APIService } from "../../hooks/remote/apiService";
 import { getAuthToken, isAdminRole, setAuthToken, setRefreshToken, setAdminRole, setUserRole, showSuccessToastMessage } from "../../utils/constant";
+import TurnstileWidget from "../../components/turnstileWidget";
 
 const AdminLogin = () => {
   document.title = "Admin | RapidStylers";
@@ -10,6 +11,10 @@ const AdminLogin = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  // Cloudflare Turnstile token (empty when no site key is configured). Reset
+  // after a failure because a token can only be redeemed once.
+  const [captchaToken, setCaptchaToken] = useState("");
+  const [captchaReset, setCaptchaReset] = useState(0);
 
   if (getAuthToken() && isAdminRole()) {
     return <Navigate to="/admin/categories" replace />;
@@ -20,7 +25,7 @@ const AdminLogin = () => {
     setErrorMsg("");
     setLoading(true);
     try {
-      const res = await APIService.adminSignIn({ emailAddress, password });
+      const res = await APIService.adminSignIn({ emailAddress, password, captchaToken });
       const token = res.data?.token;
       const refreshToken = res.data?.refreshToken;
       if (token) {
@@ -36,6 +41,7 @@ const AdminLogin = () => {
     } catch (error) {
       const msg = error?.response?.data?.message || error?.message || "Sign in failed";
       setErrorMsg(msg);
+      setCaptchaReset((n) => n + 1);
     } finally {
       setLoading(false);
     }
@@ -69,6 +75,7 @@ const AdminLogin = () => {
               placeholder="••••••••"
             />
           </div>
+          <TurnstileWidget onVerify={setCaptchaToken} resetSignal={captchaReset} />
           <button
             type="submit"
             disabled={loading}
