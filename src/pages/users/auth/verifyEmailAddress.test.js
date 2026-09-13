@@ -3,41 +3,41 @@ import VerifyUserEmailAddress from "./verifyEmailAddress";
 
 // Stub the heavy chrome — router state, redux, button, spinner.
 // The dispatch/navigate fns are exported so tests can assert auto-submit.
-jest.mock("react-router-dom", () => {
-  const navigate = jest.fn();
+vi.mock("react-router-dom", () => {
+  const navigate = vi.fn();
   return {
     useLocation: () => ({ state: { emailAddress: "test@example.com" } }),
     useNavigate: () => navigate,
     __testNavigate: navigate,
   };
 });
-jest.mock("react-redux", () => {
-  const dispatch = jest.fn(() => ({ payload: { statusCode: "200" } }));
+vi.mock("react-redux", () => {
+  const dispatch = vi.fn(() => ({ payload: { statusCode: "200" } }));
   return {
     useDispatch: () => dispatch,
     useSelector: () => ({ loading: false }),
     __testDispatch: dispatch,
   };
 });
-jest.mock("../../../hooks/local/userReducer", () => ({
+vi.mock("../../../hooks/local/userReducer", () => ({
   // Identity mock — dispatch(verifyOtpCode(code)) becomes dispatch(code).
-  verifyOtpCode: jest.fn((code) => code),
+  verifyOtpCode: vi.fn((code) => code),
 }));
-jest.mock("../../../hooks/remote/apiService", () => ({
-  APIService: { generateSignUpOtpCode: jest.fn() },
+vi.mock("../../../hooks/remote/apiService", () => ({
+  APIService: { generateSignUpOtpCode: vi.fn() },
 }));
-jest.mock("../../../utils/constant", () => ({
-  showSuccessToastMessage: jest.fn(),
-  showErrorToastMessage: jest.fn(),
+vi.mock("../../../utils/constant", () => ({
+  showSuccessToastMessage: vi.fn(),
+  showErrorToastMessage: vi.fn(),
 }));
 import { __testDispatch } from "react-redux";
 import { __testNavigate } from "react-router-dom";
 import { verifyOtpCode } from "../../../hooks/local/userReducer";
 import { APIService } from "../../../hooks/remote/apiService";
-jest.mock("../../../components/button", () => ({ btnText, type }) => (
-  <button type={type || "button"}>{btnText}</button>
-));
-jest.mock("../../../components/spinner", () => () => null);
+vi.mock("../../../components/button", () => ({
+  default: ({ btnText, type }) => <button type={type || "button"}>{btnText}</button>,
+}));
+vi.mock("../../../components/spinner", () => ({ default: () => null }));
 
 const otpInputs = () => screen.getAllByRole("textbox").filter((el) => el.maxLength === 1);
 
@@ -176,32 +176,32 @@ describe("VerifyUserEmailAddress OTP inputs", () => {
   });
 
   test("shows a resend countdown that enables the resend link after it expires", () => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     render(<VerifyUserEmailAddress />);
 
     expect(screen.getByText("Resend code in 1:00")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /resend code/i })).not.toBeInTheDocument();
 
     act(() => {
-      jest.advanceTimersByTime(60_000);
+      vi.advanceTimersByTime(60_000);
     });
     expect(screen.queryByText(/Resend code in/)).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Resend code" })).toBeInTheDocument();
 
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   test("resending requests a fresh code, clears the boxes, and restarts the countdown", async () => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     render(<VerifyUserEmailAddress />);
     // Type a partial code so the clear-on-resend is actually observable.
     typeDigit(0, "5");
     typeDigit(1, "4");
 
     act(() => {
-      jest.advanceTimersByTime(60_000);
+      vi.advanceTimersByTime(60_000);
     });
-    jest.useRealTimers();
+    vi.useRealTimers();
 
     fireEvent.click(screen.getByRole("button", { name: "Resend code" }));
     await waitFor(() =>

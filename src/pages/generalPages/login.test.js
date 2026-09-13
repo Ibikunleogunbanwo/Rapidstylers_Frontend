@@ -3,25 +3,27 @@ import { render, screen } from "@testing-library/react";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { Provider } from "react-redux";
 import { configureStore } from "@reduxjs/toolkit";
-import userReducer from "../../hooks/local/userReducer";
+// Named import: the slice module has no default export (Jest's CJS interop
+// silently resolved that to `undefined`; Vitest throws).
+import { userReducer } from "../../hooks/local/userReducer";
 import Login from "./login";
 
 // Stub the Google button (it loads a live script) and any reducer work.
-jest.mock("../../components/googleSignInButton", () => {
+vi.mock("../../components/googleSignInButton", () => {
   const MockGoogle = () => null;
-  return MockGoogle;
+  return { default: MockGoogle };
 });
 
-jest.mock("../../hooks/local/userReducer", () => {
-  const actual = jest.requireActual("../../hooks/local/userReducer");
+vi.mock("../../hooks/local/userReducer", async (importOriginal) => {
+  const actual = await importOriginal();
   return {
     ...actual,
     // The slice reducer is fine; the async thunks trigger no network here.
   };
 });
 
-jest.mock("../../hooks/remote/apiService", () => {
-  const APIService = { signIn: jest.fn() };
+vi.mock("../../hooks/remote/apiService", () => {
+  const APIService = { signIn: vi.fn() };
   return { APIService };
 });
 

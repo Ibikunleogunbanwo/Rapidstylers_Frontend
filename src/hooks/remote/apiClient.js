@@ -1,5 +1,9 @@
 import Axios from "axios";
 import { API_BASE_URL, API_HEADER, FORM_DATA_HEADER, getAuthToken, setAuthToken, getRefreshToken, setRefreshToken, clearSavedUserLocation, clearAllSessionTokens } from "../../utils/constant";
+import { rejectApplicationFailure } from "./appFailure";
+
+// Re-exported so existing importers (and tests) keep this path working.
+export { rejectApplicationFailure };
 
 // Attach the signed-in user's JWT to every request. Role-protected endpoints
 // (create_service, book_appointment, …) reject requests without a valid token;
@@ -20,6 +24,9 @@ export const ApiClient = Axios.create(
 );
 ApiClient.interceptors.request.use(attachAuthToken);
 
+// ── Application-level failures (HTTP 200 + body statusCode) ────────────────
+// Normalized once, in ./appFailure (shared with the form-data client below and
+// unit-testable without axios). See that module for the rationale.
 export const ApiFormDataClient = Axios.create(
     {
         baseURL: API_BASE_URL,
@@ -27,6 +34,7 @@ export const ApiFormDataClient = Axios.create(
     }
 );
 ApiFormDataClient.interceptors.request.use(attachAuthToken);
+ApiFormDataClient.interceptors.response.use(rejectApplicationFailure);
 
 // ── Auto-refresh on 401 ─────────────────────────────────────────────────────
 // When the backend rejects a request because the access token expired, try to
@@ -112,7 +120,7 @@ const handle401 = async (error) => {
 };
 
 ApiClient.interceptors.response.use(
-    (response) => response,
+    (response) => rejectApplicationFailure(response),
     (error) => {
         if (error?.response?.status === 401 && !error.config?.url?.includes("/auth/")) {
             return handle401(error);

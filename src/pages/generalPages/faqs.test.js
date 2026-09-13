@@ -12,12 +12,12 @@ const renderFaqs = () =>
 
 // The FAQ page is what we're testing — stub the heavy footer chrome so the
 // test stays focused on the accordion content.
-jest.mock("../../components/footer", () => () => <div data-testid="footer" />);
+vi.mock("../../components/footer", () => ({ default: () => <div data-testid="footer" /> }));
 
 // The page scrolls on mount; jsdom doesn't implement it.
 beforeEach(() => {
-  window.scrollTo = jest.fn();
-  window.scrollIntoView = jest.fn();
+  window.scrollTo = vi.fn();
+  window.scrollIntoView = vi.fn();
 });
 
 const QUESTIONS = [

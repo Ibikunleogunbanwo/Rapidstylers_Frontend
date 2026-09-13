@@ -1,25 +1,25 @@
 import { render, screen, fireEvent, within } from "@testing-library/react";
 import StylistProfile from "./stylistProfile";
 
-jest.mock("react-router-dom", () => ({
+vi.mock("react-router-dom", () => ({
   useParams: () => ({ stylerId: btoa("S1"), stylerName: btoa("Pro One") }),
 }));
-jest.mock("../userLayout/functionalEffects", () => ({
-  useSingleStylerProfile: jest.fn(),
+vi.mock("../userLayout/functionalEffects", () => ({
+  useSingleStylerProfile: vi.fn(),
 }));
-jest.mock("react-redux", () => ({
+vi.mock("react-redux", () => ({
   useSelector: () => ({ loading: false }),
 }));
-jest.mock("../../../components/spinner", () => () => null);
-jest.mock("../../../components/goBack", () => () => <div data-testid="back" />);
-jest.mock("../../../components/selectService", () => () => null);
-jest.mock("../../../utils/constant", () => ({
+vi.mock("../../../components/spinner", () => ({ default: () => null }));
+vi.mock("../../../components/goBack", () => ({ default: () => <div data-testid="back" /> }));
+vi.mock("../../../components/selectService", () => ({ default: () => null }));
+vi.mock("../../../utils/constant", () => ({
   getAuthToken: () => null,
-  showErrorToastMessage: jest.fn(),
-  showSuccessToastMessage: jest.fn(),
+  showErrorToastMessage: vi.fn(),
+  showSuccessToastMessage: vi.fn(),
 }));
-jest.mock("../../../hooks/remote/apiService", () => ({
-  APIService: { listSavedStylists: jest.fn(), saveStylist: jest.fn(), removeSavedStylist: jest.fn() },
+vi.mock("../../../hooks/remote/apiService", () => ({
+  APIService: { listSavedStylists: vi.fn(), saveStylist: vi.fn(), removeSavedStylist: vi.fn() },
 }));
 
 import { useSingleStylerProfile } from "../userLayout/functionalEffects";

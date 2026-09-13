@@ -4,13 +4,13 @@ import { act } from "react-dom/test-utils";
 import StylerAppointments from "./stylerAppointments";
 import { APIService } from "../../hooks/remote/apiService";
 
-jest.mock("../../hooks/remote/apiService", () => ({
+vi.mock("../../hooks/remote/apiService", () => ({
   APIService: {
-    stylerAppointments: jest.fn(),
-    acceptAppointment: jest.fn(),
-    declineAppointment: jest.fn(),
-    completeAppointment: jest.fn(),
-    stylerCancelAppointment: jest.fn(),
+    stylerAppointments: vi.fn(),
+    acceptAppointment: vi.fn(),
+    declineAppointment: vi.fn(),
+    completeAppointment: vi.fn(),
+    stylerCancelAppointment: vi.fn(),
   },
 }));
 

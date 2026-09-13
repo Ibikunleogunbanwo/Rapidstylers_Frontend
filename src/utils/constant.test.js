@@ -10,19 +10,19 @@ import {
   SAVED_LOCATION_KEY,
 } from "./constant";
 
-jest.mock("react-toastify", () => ({
+vi.mock("react-toastify", () => ({
   toast: {
-    success: jest.fn(),
-    error: jest.fn(),
-    info: jest.fn(),
-    warning: jest.fn(),
+    success: vi.fn(),
+    error: vi.fn(),
+    info: vi.fn(),
+    warning: vi.fn(),
   },
 }));
 
-jest.mock("react-toastify/dist/ReactToastify.css", () => {});
+vi.mock("react-toastify/dist/ReactToastify.css", () => ({}));
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   sessionStorage.clear();
 });
 
@@ -78,7 +78,7 @@ describe("Auth token helpers", () => {
   });
 
   test("clearSavedUserLocation removes the location and notifies re-detection", () => {
-    const dispatched = jest.fn();
+    const dispatched = vi.fn();
     window.addEventListener("rapidstylers:location-reset", dispatched);
     localStorage.setItem(SAVED_LOCATION_KEY, JSON.stringify({ latitude: 9, longitude: 9 }));
 

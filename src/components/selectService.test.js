@@ -1,43 +1,46 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import SelectService from "./selectService";
+// Resolves to the vi.mock() below (hoisted), so APIService is the mock.
+import { APIService } from "../hooks/remote/apiService";
 
 // react-scripts resets mock implementations between tests, so the factory only
 // creates the fns and beforeEach wires the resolved values — the same pattern
 // the existing apiService.test.js uses.
-jest.mock("../hooks/remote/apiService", () => ({
+vi.mock("../hooks/remote/apiService", () => ({
   APIService: {
-    singleStylerData: jest.fn(),
-    estimateBooking: jest.fn(),
-    bookAppointment: jest.fn(),
+    singleStylerData: vi.fn(),
+    estimateBooking: vi.fn(),
+    bookAppointment: vi.fn(),
   },
 }));
-jest.mock("react-router-dom", () => ({ useNavigate: () => jest.fn() }));
-jest.mock("react-redux", () => {
-  const dispatch = jest.fn(() => ({ payload: { statusCode: "200" } }));
+vi.mock("react-router-dom", () => ({ useNavigate: () => vi.fn() }));
+vi.mock("react-redux", () => {
+  const dispatch = vi.fn(() => ({ payload: { statusCode: "200" } }));
   return { useDispatch: () => dispatch, __testDispatch: dispatch };
 });
-jest.mock("../hooks/local/userReducer", () => ({
-  verifySignUpEmailAddress: jest.fn(),
-  verifyOtpCode: jest.fn(),
-  createUserAccount: jest.fn(),
-  userAuthenticate: jest.fn(),
+vi.mock("../hooks/local/userReducer", () => ({
+  verifySignUpEmailAddress: vi.fn(),
+  verifyOtpCode: vi.fn(),
+  createUserAccount: vi.fn(),
+  userAuthenticate: vi.fn(),
 }));
-jest.mock("../context/LocationContext", () => ({
+vi.mock("../context/LocationContext", () => ({
   useUserLocation: () => ({ location: { latitude: null, longitude: null } }),
 }));
-jest.mock("../utils/constant", () => ({
+vi.mock("../utils/constant", () => ({
+  // Vitest (unlike Jest's CJS interop) throws on a named export the mock does
+  // not define, so every constant selectService.js imports must be listed here.
+  STRIPE_PUBLISHABLE_KEY: "",
   getAuthToken: () => null,
   getRefreshToken: () => null,
-  setAuthToken: jest.fn(),
-  setRefreshToken: jest.fn(),
-  clearAuthToken: jest.fn(),
-  clearRefreshToken: jest.fn(),
+  setAuthToken: vi.fn(),
+  setRefreshToken: vi.fn(),
+  clearAuthToken: vi.fn(),
+  clearRefreshToken: vi.fn(),
   retrieveFromLocalStorage: () => ({}),
-  showErrorToastMessage: jest.fn(),
-  showSuccessToastMessage: jest.fn(),
+  showErrorToastMessage: vi.fn(),
+  showSuccessToastMessage: vi.fn(),
 }));
-
-const { APIService } = jest.requireMock("../hooks/remote/apiService");
 
 beforeEach(() => {
   APIService.singleStylerData.mockResolvedValue({

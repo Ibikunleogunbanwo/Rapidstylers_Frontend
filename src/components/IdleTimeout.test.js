@@ -9,11 +9,12 @@ import { AUTH_TOKEN_STORAGE_KEY, USER_ROLE_STORAGE_KEY } from "../utils/constant
 
 // The canonical logout thunk (userLogOut) revokes the refresh token through
 // APIService.logout. Mock it so we can assert the revoke call fires.
-jest.mock("../hooks/remote/apiService", () => {
-  const APIService = { logout: jest.fn().mockResolvedValue({}) };
-  return { APIService };
-});
-const { APIService } = require("../hooks/remote/apiService");
+vi.mock("../hooks/remote/apiService", () => ({
+  APIService: { logout: vi.fn().mockResolvedValue({}) },
+}));
+// Statically imported on purpose: the mock above is hoisted, and a bare
+// `require()` here would bypass Vite's resolver entirely.
+import { APIService } from "../hooks/remote/apiService";
 
 const REFRESH_KEY = "rapidstylers_refresh_token";
 
@@ -37,20 +38,20 @@ const renderIdle = () =>
 
 const advance = async (ms) => {
   await act(async () => {
-    jest.advanceTimersByTime(ms);
+    vi.advanceTimersByTime(ms);
   });
 };
 
 describe("IdleTimeout role-based session timeout", () => {
   beforeEach(() => {
-    jest.useFakeTimers();
-    jest.clearAllMocks();
+    vi.useFakeTimers();
+    vi.clearAllMocks();
     sessionStorage.clear();
     window.__idlePath = "/dashboard";
   });
 
   afterEach(() => {
-    jest.useRealTimers();
+    vi.useRealTimers();
     sessionStorage.clear();
   });
 

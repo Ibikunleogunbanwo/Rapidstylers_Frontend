@@ -5,27 +5,27 @@ import UserLayout from "./index";
 
 // Stub the chrome (top bar, sidebar, cards) and every page module so the test
 // can assert which page the shell resolves per URL.
-jest.mock("./topBar", () => () => <div data-testid="topbar" />);
-jest.mock("./sideBar", () => () => <div data-testid="sidebar" />);
-jest.mock("../../../components/rapidStylerHumour", () => () => null);
-jest.mock("../../../components/advert", () => () => null);
-jest.mock("../../generalPages/notFound", () => () => <div data-testid="page-notfound" />);
-jest.mock("../auth/logout", () => () => <div data-testid="page-logout" />);
-jest.mock("../pages/dashboard", () => () => <div data-testid="page-dashboard" />);
-jest.mock("../pages/bookAnAppointment", () => () => <div data-testid="page-bookAppointment" />);
-jest.mock("../pages/accountsettings", () => () => <div data-testid="page-accountSettings" />);
-jest.mock("../pages/updatePersonal", () => () => <div data-testid="page-updatePersonal" />);
-jest.mock("../pages/savedStylists", () => () => <div data-testid="page-savedStylist" />);
-jest.mock("../pages/changePassword", () => () => <div data-testid="page-changePassword" />);
-jest.mock("../pages/notificationSettings", () => () => <div data-testid="page-notificationSettings" />);
-jest.mock("../pages/notifications", () => () => <div data-testid="page-notifications" />);
-jest.mock("../pages/support", () => () => <div data-testid="page-support" />);
-jest.mock("../pages/loyalty", () => () => <div data-testid="page-loyalty" />);
-jest.mock("../pages/feedback", () => () => <div data-testid="page-feedback" />);
-jest.mock("../pages/searchStylers", () => () => <div data-testid="page-searchAStyler" />);
+vi.mock("./topBar", () => ({ default: () => <div data-testid="topbar" /> }));
+vi.mock("./sideBar", () => ({ default: () => <div data-testid="sidebar" /> }));
+vi.mock("../../../components/rapidStylerHumour", () => ({ default: () => null }));
+vi.mock("../../../components/advert", () => ({ default: () => null }));
+vi.mock("../../generalPages/notFound", () => ({ default: () => <div data-testid="page-notfound" /> }));
+vi.mock("../auth/logout", () => ({ default: () => <div data-testid="page-logout" /> }));
+vi.mock("../pages/dashboard", () => ({ default: () => <div data-testid="page-dashboard" /> }));
+vi.mock("../pages/bookAnAppointment", () => ({ default: () => <div data-testid="page-bookAppointment" /> }));
+vi.mock("../pages/accountsettings", () => ({ default: () => <div data-testid="page-accountSettings" /> }));
+vi.mock("../pages/updatePersonal", () => ({ default: () => <div data-testid="page-updatePersonal" /> }));
+vi.mock("../pages/savedStylists", () => ({ default: () => <div data-testid="page-savedStylist" /> }));
+vi.mock("../pages/changePassword", () => ({ default: () => <div data-testid="page-changePassword" /> }));
+vi.mock("../pages/notificationSettings", () => ({ default: () => <div data-testid="page-notificationSettings" /> }));
+vi.mock("../pages/notifications", () => ({ default: () => <div data-testid="page-notifications" /> }));
+vi.mock("../pages/support", () => ({ default: () => <div data-testid="page-support" /> }));
+vi.mock("../pages/loyalty", () => ({ default: () => <div data-testid="page-loyalty" /> }));
+vi.mock("../pages/feedback", () => ({ default: () => <div data-testid="page-feedback" /> }));
+vi.mock("../pages/searchStylers", () => ({ default: () => <div data-testid="page-searchAStyler" /> }));
 
-jest.mock("react-redux", () => ({
-  useSelector: jest.fn(),
+vi.mock("react-redux", () => ({
+  useSelector: vi.fn(),
 }));
 
 const renderAt = (path) =>

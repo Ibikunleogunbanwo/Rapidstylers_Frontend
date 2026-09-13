@@ -99,16 +99,16 @@ index.css               Tailwind layers and global UI styling
 
 ## Stack
 
-- **React 18** with Create React App and React Router v6.
+- **React 18** with **Vite 8** and React Router v6.
 - **Redux Toolkit** for shared app state and async workflows.
 - **Tailwind CSS** for layout and visual styling.
 - **MUI 5** for selected controls and interface pieces.
-- **Formik, Yup, and Zod** across legacy and newer form flows.
+- **Formik** as the form-state layer, with **Zod** for validation (new/edited forms; older Yup forms migrate opportunistically — see CONTRIBUTING.md).
 - **Axios** through a centralized API client that attaches API key and JWT headers.
 - **React Toastify** for success and error feedback.
 - **Cloudinary** for direct browser image uploads using signatures issued by the backend.
 - **Google Places / Maps** for address capture and booking prices that account for distance.
-- **Jest + React Testing Library** for UI and API contract coverage.
+- **Vitest + React Testing Library** for UI and API contract coverage.
 
 ## Local Development
 
@@ -155,10 +155,12 @@ REACT_APP_ADSENSE_CLIENT=
 
 | Command | Purpose |
 | --- | --- |
-| `npm start` | Start the local CRA dev server. |
-| `npm test` | Run Jest in watch mode. |
-| `CI=true npm test -- --watchAll=false` | Run the test suite once for verification. |
+| `npm start` (or `npm run dev`) | Start the local Vite dev server on port 3000. |
+| `npm test` | Run the Vitest suite once. |
+| `npm run test:watch` | Run Vitest in watch mode. |
 | `npm run build` | Create the production build in `build/`. |
+| `npm run preview` | Serve the built `build/` locally on port 3000. |
+| `node scripts/verify-build-chunks.js` | Post-build check that every emitted chunk/asset exists (also runs in CI). |
 
 ## Deployment Shape
 
@@ -180,12 +182,12 @@ REACT_APP_GOOGLE_MAPS_KEY=production_google_maps_key
 REACT_APP_ADSENSE_CLIENT=
 ```
 
-After changing Vercel environment variables, redeploy. Create React App bakes environment variables into the static bundle at build time.
+After changing Vercel environment variables, redeploy. The build bakes environment variables into the static bundle at build time, so a value change only takes effect on a new build.
 
 ## Backend Contract Notes
 
-- API calls should go through `src/hooks/remote/apiService.js`.
-- Backend responses may return HTTP 200 with an application `statusCode: "400"`, so pages must inspect the body before treating a request as successful.
+- API calls should go through `src/hooks/remote/apiService.js`; the Axios instance in `src/hooks/remote/apiClient.js` attaches the API key and JWT and converts an application-level failure into a rejected promise, so pages can just `try/catch`.
+- Backend responses may return HTTP 200 with an application `statusCode: "400"`; that is normalized centrally (`src/hooks/remote/appFailure.js`), so pages never need to inspect `statusCode` themselves.
 - Auth tokens live in `sessionStorage` under `rapidstylers_auth_token`.
 - Booking totals are displayed in the UI, but the backend is the source of truth.
 - Landing/blog pages include fallback content so Vercel does not show a broken public site if the backend is not reachable.
@@ -196,16 +198,17 @@ After changing Vercel environment variables, redeploy. Create React App bakes en
 Latest verification from the MVP hardening pass:
 
 ```text
-Frontend tests: 23 passed
+Frontend tests: 203 passed, 1 local-only failure (while `IdleTimeout.js` holds temporary 60 s test windows — committed values are green)
 Frontend build: compiled successfully
-Backend tests: 39 passed
+Backend tests: 369 passed
 ```
 
 Run before pushing frontend changes:
 
 ```bash
-CI=true npm test -- --watchAll=false
+npm test
 npm run build
+node scripts/verify-build-chunks.js
 ```
 
 ## Troubleshooting

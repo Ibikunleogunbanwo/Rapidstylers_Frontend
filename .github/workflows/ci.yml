@@ -46,7 +46,7 @@ jobs:
       - name: Run tests
         env:
           CI: 'true'
-        run: npm test -- --watchAll=false --runInBand
+        run: npm test
 
       - name: Production build
         env:

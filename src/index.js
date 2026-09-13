@@ -3,7 +3,6 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import 'react-toastify/dist/ReactToastify.css';
 import App from './App';
-import reportWebVitals from './reportWebVitals';
 import { Provider } from 'react-redux';
 import store from './hooks/local/store';
 import { createChunkReloadGuard } from './utils/staleChunkGuard';
@@ -17,13 +16,12 @@ root.render(
   </React.StrictMode>
 );
 
-reportWebVitals();
-
 // ---- Stale-shell recovery ------------------------------------------------
-// CRA code-splits routes into content-hashed chunks. After a redeploy the old
-// bundle names disappear, so a visitor still running a previous deploy (cached
-// index.html -> old main hash -> old chunk hashes) 404s on those chunks and the
-// page bricks until a manual hard refresh. Two guards below self-heal it.
+// The build code-splits routes into content-hashed chunks. After a redeploy the
+// old bundle names disappear, so a visitor still running a previous deploy
+// (cached index.html -> old main hash -> old chunk hashes) 404s on those chunks
+// and the page bricks until a manual hard refresh. Three guards below self-heal
+// it; they share one reload budget so they can never fight each other.
 // Shared reload guard: exactly one reload per session, shared across the boot
 // manifest check and the runtime chunk-error handler so they can't double-fire.
 const staleShellGuard = createChunkReloadGuard();
@@ -57,4 +55,12 @@ const staleShellGuard = createChunkReloadGuard();
 // mid-session. When a chunk 404s, reload once for the new bundle.
 window.addEventListener("error", (event) => {
   staleShellGuard.handleError(event);
+});
+
+// 3. Vite reports a failed dynamic import (JS or CSS chunk) as a
+// `vite:preloadError` window event instead of a typed window error. Without
+// this listener a stale chunk during navigation would surface as an unhandled
+// rejection and leave the visitor on a broken route.
+window.addEventListener("vite:preloadError", (event) => {
+  staleShellGuard.handlePreloadError(event);
 });

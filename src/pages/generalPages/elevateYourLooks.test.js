@@ -4,14 +4,14 @@ import { APIService } from "../../hooks/remote/apiService";
 
 // The gallery page is what we're testing — stub the heavy chrome (Hero pulls in
 // redux/router/formik/video assets) and the ad slot, keeping the test focused.
-jest.mock("./newHeroSection", () => () => <div data-testid="hero" />);
-jest.mock("../../components/footer", () => () => <div data-testid="footer" />);
-jest.mock("../../components/adSlot", () => () => null);
+vi.mock("./newHeroSection", () => ({ default: () => <div data-testid="hero" /> }));
+vi.mock("../../components/footer", () => ({ default: () => <div data-testid="footer" /> }));
+vi.mock("../../components/adSlot", () => ({ default: () => null }));
 
 // react-scripts resets mock implementations between tests, so the factory only
 // declares the shape and values are wired in beforeEach (see apiService.test.js).
-jest.mock("../../hooks/remote/apiService", () => ({
-  APIService: { searchGallery: jest.fn() },
+vi.mock("../../hooks/remote/apiService", () => ({
+  APIService: { searchGallery: vi.fn() },
 }));
 
 // Shape returned by the backend /gallery endpoint for an approved stylist's upload.

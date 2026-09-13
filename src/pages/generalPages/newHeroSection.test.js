@@ -3,26 +3,26 @@ import { MemoryRouter, useLocation } from "react-router-dom";
 import Hero from "./newHeroSection";
 
 // Stub the chrome the hero pulls in so the test focuses on the nav itself.
-jest.mock("../../context/LocationContext", () => ({
+vi.mock("../../context/LocationContext", () => ({
   useUserLocation: () => ({ location: null }),
 }));
 // react-scripts resets mock implementations between tests, so the factory only
 // declares the shape and the value is wired in beforeEach (see apiService.test.js).
-jest.mock("../../hooks/remote/apiService", () => ({
-  APIService: { getStylerType: jest.fn() },
+vi.mock("../../hooks/remote/apiService", () => ({
+  APIService: { getStylerType: vi.fn() },
 }));
 import { APIService } from "../../hooks/remote/apiService";
-jest.mock("../../components/searchForStyler", () => () => null);
-jest.mock("../../components/locationPicker", () => () => null);
-jest.mock("../../components/modals", () => () => null);
-jest.mock("../../components/inputWithLabel", () => () => null);
-jest.mock("../../components/button", () => () => null);
-jest.mock("../../components/spinner", () => () => null);
+vi.mock("../../components/searchForStyler", () => ({ default: () => null }));
+vi.mock("../../components/locationPicker", () => ({ default: () => null }));
+vi.mock("../../components/modals", () => ({ default: () => null }));
+vi.mock("../../components/inputWithLabel", () => ({ default: () => null }));
+vi.mock("../../components/button", () => ({ default: () => null }));
+vi.mock("../../components/spinner", () => ({ default: () => null }));
 
 // Mock redux so the test can drive the session state directly.
-jest.mock("react-redux", () => ({
-  useSelector: jest.fn(),
-  useDispatch: jest.fn(),
+vi.mock("react-redux", () => ({
+  useSelector: vi.fn(),
+  useDispatch: vi.fn(),
 }));
 import { useSelector, useDispatch } from "react-redux";
 
@@ -50,7 +50,7 @@ const openAccountMenu = () =>
 describe("Hero header auth-conditional nav", () => {
   beforeEach(() => {
     session = null;
-    dispatchMock = jest.fn();
+    dispatchMock = vi.fn();
     useSelector.mockImplementation((selector) =>
       selector({ user: { userSessionData: session, loading: false } })
     );

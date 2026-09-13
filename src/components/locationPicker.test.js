@@ -1,11 +1,13 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import LocationPicker from "./locationPicker";
+// Resolves to the vi.mock() below (hoisted) — the mock exposes the spy.
+import { __updateLocation } from "../context/LocationContext";
 
 // The picker reads the current location from context and lets the user save a
 // new one. Both are exercised here; updateLocation is only used on Save. The
 // mock exposes the fn as __updateLocation so tests can assert what gets saved.
-jest.mock("../context/LocationContext", () => {
-  const updateLocation = jest.fn();
+vi.mock("../context/LocationContext", () => {
+  const updateLocation = vi.fn();
   return {
     useUserLocation: () => ({
       location: {
@@ -39,7 +41,7 @@ describe("LocationPicker viewport containment", () => {
   });
 
   test("renders the dialog through a portal directly under document.body", () => {
-    render(<LocationPicker onClose={jest.fn()} />);
+    render(<LocationPicker onClose={vi.fn()} />);
 
     const overlay = document.querySelector(".fixed.inset-0");
     expect(overlay).not.toBeNull();
@@ -49,7 +51,7 @@ describe("LocationPicker viewport containment", () => {
   });
 
   test("anchors the overlay to the viewport with explicit inset offsets at mobile width", () => {
-    render(<LocationPicker onClose={jest.fn()} />);
+    render(<LocationPicker onClose={vi.fn()} />);
 
     const overlay = document.querySelector(".fixed.inset-0");
     expect(overlay).toBeInTheDocument();
@@ -64,7 +66,7 @@ describe("LocationPicker viewport containment", () => {
   });
 
   test("keeps the dialog width inside the viewport at mobile width", () => {
-    render(<LocationPicker onClose={jest.fn()} />);
+    render(<LocationPicker onClose={vi.fn()} />);
 
     const overlay = document.querySelector(".fixed.inset-0");
     const card = overlay.querySelector(".bg-white.rounded-md");
@@ -80,7 +82,7 @@ describe("LocationPicker viewport containment", () => {
   });
 
   test("stacks the action row on mobile so buttons cannot overflow horizontally", () => {
-    render(<LocationPicker onClose={jest.fn()} />);
+    render(<LocationPicker onClose={vi.fn()} />);
 
     // The row contains the detect link and the Cancel/Save buttons.
     const detectLink = screen.getByText("Use my current location");
@@ -94,7 +96,7 @@ describe("LocationPicker viewport containment", () => {
   });
 
   test("does not use the fragile h-screen/w-full overlay without offsets", () => {
-    render(<LocationPicker onClose={jest.fn()} />);
+    render(<LocationPicker onClose={vi.fn()} />);
 
     const overlay = document.querySelector(".fixed.inset-0");
     // Regression guard: the old pattern was `fixed bg-black/60 h-screen w-full`
@@ -104,14 +106,12 @@ describe("LocationPicker viewport containment", () => {
 });
 
 describe("LocationPicker city/province reconciliation", () => {
-  const { __updateLocation } = jest.requireMock("../context/LocationContext");
-
   beforeEach(() => {
     __updateLocation.mockClear();
   });
 
   test("warns when the typed city belongs to a different province", () => {
-    render(<LocationPicker onClose={jest.fn()} />);
+    render(<LocationPicker onClose={vi.fn()} />);
 
     fireEvent.change(document.querySelector('select[name="Province"]'), {
       target: { value: "Saskatchewan" },
@@ -124,7 +124,7 @@ describe("LocationPicker city/province reconciliation", () => {
   });
 
   test("saving a mismatched city auto-corrects the province", () => {
-    render(<LocationPicker onClose={jest.fn()} />);
+    render(<LocationPicker onClose={vi.fn()} />);
 
     fireEvent.change(document.querySelector('select[name="Province"]'), {
       target: { value: "Saskatchewan" },
@@ -140,7 +140,7 @@ describe("LocationPicker city/province reconciliation", () => {
   });
 
   test("a known city with no province selected fills the province in", () => {
-    render(<LocationPicker onClose={jest.fn()} />);
+    render(<LocationPicker onClose={vi.fn()} />);
 
     fireEvent.change(document.querySelector('select[name="Province"]'), {
       target: { value: "" },
@@ -156,7 +156,7 @@ describe("LocationPicker city/province reconciliation", () => {
   });
 
   test("an unknown city keeps the selected province", () => {
-    render(<LocationPicker onClose={jest.fn()} />);
+    render(<LocationPicker onClose={vi.fn()} />);
 
     fireEvent.change(document.querySelector('select[name="Province"]'), {
       target: { value: "Saskatchewan" },

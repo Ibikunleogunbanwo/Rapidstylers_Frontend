@@ -4,8 +4,8 @@ import { MemoryRouter, Routes, Route, useLocation } from "react-router-dom";
 import AdminLogin from "./adminLogin";
 
 // The admin login calls APIService.adminSignIn; stub it to avoid network.
-jest.mock("../../hooks/remote/apiService", () => {
-  const APIService = { adminSignIn: jest.fn() };
+vi.mock("../../hooks/remote/apiService", () => {
+  const APIService = { adminSignIn: vi.fn() };
   return { APIService };
 });
 

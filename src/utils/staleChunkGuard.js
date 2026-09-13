@@ -1,13 +1,17 @@
 /**
  * staleChunkGuard.js
  * ------------------
- * Standalone recovery guard for CRA's stale-chunk failures.
+ * Standalone recovery guard for stale-deploy chunk failures.
  *
- * CRA code-splits routes into content-hashed chunks (static/js/<id>.<hash>).
- * After a redeploy the previous deploy's chunks are gone, so a visitor still
- * running the old shell 404s when a route lazy-loads -> an uncaught
- * ChunkLoadError / "Loading chunk N failed" window error that bricks the page
- * until a manual hard refresh.
+ * The build code-splits routes into content-hashed chunks
+ * (static/js/<name>.<hash>.js). After a redeploy the previous deploy's chunks
+ * are gone, so a visitor still running the old shell 404s when a route
+ * lazy-loads -> an uncaught module-load error that bricks the page until a
+ * manual hard refresh.
+ *
+ * Messages are matched for BOTH bundlers the app has shipped with: the
+ * Vite/ES-module wording current builds emit, and the webpack wording kept so
+ * a client still running an older cached bundle keeps self-healing.
  *
  * This module holds ONLY the pure, testable decision logic (classify an error,
  * decide whether to reload, and guard against double/host loops). index.js
@@ -16,6 +20,13 @@
  */
 
 const CHUNK_ERROR_PATTERNS = [
+  // Vite / native ES module loading failures (one wording per browser).
+  /Failed to fetch dynamically imported module/i, // Chrome, Edge
+  /error loading dynamically imported module/i, // Firefox
+  /Importing a module script failed/i, // Safari
+  /Unable to preload CSS/i, // Vite's preload helper (CSS chunk 404)
+  /vite:preloadError/i,
+  // webpack / old CRA bundles still cached in users' browsers.
   /ChunkLoadError/,
   /Loading chunk .* failed/i,
   /Loading CSS chunk/i,
@@ -23,8 +34,8 @@ const CHUNK_ERROR_PATTERNS = [
 ];
 
 /**
- * True when a window "error" message looks like a webpack chunk-load failure.
- * Anything else (TypeError, ReferenceError, network) is left untouched.
+ * True when a window "error" message looks like a stale-deploy chunk-load
+ * failure. Anything else (TypeError, ReferenceError, network) is left alone.
  */
 export function isChunkError(message = "") {
   return CHUNK_ERROR_PATTERNS.some((re) => re.test(message));
@@ -40,6 +51,7 @@ export function isChunkError(message = "") {
  *   get attempted(): boolean,
  *   claim(): boolean,
  *   handleError(event): boolean,
+ *   handlePreloadError(event): boolean,
  * }}
  *   - claim(): marks the guard as spent WITHOUT reloading (used by the
  *     boot-time manifest check before it calls reload).
@@ -73,6 +85,20 @@ export function createChunkReloadGuard({ reload } = {}) {
     handleError(event) {
       const msg = event?.message || "";
       if (!isChunkError(msg)) return false;
+      if (attempted) return true; // already reloaded; swallow repeats silently
+      attempted = true;
+      event?.preventDefault?.();
+      reloadFn();
+      return true;
+    },
+
+    /**
+     * Handle Vite's `vite:preloadError` window event, which fires when a
+     * dynamically imported chunk (or its CSS) fails to load. The payload is
+     * always a chunk failure, so no message classification is needed — only
+     * the same one-reload-per-session rule applies.
+     */
+    handlePreloadError(event) {
       if (attempted) return true; // already reloaded; swallow repeats silently
       attempted = true;
       event?.preventDefault?.();

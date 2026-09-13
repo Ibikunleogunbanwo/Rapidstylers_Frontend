@@ -1,24 +1,27 @@
 import { APIService } from "./apiService";
 import { ApiClient } from "./apiClient";
+// The real normalizer: it lives in ./appFailure (no axios import) so requiring
+// it here doesn't pull axios into this test.
+import { rejectApplicationFailure } from "./appFailure";
 import { toast } from "react-toastify";
 
-jest.mock("./apiClient", () => ({
+vi.mock("./apiClient", () => ({
   ApiClient: {
-    get: jest.fn(),
-    post: jest.fn(),
+    get: vi.fn(),
+    post: vi.fn(),
   },
 }));
 
 describe("RapidStylers API contracts", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     ApiClient.post.mockResolvedValue({ data: { statusCode: "200" } });
     ApiClient.get.mockResolvedValue({ data: { statusCode: "200" } });
-    jest.spyOn(toast, "error").mockImplementation(() => {});
+    vi.spyOn(toast, "error").mockImplementation(() => {});
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   test("booking sends the selected service identity without trusting client price", async () => {
@@ -56,12 +59,17 @@ describe("RapidStylers API contracts", () => {
   });
 
   test("unified sign-in surfaces invalid credential responses returned with an app-level 400", async () => {
-    ApiClient.post.mockResolvedValueOnce({
-      data: {
-        statusCode: "400",
-        message: "Invalid Email Address or Password",
-      },
-    });
+    // The real ApiClient rejects this shape; mirror it through the actual
+    // normalizer so this test exercises how the service surfaces the failure.
+    ApiClient.post.mockImplementationOnce(() =>
+      rejectApplicationFailure({
+        data: {
+          statusCode: "400",
+          message: "Invalid Email Address or Password",
+        },
+        config: { url: "/sign_in" },
+      })
+    );
 
     await expect(
       APIService.signIn({ emailAddress: "wrong@example.com", password: "bad" })

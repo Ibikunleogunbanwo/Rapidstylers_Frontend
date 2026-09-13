@@ -2,16 +2,16 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import StylerPayouts from "./stylerPayouts";
 
-jest.mock("../../hooks/remote/apiService", () => ({
+vi.mock("../../hooks/remote/apiService", () => ({
   APIService: {
-    getStylerPayouts: jest.fn(),
-    createStylerConnectAccount: jest.fn(),
+    getStylerPayouts: vi.fn(),
+    createStylerConnectAccount: vi.fn(),
   },
 }));
 
-jest.mock("../../utils/constant", () => ({
-  ...jest.requireActual("../../utils/constant"),
-  showErrorToastMessage: jest.fn(),
+vi.mock("../../utils/constant", async (importOriginal) => ({
+  ...(await importOriginal()),
+  showErrorToastMessage: vi.fn(),
 }));
 
 import { APIService } from "../../hooks/remote/apiService";
@@ -34,7 +34,7 @@ const rejectedPayouts = {
 
 describe("StylerPayouts rejected-state banner", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     APIService.getStylerPayouts.mockResolvedValue(rejectedPayouts);
   });
 

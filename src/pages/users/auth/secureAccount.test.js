@@ -5,25 +5,25 @@ import { __testDispatch } from "react-redux";
 // The page dispatches the account-creation action and shows the success modal
 // only when it returns statusCode 200. Mock the redux plumbing so the form
 // submission resolves successfully in the test.
-jest.mock("react-redux", () => {
-  const dispatch = jest.fn();
+vi.mock("react-redux", () => {
+  const dispatch = vi.fn();
   return {
     useDispatch: () => dispatch,
     __testDispatch: dispatch,
   };
 });
-jest.mock("react-router-dom", () => ({ useNavigate: () => jest.fn() }));
-jest.mock("lottie-react", () => ({
+vi.mock("react-router-dom", () => ({ useNavigate: () => vi.fn() }));
+vi.mock("lottie-react", () => ({
   __esModule: true,
   default: () => <div data-testid="lottie" />,
 }));
-jest.mock("../../../hooks/local/userReducer", () => ({
-  createUserAccount: jest.fn(),
-  getUserDetails: jest.fn(),
-  userAuthenticate: jest.fn(),
+vi.mock("../../../hooks/local/userReducer", () => ({
+  createUserAccount: vi.fn(),
+  getUserDetails: vi.fn(),
+  userAuthenticate: vi.fn(),
 }));
-jest.mock("../../../utils/constant", () => ({
-  showErrorToastMessage: jest.fn(),
+vi.mock("../../../utils/constant", () => ({
+  showErrorToastMessage: vi.fn(),
 }));
 
 const PROFILE = {

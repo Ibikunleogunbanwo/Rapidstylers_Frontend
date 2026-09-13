@@ -6,41 +6,41 @@ import store from "./hooks/local/store";
 import { setUserSession } from "./hooks/local/userReducer";
 import { APIService } from "./hooks/remote/apiService";
 
-jest.mock("./context/LocationContext", () => ({
+vi.mock("./context/LocationContext", () => ({
   LocationProvider: ({ children }) => children,
-  useUserLocation: () => ({ location: null, loading: false, updateLocation: jest.fn() }),
+  useUserLocation: () => ({ location: null, loading: false, updateLocation: vi.fn() }),
 }));
 
-jest.mock("./hooks/remote/apiClient", () => ({
+vi.mock("./hooks/remote/apiClient", () => ({
   ApiClient: {
-    get: jest.fn(() => Promise.resolve({ data: { statusCode: "200", data: [] } })),
-    post: jest.fn(() => Promise.resolve({ data: { statusCode: "200", data: [] } })),
+    get: vi.fn(() => Promise.resolve({ data: { statusCode: "200", data: [] } })),
+    post: vi.fn(() => Promise.resolve({ data: { statusCode: "200", data: [] } })),
   },
   ApiFormDataClient: {
-    post: jest.fn(() => Promise.resolve({ data: { statusCode: "200", data: [] } })),
+    post: vi.fn(() => Promise.resolve({ data: { statusCode: "200", data: [] } })),
   },
 }));
 
 // Customer-area shell chrome + pages: stub them so the integration test focuses
 // on the App.js routing chain (URL -> UserLayout -> page) without network calls.
-jest.mock("./pages/users/userLayout/topBar", () => () => <div data-testid="topbar" />);
-jest.mock("./pages/users/userLayout/sideBar", () => () => <div data-testid="sidebar" />);
-jest.mock("./components/rapidStylerHumour", () => () => null);
-jest.mock("./components/advert", () => () => null);
-jest.mock("./pages/generalPages/notFound", () => () => <div data-testid="page-notfound" />);
-jest.mock("./pages/users/auth/logout", () => () => <div data-testid="page-logout" />);
-jest.mock("./pages/users/pages/dashboard", () => () => <div data-testid="page-dashboard" />);
-jest.mock("./pages/users/pages/bookAnAppointment", () => () => <div data-testid="page-bookAppointment" />);
-jest.mock("./pages/users/pages/accountsettings", () => () => <div data-testid="page-accountSettings" />);
-jest.mock("./pages/users/pages/updatePersonal", () => () => <div data-testid="page-updatePersonal" />);
-jest.mock("./pages/users/pages/savedStylists", () => () => <div data-testid="page-savedStylist" />);
-jest.mock("./pages/users/pages/changePassword", () => () => <div data-testid="page-changePassword" />);
-jest.mock("./pages/users/pages/notificationSettings", () => () => <div data-testid="page-notificationSettings" />);
-jest.mock("./pages/users/pages/notifications", () => () => <div data-testid="page-notifications" />);
-jest.mock("./pages/users/pages/support", () => () => <div data-testid="page-support" />);
-jest.mock("./pages/users/pages/loyalty", () => () => <div data-testid="page-loyalty" />);
-jest.mock("./pages/users/pages/feedback", () => () => <div data-testid="page-feedback" />);
-jest.mock("./pages/users/pages/searchStylers", () => () => <div data-testid="page-searchAStyler" />);
+vi.mock("./pages/users/userLayout/topBar", () => ({ default: () => <div data-testid="topbar" /> }));
+vi.mock("./pages/users/userLayout/sideBar", () => ({ default: () => <div data-testid="sidebar" /> }));
+vi.mock("./components/rapidStylerHumour", () => ({ default: () => null }));
+vi.mock("./components/advert", () => ({ default: () => null }));
+vi.mock("./pages/generalPages/notFound", () => ({ default: () => <div data-testid="page-notfound" /> }));
+vi.mock("./pages/users/auth/logout", () => ({ default: () => <div data-testid="page-logout" /> }));
+vi.mock("./pages/users/pages/dashboard", () => ({ default: () => <div data-testid="page-dashboard" /> }));
+vi.mock("./pages/users/pages/bookAnAppointment", () => ({ default: () => <div data-testid="page-bookAppointment" /> }));
+vi.mock("./pages/users/pages/accountsettings", () => ({ default: () => <div data-testid="page-accountSettings" /> }));
+vi.mock("./pages/users/pages/updatePersonal", () => ({ default: () => <div data-testid="page-updatePersonal" /> }));
+vi.mock("./pages/users/pages/savedStylists", () => ({ default: () => <div data-testid="page-savedStylist" /> }));
+vi.mock("./pages/users/pages/changePassword", () => ({ default: () => <div data-testid="page-changePassword" /> }));
+vi.mock("./pages/users/pages/notificationSettings", () => ({ default: () => <div data-testid="page-notificationSettings" /> }));
+vi.mock("./pages/users/pages/notifications", () => ({ default: () => <div data-testid="page-notifications" /> }));
+vi.mock("./pages/users/pages/support", () => ({ default: () => <div data-testid="page-support" /> }));
+vi.mock("./pages/users/pages/loyalty", () => ({ default: () => <div data-testid="page-loyalty" /> }));
+vi.mock("./pages/users/pages/feedback", () => ({ default: () => <div data-testid="page-feedback" /> }));
+vi.mock("./pages/users/pages/searchStylers", () => ({ default: () => <div data-testid="page-searchAStyler" /> }));
 
 const renderCustomerArea = async (path) => {
   window.history.pushState({}, "", path);
@@ -66,7 +66,11 @@ test("public stylist profile routes do not require a customer session", async ()
     );
   });
 
-  expect(await screen.findByText(/Working hours/i)).toBeInTheDocument();
+  // This route is a real (unmocked) lazy import, so allow for the module's
+  // first transform rather than the 1s default.
+  expect(
+    await screen.findByText(/Working hours/i, {}, { timeout: 5000 })
+  ).toBeInTheDocument();
   expect(screen.queryByText(/Please sign in to continue/i)).not.toBeInTheDocument();
 });
 
@@ -130,7 +134,7 @@ test("a signed-out customer signs in through App and lands on /dashboard, not ho
   sessionStorage.clear();
 
   // Backend /sign_in returns a customer session; the login page routes by role.
-  const signInMock = jest
+  const signInMock = vi
     .spyOn(APIService, "signIn")
     .mockResolvedValue({
       data: {

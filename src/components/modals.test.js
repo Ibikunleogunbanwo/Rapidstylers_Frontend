@@ -8,7 +8,7 @@ describe("Modal", () => {
 
   test("renders nothing when not visible", () => {
     const { container } = render(
-      <Modal isVisible={false} onClose={jest.fn()} modalTitle="Test">
+      <Modal isVisible={false} onClose={vi.fn()} modalTitle="Test">
         <p>content</p>
       </Modal>
     );
@@ -18,7 +18,7 @@ describe("Modal", () => {
 
   test("portals the overlay directly under document.body", () => {
     render(
-      <Modal isVisible onClose={jest.fn()} modalTitle="Test">
+      <Modal isVisible onClose={vi.fn()} modalTitle="Test">
         <p>content</p>
       </Modal>
     );
@@ -33,7 +33,7 @@ describe("Modal", () => {
 
   test("anchors the overlay to the viewport with explicit offsets and z-index", () => {
     render(
-      <Modal isVisible onClose={jest.fn()} modalTitle="Test">
+      <Modal isVisible onClose={vi.fn()} modalTitle="Test">
         <p>content</p>
       </Modal>
     );
@@ -54,7 +54,7 @@ describe("Modal", () => {
   });
 
   test("shows the title, renders children, and the close button calls onClose", () => {
-    const onClose = jest.fn();
+    const onClose = vi.fn();
     render(
       <Modal isVisible onClose={onClose} modalTitle="Add new service">
         <p>Service form here</p>

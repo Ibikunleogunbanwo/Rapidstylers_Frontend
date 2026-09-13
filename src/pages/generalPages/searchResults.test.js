@@ -5,23 +5,23 @@ import { APIService } from "../../hooks/remote/apiService";
 
 // Stub the heavy chrome — ServiceCard pulls in router/nav/ratings machinery and
 // the ad slot renders nothing until AdSense is configured.
-jest.mock("../../components/serviceCard", () =>
-  ({ name, stylerId }) => (
+vi.mock("../../components/serviceCard", () => ({
+  default: ({ name, stylerId }) => (
     <div data-testid="stylist-card">{name} · {stylerId}</div>
-  )
-);
-jest.mock("../../components/adSlot", () => () => null);
-jest.mock("../../hooks/useSavedStylists", () => ({
+  ),
+}));
+vi.mock("../../components/adSlot", () => ({ default: () => null }));
+vi.mock("../../hooks/useSavedStylists", () => ({
   useSavedStylists: () => ({
     savedIds: new Set(),
     loading: false,
-    toggleSaved: jest.fn(),
+    toggleSaved: vi.fn(),
   }),
 }));
-jest.mock("../../hooks/remote/apiService", () => ({
+vi.mock("../../hooks/remote/apiService", () => ({
   APIService: {
-    getStylerType: jest.fn(),
-    searchNearby: jest.fn(),
+    getStylerType: vi.fn(),
+    searchNearby: vi.fn(),
   },
 }));
 
@@ -36,7 +36,7 @@ const stylists = (n, extra = {}) =>
 // response is { items, page, pageSize, total, hasNext }; without them the full
 // list is returned as a plain array.
 const nearbyMock = (all, total = all.length) =>
-  jest.fn((_lat, _lng, _radius, _sid, _city, filters = {}) => {
+  vi.fn((_lat, _lng, _radius, _sid, _city, filters = {}) => {
     if (filters.page || filters.pageSize) {
       const pageSize = filters.pageSize || 12;
       const page = filters.page || 1;
@@ -65,7 +65,7 @@ const renderPage = (path = "/search?lat=53.5&lng=-113.5&radius=25") =>
 
 describe("SearchResults pagination", () => {
   beforeEach(() => {
-    window.scrollTo = jest.fn();
+    window.scrollTo = vi.fn();
     APIService.getStylerType.mockResolvedValue({ data: { data: [] } });
   });
 

@@ -3,10 +3,10 @@ import { MemoryRouter, Routes, Route } from "react-router-dom";
 import StylerLayout from "./stylerLayout";
 
 // Stub the chrome the layout pulls in so the test focuses on the role gate.
-jest.mock("./topNav", () => () => null);
-jest.mock("../stylerComponents/businessSummary", () => () => null);
-jest.mock("../../../hooks/remote/apiService", () => ({
-  APIService: { stylerSignOut: jest.fn() },
+vi.mock("./topNav", () => ({ default: () => null }));
+vi.mock("../stylerComponents/businessSummary", () => ({ default: () => null }));
+vi.mock("../../../hooks/remote/apiService", () => ({
+  APIService: { stylerSignOut: vi.fn() },
 }));
 
 const renderLayout = (entry = "/styler-dashboard") =>

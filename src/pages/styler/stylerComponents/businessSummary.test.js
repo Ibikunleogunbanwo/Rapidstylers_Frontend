@@ -1,9 +1,9 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import BusinessSummary from "./businessSummary";
 
-jest.mock("../../../hooks/remote/apiService", () => ({
+vi.mock("../../../hooks/remote/apiService", () => ({
   APIService: {
-    getStylerBusinessSummary: jest.fn(),
+    getStylerBusinessSummary: vi.fn(),
   },
 }));
 

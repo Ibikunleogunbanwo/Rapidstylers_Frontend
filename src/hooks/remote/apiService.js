@@ -98,19 +98,11 @@ export class APIService {
     /** Unified sign-in for customers, stylists and admins — routes by the role in the response. */
     static async signIn(data){
         try{
-            const response = await ApiClient.post("/sign_in", data);
-            if(response.data?.statusCode && response.data.statusCode !== "200"){
-                const error = new Error(response.data?.message || "Sign in failed");
-                error.handledByApiService = true;
-                APIService.extractError(error);
-                throw error;
-            }
-            return response;
+            // A non-"200" body statusCode is already rejected by the ApiClient interceptor.
+            return await ApiClient.post("/sign_in", data);
         }
         catch(error){
-            if(!error.handledByApiService){
-                APIService.extractError(error);
-            }
+            APIService.extractError(error);
             throw(error);
         }
     }
@@ -140,19 +132,11 @@ export class APIService {
      */
     static async googleSignIn(idToken){
         try{
-            const response = await ApiClient.post("/google_sign_in", { idToken });
-            if(response.data?.statusCode && response.data.statusCode !== "200"){
-                const error = new Error(response.data?.message || "Google sign in failed");
-                error.handledByApiService = true;
-                APIService.extractError(error);
-                throw error;
-            }
-            return response;
+            // A non-"200" body statusCode is already rejected by the ApiClient interceptor.
+            return await ApiClient.post("/google_sign_in", { idToken });
         }
         catch(error){
-            if(!error.handledByApiService){
-                APIService.extractError(error);
-            }
+            APIService.extractError(error);
             throw(error);
         }
     }
@@ -160,19 +144,11 @@ export class APIService {
     // ── Admin-only endpoints (require an ADMIN-role JWT via the interceptor) ─
     static async adminSignIn(data){
         try{
-            const response = await ApiClient.post("/admin_sign_in", data);
-            if(response.data?.statusCode && response.data.statusCode !== "200"){
-                const error = new Error(response.data?.message || "Admin sign in failed");
-                error.handledByApiService = true;
-                APIService.extractError(error);
-                throw error;
-            }
-            return response;
+            // A non-"200" body statusCode is already rejected by the ApiClient interceptor.
+            return await ApiClient.post("/admin_sign_in", data);
         }
         catch(error){
-            if(!error.handledByApiService){
-                APIService.extractError(error);
-            }
+            APIService.extractError(error);
             throw(error);
         }
     }
@@ -613,19 +589,13 @@ export class APIService {
     }
     static async bookAppointment(data){
         try{
-            const response = await ApiClient.post("/book_appointment", data);
-            // Business errors come back as HTTP 200 with a non-200 statusCode —
-            // surface them so the booking modal can show the reason inline.
-            if(response.data?.statusCode && response.data.statusCode !== "200"){
-                const error = new Error(response.data.message || "Booking failed. Please try again.");
-                error.paymentError = response.data.data?.paymentError || null;
-                error.handledByApiService = true;
-                throw error;
-            }
-            return response;
+            return await ApiClient.post("/book_appointment", data);
         }
         catch(error){
-            if(!error.handledByApiService){
+            // Application-level failures arrive rejected by the ApiClient
+            // interceptor with `paymentError` attached; the booking modal shows
+            // that reason inline, so business failures skip the toast.
+            if(!error.appStatusCode){
                 APIService.extractError(error);
             }
             throw(error);

@@ -1,15 +1,16 @@
 name: Chunk integrity check
 
 # Catches stale-reference / missing-chunk bugs in CI, before they reach
-# Vercel. CRA splits routes into content-hashed chunks (e.g. 8604.a60f250b).
-# Two failure classes this catches:
+# Vercel. Vite splits routes into content-hashed chunks (e.g. searchResults.BFBdO1Ja.js).
+# Three failure classes this catches:
 #
-#   1. Dangling manifest: the built main.js references a chunk id+hash that has
-#      no matching file under build/static/js (would 404 on the live site as a
-#      "Loading chunk N failed" ChunkLoadError once the chunk is requested).
-#   2. Broken page shell: index.html references a main bundle that is not the
-#      one listed in asset-manifest.json (a stale/dead main would leave the
-#      page bricked after redeploy).
+#   1. Dangling manifest: build/.vite/manifest.json lists a chunk (or its CSS)
+#      that has no matching file under build/static (would 404 on the live site
+#      as a failed dynamic import once the chunk is requested).
+#   2. Broken page shell: index.html references an asset that was never emitted.
+#   3. Stale shell: index.html loads an entry chunk that is not the one in the
+#      build manifest (a stale/dead main would leave the page bricked after
+#      redeploy).
 #
 # It runs a tiny Node script (no deps) that cross-checks the emitted manifest
 # against the actual files on disk. It is informational (failures don't block
@@ -48,7 +49,7 @@ jobs:
           CI: 'true'
         run: npm run build
 
-      - name: Cross-check chunks and page shell against the manifest
+      - name: Cross-check chunks and page shell against the build manifest
         run: node scripts/verify-build-chunks.js
         env:
           # Never fail the pipeline on a dangling reference; just report it so

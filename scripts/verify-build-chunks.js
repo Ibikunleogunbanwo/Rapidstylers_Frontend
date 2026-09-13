@@ -5,20 +5,23 @@
  * Post-build integrity check that catches the "stale reference" failure class
  * BEFORE it reaches production.
  *
- * CRA/Create React App bundles route chunks into content-hashed files named
- *   build/static/js/<chunkId>.<contentHash>.chunk.js
- * and embeds a chunk-id -> content-hash map inside the emitted main.js like:
- *   {32:"80bb0650", 54:"db0761d1", ...}
+ * The app is built by Vite, which code-splits routes into content-hashed files
+ * named
+ *   build/static/js/<name>.<contentHash>.js
+ * and records every emitted file in a build manifest
+ *   build/.vite/manifest.json    (enabled via `build.manifest: true`)
  *
  * This script:
- *   1. Reads asset-manifest.json and confirms every file it lists actually
- *      exists on disk (guards against a partial/interrupted build being
- *      uploaded and 404ing).
- *   2. Extracts the chunk-id -> content-hash map from main.js and confirms
- *      each referenced hash has a matching file on disk — reproducing what the
- *      browser will do when a route is lazily loaded, so a "Loading chunk N
- *      failed" can't silently make it to the live bundle.
- *   3. Confirms the page shell (index.html) points at the manifest's main.css.
+ *   1. Reads the build manifest and confirms every file it lists (entry, shared
+ *      chunks, per-route chunks, their CSS and other assets) actually exists on
+ *      disk — guards against a partial/interrupted build being uploaded and
+ *      404ing.
+ *   2. Confirms every asset URL the page shell (index.html) references resolves
+ *      to a file on disk, so a shell can't point at a bundle that was not
+ *      emitted.
+ *   3. Confirms index.html loads the manifest's entry chunk — a mismatch means
+ *      the shell and the bundle on disk are from different builds (the "stale
+ *      shell" state that leaves the site bricked after a redeploy).
  *
  * By default this reports findings and exits 0 (informational). Set the env
  * var BUILD_VERIFY_REQUIRE_PRESENT=1 to make it fail the pipeline on a
@@ -31,6 +34,7 @@ const path = require('path');
 const ROOT = path.resolve(__dirname, '..');
 const BUILD = path.join(ROOT, 'build');
 const DIR_JS = path.join(BUILD, 'static', 'js');
+const MANIFEST = path.join(BUILD, '.vite', 'manifest.json');
 
 const FAIL_FAST = process.env.BUILD_VERIFY_REQUIRE_PRESENT === '1';
 const issues = [];
@@ -67,103 +71,97 @@ function existsDir(dir) {
   }
 }
 
+/** Turn a manifest entry's "./static/js/x.js" (or "/static/js/x.js") into a path. */
+function toBuildPath(url) {
+  return path.join(BUILD, ...url.replace(/^\.?\//, '').split('/'));
+}
+
 function main() {
   if (!exists(path.join(BUILD, 'index.html')) || !existsDir(DIR_JS)) {
     logError(`build output missing. Expected ${BUILD}/index.html and ${DIR_JS}. Run \`npm run build\` first.`);
     return finish();
   }
 
-  /* ---- 1. asset-manifest.json entries all exist on disk ---------------- */
-  const manifestPath = path.join(BUILD, 'asset-manifest.json');
-  let files = {};
-  let mainCssFromManifest = '';
-  if (exists(manifestPath)) {
-    const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-    files = manifest.files || {};
-    for (const [key, url] of Object.entries(files)) {
-      if (typeof url !== 'string' || !url.startsWith('/static/')) continue;
-      const file = path.join(BUILD, ...url.split('/'));
-      if (!exists(file)) {
-        logError(`manifest lists ${url} but the file is missing on disk (${key}). This would 404 for any user requesting it.`);
-      }
-    }
-    mainCssFromManifest = files['main.css'] || '';
-    logInfo(`asset-manifest.json lists ${Object.keys(files).length} files; all present on disk.`);
-  } else {
-    logWarn(`no asset-manifest.json — skipping manifest cross-check.`);
+  if (!exists(MANIFEST)) {
+    logError(
+      `no build manifest at ${path.relative(ROOT, MANIFEST)}. Vite must run with build.manifest enabled so this check can see what the build emitted.`
+    );
+    return finish();
   }
 
-  /* ---- 2. main.js chunk-id -> hash map matches real files -------------- */
-  const mainJs = findMainJs();
-  if (mainJs) {
-    // Reproduce the browser's chunk URL assembly: given id N and hash H, CRA
-    // requests static/js/<N>.<H suffix>.chunk.js. We extract every `id:"hash"`,
-    // confirm a file matching that id+the-unique-hash exists.
-    const mapRe = /\b(\d+):"([0-9a-f]{6,})"/g;
-    let match;
-    let referenced = 0;
-    let dangling = 0;
-    const seenHashes = new Set();
-    while ((match = mapRe.exec(mainJs)) !== null) {
-      const id = match[1];
-      // The full runtime map uses the full content hash; a build embedding
-      // multiple hashes for one id is fine, so dedupe by (id, hash).
-      const key = `${id}:${match[2]}`;
-      if (seenHashes.has(key)) continue;
-      seenHashes.add(key);
-      referenced++;
+  /* ---- 1. every manifest file exists on disk --------------------------- */
+  const manifest = JSON.parse(fs.readFileSync(MANIFEST, 'utf8'));
+  const entries = Object.entries(manifest);
+  let checked = 0;
+  let entryFile = '';
 
-      // match[2] is stable for the loop body scope; eslint flags the closure but it is fine here.
-      // eslint-disable-next-line no-loop-func
-      const hashStr = match[2];
-      const candidates = fs.readdirSync(DIR_JS).filter(
-        (f) => f === `${id}.${hashStr}.chunk.js` || (f.startsWith(`${id}.`) && f.endsWith(`.${hashStr}.chunk.js`))
-      );
-      if (candidates.length === 0) {
-        dangling++;
+  for (const [key, chunk] of entries) {
+    const urls = [chunk.file, ...(chunk.css || []), ...(chunk.assets || [])].filter(Boolean);
+    for (const url of urls) {
+      checked++;
+      if (!exists(toBuildPath(url))) {
         logError(
-          `chunk id ${id} references hash ${match[2]} but no file static/js/${id}.*(${match[2]}).chunk.js exists. ` +
-            `The browser would throw "Loading chunk ${id} failed" when this route loads.`
+          `manifest lists ${url} for ${key} but the file is missing on disk. This would 404 for any user requesting it.`
         );
       }
     }
-
-    // Guard against a degenerate run where the runtime map didn't get parsed
-    // (e.g. webpack output format changed) — better to say we couldn't verify
-    // than to silently pass.
-    if (referenced === 0) {
-      logWarn('could not parse any chunk-id -> hash entries from main.js. Verify the CRA/emitted format still matches expectations.');
-    } else {
-      logInfo(`checked ${referenced} chunk references from main.js; ${dangling === 0 ? 'all have files on disk' : dangling + ' dangling'}.`);
-    }
-  } else {
-    logWarn('could not locate main.*.js under static/js — skipping runtime map check.');
+    if (chunk.isEntry) entryFile = chunk.file;
   }
 
-  /* ---- 3. page shell points at the manifest main ----------------------- */
+  if (checked === 0) {
+    logError('manifest lists no emitted files — the build output looks empty or the manifest format changed.');
+  } else {
+    logInfo(`build manifest lists ${entries.length} chunk(s) / ${checked} file(s); all present on disk.`);
+  }
+
+  if (!entryFile) {
+    logError('could not identify the entry chunk in the build manifest (no isEntry flag).');
+  } else if (!/^\.?\/?static\/js\/main\.[^/]+\.js$/.test(entryFile)) {
+    // The entry name is load-bearing: src/index.js's stale-shell guard looks for
+    // /static/js/main. and vercel.json caches /static/* immutably.
+    logError(
+      `entry chunk is ${entryFile}, but the stale-shell guard in src/index.js expects it under static/js/main.<hash>.js.`
+    );
+  }
+
+  /* ---- 2. page-shell asset references resolve -------------------------- */
+  let html = '';
   try {
-    const html = fs.readFileSync(path.join(BUILD, 'index.html'), 'utf8');
-    const shellCss = /href="([^"]*\/static\/css\/main\.[^"]+\.css)"/.exec(html);
-    if (mainCssFromManifest && shellCss && shellCss[1] !== mainCssFromManifest) {
-      logWarn(`index.html references ${shellCss[1]} but asset-manifest.json lists ${mainCssFromManifest}. A stale main/CSS pairing is possible on the live site.`);
-    } else if (mainCssFromManifest && shellCss) {
-      logInfo(`page shell and asset-manifest agree on main.css (${shellCss[1]}).`);
-    }
+    html = fs.readFileSync(path.join(BUILD, 'index.html'), 'utf8');
   } catch (e) {
-    logWarn(`could not read index.html for shell check: ${e.message}`);
+    logWarn(`could not read index.html for shell checks: ${e.message}`);
+  }
+
+  if (html) {
+    const refs = [...html.matchAll(/(?:src|href)="(\/static\/[^"]+)"/g)].map((m) => m[1]);
+    let missing = 0;
+    for (const ref of new Set(refs)) {
+      if (!exists(toBuildPath(ref))) {
+        missing++;
+        logError(`index.html references ${ref} but no such file was emitted. The page shell would 404.`);
+      }
+    }
+    if (missing === 0 && refs.length > 0) {
+      logInfo(`page shell references ${new Set(refs).size} emitted asset(s); all present.`);
+    }
+
+    /* ---- 3. shell loads the manifest's entry chunk --------------------- */
+    if (entryFile) {
+      const entryRef = entryFile.replace(/^\.?\//, '');
+      const shellEntry = html.match(/src="(\/?static\/js\/main\.[^"]+\.js)"/);
+      if (!shellEntry) {
+        logError('index.html does not load a static/js/main.<hash>.js entry chunk.');
+      } else if (shellEntry[1].replace(/^\//, '') !== entryRef) {
+        logError(
+          `index.html loads ${shellEntry[1]} but the manifest's entry is ${entryFile}. The shell and the bundle are from different builds — the site would brick after redeploy.`
+        );
+      } else {
+        logInfo(`page shell and build manifest agree on the entry chunk (${shellEntry[1]}).`);
+      }
+    }
   }
 
   return finish();
-}
-
-function findMainJs() {
-  try {
-    const files = fs.readdirSync(DIR_JS);
-    const main = files.find((f) => /^main\.[0-9a-f]+\.js$/.test(f));
-    return main ? fs.readFileSync(path.join(DIR_JS, main), 'utf8') : '';
-  } catch (_) {
-    return '';
-  }
 }
 
 function finish() {
