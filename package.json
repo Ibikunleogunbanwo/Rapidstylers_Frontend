@@ -20,7 +20,7 @@
     "react-dom": "^18.2.0",
     "react-redux": "^9.1.1",
     "react-router-dom": "^6.21.1",
-    "react-toastify": "^10.0.5",
+    "react-toastify": "^11.1.0",
     "yup": "^1.4.0",
     "zod": "^4.4.3"
   },
