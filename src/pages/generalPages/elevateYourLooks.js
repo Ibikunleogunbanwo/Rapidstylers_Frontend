@@ -11,7 +11,9 @@ import { APIService } from "../../hooks/remote/apiService";
 // public/images/gallery/ (see curatedGallery.js).
 import { CURATED_GALLERY as CURATED, searchCuratedPhotos } from "../../utils/curatedGallery";
 import {
-  GALLERY_CATEGORIES as CATEGORIES,
+  ALL_WORK,
+  // The strip as it renders: the "everything" view first, then the categories.
+  GALLERY_TAB_STRIP as CATEGORIES,
   categoriesForTab,
   isInTab,
 } from "../../utils/galleryCategories";
@@ -20,6 +22,8 @@ const PER_PAGE = 12;
 
 const ElevateLooks = () => {
   document.title = "Elevate your looks | RapidStylers";
+  // The strip's first entry is "All work", so the opening grid is a named,
+  // highlighted view rather than an unlabelled default that no tab admitted to.
   const [activeCategory, setActiveCategory] = useState(CATEGORIES[0]);
   const [images, setImages] = useState(null);
   const [page, setPage] = useState(1);
@@ -31,19 +35,12 @@ const ElevateLooks = () => {
   const [searchQuery, setSearchQuery] = useState("");
   // True when the gallery request itself failed (network/server), vs. simply empty.
   const [loadError, setLoadError] = useState(false);
-  // The opening view shows the whole curated set; picking a category narrows it
-  // until you pick another. This is explicit state rather than a side effect of
-  // `images` being null — reading that made "show everything" collapse to the
-  // selected tab (Dreadlocks, which has no photos) as soon as you searched and
-  // cleared, emptying the gallery.
-  const [browsingAll, setBrowsingAll] = useState(true);
 
   // Curated RapidStylers work leads the grid. Filtering goes through the tab
   // rather than a category equality test, because a tab can cover more than one
-  // category ("Locs & dreadlocks"); comparing names directly dropped photos out
-  // of the tab that is supposed to hold them.
-  const browseCurated = (category) =>
-    browsingAll ? CURATED : CURATED.filter((p) => isInTab(p.category, category));
+  // category ("Locs & dreadlocks") and the first tab covers all of them, so there
+  // is no separate "show everything" flag to keep in step with the selection.
+  const browseCurated = (category) => CURATED.filter((p) => isInTab(p.category, category));
 
   // Typing or switching category fires a request per change, and they can come
   // back out of order — without this, a slow "dr" could repaint over "dreadlocks".
@@ -54,10 +51,16 @@ const ElevateLooks = () => {
     const seq = ++requestSeq.current;
     const setter = append ? setLoadingMore : setLoading;
     setter(true);
-    // A merged tab covers more than one backend category, and the API takes one
-    // category per request, so ask for each of them and merge. Sending the tab's
-    // label instead would be rejected — the backend only accepts the names in
-    // AppConstants.GALLERY_CATEGORIES, and "Locs & dreadlocks" is not one.
+    // A tab can cover more than one backend category, and the API takes exactly
+    // one per request, so ask for each of them and merge. Sending the tab's label
+    // instead would be rejected — the backend only accepts the names in
+    // AppConstants.GALLERY_CATEGORIES, and neither "Locs & dreadlocks" nor "All
+    // work" is one.
+    //
+    // "All work" therefore costs one request per category. That is fine while
+    // uploads are sparse, but the honest fix is a single call: the backend could
+    // accept `category=all` (or make the parameter optional) and answer with every
+    // approved upload. Worth doing before stylists start posting in volume.
     const perCategory = categoriesForTab(category);
     Promise.all(
       perCategory.map((name) =>
@@ -137,19 +140,18 @@ const ElevateLooks = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchInput]);
 
-  // Load whenever the category, the committed query, or the browsing mode
-  // changes (always page 1). `browsingAll` belongs in this list: the opening view
-  // is the whole curated set, so choosing the FIRST tab changed no category value
-  // and the effect never re-ran — the tab highlighted while the grid carried on
-  // showing every photo, which is why that tab looked like it was full of work
-  // from other categories.
+  // Load whenever the category or the committed query changes (always page 1).
+  // A reload needs the selected category to actually change — which is why the
+  // opening view needed a name: while it was an unlabelled default, the first tab
+  // was already selected, so clicking it changed nothing and the grid kept showing
+  // every category under a tab that named only one.
   useEffect(() => {
     setPage(1);
     setImages(null);
     setHasMore(false);
     loadImages(activeCategory, 1, false, searchQuery);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeCategory, searchQuery, browsingAll]);
+  }, [activeCategory, searchQuery]);
 
   const loadMore = () => {
     const nextPage = page + 1;
@@ -159,7 +161,6 @@ const ElevateLooks = () => {
 
   const switchCategory = (cat) => {
     setActiveCategory(cat);
-    setBrowsingAll(false);
     setSearchInput("");
     setSearchQuery("");
   };
@@ -197,7 +198,7 @@ const ElevateLooks = () => {
                 key={cat}
                 onClick={() => switchCategory(cat)}
                 className={
-                  activeCategory === cat && !browsingAll && !searchQuery
+                  activeCategory === cat && !searchQuery
                     ? "bg-brand text-white p-3 rounded-md text-sm text-left"
                     : "px-3 py-4 rounded-md text-sm text-slate-500 hover:text-gray-800 text-left flex-shrink-0"
                 }
@@ -286,7 +287,9 @@ const ElevateLooks = () => {
               ) : (
                 <>
                   <p className="text-base font-bold text-gray-700">
-                    {browsingAll ? "No work posted yet" : `No ${activeCategory} work posted yet`}
+                    {activeCategory === ALL_WORK
+                      ? "No work posted yet"
+                      : `No ${activeCategory} work posted yet`}
                   </p>
                   <p className="mt-1 text-sm text-gray-400">
                     This gallery is filled by verified professionals. Be the first to share your work.
@@ -385,7 +388,7 @@ const ElevateLooks = () => {
             <p className="text-center text-xs text-gray-400 mt-8">
               {searchQuery
                 ? "That's everything matching your search."
-                : browsingAll
+                : activeCategory === ALL_WORK
                 ? "That's everything in the gallery."
                 : "You've reached the end of this category."}
             </p>

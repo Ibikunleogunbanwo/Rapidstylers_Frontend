@@ -8,7 +8,9 @@ import {
   searchCuratedPhotos,
 } from "./curatedGallery";
 import {
+  ALL_WORK,
   GALLERY_CATEGORIES,
+  GALLERY_TAB_STRIP,
   GALLERY_TABS,
   KNOWN_CATEGORIES,
   categoriesForTab,
@@ -94,6 +96,25 @@ describe("curated gallery images", () => {
       expect(tab.categories.length).toBeGreaterThan(0);
       expect(categoriesForTab(tab.label)).toEqual(tab.categories);
     });
+  });
+
+  test("the strip opens with a named everything view", () => {
+    // The gallery's opening state has to be a tab a visitor can see and return
+    // to; as an unlabelled default it looked like the first category tab was
+    // showing every category's work.
+    expect(GALLERY_TAB_STRIP[0]).toBe(ALL_WORK);
+    expect(GALLERY_TAB_STRIP).toEqual([ALL_WORK, ...GALLERY_CATEGORIES]);
+    expect(GALLERY_TAB_STRIP.length).toBe(new Set(GALLERY_TAB_STRIP).size);
+    // It is a view over the categories, not one of them: a photo must never be
+    // filed under it, or the backend would reject the upload.
+    expect(GALLERY_CATEGORIES).not.toContain(ALL_WORK);
+    expect(KNOWN_CATEGORIES).not.toContain(ALL_WORK);
+  });
+
+  test("the everything view covers every photo in the list", () => {
+    const covered = CURATED_GALLERY.filter((entry) => isInTab(entry.category, ALL_WORK));
+    expect(covered).toHaveLength(CURATED_GALLERY.length);
+    expect(categoriesForTab(ALL_WORK)).toEqual(KNOWN_CATEGORIES);
   });
 
   test("dreadlocks and locs are one tab, covering both backend names", () => {

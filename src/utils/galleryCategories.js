@@ -39,6 +39,22 @@ export const GALLERY_TABS = [
 export const GALLERY_CATEGORIES = GALLERY_TABS.map((tab) => tab.label);
 
 /**
+ * The gallery opens on everything we have, and that view needs a name of its
+ * own. Without one the strip had nothing to highlight, so the first category tab
+ * was already "selected" on load: clicking it changed no value the grid listened
+ * to, and it went on showing every category — a tab named for one subject, full
+ * of photos from all of them.
+ *
+ * "All work" is a view, not a backend category: it covers every name in
+ * GALLERY_TABS, which is why it is kept out of GALLERY_CATEGORIES (the list the
+ * guard test checks photos against, and the list a stylist files work under).
+ */
+export const ALL_WORK = "All work";
+
+/** Tab labels as they render, the "everything" view first. */
+export const GALLERY_TAB_STRIP = [ALL_WORK, ...GALLERY_CATEGORIES];
+
+/**
  * Every backend category name any tab can show. A curated photo filed under
  * something outside this list can never be browsed to, which is what the guard
  * test in `curatedGallery.test.js` fails on.
@@ -47,10 +63,12 @@ export const KNOWN_CATEGORIES = GALLERY_TABS.flatMap((tab) => tab.categories);
 
 /**
  * The backend category names a tab shows, in the order to ask the API for them.
- * An unrecognised label falls back to itself rather than throwing: a stale label
- * should show an empty tab, not take the whole gallery down.
+ * "All work" covers every name; an unrecognised label falls back to itself rather
+ * than throwing, because a stale label should show an empty tab, not take the
+ * whole gallery down.
  */
 export function categoriesForTab(label) {
+  if (label === ALL_WORK) return KNOWN_CATEGORIES;
   const tab = GALLERY_TABS.find((item) => item.label === label);
   return tab ? tab.categories : [label];
 }

@@ -128,19 +128,54 @@ describe("ElevateLooks gallery cards", () => {
     });
   });
 
+  test("names the opening view, so the strip always has a selected entry", async () => {
+    // The gallery used to open on an unlabelled "everything" view whose first tab
+    // was already selected, so clicking that tab changed no value the loader
+    // watched: it highlighted while the grid went on showing every category.
+    APIService.searchGallery.mockResolvedValue({ data: { data: [] } });
+    render(<ElevateLooks />);
+
+    await screen.findByRole("button", { name: "View Professional makeup application" });
+
+    const strip = screen.getByRole("button", { name: "All work" });
+    expect(strip.className).toContain("bg-brand");
+    // …and it is the first thing in the strip.
+    const tabs = screen.getAllByRole("button").filter((b) => /^(All work|[A-Z].*)$/.test(b.textContent.trim()));
+    expect(tabs[0].textContent.trim()).toBe("All work");
+  });
+
+  test("comes back to the whole gallery from a category", async () => {
+    APIService.searchGallery.mockResolvedValue({ data: { data: [] } });
+    render(<ElevateLooks />);
+    await screen.findByRole("button", { name: "View Professional makeup application" });
+
+    fireEvent.click(screen.getByRole("button", { name: "Braids" }));
+    await waitFor(() =>
+      expect(
+        screen.queryByRole("button", { name: "View Professional makeup application" })
+      ).not.toBeInTheDocument()
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "All work" }));
+
+    expect(
+      await screen.findByRole("button", { name: "View Professional makeup application" })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "View Long auburn knotless braids" })
+    ).toBeInTheDocument();
+  });
+
   test("a merged tab shows the photos of every category it covers", async () => {
-    // This is also the FIRST tab, which makes it the default selection: clicking
-    // a tab that is already selected changed no value the loader watched, so the
-    // tab highlighted and the grid carried on showing the whole curated set —
-    // the reason this tab looked full of photos that were not dreadlocks.
     APIService.searchGallery.mockResolvedValue({ data: { data: [] } });
     render(<ElevateLooks />);
 
     await screen.findByRole("button", { name: "View Professional makeup application" });
     fireEvent.click(screen.getByRole("button", { name: "Locs & dreadlocks" }));
 
-    // Both locs photos live in the one tab, rather than being split off from the
-    // dreadlocks tab that used to hold nothing.
+    // Both backend names behind the one tab. The tab queries for each of them —
+    // the label itself is not a category the API accepts, and either name on its
+    // own would hide the other's work.
     await waitFor(() => {
       expect(
         screen.getByRole("button", { name: "View Long faux locs worn with statement sunglasses" })
