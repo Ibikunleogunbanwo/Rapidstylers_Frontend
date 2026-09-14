@@ -1,18 +1,8 @@
 import { useEffect, useState } from "react";
-import { Link, Navigate } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import { APIService } from "../../hooks/remote/apiService";
-import { clearAllSessionTokens, getAuthToken, isAdminRole, showErrorToastMessage, showSuccessToastMessage } from "../../utils/constant";
-
-const AdminNav = () => (
-  <div className="mb-6 flex flex-wrap gap-4 text-sm font-semibold">
-    <Link to="/admin/categories" className="text-gray-500 hover:text-gray-800">Categories</Link>
-    <Link to="/admin/blog" className="text-gray-500 hover:text-gray-800">Blog</Link>
-    <Link to="/admin/stylers" className="text-gray-500 hover:text-gray-800">Stylists</Link>
-    <Link to="/admin/operations" className="text-gray-500 hover:text-gray-800">Operations</Link>
-    <Link to="/admin/recovery" className="text-gray-500 hover:text-gray-800">Recovery</Link>
-    <span className="text-brand underline">Payments</span>
-  </div>
-);
+import { AdminPage, AdminInput } from "./adminShell";
+import { getAuthToken, isAdminRole, showErrorToastMessage, showSuccessToastMessage } from "../../utils/constant";
 
 const REFUND_BADGES = {
   COMPLETED: "bg-green-100 text-green-700",
@@ -108,13 +98,7 @@ const Payments = () => {
   if (!getAuthToken() || !isAdminRole()) return <Navigate to="/admin/login" replace />;
 
   return (
-    <div className="min-h-screen bg-[#f5f5f5] px-4 py-10">
-      <div className="mx-auto max-w-5xl">
-        <div className="mb-6 flex items-center justify-between">
-          <p className="text-2xl font-bold text-gray-900">Admin payments</p>
-          <button type="button" onClick={() => { clearAllSessionTokens(); window.location.href = "/admin/login"; }} className="text-sm font-semibold text-gray-500">Sign out</button>
-        </div>
-        <AdminNav />
+    <AdminPage eyebrow="Admin" title="Admin payments">
         <div className="mb-5 flex flex-wrap gap-2">
           {[["refunds", `Refunds (${refunds.length})`], ["reconciliation", "Reconciliation"]].map(([value, label]) => (
             <button key={value} type="button" onClick={() => setTab(value)} className={`rounded-md border px-3 py-2 text-sm font-semibold ${tab === value ? "border-brand bg-brand text-white" : "border-gray-200 bg-white text-gray-600"}`}>{label}</button>
@@ -133,45 +117,41 @@ const Payments = () => {
               <div className="mt-3 grid gap-3 md:grid-cols-3">
                 <div>
                   <label className="block mb-1 text-xs text-gray-500">Appointment id *</label>
-                  <input
+                  <AdminInput
                     type="text"
                     value={refundForm.appointmentId}
                     onChange={(e) => setRefundForm({ ...refundForm, appointmentId: e.target.value })}
                     placeholder="e.g. aB3xY"
-                    className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm"
                   />
                 </div>
                 <div>
                   <label className="block mb-1 text-xs text-gray-500">Amount (blank = full refund)</label>
-                  <input
+                  <AdminInput
                     type="number"
                     min="0"
                     step="0.01"
                     value={refundForm.amount}
                     onChange={(e) => setRefundForm({ ...refundForm, amount: e.target.value })}
                     placeholder="e.g. 25.00"
-                    className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm"
                   />
                 </div>
                 <div>
                   <label className="block mb-1 text-xs text-gray-500">Reason</label>
-                  <input
+                  <AdminInput
                     type="text"
                     value={refundForm.reason}
                     onChange={(e) => setRefundForm({ ...refundForm, reason: e.target.value })}
                     placeholder="e.g. Client cancellation"
-                    className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm"
                   />
                 </div>
                 <div className="mt-3">
                   <label className="block mb-1 text-xs text-gray-500">Re-authenticate (admin password)</label>
-                  <input
+                  <AdminInput
                     type="password"
                     value={refundForm.password}
                     onChange={(e) => setRefundForm({ ...refundForm, password: e.target.value })}
                     placeholder="Re-enter your admin password"
                     autoComplete="current-password"
-                    className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm"
                   />
                   <p className="mt-1 text-[11px] text-gray-400">Refunds move money, so you must re-prove your password on each refund.</p>
                 </div>
@@ -267,8 +247,7 @@ const Payments = () => {
             )}
           </div>
         )}
-      </div>
-    </div>
+    </AdminPage>
   );
 };
 

@@ -31,10 +31,10 @@ const CreateAccountAdmin = () => {
           <img src={close} alt="close" className="h-5" />
         </div>
 
-        <p className="text-xl font-bold">
-          Welcome to the <span className="text-brand">RapidStylers</span>
-          stylist portal!
-        </p>
+        <p className="text-[11px] uppercase tracking-[0.25em] text-gray-400">For professionals</p>
+        <h1 className="mt-2 text-[clamp(1.5rem,2.5vw,2rem)] font-normal leading-[1.1] tracking-[-0.02em]">
+          Welcome to the <span className="text-brand">RapidStylers</span> stylist portal
+        </h1>
         <p>Create your account and start connecting with clients.</p>
         <form className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-8">
           <div className="col-span-1 md:col-span-2 lg:col-span-3">

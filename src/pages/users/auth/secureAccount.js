@@ -113,7 +113,7 @@ const SecureAccount = () => {
         <div className="absolute inset-0 bg-black/60"></div>
         <div className="absolute inset-0 flex items-center justify-center text-white px-10">
           <div className="max-w-sm grid gap-8">
-            <p className="text-3xl font-bold font-serif leading-tight">
+            <p className="text-[clamp(1.75rem,3vw,2.5rem)] font-normal leading-[1.15] tracking-[-0.02em]">
               Create your <span className="text-brand">RapidStylers</span> account
             </p>
             <div className="grid gap-4">
@@ -135,7 +135,7 @@ const SecureAccount = () => {
         <div className="grid content-between h-full">
           <div className="p-5 md:p-10 mb-6 md:mb-0 w-full">
             <img src={logo} alt="" className="h-10 mb-8" />
-            <p className="text-2xl font-bold text-gray-900">Secure your account.</p>
+            <p className="text-[22px] font-normal tracking-[-0.01em] text-onSurface">Secure your account</p>
             <p className="text-black/60 text-sm mt-1">
               Create a password with at least <span className="text-black">8 characters, 1 uppercase letter, 1 lowercase letter, 1 digit, and 1 special character.</span>
             </p>

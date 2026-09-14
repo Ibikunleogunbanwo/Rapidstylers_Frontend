@@ -121,8 +121,8 @@ const StylerDashboard = () => {
 
   return (
     <>
-    <div className='border rounded-md relative'>
-      <div className="border-b p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 bg-[#fafaff]">
+    <div className='border border-black/10 rounded-lg relative'>
+      <div className="border-b border-black/10 p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white rounded-t-lg">
         <div>
           <p className="text-sm font-semibold">Get paid</p>
           <p className="text-xs text-black/50 mt-0.5">
@@ -156,41 +156,41 @@ const StylerDashboard = () => {
           <p className="mt-0.5 text-red-700/80">Reconnect to re-enter your details. Your earnings stay safe until it's sorted.</p>
         </div>
       )}
-      <div className='border-b p-4 flex justify-between'>
+      <div className='border-b border-black/10 p-4 flex justify-between'>
         <div className='flex items-center gap-4 text-sm'>
-          <div onClick={goToPreviousDay} disabled={isToday(selectedDate)} className={`border rounded-md p-2 ${isToday(selectedDate) ? "cursor-default" : "cursor-pointer"}`}>
+          <div onClick={goToPreviousDay} disabled={isToday(selectedDate)} className={`border border-black/10 rounded-lg p-2 ${isToday(selectedDate) ? "cursor-default" : "cursor-pointer hover:border-black/25 transition-colors"}`}>
             <img src={arrow} alt="" className={`h-4 rotate-180 ${isToday(selectedDate) ? "opacity-30" : "opacity-100"}`}/>
           </div>
-            <div className='border rounded-md p-2 text-xs font-medium cursor-default'>
+            <div className='border border-black/10 rounded-lg p-2 text-xs font-medium cursor-default'>
               {format(selectedDate, 'eee, MMMM d')}
               {/* add yyy to show the current yr */}
             </div>
-          <div onClick={goToNextDay} className='border rounded-md p-2 cursor-pointer'>
+          <div onClick={goToNextDay} className='border border-black/10 rounded-lg p-2 cursor-pointer hover:border-black/25 transition-colors'>
             <img src={arrow} alt=""  className='h-4'/>
           </div>
         </div>
-        <div className='border rounded-md p-2'>
+        <div className='border border-black/10 rounded-lg p-2'>
           <img src={calendar} alt="" className='h-4'/>
         </div>
       </div>
       <div className='p-4 text-sm'>
-        <p className='font-semibold'>Morning:</p>
+        <p className='font-semibold text-[11px] uppercase tracking-[0.25em] text-muted'>Morning</p>
         <div className='grid grid-cols-2 md:grid-cols-4 gap-4 mt-4'>
           {timeSlots.morning.map((slot, index) => (
-            <div key={index} className='border p-4 rounded-md text-center text-xs cursor-pointer' onClick={openDetails}>{slot}</div>
+            <div key={index} className='border border-black/10 p-4 rounded-lg text-center text-xs cursor-pointer hover:border-black/30 transition-colors' onClick={openDetails}>{slot}</div>
           ))}
         </div>
         
-        <p className='font-semibold mt-10'>Afternoon:</p>
+        <p className='font-semibold text-[11px] uppercase tracking-[0.25em] text-muted mt-10'>Afternoon</p>
         <div className='grid grid-cols-2 md:grid-cols-4 gap-4 mt-4'>
           {timeSlots.afternoon.map((slot, index) => (
-            <div key={index} className='border p-4 rounded-md text-center text-xs cursor-pointer' onClick={openDetails}>{slot}</div>
+            <div key={index} className='border border-black/10 p-4 rounded-lg text-center text-xs cursor-pointer hover:border-black/30 transition-colors' onClick={openDetails}>{slot}</div>
           ))}
         </div>
-        <p className='font-semibold mt-10'>Evening:</p>
+        <p className='font-semibold text-[11px] uppercase tracking-[0.25em] text-muted mt-10'>Evening</p>
         <div className='grid grid-cols-2 md:grid-cols-4 gap-4 mt-4'>
           {timeSlots.evening.map((slot, index) => (
-            <div key={index} className='border p-4 rounded-md text-center text-xs cursor-pointer' onClick={openDetails}>{slot}</div>
+            <div key={index} className='border border-black/10 p-4 rounded-lg text-center text-xs cursor-pointer hover:border-black/30 transition-colors' onClick={openDetails}>{slot}</div>
           ))}
         </div>
       </div>

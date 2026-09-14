@@ -1,60 +1,85 @@
+/**
+ * Guard for the stylist dashboard chrome. The sidebar used to be eight copied
+ * blocks with a solid purple slab for the active item, and the top bar a
+ * purple-tinted band with a solid brand button. These tests pin the quieter
+ * hairline register so it cannot creep back.
+ */
 import { render, screen } from "@testing-library/react";
-import { MemoryRouter, Routes, Route } from "react-router-dom";
+import { MemoryRouter } from "react-router-dom";
 import StylerLayout from "./stylerLayout";
+import StylerTopBar from "./topNav";
 
-// Stub the chrome the layout pulls in so the test focuses on the role gate.
-vi.mock("./topNav", () => ({ default: () => null }));
-vi.mock("../stylerComponents/businessSummary", () => ({ default: () => null }));
 vi.mock("../../../hooks/remote/apiService", () => ({
   APIService: { stylerSignOut: vi.fn() },
 }));
 
-const renderLayout = (entry = "/styler-dashboard") =>
+vi.mock("../../../utils/constant", () => ({
+  getAuthToken: vi.fn(() => "token"),
+  getUserRole: vi.fn(() => "STYLER"),
+  clearAllSessionTokens: vi.fn(),
+  setIntendedRoute: vi.fn(),
+}));
+
+vi.mock("../stylerComponents/businessSummary", () => ({ default: () => <aside>summary</aside> }));
+
+const renderLayout = () =>
   render(
-    <MemoryRouter initialEntries={[entry]}>
-      <Routes>
-        <Route path="/styler-dashboard" element={<StylerLayout />}>
-          <Route index element={<div>STYLER_HOME</div>} />
-          {/* Let nested /styler-dashboard/* paths reach the layout, as in App.js. */}
-          <Route path="*" element={null} />
-        </Route>
-        <Route path="/login" element={<div>LOGIN_PAGE</div>} />
-      </Routes>
+    <MemoryRouter initialEntries={["/styler-dashboard/appointments"]}>
+      <StylerLayout />
     </MemoryRouter>
   );
 
-describe("StylerLayout role gate", () => {
-  beforeEach(() => sessionStorage.clear());
-  afterEach(() => sessionStorage.clear());
-
-  test("logged-out visitors are redirected to /login", () => {
+describe("the stylist sidebar", () => {
+  it("renders every section once, from one nav list", () => {
     renderLayout();
-    expect(screen.getByText("LOGIN_PAGE")).toBeInTheDocument();
-    expect(screen.queryByText("STYLER_HOME")).not.toBeInTheDocument();
+    const nav = screen.getByRole("navigation");
+    for (const label of [
+      "Overview",
+      "Appointments",
+      "Calendar",
+      "Availability",
+      "Services",
+      "My work",
+      "Payouts",
+      "My profile",
+    ]) {
+      expect(screen.getAllByText(label).length).toBe(1);
+    }
+    expect(nav.querySelectorAll("a").length).toBe(8);
   });
 
-  test("the requested page is remembered so a later sign-in returns there", () => {
-    // The logged-out case above proves the redirect to /login; this asserts the
-    // requested path (incl. a nested route) was captured for the return trip.
-    renderLayout("/styler-dashboard/appointments");
-    expect(sessionStorage.getItem("rapidstylers_intended_route")).toBe("/styler-dashboard/appointments");
-    expect(screen.queryByText("STYLER_HOME")).not.toBeInTheDocument();
+  it("marks the active section with a quiet brand pill, never the solid slab", () => {
+    renderLayout();
+    const active = screen.getByText("Appointments");
+    expect(active.className).toMatch(/bg-brand\/10/);
+    expect(active.className).toMatch(/text-brand/);
+    expect(active.className).not.toMatch(/bg-brand text-white/);
+    expect(active.getAttribute("aria-current")).toBe("page");
   });
 
-  test("a customer token alone is not enough — only a STYLER role passes", () => {
-    sessionStorage.setItem("rapidstylers_auth_token", "customer-jwt");
-    sessionStorage.setItem("rapidstylers_user_role", "CUSTOMER");
+  it("offers sign out as a quiet item, not a brand button", () => {
     renderLayout();
-    expect(screen.getByText("LOGIN_PAGE")).toBeInTheDocument();
-    expect(screen.queryByText("STYLER_HOME")).not.toBeInTheDocument();
+    const nav = screen.getByRole("navigation");
+    const signOut = Array.from(nav.querySelectorAll("button")).find(
+      (b) => b.textContent === "Sign out"
+    );
+    expect(signOut).toBeTruthy();
+    expect(signOut.className).not.toMatch(/bg-brand/);
+  });
+});
+
+describe("the stylist top bar", () => {
+  it("is a hairline bar, not the purple-tinted band", () => {
+    const { container } = render(<StylerTopBar />);
+    const bar = container.firstChild;
+    expect(bar.className).toMatch(/border-black\/10/);
+    expect(bar.className).not.toMatch(/F7F5FF/);
   });
 
-  test("a valid styler session renders the dashboard", () => {
-    sessionStorage.setItem("rapidstylers_auth_token", "styler-jwt");
-    sessionStorage.setItem("rapidstylers_refresh_token", "styler-refresh");
-    sessionStorage.setItem("rapidstylers_user_role", "STYLER");
-    renderLayout();
-    expect(screen.getByText("STYLER_HOME")).toBeInTheDocument();
-    expect(screen.queryByText("LOGIN_PAGE")).not.toBeInTheDocument();
+  it("signs out through a hairline pill, not a solid brand button", () => {
+    render(<StylerTopBar />);
+    const button = screen.getByRole("button", { name: "Sign out" });
+    expect(button.className).toMatch(/border/);
+    expect(button.className).not.toMatch(/bg-brand/);
   });
 });

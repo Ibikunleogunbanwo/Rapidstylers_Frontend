@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Navigate, Link } from "react-router-dom";
 import { APIService } from "../../hooks/remote/apiService";
+import { AdminPage, AdminCard, AdminInput } from "./adminShell";
 import {
   getAuthToken,
   isAdminRole,
@@ -86,41 +87,23 @@ const ManageCategories = () => {
   const displayName = (item) => item.serviceTypeName || item.serviceName || item.name || "(unnamed)";
 
   return (
-    <div className="min-h-screen bg-[#f5f5f5] px-4 py-10">
-      <div className="max-w-3xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <p className="text-2xl font-bold text-gray-900">Manage Categories</p>
-          <button
-            onClick={() => { clearAllSessionTokens(); window.location.href = "/admin/login"; }}
-            className="text-sm text-gray-500 hover:text-gray-800 font-semibold"
-          >
-            Sign out
-          </button>
-        </div>
-
-        <div className="flex gap-4 mb-6 text-sm font-semibold">
-          <span className="text-brand underline">Categories</span>
-          <Link to="/admin/blog" className="text-gray-500 hover:text-gray-800">Blog</Link>
-          <Link to="/admin/stylers" className="text-gray-500 hover:text-gray-800">Stylist verification</Link><Link to="/admin/operations" className="text-gray-500 hover:text-gray-800">Operations</Link><Link to="/admin/recovery" className="text-gray-500 hover:text-gray-800">Recovery</Link>
-        </div>
-
-        {/* Create */}
-        <form onSubmit={handleCreate} className="bg-white rounded-2xl shadow-md p-6 mb-6">
+    <AdminPage eyebrow="Admin" title="Manage Categories">
+      {/* Create */}
+      <form onSubmit={handleCreate}>
+        <AdminCard className="mb-6">
           <p className="font-semibold text-gray-900 mb-3">Add a new category</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <input
+            <AdminInput
               type="text"
               required
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
-              className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
               placeholder="Category name (e.g. Nails)"
             />
-            <input
+            <AdminInput
               type="text"
               value={newDescription}
               onChange={(e) => setNewDescription(e.target.value)}
-              className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
               placeholder="Description (optional)"
             />
           </div>
@@ -131,10 +114,11 @@ const ManageCategories = () => {
           >
             {submitting ? "Adding…" : "Add Category"}
           </button>
-        </form>
+        </AdminCard>
+      </form>
 
-        {/* List */}
-        <div className="bg-white rounded-2xl shadow-md p-6">
+      {/* List */}
+      <AdminCard>
           <p className="font-semibold text-gray-900 mb-3">Existing categories</p>
           {loading ? (
             <p className="text-sm text-gray-500">Loading…</p>
@@ -146,18 +130,18 @@ const ManageCategories = () => {
                 <li key={item.id} className="py-3 flex items-center justify-between gap-3">
                   {editItem && editItem.id === item.id ? (
                     <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2 flex-1">
-                      <input
+                      <AdminInput
+                        variant="inline"
                         type="text"
                         value={editName}
                         onChange={(e) => setEditName(e.target.value)}
-                        className="flex-1 border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                         placeholder="Category name"
                       />
-                      <input
+                      <AdminInput
+                        variant="inline"
                         type="text"
                         value={editDescription}
                         onChange={(e) => setEditDescription(e.target.value)}
-                        className="flex-1 border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                         placeholder="Description (optional)"
                       />
                       <button
@@ -201,15 +185,14 @@ const ManageCategories = () => {
               ))}
             </ul>
           )}
-        </div>
+      </AdminCard>
 
-        <p className="mt-6 text-center">
-          <Link to="/" className="text-sm text-gray-500 hover:text-gray-800 font-semibold">
-            ← Home
-          </Link>
-        </p>
-      </div>
-    </div>
+      <p className="mt-6 text-center">
+        <Link to="/" className="text-sm text-gray-500 hover:text-gray-800 font-semibold">
+          ← Home
+        </Link>
+      </p>
+    </AdminPage>
   );
 };
 

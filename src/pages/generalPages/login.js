@@ -124,7 +124,7 @@ const Login = () => {
         <div className="absolute inset-0 bg-black/60"></div>
         <div className="absolute inset-0 flex items-center justify-center text-white px-10">
           <div className="max-w-md text-center">
-            <p className="text-4xl font-bold font-serif leading-tight">
+            <p className="text-[clamp(1.75rem,3vw,2.5rem)] font-normal leading-[1.15] tracking-[-0.02em]">
               Welcome back to{" "}
               <span className="text-brand">RapidStylers</span>
             </p>
@@ -141,7 +141,7 @@ const Login = () => {
                 <img src={logo} alt="" className="h-10" />
               </Link>
             </div>
-            <p className="text-2xl font-bold text-gray-900">Welcome back</p>
+            <p className="text-[22px] font-normal tracking-[-0.01em] text-onSurface">Welcome back</p>
             <p className="text-sm text-gray-500 mt-1">Sign in to your account</p>
 
             {GOOGLE_CLIENT_ID && (

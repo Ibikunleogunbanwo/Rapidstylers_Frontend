@@ -1,18 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { Link, Navigate } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import { APIService } from "../../hooks/remote/apiService";
-import { clearAllSessionTokens, getAuthToken, isAdminRole } from "../../utils/constant";
-
-const AdminNav = () => (
-  <div className="mb-6 flex flex-wrap gap-4 text-sm font-semibold">
-    <Link to="/admin/categories" className="text-gray-500 hover:text-gray-800">Categories</Link>
-    <Link to="/admin/blog" className="text-gray-500 hover:text-gray-800">Blog</Link>
-    <Link to="/admin/stylers" className="text-gray-500 hover:text-gray-800">Stylists</Link>
-    <Link to="/admin/operations" className="text-gray-500 hover:text-gray-800">Operations</Link>
-    <Link to="/admin/payments" className="text-gray-500 hover:text-gray-800">Payments</Link>
-    <span className="text-brand underline">Recovery</span>
-  </div>
-);
+import { AdminPage } from "./adminShell";
+import { getAuthToken, isAdminRole } from "../../utils/constant";
 
 const STAGE_STYLES = {
   0: "bg-gray-100 text-gray-600",
@@ -50,28 +40,19 @@ const Recovery = () => {
   const converted = rows.filter((r) => r.converted).length;
 
   return (
-    <div className="min-h-screen bg-[#f5f5f5] px-4 py-10">
-      <div className="mx-auto max-w-5xl">
-        <div className="mb-6 flex items-center justify-between">
-          <p className="text-2xl font-bold text-gray-900">Recovery campaigns</p>
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={load}
-              className="rounded-md border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-600"
-            >
-              Refresh
-            </button>
-            <button
-              type="button"
-              onClick={() => { clearAllSessionTokens(); window.location.href = "/admin/login"; }}
-              className="text-sm font-semibold text-gray-500"
-            >
-              Sign out
-            </button>
-          </div>
-        </div>
-        <AdminNav />
+    <AdminPage
+      eyebrow="Admin"
+      title="Recovery campaigns"
+      actions={
+        <button
+          type="button"
+          onClick={load}
+          className="rounded-md border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-600"
+        >
+          Refresh
+        </button>
+      }
+    >
         <p className="mb-5 text-sm text-gray-500">
           Customers who started a sign-up but never created an account, and which recovery email they received
           (24h reminder → 7-day → 14-day → 1-month). Uses a "created" account after the follow-up stops.
@@ -129,8 +110,7 @@ const Recovery = () => {
             </table>
           </div>
         )}
-      </div>
-    </div>
+    </AdminPage>
   );
 };
 

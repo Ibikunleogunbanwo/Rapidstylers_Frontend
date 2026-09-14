@@ -4,6 +4,24 @@ import BusinessSummary from "../stylerComponents/businessSummary";
 import { getAuthToken, getUserRole, clearAllSessionTokens, setIntendedRoute } from "../../../utils/constant";
 import { APIService } from "../../../hooks/remote/apiService";
 
+/**
+ * The stylist dashboard shell. The sidebar used to be eight copies of the same
+ * block (one per link); it is now one array, and the active item is a quiet
+ * brand-tinted pill rather than a solid purple slab, matching the site's
+ * hairline register. Structure is unchanged: fixed top bar, sidebar on lg+,
+ * main outlet beside the business summary.
+ */
+const NAV_ITEMS = [
+  { to: "/styler-dashboard", label: "Overview" },
+  { to: "/styler-dashboard/appointments", label: "Appointments" },
+  { to: "/styler-dashboard/calendar", label: "Calendar" },
+  { to: "/styler-dashboard/availability", label: "Availability" },
+  { to: "/styler-dashboard/services", label: "Services" },
+  { to: "/styler-dashboard/my-work", label: "My work" },
+  { to: "/styler-dashboard/payouts", label: "Payouts" },
+  { to: "/styler-dashboard/profile", label: "My profile" },
+];
+
 const StylerLayout = () => {
   const location = useLocation();
   // Role gate: the whole /styler-dashboard area is styler-only. Without this a
@@ -12,121 +30,38 @@ const StylerLayout = () => {
     setIntendedRoute(location.pathname + location.search);
     return <Navigate to="/login" replace />;
   }
+  const signOut = () => {
+    APIService.stylerSignOut();
+    clearAllSessionTokens();
+    window.location.href = "/";
+  };
   return (
     <div className="bg-white min-h-screen">
       <StylerTopBar />
       <div className="pt-[70px] grid grid-cols-1 lg:grid-cols-12">
         <div className="px-4 col-span-1 lg:col-span-2 hidden lg:block relative">
-          <div className="grid gap-10 pt-8 pb-14 px-8 lg:px-0 text-xs font-medium fixed bg-white lg:bg-transparent">
-            <div>
+          <nav className="grid gap-1 pt-8 pb-14 px-8 lg:px-0 text-[13px] font-medium fixed bg-white lg:bg-transparent">
+            {NAV_ITEMS.map(({ to, label }) => (
               <Link
-                to="/styler-dashboard"
-                className={`py-4 px-4 rounded-md ${
-                  location.pathname === "/styler-dashboard"
-                    ? "bg-brand text-white cursor-default"
-                    : "cursor-pointer"
+                key={to}
+                to={to}
+                aria-current={location.pathname === to ? "page" : undefined}
+                className={`py-2.5 px-4 rounded-full transition-colors ${
+                  location.pathname === to
+                    ? "bg-brand/10 text-brand font-semibold cursor-default"
+                    : "text-black/60 hover:text-onSurface hover:bg-black/[0.04] cursor-pointer"
                 }`}
               >
-                Overview
+                {label}
               </Link>
-            </div>
-            <div>
-              <Link
-                to="/styler-dashboard/appointments"
-                className={`py-4 px-4 rounded-md ${
-                  location.pathname === "/styler-dashboard/appointments"
-                    ? "bg-brand text-white cursor-default"
-                    : "cursor-pointer"
-                }`}
-              >
-                Appointments
-              </Link>
-            </div>
-            <div>
-              <Link
-                to="/styler-dashboard/calendar"
-                className={`py-4 px-4 rounded-md ${
-                  location.pathname === "/styler-dashboard/calendar"
-                    ? "bg-brand text-white cursor-default"
-                    : "cursor-pointer"
-                }`}
-              >
-                Calendar
-              </Link>
-            </div>
-            <div>
-              <Link
-                to="/styler-dashboard/availability"
-                className={`py-4 px-4 rounded-md ${
-                  location.pathname === "/styler-dashboard/availability"
-                    ? "bg-brand text-white cursor-default"
-                    : "cursor-pointer"
-                }`}
-              >
-                Availability
-              </Link>
-            </div>
-            <div>
-              <Link
-                to="/styler-dashboard/services"
-                className={`py-4 px-4 rounded-md ${
-                  location.pathname === "/styler-dashboard/services"
-                    ? "bg-brand text-white cursor-default"
-                    : "cursor-pointer"
-                }`}
-              >
-                Services
-              </Link>
-            </div>
-            <div>
-              <Link
-                to="/styler-dashboard/my-work"
-                className={`py-4 px-4 rounded-md ${
-                  location.pathname === "/styler-dashboard/my-work"
-                    ? "bg-brand text-white cursor-default"
-                    : "cursor-pointer"
-                }`}
-              >
-                My work
-              </Link>
-            </div>
-            <div>
-              <Link
-                to="/styler-dashboard/payouts"
-                className={`py-4 px-4 rounded-md ${
-                  location.pathname === "/styler-dashboard/payouts"
-                    ? "bg-brand text-white cursor-default"
-                    : "cursor-pointer"
-                }`}
-              >
-                Payouts
-              </Link>
-            </div>
-            <div>
-              <Link
-                to="/styler-dashboard/profile"
-                className={`py-4 px-4 rounded-md ${
-                  location.pathname === "/styler-dashboard/profile"
-                    ? "bg-brand text-white cursor-default"
-                    : "cursor-pointer"
-                }`}
-              >
-                My profile
-              </Link>
-            </div>
-            <div>
-              <button
-                onClick={() => {
-                  APIService.stylerSignOut();
-                  clearAllSessionTokens();
-                  window.location.href = "/";
-                }}
-                className="py-4 px-4 rounded-md cursor-pointer text-left w-full"
-              >
-                Sign out
-              </button>
-            </div>
-          </div>
+            ))}
+            <button
+              onClick={signOut}
+              className="py-2.5 px-4 rounded-full cursor-pointer text-left w-full text-black/60 hover:text-onSurface hover:bg-black/[0.04] transition-colors"
+            >
+              Sign out
+            </button>
+          </nav>
         </div>
         <div className="p-2 col-span-1 lg:col-span-10">
           <div className="grid grid-cols-1 lg:grid-cols-10 gap-4">

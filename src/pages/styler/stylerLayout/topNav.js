@@ -15,7 +15,7 @@ const StylerTopBar = ({toggleSideBar}) => {
     };
 
     return (
-        <div className="h-[70px] flex items-center justify-between bg-[#F7F5FF] border-b fixed w-full px-3 md:px-4 z-50">
+        <div className="h-[70px] flex items-center justify-between bg-white/95 backdrop-blur border-b border-black/10 fixed w-full px-3 md:px-4 z-50">
         <div className="flex items-center gap-6">
           <img
             src={menu}
@@ -26,12 +26,12 @@ const StylerTopBar = ({toggleSideBar}) => {
           <img src={logo} alt="" className="h-12"/>
         </div>
         <div className="flex items-center gap-4">
-          <div className="text-[13px] hidden md:block font-medium">
+          <div className="text-[13px] hidden md:block text-black/55">
             {CurrentDateTime()}
           </div>
           <button
             onClick={handleSignOut}
-            className="text-xs font-medium text-white bg-brand rounded-md px-4 py-2"
+            className="text-xs font-semibold text-black/55 border border-black/20 rounded-full px-4 py-2 transition-colors hover:border-black/40 hover:text-onSurface"
           >
             Sign out
           </button>

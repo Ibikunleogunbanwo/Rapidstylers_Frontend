@@ -3,6 +3,7 @@ import { useNavigate, Navigate } from "react-router-dom";
 import { APIService } from "../../hooks/remote/apiService";
 import { getAuthToken, isAdminRole, setAuthToken, setRefreshToken, setAdminRole, setUserRole, showSuccessToastMessage } from "../../utils/constant";
 import TurnstileWidget from "../../components/turnstileWidget";
+import { AdminInput } from "./adminShell";
 
 const AdminLogin = () => {
   document.title = "Admin | RapidStylers";
@@ -49,29 +50,28 @@ const AdminLogin = () => {
 
   return (
     <div className="min-h-screen bg-[#f5f5f5] flex items-center justify-center px-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-md p-8">
-        <p className="text-2xl font-bold text-gray-900">Admin Sign In</p>
+      <div className="w-full max-w-md rounded-lg border border-black/10 bg-white p-8">
+        <p className="text-[11px] uppercase tracking-[0.25em] text-gray-400">RapidStylers</p>
+        <h1 className="mt-2 text-[clamp(1.5rem,2.5vw,2rem)] font-normal leading-[1.1] tracking-[-0.02em] text-gray-900">Admin Sign In</h1>
         <p className="text-sm text-gray-500 mt-1">Manage service categories</p>
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1">Email address</label>
-            <input
+            <AdminInput
               type="email"
               required
               value={emailAddress}
               onChange={(e) => setEmailAddress(e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
               placeholder="admin@rapidstylers.ca"
             />
           </div>
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1">Password</label>
-            <input
+            <AdminInput
               type="password"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
               placeholder="••••••••"
             />
           </div>

@@ -67,7 +67,7 @@ beforeEach(() => {
 describe("VerifyUserEmailAddress OTP inputs", () => {
   test("renders without crashing when the meta description tag is missing", () => {
     render(<VerifyUserEmailAddress />);
-    expect(screen.getByText("Verify your email address.")).toBeInTheDocument();
+    expect(screen.getByText("Verify your email address")).toBeInTheDocument();
   });
 
   test("renders the typed digit visibly and advances focus", () => {

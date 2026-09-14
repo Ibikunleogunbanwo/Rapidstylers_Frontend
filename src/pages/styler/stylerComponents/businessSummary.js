@@ -27,8 +27,8 @@ const BusinessSummary = () => {
 
     return ( 
         <div className="grid gap-4">
-            <div className="rounded-md border">
-              <p className="p-4 border-b text-sm font-bold truncate">Business summary</p>
+            <div className="rounded-lg border border-black/10">
+              <p className="p-4 border-b border-black/10 text-[11px] uppercase tracking-[0.25em] text-muted truncate">Business summary</p>
               <div className="p-4 grid grid-cols-2 gap-4 overflow-hidden">
                 <div className="">
                   <div className="text-[13px] text-gray-500 truncate">Appointments:</div>
@@ -68,8 +68,8 @@ const BusinessSummary = () => {
                 </div>
               </div>
             </div>
-            <div className="rounded-md border overflow-hidden">
-              <p className="p-4 border-b text-sm font-bold">Popular services:</p>
+            <div className="rounded-lg border border-black/10 overflow-hidden">
+              <p className="p-4 border-b border-black/10 text-[11px] uppercase tracking-[0.25em] text-muted">Popular services</p>
               {popularServices.length === 0 ? (
                 <p className="p-4 text-sm text-gray-500">{summary ? "No bookings yet. Services will appear here once clients book them." : "Loading…"}</p>
               ) : (

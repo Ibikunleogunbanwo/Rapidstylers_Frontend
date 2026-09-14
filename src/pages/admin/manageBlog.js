@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Navigate, Link } from "react-router-dom";
 import { APIService } from "../../hooks/remote/apiService";
+import { AdminPage, AdminCard, AdminInput, AdminTextarea } from "./adminShell";
 import {
   getAuthToken,
   isAdminRole,
@@ -92,64 +93,44 @@ const ManageBlog = () => {
     });
   };
 
-  const field = "border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand";
-
   return (
-    <div className="min-h-screen bg-[#f5f5f5] px-4 py-10">
-      <div className="max-w-4xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <p className="text-2xl font-bold text-gray-900">Manage Blog</p>
-          <button
-            onClick={() => { clearAllSessionTokens(); window.location.href = "/admin/login"; }}
-            className="text-sm text-gray-500 hover:text-gray-800 font-semibold"
-          >
-            Sign out
-          </button>
-        </div>
-
-        <div className="flex gap-4 mb-6 text-sm font-semibold">
-          <Link to="/admin/categories" className="text-gray-500 hover:text-gray-800">Categories</Link>
-          <span className="text-brand underline">Blog</span>
-          <Link to="/admin/stylers" className="text-gray-500 hover:text-gray-800">Stylist verification</Link><Link to="/admin/operations" className="text-gray-500 hover:text-gray-800">Operations</Link><Link to="/admin/recovery" className="text-gray-500 hover:text-gray-800">Recovery</Link>
-        </div>
-
-        {/* Create */}
-        <form onSubmit={handleCreate} className="bg-white rounded-2xl shadow-md p-6 mb-6">
+    <AdminPage eyebrow="Admin" title="Manage Blog">
+      {/* Create */}
+      <form onSubmit={handleCreate}>
+        <AdminCard className="mb-6">
           <p className="font-semibold text-gray-900 mb-3">Write a new article</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <input
+            <AdminInput
               type="text"
               required
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
-              className={`${field} md:col-span-2`}
+              className="md:col-span-2"
               placeholder="Article title"
             />
-            <input
+            <AdminInput
               type="text"
               value={form.category}
               onChange={(e) => setForm({ ...form, category: e.target.value })}
-              className={field}
               placeholder="Category (e.g. Braiding)"
             />
-            <input
+            <AdminInput
               type="text"
               value={form.author}
               onChange={(e) => setForm({ ...form, author: e.target.value })}
-              className={field}
               placeholder="Author (defaults to RapidStylers Team)"
             />
-            <input
+            <AdminInput
               type="text"
               value={form.imageUrl}
               onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
-              className={`${field} md:col-span-2`}
+              className="md:col-span-2"
               placeholder="Image URL"
             />
-            <textarea
+            <AdminTextarea
               value={form.content}
               onChange={(e) => setForm({ ...form, content: e.target.value })}
-              className={`${field} md:col-span-2 min-h-[140px]`}
+              className="md:col-span-2 min-h-[140px]"
               placeholder="Article content (paragraphs separated by blank lines)"
             />
           </div>
@@ -166,10 +147,11 @@ const ManageBlog = () => {
           >
             {submitting ? "Publishing…" : "Publish Article"}
           </button>
-        </form>
+        </AdminCard>
+      </form>
 
-        {/* List */}
-        <div className="bg-white rounded-2xl shadow-md p-6">
+      {/* List */}
+      <AdminCard>
           <p className="font-semibold text-gray-900 mb-3">Published articles</p>
           {loading ? (
             <p className="text-sm text-gray-500">Loading…</p>
@@ -181,40 +163,36 @@ const ManageBlog = () => {
                 <li key={item.id} className="py-4">
                   {editItem && editItem.id === item.id ? (
                     <div className="flex flex-col gap-2">
-                      <input
+                      <AdminInput
                         type="text"
                         value={editForm.title}
                         onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-                        className={field}
                         placeholder="Article title"
                       />
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                        <input
+                        <AdminInput
                           type="text"
                           value={editForm.category}
                           onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
-                          className={field}
                           placeholder="Category"
                         />
-                        <input
+                        <AdminInput
                           type="text"
                           value={editForm.author}
                           onChange={(e) => setEditForm({ ...editForm, author: e.target.value })}
-                          className={field}
                           placeholder="Author"
                         />
                       </div>
-                      <input
+                      <AdminInput
                         type="text"
                         value={editForm.imageUrl}
                         onChange={(e) => setEditForm({ ...editForm, imageUrl: e.target.value })}
-                        className={field}
                         placeholder="Image URL"
                       />
-                      <textarea
+                      <AdminTextarea
                         value={editForm.content}
                         onChange={(e) => setEditForm({ ...editForm, content: e.target.value })}
-                        className={`${field} min-h-[120px]`}
+                        className="min-h-[120px]"
                         placeholder="Article content"
                       />
                       {editError && (
@@ -274,15 +252,14 @@ const ManageBlog = () => {
               ))}
             </ul>
           )}
-        </div>
+      </AdminCard>
 
-        <p className="mt-6 text-center">
-          <Link to="/" className="text-sm text-gray-500 hover:text-gray-800 font-semibold">
-            ← Home
-          </Link>
-        </p>
-      </div>
-    </div>
+      <p className="mt-6 text-center">
+        <Link to="/" className="text-sm text-gray-500 hover:text-gray-800 font-semibold">
+          ← Home
+        </Link>
+      </p>
+    </AdminPage>
   );
 };
 

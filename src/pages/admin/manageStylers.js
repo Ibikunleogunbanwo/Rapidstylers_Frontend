@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Navigate, Link } from "react-router-dom";
 import { APIService } from "../../hooks/remote/apiService";
 import { cloudinaryAvatar } from "../../utils/cloudinaryImage";
+import { AdminPage } from "./adminShell";
 import {
   getAuthToken,
   isAdminRole,
@@ -17,26 +18,6 @@ const STATUS_STYLES = {
 };
 
 const FILTERS = ["All", "PENDING", "APPROVED", "REJECTED", "SUSPENDED"];
-
-const AdminNav = () => (
-  <div className="flex gap-4 mb-6 text-sm font-semibold">
-    <Link to="/admin/categories" className="text-gray-500 hover:text-gray-800">
-      Categories
-    </Link>
-    <Link to="/admin/blog" className="text-gray-500 hover:text-gray-800">
-      Blog
-    </Link>
-    <Link to="/admin/stylers" className="text-brand underline">
-      Stylist verification
-    </Link>
-    <Link to="/admin/operations" className="text-gray-500 hover:text-gray-800">
-      Operations
-    </Link>
-    <Link to="/admin/recovery" className="text-gray-500 hover:text-gray-800">
-      Recovery
-    </Link>
-  </div>
-);
 
 const ManageStylers = () => {
   document.title = "Stylist Management | RapidStylers";
@@ -101,23 +82,7 @@ const ManageStylers = () => {
       : stylers.filter((s) => s.verificationStatus === filter);
 
   return (
-    <div className="min-h-screen bg-[#f5f5f5] px-4 py-10">
-      <div className="max-w-4xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <p className="text-2xl font-bold text-gray-900">Stylist Management</p>
-          <button
-            onClick={() => {
-              clearAllSessionTokens();
-              window.location.href = "/admin/login";
-            }}
-            className="text-sm text-gray-500 hover:text-gray-800 font-semibold"
-          >
-            Sign out
-          </button>
-        </div>
-
-        <AdminNav />
-
+    <AdminPage eyebrow="Admin" title="Stylist Management">
         {/* Section tabs */}
         <div className="flex gap-2 mb-5">
           <button
@@ -335,8 +300,7 @@ const ManageStylers = () => {
             ← Home
           </Link>
         </div>
-      </div>
-    </div>
+    </AdminPage>
   );
 };
 
