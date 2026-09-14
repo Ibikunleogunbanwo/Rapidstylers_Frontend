@@ -37,6 +37,7 @@ const Stylist = ({ setPageTitle }) => {
                       <ServiceCard
                         coverImg={val.profileImageUrl}
                         name={val.businessName}
+                        serviceTypeName={val.serviceTypeName || ""}
                         status={val.visibilityStatus}
                         distance={val.distanceKm}
                         rating={val.averageRating}

@@ -45,30 +45,44 @@ const SavedStylist = ({ setPageTitle }) => {
   };
 
   return (
-    <div className="rounded-xl border border-gray-100 bg-white shadow-sm overflow-hidden">
-      <div className="flex items-center gap-3 border-b border-gray-100 bg-gradient-to-r from-brand/5 to-white px-4 py-4 sm:px-5">
-        <div className="flex items-center gap-2">
+    <div className="rounded-lg border border-black/10 bg-white">
+      <div className="border-b border-black/10 px-5 py-5 sm:px-6">
+        <div className="flex items-start gap-3">
           <Back />
           <div>
-            <h1 className="text-[15px] font-bold text-gray-900">Saved stylists</h1>
-            <p className="mt-0.5 text-xs text-gray-500">Professionals you have saved for later</p>
+            <p className="text-[10px] uppercase tracking-[0.25em] text-muted">Your list</p>
+            <h1 className="mt-2 text-[clamp(1.25rem,2.5vw,1.75rem)] font-normal leading-[1.1] tracking-[-0.02em] text-onSurface">
+              Saved professionals
+            </h1>
+            <p className="mt-1.5 text-[13px] text-black/55">Professionals you have saved for later</p>
           </div>
         </div>
       </div>
-      <div className="p-4">
+      <div className="p-5 sm:p-6">
         {!getAuthToken() ? (
-          <p className="text-sm text-gray-500">Please sign in to view saved professionals.</p>
+          <p className="border-t border-black/10 py-10 text-center text-[13px] text-black/55">
+            Please sign in to view saved professionals.
+          </p>
         ) : loading ? (
-          <p className="text-sm text-gray-500">Loading saved professionals...</p>
+          <p className="border-t border-black/10 py-10 text-center text-[13px] text-black/55">
+            Loading saved professionals...
+          </p>
         ) : stylists.length === 0 ? (
-          <p className="text-sm text-gray-500">You have not saved any professionals yet.</p>
+          <div className="border-t border-black/10 pt-10 text-center">
+            <p className="text-[10px] uppercase tracking-[0.25em] text-muted">Nothing saved yet</p>
+            <p className="mx-auto mt-3 max-w-[380px] text-[13px] leading-[1.6] text-black/55">
+              You have not saved any professionals yet. Tap the bookmark on any
+              professional to keep them here for later.
+            </p>
+          </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
             {stylists.map((styler) => (
               <div key={styler.stylerId} className="relative">
                 <ServiceCard
                   coverImg={styler.profileImageUrl}
                   name={styler.businessName || [styler.firstname, styler.lastname].filter(Boolean).join(" ")}
+                  serviceTypeName={styler.serviceTypeName || ""}
                   businessName={styler.businessName}
                   stylerId={styler.stylerId}
                   status={styler.visibilityStatus}
@@ -79,7 +93,7 @@ const SavedStylist = ({ setPageTitle }) => {
                 />
                 <button
                   type="button"
-                  className="absolute right-3 bottom-3 rounded-md bg-white px-3 py-2 text-xs font-semibold text-rose-600 shadow ring-1 ring-rose-100 disabled:opacity-50"
+                  className="absolute right-3 bottom-3 rounded-full border border-black/10 bg-white px-3.5 py-2 text-xs font-semibold text-rose-600 transition-colors hover:border-rose-300 disabled:opacity-50"
                   onClick={() => removeStylist(styler.stylerId)}
                   disabled={removingId === styler.stylerId}
                 >

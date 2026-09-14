@@ -183,5 +183,62 @@ export const ELEVATE_GRID = ["g-cornrows-1", "g-buzz-cut-1", "g-nails-1", "g-loc
   return { src, alt };
 });
 
+/**
+ * Sample photos for professionals who have not uploaded one.
+ *
+ * A card with no photo used to fall straight to the initials tile, which reads
+ * as an unfinished page when a whole search result grid is full of them. Each
+ * entry below maps one backend service type (the `service_type` table: Nail
+ * Technician, Eyelash Technician, Barber, Hairstylist, Makeup Artist) onto
+ * curated photos from the list above, so a photo-less card shows real work
+ * from the stylist's own field.
+ *
+ * Matching is word-based over the service name, so admin-renamed services keep
+ * working while their names keep the recognisable word ("Nail tech", "Mobile
+ * nail technician"). The words deliberately include the gallery's own
+ * vocabulary, and the hair entry accepts the hair-service words so a future
+ * "Braider" or "Loc specialist" service falls back sensibly too.
+ */
+const SERVICE_FALLBACKS = [
+  { words: ["nail"], ids: ["g-nails-1", "g-nails-3", "g-nails-6", "g-nails-2", "g-nails-5"] },
+  { words: ["lash"], ids: ["g-lashes-2", "g-lashes-4", "g-lashes-5"] },
+  { words: ["barber", "buzz", "fade", "clipper"], ids: ["g-buzz-cut-1"] },
+  { words: ["makeup", "mua"], ids: ["g-makeup-1", "g-makeup-2", "g-makeup-3"] },
+  {
+    words: ["hairstylist", "hair", "braid", "loc", "dreadlock", "cornrow", "natural"],
+    ids: ["g-natural-hair-1", "g-natural-hair-2", "g-natural-hair-3", "g-locs-2", "g-braids-5"],
+  },
+];
+
+/** Small stable hash, so a card picks the same sample photo on every render. */
+const hashSeed = (value) => {
+  const text = String(value || "");
+  let hash = 0;
+  for (let i = 0; i < text.length; i += 1) {
+    hash = (hash * 31 + text.charCodeAt(i)) >>> 0;
+  }
+  return hash;
+};
+
+/**
+ * Picks a curated photo for a stylist with no profile image. `serviceTypeName`
+ * selects the field ("Barber", "Nail Technician", ...); `seed` (the styler id)
+ * spreads stylists of the same field across that field's photos instead of
+ * repeating one tile down a whole results grid. Deterministic on both: the
+ * same stylist shows the same sample photo on every search and reload.
+ *
+ * Returns the curated entry ({ src, alt, category, ... }), or null when the
+ * service name is unrecognised — the card then falls back to initials.
+ */
+export function fallbackPhotoFor(serviceTypeName, seed = "") {
+  const tokens = words(serviceTypeName);
+  if (tokens.length === 0) return null;
+  const row = SERVICE_FALLBACKS.find((entry) =>
+    entry.words.some((word) => tokens.some((token) => wordsMatch(token, word)))
+  );
+  if (!row) return null;
+  return curatedById(row.ids[hashSeed(seed) % row.ids.length]);
+}
+
 /** Filenames this list expects to find in public/images/gallery/. */
 export const CURATED_FILENAMES = CURATED_GALLERY.map((entry) => `${entry.id}.${EXTENSION}`);

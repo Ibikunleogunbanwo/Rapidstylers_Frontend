@@ -6,6 +6,14 @@ import Footer from "../../components/footer";
 import canada from "../../assets/images/canada.webp";
 import canada2 from "../../assets/images/signup.jpg";
 import { Link } from "react-router-dom";
+// Real photos of the Canadian cities the platform operates in, plus a short
+// street-level video loop for the Canada band. Resized for web on import.
+import photoCalgaryStreet from "../../assets/images/canada/calgary-tower-street.jpg";
+import photoCalgarySkyline from "../../assets/images/canada/calgary-skyline-dusk.jpg";
+import photoTorontoAerial from "../../assets/images/canada/toronto-aerial.jpg";
+import photoAutumnLeaves from "../../assets/images/canada/autumn-leaves.jpg";
+import photoMontrealWheel from "../../assets/images/canada/montreal-wheel.jpg";
+import cityLoop from "../../assets/images/canada/city-loop.mp4";
 import Hero from "./newHeroSection";
 // import rapidGIF from "../../assets/Videos/stylers.gif";
 // The "for clients" card used stylist-1.jpg, which is the same braiding close-up
@@ -78,39 +86,41 @@ const BlogSection = () => {
   const visible = posts || FALLBACK_BLOGS;
 
   return (
-    <div id="blog" className="px-4 md:px-[50px] py-20 max-w-7xl mx-auto">
+    <div id="blog" className="mx-auto max-w-[1240px] px-5 py-20 md:px-[50px] md:py-28 lg:px-[100px]">
       <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
         <div>
-          <p className="text-xs uppercase tracking-[0.25em] text-brand font-bold">From the blog</p>
-          <p className="text-3xl md:text-4xl font-bold mt-2 font-serif">Get inspired with RapidStylers</p>
-          <p className="mt-2 text-black/60">Helpful articles written by beauty professionals.</p>
+          <p className="text-[11px] uppercase tracking-[0.25em] text-muted">From the blog</p>
+          <h2 className="mt-4 text-[clamp(1.75rem,3vw,2.5rem)] font-normal leading-[1.1] tracking-[-0.02em] text-onSurface">
+            Get inspired with RapidStylers
+          </h2>
+          <p className="mt-3 text-[14px] leading-[1.6] text-black/60">Helpful articles written by beauty professionals.</p>
         </div>
         <Link
           to="/blog"
-          className="text-sm font-semibold text-black/50 hover:text-brand transition-colors w-fit"
+          className="text-[13px] font-semibold text-black/55 hover:text-brand transition-colors w-fit"
         >
           Read all articles →
         </Link>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mt-10">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-12">
         {visible.map((post, i) => (
           <Link
             key={post.title + i}
             to="/blog"
-            className="group rounded-2xl overflow-hidden border border-gray-100 bg-white shadow-[0_2px_20px_rgba(147,129,255,0.08)] hover:shadow-[0_10px_30px_rgba(147,129,255,0.2)] hover:-translate-y-1 transition-all duration-300"
+            className="group"
           >
-            <div className="h-48 overflow-hidden">
+            <div className="aspect-[4/5] overflow-hidden bg-neutral">
               <img
                 src={post.img}
                 alt=""
-                className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-500"
+                className="object-cover w-full h-full"
                 loading="lazy"
               />
             </div>
-            <div className="p-4">
-              <span className="text-xs font-semibold uppercase tracking-wide text-brand">{post.cat}</span>
-              <p className="font-semibold text-sm leading-snug mt-2">{post.title}</p>
-              <p className="text-xs text-slate-400 mt-3">{post.date}</p>
+            <div className="pt-4">
+              <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted">{post.cat}</span>
+              <p className="text-[15px] font-medium leading-snug mt-2 text-onSurface">{post.title}</p>
+              <p className="text-xs text-black/45 mt-2">{post.date}</p>
             </div>
           </Link>
         ))}
@@ -158,12 +168,11 @@ const LandingPage = () => {
               </div>
             </div>
             <div>
-              <p className="text-xs uppercase tracking-[0.25em] text-brand font-bold">Who we are</p>
-              <h2 className="text-3xl md:text-5xl font-bold mt-3 leading-tight font-serif">
-                A vetted professional, at your door.{" "}
-                <span className="text-brand">You choose the time.</span>
+              <p className="text-[11px] uppercase tracking-[0.25em] text-muted">Who we are</p>
+              <h2 className="mt-4 text-[clamp(1.75rem,3vw,2.5rem)] font-normal leading-[1.1] tracking-[-0.02em] text-onSurface">
+                A vetted professional, at your door. You choose the time.
               </h2>
-              <p className="mt-5 text-black/60 leading-relaxed">
+              <p className="mt-5 text-[14px] leading-[1.7] text-black/60 max-w-[520px]">
                 We are a Canadian booking platform for hair, nails and beauty.
                 Search for the service you want, look through the professional's
                 work, read reviews from clients who booked them, then pick a time
@@ -172,7 +181,7 @@ const LandingPage = () => {
               </p>
               <Link
                 to={"/about"}
-                className="inline-block mt-8 py-4 px-8 bg-brand rounded-md text-sm text-white font-semibold hover:opacity-90 transition"
+                className="mt-8 inline-flex items-center rounded-full bg-[#1A1A1A] px-7 py-3.5 text-[13px] font-semibold text-white transition-opacity hover:opacity-85"
               >
                 Read our story
               </Link>
@@ -192,13 +201,13 @@ const LandingPage = () => {
             <img src={canada} alt="" loading="lazy" decoding="async" className="block lg:hidden" />
           </div>
           <div className="">
-            <p className="text-3xl mb-4 text-white">Why choose RapidStylers?</p>
+            <h2 className="text-[clamp(1.75rem,3vw,2.5rem)] font-normal leading-[1.1] tracking-[-0.02em] text-white mb-8">Why choose RapidStylers?</h2>
             <div className="gap-6 grid">
               <div className="text-white">
                 <div className="flex gap-5">
                   <div className="">01</div>
                   <div>
-                    <span>Salon Quality, At Home</span>
+                    <span className="text-[15px] font-medium">Salon Quality, At Home</span>
                   </div>
                 </div>
                 <div className="flex gap-5">
@@ -217,7 +226,7 @@ const LandingPage = () => {
                 <div className="flex gap-5">
                   <div className="">02</div>
                   <div>
-                    <span>Your Perfect Match, Every Time</span>
+                    <span className="text-[15px] font-medium">Your Perfect Match, Every Time</span>
                   </div>
                 </div>
                 <div className="flex gap-5">
@@ -236,7 +245,7 @@ const LandingPage = () => {
                 <div className="flex gap-5">
                   <div className="">03</div>
                   <div>
-                    <span>Convenience, Redefined</span>
+                    <span className="text-[15px] font-medium">Convenience, Redefined</span>
                   </div>
                 </div>
                 <div className="flex gap-5">
@@ -254,7 +263,7 @@ const LandingPage = () => {
                 <div className="flex gap-5">
                   <div className="">04</div>
                   <div>
-                    <span>Community, Not Just a Service</span>
+                    <span className="text-[15px] font-medium">Community, Not Just a Service</span>
                   </div>
                 </div>
                 <div className="flex gap-5">
@@ -273,7 +282,7 @@ const LandingPage = () => {
                 <div className="flex gap-5">
                   <div className="">05</div>
                   <div>
-                    <span>Beyond the Basics</span>
+                    <span className="text-[15px] font-medium">Beyond the Basics</span>
                   </div>
                 </div>
                 <div className="flex gap-5">
@@ -302,22 +311,21 @@ const LandingPage = () => {
         </div>
 
         {/* Elevate your looks */}
-        <div className="relative overflow-hidden bg-[#F0EBF6]">
-          <div className="absolute -top-24 -right-24 h-80 w-80 rounded-full bg-brand/10 blur-3xl"></div>
-          <div className="relative px-4 md:px-[50px] py-20 lg:py-24 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center max-w-7xl mx-auto">
+        <div className="bg-neutral">
+          <div className="px-5 md:px-[50px] lg:px-[100px] py-20 lg:py-24 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center max-w-[1240px] mx-auto">
             <div className="text-center lg:text-start">
-              <p className="text-xs uppercase tracking-[0.25em] text-brand font-bold">The gallery</p>
-              <h2 className="text-3xl md:text-5xl font-bold mt-3 leading-tight font-serif">
-                Elevate your <span className="text-brand">style.</span>
+              <p className="text-[11px] uppercase tracking-[0.25em] text-muted">The gallery</p>
+              <h2 className="mt-4 text-[clamp(1.75rem,3vw,2.5rem)] font-normal leading-[1.1] tracking-[-0.02em] text-onSurface">
+                Elevate your style.
               </h2>
-              <p className="mt-4 text-black/60 text-lg">
+              <p className="mt-4 text-[14px] leading-[1.6] text-black/60 max-w-[440px] mx-auto lg:mx-0">
                 Explore our exclusive collection of trendsetting styles for
                 men and women.
               </p>
               <div className="mt-8 flex justify-center lg:justify-start">
                 <Link
                   to={"/elevate-your-looks"}
-                  className="inline-block py-4 px-8 bg-brand rounded-md text-sm text-white font-semibold hover:opacity-90 transition"
+                  className="inline-flex items-center rounded-full bg-[#1A1A1A] px-7 py-3.5 text-[13px] font-semibold text-white transition-opacity hover:opacity-85"
                 >
                   Browse gallery
                 </Link>
@@ -331,7 +339,7 @@ const LandingPage = () => {
                   alt={img.alt}
                   loading="lazy"
                   decoding="async"
-                  className="w-full aspect-square object-cover rounded-2xl shadow-[0_20px_60px_rgba(147,129,255,0.3)]"
+                  className="w-full aspect-square object-cover"
                 />
               ))}
             </div>
@@ -342,12 +350,12 @@ const LandingPage = () => {
         <div className="px-4 md:px-[50px] grid gap-8 my-20 min-w-0">
           <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5">
             <div className="lg:w-1/2">
-              <p className="text-xs uppercase tracking-[0.25em] text-brand font-bold">
+              <p className="text-[11px] uppercase tracking-[0.25em] text-brand">
                 For beauty professionals
               </p>
-              <p className="text-4xl md:text-5xl font-bold mt-2 leading-tight font-serif">
+              <h2 className="mt-4 text-[clamp(1.75rem,3vw,2.5rem)] font-normal leading-[1.1] tracking-[-0.02em] text-onSurface">
                 Calling all <span className="text-brand">beauty professionals!</span>
-              </p>
+              </h2>
               <p className="mt-3 text-lg text-black/60">
                 Join now to start receiving online booking appointments
                 effortlessly.
@@ -370,10 +378,10 @@ const LandingPage = () => {
           <div className="mx-auto max-w-7xl">
             <div className="mb-10 flex flex-col gap-4 md:mb-12 md:flex-row md:items-end md:justify-between">
               <div className="max-w-2xl">
-                <p className="text-xs font-bold uppercase tracking-[0.25em] text-brand">
+                <p className="text-[11px] uppercase tracking-[0.25em] text-muted">
                   Your next move
                 </p>
-                <h2 className="mt-3 font-serif text-3xl font-bold leading-tight text-[#171717] sm:text-4xl md:text-5xl">
+                <h2 className="mt-4 text-[clamp(1.75rem,3vw,2.5rem)] font-normal leading-[1.1] tracking-[-0.02em] text-onSurface">
                   Beauty that fits your life.
                 </h2>
               </div>
@@ -398,7 +406,7 @@ const LandingPage = () => {
                   </span>
                 </div>
                 <div className="flex min-h-[242px] flex-col p-6 sm:p-8">
-                  <h3 className="font-serif text-2xl font-bold leading-tight sm:text-3xl">
+                  <h3 className="text-xl font-normal leading-tight tracking-[-0.01em] sm:text-2xl">
                     Your best look, at home.
                   </h3>
                   <p className="mt-3 max-w-lg text-sm leading-relaxed text-white/65 sm:text-base">
@@ -429,7 +437,7 @@ const LandingPage = () => {
                   </span>
                 </div>
                 <div className="flex min-h-[242px] flex-col p-6 sm:p-8">
-                  <h3 className="font-serif text-2xl font-bold leading-tight sm:text-3xl">
+                  <h3 className="text-xl font-normal leading-tight tracking-[-0.01em] sm:text-2xl">
                     Turn your talent into a business.
                   </h3>
                   <p className="mt-3 max-w-lg text-sm leading-relaxed text-white/65 sm:text-base">
@@ -456,16 +464,57 @@ const LandingPage = () => {
         {/* Blog section — fetched from API, 4 fallback posts if backend is down */}
         <BlogSection />
 
+        {/* Across Canada: real photos of the cities we operate in */}
+        <div className="bg-white">
+          <div className="mx-auto max-w-[1240px] px-5 py-20 md:px-[50px] md:py-28 lg:px-[100px]">
+            <div className="max-w-[680px]">
+              <p className="text-[11px] uppercase tracking-[0.25em] text-muted">Coast to coast</p>
+              <h2 className="mt-4 text-[clamp(1.75rem,3vw,2.5rem)] font-normal leading-[1.1] tracking-[-0.02em] text-onSurface">
+                Built for Canadian cities.
+              </h2>
+              <p className="mt-4 text-[14px] leading-[1.6] text-black/60">
+                RapidStylers connects clients and professionals across the
+                country. These are the streets our professionals travel every
+                day, from Calgary to Toronto to Montreal.
+              </p>
+            </div>
+            <div className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <figure className="m-0">
+                <img src={photoCalgaryStreet} alt="Centre Street Bridge looking toward the Calgary Tower" className="aspect-[3/4] w-full object-cover" loading="lazy" decoding="async" />
+                <figcaption className="mt-3 text-[11px] uppercase tracking-[0.15em] text-muted">Calgary, Alberta</figcaption>
+              </figure>
+              <figure className="m-0">
+                <img src={photoTorontoAerial} alt="Aerial view of downtown Toronto and the CN Tower" className="aspect-[3/4] w-full object-cover" loading="lazy" decoding="async" />
+                <figcaption className="mt-3 text-[11px] uppercase tracking-[0.15em] text-muted">Toronto, Ontario</figcaption>
+              </figure>
+              <figure className="m-0">
+                <img src={photoMontrealWheel} alt="The La Grande Roue de Montreal ferris wheel reflected in the Old Port basin" className="aspect-[3/4] w-full object-cover" loading="lazy" decoding="async" />
+                <figcaption className="mt-3 text-[11px] uppercase tracking-[0.15em] text-muted">Montreal, Quebec</figcaption>
+              </figure>
+            </div>
+            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <figure className="m-0">
+                <img src={photoAutumnLeaves} alt="Maple leaves turning orange against a blue sky" className="aspect-[16/9] w-full object-cover" loading="lazy" decoding="async" />
+                <figcaption className="mt-3 text-[11px] uppercase tracking-[0.15em] text-muted">Canadian autumn</figcaption>
+              </figure>
+              <figure className="m-0">
+                <img src={photoCalgarySkyline} alt="An observation tower seen from below through golden autumn branches" className="aspect-[16/9] w-full object-cover" loading="lazy" decoding="async" />
+                <figcaption className="mt-3 text-[11px] uppercase tracking-[0.15em] text-muted">Through the autumn leaves</figcaption>
+              </figure>
+            </div>
+          </div>
+        </div>
+
         {/* Stylist by location */}
         <div className="relative overflow-hidden bg-black">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_80%,rgba(147,129,255,0.12),transparent_50%),radial-gradient(circle_at_80%_20%,rgba(147,129,255,0.08),transparent_50%)]"></div>
           <div className="relative px-4 md:px-[50px] py-20 lg:py-28 max-w-7xl mx-auto">
             <div className="text-center mb-12">
-              <p className="text-xs uppercase tracking-[0.25em] text-brand font-bold">Nationwide coverage</p>
-              <h2 className="text-3xl md:text-5xl font-bold mt-3 leading-tight font-serif text-white">
+              <p className="text-[11px] uppercase tracking-[0.25em] text-brand">Nationwide coverage</p>
+              <h2 className="mt-4 text-[clamp(1.75rem,3vw,2.5rem)] font-normal leading-[1.1] tracking-[-0.02em] text-white">
                 Find beauty professionals<br />anywhere in <span className="text-brand">Canada.</span>
               </h2>
-              <p className="text-white/50 mt-3 text-lg max-w-xl mx-auto">
+              <p className="text-white/50 mt-4 text-[14px] leading-[1.6] max-w-xl mx-auto">
                 Choose a province to discover top-rated stylists near you.
               </p>
             </div>
@@ -488,11 +537,20 @@ const LandingPage = () => {
         </div>
 
         {/* Quote */}
-        <div className="my-16 px-4 md:px-[50px] text-center grid gap-3">
+        <div className="my-16 px-5 md:px-[50px] text-center grid gap-4 justify-items-center">
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            src={cityLoop}
+            aria-label="RapidStylers logo animation"
+            className="w-full max-w-[420px] rounded-lg"
+          />
           <div className="flex justify-center">
             <img src={scissors} alt="" className="h-5" />
           </div>
-          <p className="text-[#c4c4c4]">
+          <p className="text-[13px] text-black/45">
             Style is a way to say who you are without having to speak
           </p>
         </div>

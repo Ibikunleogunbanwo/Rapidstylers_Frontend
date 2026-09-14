@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Footer from "../../components/footer";
+import { Section, PageHeading, BackHome } from "../../components/pageSections";
 import { APIService } from "../../hooks/remote/apiService";
 import { cloudinaryBlog } from "../../utils/cloudinaryImage";
 
@@ -67,40 +68,40 @@ const Blog = () => {
   const visiblePosts = posts === null ? FALLBACK_POSTS : posts;
 
   return (
-    <div className="min-h-screen bg-[#f5f5f5]">
-      <div className="px-4 md:px-[50px] pt-14 pb-6 max-w-7xl mx-auto">
-        <Link to="/" className="text-sm font-semibold text-gray-500 hover:text-gray-800 transition-colors">
-          ← Home
-        </Link>
-        <p className="text-xs uppercase tracking-[0.25em] text-brand font-bold mt-10">From the blog</p>
-        <h1 className="text-4xl md:text-5xl font-bold mt-3 font-serif">Get inspired with RapidStylers</h1>
-        <p className="mt-3 text-black/60">Helpful articles written by beauty professionals.</p>
-      </div>
-      <div className="px-4 md:px-[50px] pb-20 max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mt-8">
+    <div className="min-h-screen bg-white">
+      <Section pad="pt-32 pb-2">
+        <BackHome />
+        <PageHeading
+          eyebrow="From the blog"
+          title="Get inspired with RapidStylers"
+          lead="Helpful articles written by beauty professionals."
+        />
+      </Section>
+      <Section>
+        <div className="grid grid-cols-1 gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
           {visiblePosts.map((post) => (
             <Link
               key={post.id}
               to={`/blog/${post.id}`}
-              className="group rounded-2xl overflow-hidden border border-gray-100 bg-white shadow-[0_2px_20px_rgba(147,129,255,0.08)] hover:shadow-[0_10px_30px_rgba(147,129,255,0.2)] hover:-translate-y-1 transition-all duration-300"
+              className="group"
             >
-              <div className="h-48 overflow-hidden">
+              <div className="aspect-[4/5] overflow-hidden bg-neutral">
                 <img
                   src={cloudinaryBlog(post.img)}
                   alt=""
-                  className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-500"
+                  className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500"
                   loading="lazy"
                 />
               </div>
-              <div className="p-4">
-                <span className="text-xs font-semibold uppercase tracking-wide text-brand">{post.cat}</span>
-                <p className="font-semibold text-sm leading-snug mt-2">{post.title}</p>
-                <p className="text-xs text-slate-400 mt-3">{post.date}</p>
+              <div className="pt-4">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted">{post.cat}</span>
+                <p className="mt-2 text-[15px] leading-snug text-onSurface">{post.title}</p>
+                <p className="mt-2 text-[12px] text-black/45">{post.date}</p>
               </div>
             </Link>
           ))}
         </div>
-      </div>
+      </Section>
       <Footer />
     </div>
   );

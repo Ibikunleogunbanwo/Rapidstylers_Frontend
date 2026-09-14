@@ -65,6 +65,7 @@ const Featured = () => {
               key={stylist.stylerId || stylist.id}
               coverImg={stylist.logoUrl || stylist.bannerUrl || stylist.profileImageUrl || ""}
               name={stylist.businessName || stylist.restaurantName || stylist.name || "Professional"}
+              serviceTypeName={stylist.serviceTypeName || ""}
               rating={stylist.averageRating || stylist.rating || "0"}
               reviews={stylist.reviewCount || stylist.reviews || "0"}
               status={stylist.online ? "Online" : "Offline"}

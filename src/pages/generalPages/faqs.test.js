@@ -46,10 +46,17 @@ describe("FAQs page", () => {
   test("renders all three section headings with deep-link anchors", () => {
     renderFaqs();
 
-    // The category headings carry the deep-link anchors the footer points at.
-    expect(screen.getByText("For customers").id).toBe("for-customers");
-    expect(screen.getByText("For beauty professionals").id).toBe("for-beauty-professionals");
-    expect(screen.getByText("Accounts & security").id).toBe("accounts-security");
+    // The category sections carry the deep-link anchors the footer points at.
+    expect(document.getElementById("for-customers")).not.toBeNull();
+    expect(document.getElementById("for-beauty-professionals")).not.toBeNull();
+    expect(document.getElementById("accounts-security")).not.toBeNull();
+    // ...and each wraps its own questions.
+    expect(
+      document.getElementById("for-customers").textContent
+    ).toContain("How do I book an appointment?");
+    expect(
+      document.getElementById("accounts-security").textContent
+    ).toContain("Forgot your password?");
   });
 
   test("renders every FAQ question", () => {
@@ -129,10 +136,10 @@ describe("FAQs page", () => {
     expect(screen.queryByText(/no hidden per-kilometre charges/)).not.toBeInTheDocument();
   });
 
-  test("renders the Home link and footer", () => {
+  test("renders the back link and footer", () => {
     renderFaqs();
 
-    expect(screen.getByRole("link", { name: "Home" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Back home" })).toBeInTheDocument();
     expect(screen.getByTestId("footer")).toBeInTheDocument();
   });
 });

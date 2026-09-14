@@ -5,6 +5,7 @@ import {
   CURATED_FILENAMES,
   ELEVATE_GRID,
   curatedById,
+  fallbackPhotoFor,
   searchCuratedPhotos,
 } from "./curatedGallery";
 import {
@@ -209,5 +210,54 @@ describe("curated gallery search", () => {
     const matches = searchCuratedPhotos("bob");
     expect(matches.length).toBeGreaterThan(0);
     matches.forEach((entry) => expect(CURATED_GALLERY).toContain(entry));
+  });
+});
+
+describe("photo-less card fallbacks", () => {
+  // The five service types the backend's service_type table carries today.
+  const SERVICE_TYPES = ["Nail Technician", "Eyelash Technician", "Barber", "Hairstylist", "Makeup Artist"];
+
+  test("each backend service type maps to a curated photo", () => {
+    const unmapped = SERVICE_TYPES.filter((name) => !fallbackPhotoFor(name, "S1"));
+    expect(unmapped, `No sample photo for: ${unmapped.join(", ")}`).toEqual([]);
+  });
+
+  test("every fallback photo comes from the stylist's own field, not another", () => {
+    const fieldWord = {
+      "Nail Technician": "nail",
+      "Eyelash Technician": "lash",
+      Barber: "barber",
+      "Makeup Artist": "makeup",
+      Hairstylist: "hair",
+    };
+    const offField = SERVICE_TYPES.filter((name) => {
+      const entry = fallbackPhotoFor(name, "S1");
+      const haystack = `${entry.alt} ${entry.category} ${entry.id}`.toLowerCase();
+      return !haystack.includes(fieldWord[name]);
+    });
+    expect(offField, `Sample photo from the wrong field for: ${offField.join(", ")}`).toEqual([]);
+  });
+
+  test("the same stylist always gets the same photo", () => {
+    expect(fallbackPhotoFor("Hairstylist", "S7")).toEqual(fallbackPhotoFor("Hairstylist", "S7"));
+  });
+
+  test("stylists of one field spread across that field's photos, not one repeated tile", () => {
+    const picks = new Set();
+    for (let i = 0; i < 20; i += 1) {
+      picks.add(fallbackPhotoFor("Nail Technician", `styler-${i}`).id);
+    }
+    expect(picks.size).toBeGreaterThan(1);
+  });
+
+  test("an unknown or empty service type falls back to nothing, so the card shows initials", () => {
+    expect(fallbackPhotoFor("", "S1")).toBeNull();
+    expect(fallbackPhotoFor(null, "S1")).toBeNull();
+    expect(fallbackPhotoFor("Tarot Reading", "S1")).toBeNull();
+  });
+
+  test("a renamed service keeps its fallback while the name keeps the field word", () => {
+    expect(fallbackPhotoFor("Mobile nail technician", "S1")).not.toBeNull();
+    expect(fallbackPhotoFor("Hair braiding", "S1")).not.toBeNull();
   });
 });

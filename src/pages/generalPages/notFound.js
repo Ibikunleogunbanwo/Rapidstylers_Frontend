@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { Section, Eyebrow } from "../../components/pageSections";
 import {
   SUPPORT_ADDRESS,
   SUPPORT_EMAIL,
@@ -10,29 +11,33 @@ import {
 const NotFound = () => {
   document.title = "Page Not Found | RapidStylers";
   return (
-    <div className="min-h-screen bg-[#f5f5f5] flex items-center justify-center px-4">
-      <div className="text-center max-w-md">
-        <p className="text-7xl font-bold text-brand">404</p>
-        <p className="text-2xl font-bold text-gray-900 mt-4">Page not found</p>
-        <p className="text-sm text-gray-500 mt-2">
+    <div className="min-h-screen bg-white">
+      <Section pad="pt-[18vh] pb-24" className="text-center">
+        <p className="text-[clamp(4rem,10vw,7rem)] font-normal leading-none tracking-[-0.03em] text-brand">
+          404
+        </p>
+        <h1 className="mt-4 text-[clamp(1.75rem,3vw,2.5rem)] font-normal leading-[1.1] tracking-[-0.02em] text-onSurface">
+          Page not found
+        </h1>
+        <p className="mx-auto mt-4 max-w-[420px] text-[13px] leading-[1.6] text-black/55">
           The page you're looking for doesn't exist or may have been moved.
         </p>
         <Link
           to="/"
-          className="inline-block mt-6 py-3 px-8 bg-brand rounded-md text-sm text-white font-semibold hover:opacity-90"
+          className="mt-8 inline-flex items-center rounded-full bg-[#1A1A1A] px-7 py-3.5 text-[13px] font-semibold text-white transition-opacity hover:opacity-85"
         >
-          Go Home
+          Back home
         </Link>
-        <div className="mt-10 pt-6 border-t border-gray-200 text-xs text-gray-500 leading-relaxed">
-          <p className="font-semibold text-gray-700">Need a hand? Reach us</p>
-          <p className="mt-1">
-            <a href={`mailto:${SUPPORT_EMAIL}`} className="hover:text-brand transition-colors">{SUPPORT_EMAIL}</a>
+        <div className="mx-auto mt-14 max-w-[420px] border-t border-black/10 pt-6 text-[12px] leading-[1.7] text-black/50">
+          <Eyebrow className="!text-black/40">Need a hand? Reach us</Eyebrow>
+          <p className="mt-2">
+            <a href={`mailto:${SUPPORT_EMAIL}`} className="transition-colors hover:text-brand">{SUPPORT_EMAIL}</a>
             {" \u00b7 "}
-            <a href={`tel:${SUPPORT_PHONE_TEL}`} className="hover:text-brand transition-colors">{SUPPORT_PHONE}</a>
+            <a href={`tel:${SUPPORT_PHONE_TEL}`} className="transition-colors hover:text-brand">{SUPPORT_PHONE}</a>
           </p>
-          <p className="mt-0.5">{SUPPORT_ADDRESS}</p>
+          <p>{SUPPORT_ADDRESS}</p>
         </div>
-      </div>
+      </Section>
     </div>
   );
 };

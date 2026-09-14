@@ -11,6 +11,7 @@ vi.mock("../../components/serviceCard", () => ({
   ),
 }));
 vi.mock("../../components/adSlot", () => ({ default: () => null }));
+vi.mock("../../components/footer", () => ({ default: () => <footer data-testid="footer" /> }));
 vi.mock("../../hooks/useSavedStylists", () => ({
   useSavedStylists: () => ({
     savedIds: new Set(),
@@ -22,6 +23,7 @@ vi.mock("../../hooks/remote/apiService", () => ({
   APIService: {
     getStylerType: vi.fn(),
     searchNearby: vi.fn(),
+    searchByCity: vi.fn(),
   },
 }));
 
@@ -198,5 +200,57 @@ describe("SearchResults pagination", () => {
     expect(screen.getByText("Page 2 of 2")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /next/i })).toBeDisabled();
     expect(screen.getByRole("button", { name: /previous/i })).not.toBeDisabled();
+  });
+});
+
+describe("SearchResults city search", () => {
+  beforeEach(() => {
+    window.scrollTo = vi.fn();
+    APIService.getStylerType.mockResolvedValue({ data: { data: [] } });
+  });
+
+  test("a city-only search fetches from the city endpoint instead of showing nothing", async () => {
+    APIService.searchByCity.mockResolvedValue({
+      data: { data: [stylists(1)[0]] },
+    });
+    renderPage("/search?city=Calgary");
+
+    expect(APIService.searchByCity).toHaveBeenCalledWith("Calgary");
+    expect(await screen.findByTestId("stylist-card")).toBeInTheDocument();
+    // The dedicated endpoint is city-scoped, so no client-side re-filter runs
+    // that could strip rows whose city spelling differs in case or padding.
+    expect(screen.getByText(/Professionals in Calgary/)).toBeInTheDocument();
+  });
+
+  test("an empty city widens to the province and the page says so honestly", async () => {
+    APIService.searchByCity.mockResolvedValue({
+      data: { data: { items: stylists(3), widened: true, widenedProvince: "Alberta" } },
+    });
+    renderPage("/search?city=Strathmore");
+
+    const cards = await screen.findAllByTestId("stylist-card");
+    expect(cards).toHaveLength(3);
+    expect(
+      screen.getByText("No professionals in Strathmore yet. Showing professionals across Alberta.")
+    ).toBeInTheDocument();
+  });
+
+  test("a widened search never renders the empty state", async () => {
+    APIService.searchByCity.mockResolvedValue({
+      data: { data: { items: stylists(2), widened: true, widenedProvince: "Alberta" } },
+    });
+    renderPage("/search?city=Strathmore");
+
+    await screen.findAllByTestId("stylist-card");
+    expect(screen.queryByText(/No professionals found in this search yet/)).not.toBeInTheDocument();
+  });
+
+  test("a city with nobody and no known province still shows the empty state", async () => {
+    APIService.searchByCity.mockResolvedValue({ data: { data: [] } });
+    renderPage("/search?city=Nowhere");
+
+    expect(
+      await screen.findByText(/No professionals found in this search yet/)
+    ).toBeInTheDocument();
   });
 });

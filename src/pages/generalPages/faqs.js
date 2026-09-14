@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import Footer from "../../components/footer";
+import { Section, Eyebrow, PageHeading, BackHome, HairlineList } from "../../components/pageSections";
 
 const FAQS = [
   {
@@ -102,6 +102,12 @@ const FAQS = [
   },
 ];
 
+// The three sections the accordion groups into, in the order the list defines
+// them. The ids are the deep-link targets (/faqs#for-customers) and are pinned
+// by the tests, so renaming them breaks links from the footer and the about page.
+const hashFor = (category) =>
+  category.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+
 const Faqs = () => {
   const [openIndex, setOpenIndex] = useState(0);
 
@@ -127,60 +133,52 @@ const Faqs = () => {
     return () => window.removeEventListener("hashchange", scrollToHash);
   }, []);
 
+  // The open answer indexes per section so each group keeps its own state.
+  const sections = FAQS.reduce((acc, faq, index) => {
+    if (!acc.length || acc[acc.length - 1].category !== faq.category) {
+      acc.push({ category: faq.category, items: [] });
+    }
+    acc[acc.length - 1].items.push({ ...faq, index });
+    return acc;
+  }, []);
+
   return (
     <div className="min-h-screen bg-white">
-      <div className="max-w-3xl mx-auto px-4 py-12 md:py-20">
-        <Link
-          to="/"
-          className="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-500 hover:text-brand transition-colors mb-8"
-        >
-          <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
-            <path
-              fillRule="evenodd"
-              d="M17 10a.75.75 0 01-.75.75H5.612l4.158 3.96a.75.75 0 11-1.04 1.08l-5.5-5.25a.75.75 0 010-1.08l5.5-5.25a.75.75 0 111.04 1.08L5.612 9.25H16.25A.75.75 0 0117 10z"
-              clipRule="evenodd"
-            />
-          </svg>
-          Home
-        </Link>
+      <Section pad="pt-32 pb-4">
+        <BackHome />
+        <PageHeading
+          eyebrow="FAQs"
+          title="Questions? We have answers"
+          lead={
+            <>
+              Everything you need to know about booking, pricing, payouts, and
+              getting started, whether you are a client or a beauty professional.
+              Still curious? Reach out through our support page.
+            </>
+          }
+        />
+      </Section>
 
-        <p className="text-xs uppercase tracking-[0.25em] text-brand font-bold">FAQs</p>
-        <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mt-3 mb-3">
-          Questions? We have answers
-        </h1>
-        <p className="text-sm text-gray-500 mb-8">
-          Everything you need to know about booking, pricing, payouts, and getting
-          started, whether you are a client or a beauty professional. Still curious?
-          Reach out through our support page.
-        </p>
-
-        <div className="grid gap-3">
-          {FAQS.map((faq, index) => {
-            const isNewCategory =
-              index === 0 || FAQS[index - 1].category !== faq.category;
-            const isOpen = openIndex === index;
-            return (
-              <div key={faq.q}>
-                {isNewCategory && (
-                  <p
-                    id={faq.category.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")}
-                    className="text-xs uppercase tracking-[0.2em] text-brand font-bold mt-8 mb-3 first:mt-0 scroll-mt-8"
-                  >
-                    {faq.category}
-                  </p>
-                )}
-                <div className="rounded-xl border border-gray-100 bg-[#faf9ff] overflow-hidden">
+      {sections.map(({ category, items }, sectionIndex) => (
+        <Section key={category} muted={sectionIndex % 2 === 1} id={hashFor(category)}>
+          <Eyebrow className="scroll-mt-8">{category}</Eyebrow>
+          <div className="mt-8 max-w-[860px]">
+            {items.map((faq) => {
+              const isOpen = openIndex === faq.index;
+              return (
+                <div key={faq.q} className="border-t border-black/10">
                   <button
                     type="button"
-                    onClick={() => setOpenIndex(isOpen ? null : index)}
+                    onClick={() => setOpenIndex(isOpen ? null : faq.index)}
                     aria-expanded={isOpen}
-                    className="w-full flex items-center justify-between gap-4 px-5 py-4 text-left"
+                    className="flex w-full items-center justify-between gap-6 py-5 text-left"
                   >
-                    <span className="font-semibold text-[15px] text-gray-900">{faq.q}</span>
+                    <span className="text-[15px] font-medium text-onSurface">{faq.q}</span>
                     <svg
                       viewBox="0 0 20 20"
                       fill="currentColor"
-                      className={`h-5 w-5 shrink-0 text-brand transition-transform ${isOpen ? "rotate-180" : ""}`}
+                      aria-hidden="true"
+                      className={`h-4 w-4 shrink-0 text-black/40 transition-transform ${isOpen ? "rotate-180" : ""}`}
                     >
                       <path
                         fillRule="evenodd"
@@ -190,14 +188,37 @@ const Faqs = () => {
                     </svg>
                   </button>
                   {isOpen && (
-                    <div className="px-5 pb-5 text-sm leading-7 text-gray-600">{faq.a}</div>
+                    <p className="max-w-[720px] pb-6 text-[13px] leading-[1.65] text-black/60">
+                      {faq.a}
+                    </p>
                   )}
                 </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
+              );
+            })}
+          </div>
+        </Section>
+      ))}
+
+      <Section>
+        <Eyebrow>Still have a question</Eyebrow>
+        <HairlineList
+          className="max-w-[680px]"
+          items={[
+            {
+              key: "support",
+              title: "Ask us directly",
+              note: "The support page has our email and phone, and most messages get a reply within one business day.",
+            },
+          ]}
+        />
+        <a
+          href="/contact-support"
+          className="mt-8 inline-flex items-center rounded-full bg-[#1A1A1A] px-7 py-3.5 text-[13px] font-semibold text-white transition-opacity hover:opacity-85"
+        >
+          Go to support
+        </a>
+      </Section>
+
       <Footer />
     </div>
   );

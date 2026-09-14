@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { useSearchParams, Link, useNavigate } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import ServiceCard from "../../components/serviceCard";
 import AdSlot from "../../components/adSlot";
+import Footer from "../../components/footer";
+import { Section, Eyebrow, PageHeading, BackHome } from "../../components/pageSections";
 import { APIService } from "../../hooks/remote/apiService";
 import { useSavedStylists } from "../../hooks/useSavedStylists";
 
@@ -60,6 +62,9 @@ const SearchResults = () => {
   // Set only when the backend paginated the nearby search; null means the full
   // list was fetched and pagination happens client-side.
   const [totalCount, setTotalCount] = useState(null);
+  // Set when a city search found nobody in that city and the backend widened
+  // to the province; the page then says so instead of quietly relabelling.
+  const [widened, setWidened] = useState(null);
   const { savedIds, loading: savedLoading, toggleSaved } = useSavedStylists();
 
   // Load service type categories for the filter dropdown
@@ -86,6 +91,11 @@ const SearchResults = () => {
     const run = async () => {
       setLoading(true);
       setTotalCount(null);
+      setWidened(null);
+      // True when the dedicated city endpoint served the results: they are
+      // already city-scoped (or widened by the backend), so the client-side
+      // city re-filter below must not run and strip widened rows.
+      let cityScopedResponse = false;
       try {
         let results = [];
 
@@ -131,6 +141,19 @@ const SearchResults = () => {
         } else if (province) {
           const res = await APIService.searchByProvince(province);
           results = res.data?.data || [];
+        } else if (city) {
+          // City with no other filters: the dedicated city search. The backend
+          // widens to the city's province when the city has nobody, and marks
+          // the payload so the page can say so.
+          const res = await APIService.searchByCity(city);
+          cityScopedResponse = true;
+          const data = res.data?.data;
+          if (data && !Array.isArray(data) && Array.isArray(data.items)) {
+            results = data.items;
+            if (data.widened) setWidened(data.widenedProvince || true);
+          } else {
+            results = Array.isArray(data) ? data : [];
+          }
         }
 
         if (openNow && !(lat && lng)) {
@@ -155,8 +178,10 @@ const SearchResults = () => {
 
         // Client-side secondary filter by city. When no lat/lng is present the
         // search runs province-wide, so without this the heading would say
-        // "Professionals in Calgary" while showing the whole province.
-        if (city && !(lat && lng)) {
+        // "Professionals in Calgary" while showing the whole province. The
+        // dedicated city branch is exempt: it is already city-scoped, and its
+        // widened payload legitimately carries rows from other cities.
+        if (city && !(lat && lng) && !cityScopedResponse) {
           const needle = city.trim().toLowerCase();
           results = results.filter(
             (s) => String(s.city || "").trim().toLowerCase() === needle
@@ -174,7 +199,6 @@ const SearchResults = () => {
     // navigate/searchParams are stable (React Router v6) and the URL is the
     // source of truth for every search input, so including them is safe.
   }, [lat, lng, radius, serviceTypeId, name, province, city, openNow, page, isOpenNow, navigate, searchParams]);
-
   // Re-filter by service type from the dropdown on the results page
   const handleServiceFilter = (e) => {
     const newId = e.target.value;
@@ -258,47 +282,23 @@ const SearchResults = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F4F5F7] px-4 md:px-[50px] py-10">
-      <div className="max-w-6xl mx-auto">
-        {/* Back link */}
-        <Link
-          to="/"
-          className="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-500 hover:text-[#9381FF] transition-colors"
-        >
-          <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
-            <path
-              fillRule="evenodd"
-              d="M17 10a.75.75 0 01-.75.75H5.612l4.158 3.96a.75.75 0 11-1.04 1.08l-5.5-5.25a.75.75 0 010-1.08l5.5-5.25a.75.75 0 111.04 1.08L5.612 9.25H16.25A.75.75 0 0117 10z"
-              clipRule="evenodd"
-            />
-          </svg>
-          Home
-        </Link>
+    <div className="min-h-screen bg-white text-onSurface">
+      <Section pad="pt-32 pb-12">
+        <BackHome />
+        <PageHeading
+          eyebrow="Find a professional"
+          title={heading}
+          lead={loading ? "Searching…" : "Find your perfect professional and book instantly."}
+        />
 
-        {/* Heading */}
-        <div className="mt-6 flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <p className="font-serif text-4xl font-bold tracking-tight text-gray-900">{heading}</p>
-            <p className="mt-1.5 text-sm text-gray-500">
-              {loading ? "Searching…" : "Find your perfect professional and book instantly."}
-            </p>
-          </div>
-          {!loading && totalFound > 0 && (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3.5 py-1.5 text-xs font-bold text-gray-600 shadow-sm ring-1 ring-gray-100">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#9381FF]" />
-              {totalFound} professional{totalFound === 1 ? "" : "s"} found
-            </span>
-          )}
-        </div>
-
-        {/* Filter bar */}
-        <div className="mt-7 flex flex-wrap items-center gap-2.5">
+        {/* Filters: hairline controls in the page register, count as quiet text */}
+        <div className="flex flex-wrap items-center gap-2.5">
           {/* Service type dropdown */}
           <div className="relative">
             <select
               value={activeServiceId}
               onChange={handleServiceFilter}
-              className="appearance-none rounded-xl border border-gray-200 bg-white py-2.5 pl-4 pr-10 text-sm font-semibold text-gray-700 shadow-sm outline-none transition-colors hover:border-brand/40 focus:border-brand focus:ring-2 focus:ring-brand/20 cursor-pointer"
+              className="appearance-none rounded-full border border-black/10 bg-white py-2.5 pl-5 pr-10 text-[13px] font-semibold text-onSurface outline-none transition-colors hover:border-black/30 focus:border-brand cursor-pointer"
             >
               {serviceOptions.map((option) => (
                 <option key={option.value || "all"} value={option.value}>
@@ -309,7 +309,8 @@ const SearchResults = () => {
             <svg
               viewBox="0 0 20 20"
               fill="currentColor"
-              className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
+              className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-black/40"
+              aria-hidden="true"
             >
               <path
                 fillRule="evenodd"
@@ -319,7 +320,7 @@ const SearchResults = () => {
             </svg>
           </div>
 
-          <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm hover:border-brand/40">
+          <label className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-black/10 bg-white px-5 py-2.5 text-[13px] font-semibold text-onSurface transition-colors hover:border-black/30">
             <input
               type="checkbox"
               checked={openNowFilter}
@@ -333,55 +334,64 @@ const SearchResults = () => {
           {pills.map((pill) => (
             <span
               key={pill.key}
-              className="inline-flex items-center gap-1.5 rounded-full bg-[#9381FF]/10 py-1.5 pl-3.5 pr-2 text-xs font-bold text-[#6b5bd2] ring-1 ring-[#9381FF]/15"
+              className="inline-flex items-center gap-1.5 rounded-full bg-neutral py-1.5 pl-3.5 pr-2 text-xs font-semibold text-onSurface ring-1 ring-black/10"
             >
               {pill.label}
               <button
                 onClick={() => removeFilter(pill.key)}
-                className="flex h-4 w-4 items-center justify-center rounded-full bg-[#9381FF]/15 transition-colors hover:bg-[#9381FF]/30"
+                className="flex h-4 w-4 items-center justify-center rounded-full bg-black/10 text-black/60 transition-colors hover:bg-black/20"
                 title={`Remove ${pill.label} filter`}
               >
                 ✕
               </button>
             </span>
           ))}
-        </div>
 
+          {!loading && totalFound > 0 && (
+            <p className="ml-auto text-[13px] text-black/55">
+              {totalFound} professional{totalFound === 1 ? "" : "s"} found
+            </p>
+          )}
+        </div>
+      </Section>
+
+      <Section pad="pb-20 pt-4 md:pb-28">
         {/* Ad unit (renders nothing until REACT_APP_ADSENSE_CLIENT is configured) */}
-        <div className="mt-8">
+        <div className="mb-10">
           <AdSlot slot="search_results_top" />
         </div>
+
+        {/* The city had nobody, so the search widened to the province. Say so. */}
+        {widened && !loading && stylists.length > 0 && (
+          <p className="-mt-4 mb-8 text-[13px] text-black/55">
+            No professionals in {city} yet. Showing{" "}
+            {typeof widened === "string" ? `professionals across ${widened}` : "nearby professionals"}.
+          </p>
+        )}
 
         {/* Results */}
         {loading ? (
           <div className="py-24 text-center">
-            <div className="mx-auto h-10 w-10 animate-spin rounded-full border-[3px] border-[#9381FF]/20 border-t-[#9381FF]" />
-            <p className="mt-4 text-sm text-gray-400">Finding professionals…</p>
+            <div className="mx-auto h-9 w-9 animate-spin rounded-full border-[3px] border-brand/20 border-t-brand" />
+            <p className="mt-4 text-[13px] text-black/55">Finding professionals…</p>
           </div>
         ) : stylists.length === 0 ? (
-          <div className="mt-8 rounded-2xl border border-dashed border-gray-200 bg-white/60 py-20 text-center">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#9381FF]/10">
-              <svg viewBox="0 0 20 20" fill="currentColor" className="h-7 w-7 text-[#9381FF]">
-                <path
-                  fillRule="evenodd"
-                  d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </div>
-            <p className="mt-4 text-base font-bold text-gray-700">No professionals found in this search yet</p>
-            <p className="mt-1 text-sm text-gray-400">
+          <div className="border-t border-black/10 pt-16 text-center">
+            <Eyebrow>No results</Eyebrow>
+            <p className="mt-5 text-[15px] text-onSurface">No professionals found in this search yet</p>
+            <p className="mx-auto mt-2 max-w-[440px] text-[13px] leading-[1.6] text-black/55">
               Try expanding your radius, changing the service type, or removing a filter.
             </p>
           </div>
         ) : (
           <>
-            <div className="mt-7 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {visibleStylists.map((stylist) => (
                 <ServiceCard
                   key={stylist.stylerId || stylist.id}
                   coverImg={stylist.profileImageUrl || ""}
                   name={stylist.businessName || stylist.name || "Professional"}
+                  serviceTypeName={stylist.serviceTypeName || ""}
                   rating={stylist.averageRating || "0"}
                   reviews={stylist.reviewCount || "0"}
                   status={stylist.visibilityStatus === "Online" ? "Online" : "Offline"}
@@ -398,23 +408,23 @@ const SearchResults = () => {
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="mt-10 flex items-center justify-center gap-4">
+              <div className="mt-12 flex items-center justify-center gap-4">
                 <button
                   type="button"
                   onClick={() => goToPage(safePage - 1)}
                   disabled={safePage <= 1}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition-colors hover:border-brand/40 disabled:cursor-not-allowed disabled:opacity-40"
+                  className="rounded-full border border-black/10 px-6 py-2.5 text-[13px] font-semibold text-onSurface transition-colors hover:border-black/30 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   ← Previous
                 </button>
-                <span className="text-sm font-semibold text-gray-600">
+                <span className="text-[13px] text-black/55">
                   Page {safePage} of {totalPages}
                 </span>
                 <button
                   type="button"
                   onClick={() => goToPage(safePage + 1)}
                   disabled={safePage >= totalPages}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition-colors hover:border-brand/40 disabled:cursor-not-allowed disabled:opacity-40"
+                  className="rounded-full border border-black/10 px-6 py-2.5 text-[13px] font-semibold text-onSurface transition-colors hover:border-black/30 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   Next →
                 </button>
@@ -422,7 +432,9 @@ const SearchResults = () => {
             )}
           </>
         )}
-      </div>
+      </Section>
+
+      <Footer />
     </div>
   );
 };

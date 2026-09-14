@@ -333,6 +333,15 @@ export class APIService {
             throw(error);
         }
     }
+    static async searchByCity(city){
+        try{
+            return await ApiClient.get(`/search_by_city?city=${encodeURIComponent(String(city || "").trim())}`)
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
 
     // Account-owned reads: identity comes from the Bearer token (JWT subject), not a query param.
     static async userPendingAppointment(){

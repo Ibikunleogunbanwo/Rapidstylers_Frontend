@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import Footer from "../../components/footer";
 import AdSlot from "../../components/adSlot";
+import { Section, PageHeading, BackHome } from "../../components/pageSections";
 import { APIService } from "../../hooks/remote/apiService";
 import { cloudinaryBlog } from "../../utils/cloudinaryImage";
 
@@ -82,55 +83,66 @@ const BlogPost = () => {
 
   if (notFound) {
     return (
-      <div className="min-h-screen bg-[#f5f5f5] flex flex-col items-center justify-center px-4 text-center">
-        <p className="text-6xl font-serif font-bold text-brand">404</p>
-        <h1 className="text-2xl font-bold mt-3">Article not found</h1>
-        <p className="text-black/60 mt-2 text-sm">This article may have been removed.</p>
-        <Link to="/blog" className="mt-6 py-3 px-6 bg-brand rounded-md text-sm text-white font-semibold hover:opacity-90">
-          ← Back to Blog
-        </Link>
+      <div className="min-h-screen bg-white">
+        <Section pad="pt-24 pb-24" className="text-center">
+          <p className="text-[11px] uppercase tracking-[0.25em] text-muted">404</p>
+          <h1 className="mt-4 text-[clamp(1.75rem,3vw,2.5rem)] font-normal leading-[1.1] tracking-[-0.02em] text-onSurface">
+            Article not found
+          </h1>
+          <p className="mt-4 text-[13px] leading-[1.55] text-black/55">
+            This article may have been removed.
+          </p>
+          <Link
+            to="/blog"
+            className="mt-8 inline-flex items-center rounded-full bg-[#1A1A1A] px-7 py-3.5 text-[13px] font-semibold text-white transition-opacity hover:opacity-85"
+          >
+            Back to the blog
+          </Link>
+        </Section>
       </div>
     );
   }
 
   if (!post) {
-    return <div className="min-h-screen bg-[#f5f5f5]" />;
+    return <div className="min-h-screen bg-white" />;
   }
 
   const paragraphs = String(post.content || "").split("\n").filter((p) => p.trim());
 
   return (
-    <div className="min-h-screen bg-[#f5f5f5]">
-      <div className="px-4 md:px-[50px] pt-14 pb-10 max-w-3xl mx-auto">
-        <Link to="/#blog" className="text-sm font-semibold text-gray-500 hover:text-gray-800 transition-colors">
-          ← All articles
-        </Link>
-        <p className="text-xs uppercase tracking-[0.25em] text-brand font-bold mt-8">{post.category}</p>
-        <h1 className="text-3xl md:text-4xl font-bold mt-3 font-serif leading-tight">{post.title}</h1>
-        <p className="mt-3 text-sm text-slate-500">
-          By {post.author || "RapidStylers Team"} · {post.dateCreated || ""}
-        </p>
+    <div className="min-h-screen bg-white">
+      <Section pad="pt-32 pb-6">
+        <BackHome label="All articles" to="/blog" />
+        <PageHeading
+          eyebrow={post.category}
+          title={post.title}
+          lead={`By ${post.author || "RapidStylers Team"} \u00b7 ${post.dateCreated || ""}`}
+        />
         {post.imageUrl && (
           <img
             src={cloudinaryBlog(post.imageUrl)}
             alt=""
-            className="mt-8 rounded-2xl w-full h-64 md:h-80 object-cover shadow-[0_10px_40px_rgba(147,129,255,0.25)]"
+            className="aspect-[16/9] w-full object-cover"
+            loading="lazy"
           />
         )}
-        <article className="mt-8 bg-white rounded-2xl p-6 md:p-10 shadow-[0_2px_20px_rgba(147,129,255,0.08)]">
+        <article className="mt-12 max-w-[680px] space-y-5">
           {paragraphs.map((p, i) => (
-            <p key={i} className="text-[15px] leading-relaxed text-gray-700 mb-4">
+            <p key={i} className="text-[14px] leading-[1.75] text-black/70">
               {p}
             </p>
           ))}
         </article>
         <AdSlot slot="blog_in_article" style={{ marginTop: "1.5rem" }} />
-        <div className="mt-8 text-center">
-          <Link to="/#blog" className="inline-block py-3 px-8 bg-brand rounded-md text-sm text-white font-semibold hover:opacity-90">
-            ← Back to articles
+        <div className="mt-12 border-t border-black/10 pt-8">
+          <Link
+            to="/blog"
+            className="text-[13px] underline underline-offset-4 transition-colors hover:text-brand"
+          >
+            Back to all articles
           </Link>
         </div>
-      </div>
+      </Section>
       <Footer />
     </div>
   );

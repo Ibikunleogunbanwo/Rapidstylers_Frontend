@@ -186,11 +186,11 @@ const ElevateLooks = () => {
       <Hero height="60vh" />
 
       {/* Ad unit (renders nothing until REACT_APP_ADSENSE_CLIENT is configured) */}
-      <div className="px-4 md:px-[50px] max-w-5xl mx-auto w-full">
+      <div className="mx-auto w-full max-w-[1240px] px-5 md:px-[50px] lg:px-[100px]">
         <AdSlot slot="gallery_top" />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-8 lg:grid-cols-12 gap-4 px-4 md:px-[50px]">
+      <div className="mx-auto grid w-full max-w-[1240px] grid-cols-1 gap-4 px-5 md:grid-cols-8 md:px-[50px] lg:grid-cols-12 lg:px-[100px]">
         <div className="col-span-12 lg:col-span-2">
           <div className="gap-3 md:gap-8 flex items-center overflow-x-scroll lg:grid max-h-screen py-4 lg:pt-2">
             {CATEGORIES.map((cat) => (
@@ -378,7 +378,7 @@ const ElevateLooks = () => {
               <button
                 onClick={loadMore}
                 disabled={loadingMore}
-                className="px-8 py-3 rounded-md bg-brand text-white text-sm font-semibold hover:opacity-90 disabled:opacity-60 transition-opacity"
+                className="rounded-full bg-[#1A1A1A] px-8 py-3.5 text-[13px] font-semibold text-white transition-opacity hover:opacity-85 disabled:opacity-60"
               >
                 {loadingMore ? "Loading…" : "Load more"}
               </button>
