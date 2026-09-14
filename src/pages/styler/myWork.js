@@ -93,10 +93,10 @@ const MyWork = () => {
 
   return (
     <div className="grid gap-6">
-      <div className="bg-white rounded-2xl border border-[#1d1d1d0a] shadow-sm p-6">
+      <div className="bg-white rounded-lg border border-black/10 p-6">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div>
-            <p className="text-lg font-bold">My Work</p>
+            <p className="text-[15px] font-medium text-onSurface">My Work</p>
             <p className="text-sm text-gray-400">
               Showcase your work. Approved photos appear in the public gallery.
             </p>
@@ -147,7 +147,7 @@ const MyWork = () => {
       </div>
 
       {/* Portfolio grid */}
-      <div className="bg-white rounded-2xl border border-[#1d1d1d0a] shadow-sm p-6">
+      <div className="bg-white rounded-lg border border-black/10 p-6">
         <p className="text-sm font-semibold mb-4">Your photos</p>
         {loading ? (
           <p className="text-sm text-gray-500">Loading…</p>

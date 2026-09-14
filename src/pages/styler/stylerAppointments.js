@@ -96,8 +96,8 @@ const StylerAppointments = () => {
     }
   };
 
-  const activeStyle = "bg-brand text-white p-4 rounded-md font-medium";
-  const inactiveStyle = "bg-gray-50 border rounded-md border p-4 text-gray-500";
+  const activeStyle = "bg-brand/10 text-brand font-semibold p-2 rounded-full";
+  const inactiveStyle = "text-black/60 p-2 rounded-full hover:text-onSurface hover:bg-black/[0.04] transition-colors";
 
   const statusLabel = (code) =>
     code === "0" ? "Completed" : code === "2" ? "Rejected" : "Cancelled";
@@ -121,7 +121,7 @@ const StylerAppointments = () => {
 
   return (
     <div className="rounded-md border">
-      <div className="border-b p-4 font-medium text-sm">My appointments:</div>
+      <div className="border-b border-black/10 p-4 text-[11px] uppercase tracking-[0.25em] text-muted">My appointments</div>
       <div className="p-4">
         <div className="text-xs flex gap-4">
           <div

@@ -159,9 +159,9 @@ const StylerAvailability = () => {
   return (
     <div className="grid gap-6">
       {/* Weekly hours */}
-      <div className="bg-white rounded-2xl border border-[#1d1d1d0a] shadow-sm p-6">
+      <div className="bg-white rounded-lg border border-black/10 p-6">
         <div className="mb-5">
-          <p className="text-lg font-bold">Working Hours</p>
+          <p className="text-[15px] font-medium text-onSurface">Working Hours</p>
           <p className="text-sm text-gray-400">
             Set your weekly working hours. Customers can only pick times inside these windows.
           </p>
@@ -244,9 +244,9 @@ const StylerAvailability = () => {
       </div>
 
       {/* Home visits — flat travel fee */}
-      <div className="bg-white rounded-2xl border border-[#1d1d1d0a] shadow-sm p-6">
+      <div className="bg-white rounded-lg border border-black/10 p-6">
         <div className="mb-5">
-          <p className="text-lg font-bold">Home Visits</p>
+          <p className="text-[15px] font-medium text-onSurface">Home Visits</p>
           <p className="text-sm text-gray-400">
             Set a flat home-visit fee and your included free radius. Customers within the radius pay no travel fee; beyond it they pay the flat fee once. You stay free to accept or decline any booking based on how far it is.
           </p>
@@ -287,9 +287,9 @@ const StylerAvailability = () => {
       </div>
 
       {/* Date exceptions */}
-      <div className="bg-white rounded-2xl border border-[#1d1d1d0a] shadow-sm p-6">
+      <div className="bg-white rounded-lg border border-black/10 p-6">
         <div className="mb-5">
-          <p className="text-lg font-bold">Exceptions</p>
+          <p className="text-[15px] font-medium text-onSurface">Exceptions</p>
           <p className="text-sm text-gray-400">
             Mark specific dates as unavailable (vacation, sick day, personal leave). Overrides your weekly hours.
           </p>

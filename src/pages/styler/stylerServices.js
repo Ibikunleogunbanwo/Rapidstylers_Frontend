@@ -98,7 +98,7 @@ const Services = () => {
 
   return (
     <div className="rounded-md border bg-white">
-      <div className="border-b p-4 font-medium text-sm flex gap-4 justify-between items-center">
+      <div className="border-b border-black/10 p-4 font-medium text-sm flex gap-4 justify-between items-center">
         <span>My services</span>
         <button
           type="button"
@@ -126,7 +126,7 @@ const Services = () => {
             ) : services.length === 0 ? (
               <tr><td className="px-4 py-6 text-gray-500" colSpan="6">No services added yet.</td></tr>
             ) : services.map((service, index) => (
-              <tr className="hover:bg-[#c4c4c424]" key={service.id || index}>
+              <tr className="hover:bg-black/[0.04]" key={service.id || index}>
                 <td className="text-start py-5 ps-4">{index + 1}</td>
                 <td className="text-start py-5 ps-4 truncate max-w-48 md:max-w-80">{service.name}</td>
                 <td className="text-start py-5 ps-4">${service.price}</td>
@@ -153,7 +153,7 @@ const Services = () => {
             id="service-duration"
             value={durationMinutes}
             onChange={(e) => setDurationMinutes(e.target.value)}
-            className="mt-1 w-full p-3 text-sm rounded-md border border-[#c4c4c440] bg-[#c4c4c410] focus:outline-brand"
+            className="mt-1 w-full p-3 text-sm rounded-md border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand"
           >
             {Array.from({ length: 32 }, (_, index) => (index + 1) * 15).map((minutes) => (
               <option key={minutes} value={minutes}>{formatDuration(minutes)}</option>

@@ -127,10 +127,10 @@ const StylerCalendar = () => {
 
   return (
     <div className="grid gap-6">
-      <div className="bg-white rounded-2xl border border-[#1d1d1d0a] shadow-sm p-6">
+      <div className="bg-white rounded-lg border border-black/10 p-6">
         <div className="flex items-center justify-between flex-wrap gap-3 mb-5">
           <div>
-            <p className="text-lg font-bold">Calendar</p>
+            <p className="text-[15px] font-medium text-onSurface">Calendar</p>
             <p className="text-sm text-gray-400">
               Your appointments at a glance. Click a day for details.
             </p>
@@ -238,7 +238,7 @@ const StylerCalendar = () => {
 
       {/* Day details panel */}
       {selectedDay && (
-        <div className="bg-white rounded-2xl border border-[#1d1d1d0a] shadow-sm p-6">
+        <div className="bg-white rounded-lg border border-black/10 p-6">
           <div className="flex items-center justify-between mb-4">
             <p className="font-bold text-gray-900">
               {new Date(selectedDay + "T00:00:00").toLocaleDateString(undefined, {

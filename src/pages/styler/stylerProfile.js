@@ -17,8 +17,8 @@ const StylerProfile = () => {
       });
   };
     return ( 
-        <div className="border rounded-md">
-          <div className="border-b p-4 text-sm font-medium">
+        <div className="rounded-lg border border-black/10">
+          <div className="border-b border-black/10 p-4 text-[11px] uppercase tracking-[0.25em] text-muted">
             My profile
           </div>
           <div className="p-4">

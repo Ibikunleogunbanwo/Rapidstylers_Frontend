@@ -3,7 +3,7 @@ import menu from "../../../assets/svg-icons/menu-brand.svg";
 import { CurrentDateTime } from "../../../utils/utility";
 const UserTopBar = ({toggleSideBar}) => {
     return (
-        <div className="h-[70px] flex items-center justify-between bg-[#1d1d1d] border-b fixed w-full px-3 md:px-4 z-50">
+        <div className="h-[70px] flex items-center justify-between bg-white/95 backdrop-blur border-b border-black/10 fixed w-full px-3 md:px-4 z-50">
         <div className="flex items-center gap-6">
           <img
             src={menu}
@@ -13,7 +13,7 @@ const UserTopBar = ({toggleSideBar}) => {
           />
           <img src={logo} alt="" className="h-12"/>
         </div>
-        <div className="text-sm text-white hidden md:block">
+        <div className="text-[13px] text-black/55 hidden md:block">
           {CurrentDateTime()}
         </div>
       </div>);

@@ -75,7 +75,7 @@ const StylerPayouts = () => {
 
   return (
     <div className="bg-white rounded-lg border">
-      <div className="flex gap-1 items-center border-b p-4 text-[15px] font-bold bg-[#1d1d1d08] rounded-t-lg">
+      <div className="flex gap-1 items-center border-b border-black/10 p-4 text-[11px] uppercase tracking-[0.25em] text-muted bg-white rounded-t-lg">
         <Back />
         <span>Payouts</span>
       </div>
@@ -143,7 +143,7 @@ const StylerPayouts = () => {
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {stats.map((stat) => (
-            <div key={stat.label} className="rounded-lg border border-black/10 bg-[#fafafa] p-4">
+            <div key={stat.label} className="rounded-lg border border-black/10 bg-white p-4">
               <p className="text-xs uppercase tracking-wide text-black/40">{stat.label}</p>
               <p className="mt-2 text-xl font-bold text-brand">{stat.value}</p>
             </div>

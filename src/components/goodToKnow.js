@@ -5,15 +5,15 @@ import { Link } from "react-router-dom";
 // the FAQ page. Keep in sync with src/pages/generalPages/faqs.js.
 const ITEMS = {
   styler: [
-    "You set your own service prices and can add an optional flat home-visit fee for travelling to clients, not a per-kilometre charge.",
-    "On each completed booking, a 12% platform commission plus Stripe processing fees are deducted before your payout.",
-    "Payouts go to your connected Stripe account after an appointment is completed.",
-    "You review every request, including the client's distance, before accepting. A completed booking can only be cancelled within a short window after it ends, refunding the client automatically.",
+    "You set your own prices, plus an optional flat home-visit fee if you travel to clients.",
+    "Each completed booking pays out after the 12% platform commission and Stripe's processing fees.",
+    "Payouts land in your connected Stripe account once the appointment is completed.",
+    "You approve each request yourself, and you can see how far away the client is before you accept. After a booking ends there is a short window to cancel, and the client is refunded automatically.",
   ],
   customer: [
-    "Prices are set by the professional and shown before you confirm. Some add a flat home-visit fee, with no hidden per-kilometre charges.",
-    "Cancel before the appointment starts and your payment is refunded automatically; the refund status shows right on the booking.",
-    "You can leave one review per completed booking.",
+    "Professionals set their own prices, and you see the full amount before you confirm. Some add a flat fee for home visits.",
+    "Cancel before the appointment starts and your payment is refunded automatically. The booking page shows the refund status.",
+    "You can leave one review for each completed booking.",
   ],
 };
 
@@ -25,32 +25,20 @@ const FAQ_HASH = {
 const GoodToKnow = ({ variant = "customer" }) => {
   const items = ITEMS[variant] || ITEMS.customer;
   return (
-    <div className="rounded-2xl border border-[#1d1d1d0a] bg-[#faf9ff] p-5 shadow-sm">
+    <div className="rounded-lg border border-black/10 bg-white p-5">
       <div className="flex items-center justify-between gap-3">
-        <p className="text-sm font-bold">Good to know</p>
+        <p className="text-[11px] uppercase tracking-[0.25em] text-muted">Good to know</p>
         <Link
           to={`/faqs${FAQ_HASH[variant] || ""}`}
-          className="shrink-0 text-xs font-semibold text-brand hover:underline"
+          className="shrink-0 text-[13px] font-semibold text-brand hover:underline"
         >
           Read the FAQ
         </Link>
       </div>
-      <ul className="mt-3 grid gap-2">
+      <ul className="mt-1 grid">
         {items.map((item) => (
-          <li key={item} className="flex items-start gap-2 text-xs leading-5 text-gray-600">
-            <svg
-              viewBox="0 0 20 20"
-              fill="currentColor"
-              className="h-4 w-4 shrink-0 text-brand mt-0.5"
-              aria-hidden="true"
-            >
-              <path
-                fillRule="evenodd"
-                d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z"
-                clipRule="evenodd"
-              />
-            </svg>
-            <span>{item}</span>
+          <li key={item} className="border-t border-black/10 py-3 first:border-t-0 first:pt-3 mt-1 first:mt-2 text-[13px] leading-[1.55] text-black/55">
+            {item}
           </li>
         ))}
       </ul>

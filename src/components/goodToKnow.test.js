@@ -15,15 +15,15 @@ describe("GoodToKnow card", () => {
 
     expect(screen.getByText("Good to know")).toBeInTheDocument();
     expect(
-      screen.getByText(/Prices are set by the professional and shown before you confirm/)
+      screen.getByText(/see the full amount before you confirm/)
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/no hidden per-kilometre charges/)
+      screen.getByText(/Some add a flat fee for home visits/)
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/Cancel before the appointment starts and your payment is refunded automatically/)
+      screen.getByText(/payment is refunded automatically/)
     ).toBeInTheDocument();
-    expect(screen.getByText(/one review per completed booking/)).toBeInTheDocument();
+    expect(screen.getByText(/one review for each completed booking/)).toBeInTheDocument();
 
     expect(screen.getByRole("link", { name: "Read the FAQ" }).getAttribute("href")).toBe(
       "/faqs#for-customers"
@@ -34,13 +34,13 @@ describe("GoodToKnow card", () => {
     renderCard("styler");
 
     expect(
-      screen.getByText(/12% platform commission plus Stripe processing fees are deducted/)
+      screen.getByText(/12% platform commission and Stripe's processing fees/)
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/Payouts go to your connected Stripe account after an appointment is completed/)
+      screen.getByText(/land in your connected Stripe account/)
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/completed booking can only be cancelled within a short window/)
+      screen.getByText(/see how far away the client is before you accept/)
     ).toBeInTheDocument();
 
     expect(screen.getByRole("link", { name: "Read the FAQ" }).getAttribute("href")).toBe(
@@ -50,6 +50,18 @@ describe("GoodToKnow card", () => {
 
   test("unknown variant falls back to the customer content", () => {
     renderCard("nope");
-    expect(screen.getByText(/Prices are set by the professional/)).toBeInTheDocument();
+    expect(screen.getByText(/see the full amount before you confirm/)).toBeInTheDocument();
+  });
+
+  test("reads as a hairline card: no wash, no shadow, no check icons", () => {
+    const { container } = renderCard("customer");
+    const card = container.firstChild;
+    expect(card.className).toMatch(/border-black\/10/);
+    expect(card.className).not.toMatch(/shadow/);
+    expect(card.className).not.toMatch(/faf9ff/);
+    expect(card.className).not.toMatch(/rounded-2xl/);
+    // The old design stamped a purple check on every line; the register uses
+    // plain hairline rows with no per-item icon.
+    expect(container.querySelectorAll("svg").length).toBe(0);
   });
 });
