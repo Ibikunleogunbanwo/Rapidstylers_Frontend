@@ -69,7 +69,7 @@ const Blog = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      <Section pad="pt-32 pb-2">
+      <Section pad="pt-10 md:pt-14 pb-2">
         <BackHome />
         <PageHeading
           eyebrow="From the blog"

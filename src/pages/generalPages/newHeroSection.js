@@ -106,7 +106,10 @@ const Hero = ({ height }) => {
   });
 
   return (
-    <div className="relative z-10 lg:h-[var(--hero-h)]" style={{ "--hero-h": height }}>
+    /* Below lg the fixed header floats over the page, so the hero reserves its
+       height (64px phones, 76px md+) on a black strip that continues into the
+       video; at lg the header is meant to float over the full-bleed video. */
+    <div className="relative z-10 bg-black pt-16 md:pt-[76px] lg:bg-transparent lg:pt-0 lg:h-[var(--hero-h)]" style={{ "--hero-h": height }}>
       <Spinner loading={useSelector((state) => state.user).loading} />
 
       <div className="w-full lg:h-full overflow-hidden">

@@ -11,7 +11,7 @@ const PrivacyPolicy = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      <Section pad="pt-32 pb-6">
+      <Section pad="pt-10 md:pt-14 pb-6">
         <BackHome />
         <PageHeading
           eyebrow="Legal"

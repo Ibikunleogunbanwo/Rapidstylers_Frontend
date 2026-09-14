@@ -77,7 +77,7 @@ export function BackHome({ label = "Back home", to = "/" }) {
   return (
     <Link
       to={to}
-      className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-muted transition-colors hover:text-brand"
+      className="mb-5 inline-flex items-center gap-1.5 text-[13px] font-semibold text-muted transition-colors hover:text-brand"
     >
       <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4" aria-hidden="true">
         <path

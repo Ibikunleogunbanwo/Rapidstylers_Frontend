@@ -144,7 +144,7 @@ const Faqs = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      <Section pad="pt-32 pb-4">
+      <Section pad="pt-10 md:pt-14 pb-4">
         <BackHome />
         <PageHeading
           eyebrow="FAQs"

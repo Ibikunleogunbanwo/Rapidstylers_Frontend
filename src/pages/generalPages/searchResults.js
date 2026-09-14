@@ -283,7 +283,7 @@ const SearchResults = () => {
 
   return (
     <div className="min-h-screen bg-white text-onSurface">
-      <Section pad="pt-32 pb-12">
+      <Section pad="pt-10 md:pt-14 pb-12">
         <BackHome />
         <PageHeading
           eyebrow="Find a professional"

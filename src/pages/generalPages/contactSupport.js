@@ -72,7 +72,7 @@ const ContactSupport = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      <Section pad="pt-32">
+      <Section pad="pt-10 md:pt-14">
         <BackHome />
         <PageHeading
           eyebrow="Support"
