@@ -75,7 +75,7 @@ describe("Featured (Discover professionals)", () => {
     // Four card skeletons in the same responsive grid as the results.
     const skeletons = status.querySelectorAll(".animate-pulse");
     expect(skeletons.length).toBeGreaterThanOrEqual(12); // 3 pulse zones x 4 cards
-    expect(status.querySelector(".aspect-\\[4\\/5\\]")).toBeTruthy();
+    expect(status.querySelector(".aspect-\\[4\\/3\\]")).toBeTruthy();
     expect(status.className).toContain("lg:grid-cols-4");
     // No bare text line.
     expect(screen.queryByText("Loading...")).toBeNull();
@@ -113,5 +113,53 @@ describe("Featured (Discover professionals)", () => {
     const link = await screen.findByRole("link", { name: "Use full search" });
     expect(link.getAttribute("href")).toBe("/search");
     expect(screen.queryByText("No professionals found in this category yet.")).toBeNull();
+  });
+
+  it("caps the teaser at one row of 4 and offers See more with the category carried into /search", async () => {
+    APIService.stylersBaseOnCategory.mockResolvedValue({
+      data: { data: Array.from({ length: 9 }, (_, i) => ({ stylerId: i + 1, businessName: `Studio ${i + 1}` })) },
+    });
+    renderFeatured();
+
+    // Exactly 4 cards render — one grid row.
+    expect(await screen.findByText("Studio 1")).toBeTruthy();
+    for (let i = 2; i <= 4; i++) expect(screen.getByText(`Studio ${i}`)).toBeTruthy();
+    for (let i = 5; i <= 9; i++) expect(screen.queryByText(`Studio ${i}`)).toBeNull();
+
+    // The count is said honestly, and the link carries the category so /search
+    // opens pre-filtered on the same tab the visitor was browsing.
+    expect(screen.getByText(/Showing 4 of 9 in Barber/)).toBeTruthy();
+    const link = screen.getByRole("link", { name: "See more" });
+    const href = link.getAttribute("href");
+    expect(href).toContain("/search");
+    expect(href).toContain("serviceTypeId=7");
+    expect(href).toContain("serviceTypeName=Barber");
+  });
+
+  it("renders no See more row when the category fits within one row", async () => {
+    APIService.stylersBaseOnCategory.mockResolvedValue({
+      data: { data: [{ stylerId: 1, businessName: "Solo Studio" }] },
+    });
+    renderFeatured();
+
+    expect(await screen.findByText("Solo Studio")).toBeTruthy();
+    expect(screen.queryByRole("link", { name: "See more" })).toBeNull();
+    expect(screen.queryByText(/Showing/)).toBeNull();
+  });
+
+  it("makes every card a link to the public profile, so browsing needs no account", async () => {
+    APIService.stylersBaseOnCategory.mockResolvedValue({
+      data: { data: [
+        { stylerId: "DS5713", businessName: "Demo Beauty Co" },
+        { id: 42, businessName: "Id-only Stylist" },
+      ] },
+    });
+    renderFeatured();
+
+    const demoCard = (await screen.findByText("Demo Beauty Co")).closest("a");
+    expect(demoCard.getAttribute("href")).toContain("/stylistProfile/");
+    // Cards whose rows key on id rather than stylerId link too.
+    const idCard = screen.getByText("Id-only Stylist").closest("a");
+    expect(idCard.getAttribute("href")).toContain("/stylistProfile/");
   });
 });

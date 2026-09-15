@@ -41,9 +41,9 @@ describe("ServiceCard in the page design language", () => {
     expect(shell.className).not.toMatch(/translate-y/);
   });
 
-  test("the photo keeps the editorial 4:5 ratio instead of a fixed crop", () => {
+  test("the photo keeps the landscape 4:3 ratio instead of a fixed crop", () => {
     const { container } = renderCard({ coverImg: "photo.jpg" });
-    const frame = container.querySelector(".aspect-\\[4\\/5\\]");
+    const frame = container.querySelector(".aspect-\\[4\\/3\\]");
 
     expect(frame).not.toBeNull();
     const img = frame.querySelector("img");
@@ -111,9 +111,9 @@ describe("ServiceCard in the page design language", () => {
     expect(screen.queryByText("FC")).not.toBeInTheDocument();
   });
 
-  test("the curated fallback renders inside the same 4:5 frame and never a cloudinary URL", () => {
+  test("the curated fallback renders inside the same 4:3 frame and never a cloudinary URL", () => {
     const { container } = renderCard({ serviceTypeName: "Nail Technician" });
-    const frame = container.querySelector(".aspect-\\[4\\/5\\]");
+    const frame = container.querySelector(".aspect-\\[4\\/3\\]");
     const img = frame.querySelector("img");
 
     expect(frame).not.toBeNull();

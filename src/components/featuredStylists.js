@@ -5,19 +5,34 @@ import { APIService } from "../hooks/remote/apiService";
 
 /**
  * Card-shaped placeholders matching the ServiceCard grid, shown while a
- * category's stylists load. Mirroring the grid's shape (4/5 cover, text
+ * category's stylists load. Mirroring the grid's shape (4/3 cover, text
  * block) keeps the section's height stable across tab switches instead of
  * collapsing to a one-line "Loading...".
  */
 const CardSkeleton = () => (
   <div className="overflow-hidden rounded-lg border border-black/10 bg-white" aria-hidden="true">
-    <div className="aspect-[4/5] w-full animate-pulse bg-neutral" />
+    <div className="aspect-[4/3] w-full animate-pulse bg-neutral" />
     <div className="p-4">
       <div className="h-4 w-2/3 animate-pulse rounded bg-neutral" />
       <div className="mt-2.5 h-3 w-1/3 animate-pulse rounded bg-neutral" />
     </div>
   </div>
 );
+
+// One grid row's worth of cards is all a homepage teaser shows; everything
+// beyond it lives behind the "See more" link, so a full category can stretch
+// the /search page instead of the homepage.
+const MAX_VISIBLE = 4;
+
+// The /search page reads serviceTypeId + serviceTypeName from the query, so
+// "See more" lands on the same category the tile came from.
+const buildServiceQuery = (id, name) => {
+  const params = new URLSearchParams();
+  if (id != null) params.set("serviceTypeId", String(id));
+  if (name) params.set("serviceTypeName", name);
+  const qs = params.toString();
+  return qs ? `?${qs}` : "";
+};
 
 const Featured = () => {
   const [categories, setCategories] = useState([]);
@@ -99,7 +114,7 @@ const Featured = () => {
         })}
       </div>
       {loading ? (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4" role="status" aria-label="Loading professionals">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4" role="status" aria-label="Loading professionals">
           {[0, 1, 2, 3].map((i) => (
             <CardSkeleton key={i} />
           ))}
@@ -131,19 +146,36 @@ const Featured = () => {
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {stylists.map((stylist) => (
-            <ServiceCard
-              key={stylist.stylerId || stylist.id}
-              coverImg={stylist.logoUrl || stylist.bannerUrl || stylist.profileImageUrl || ""}
-              name={stylist.businessName || stylist.restaurantName || stylist.name || "Professional"}
-              serviceTypeName={stylist.serviceTypeName || ""}
-              rating={stylist.averageRating || stylist.rating || "0"}
-              reviews={stylist.reviewCount || stylist.reviews || "0"}
-              status={stylist.online ? "Online" : "Offline"}
-              payoutReady={stylist.payoutReady}
-            />
-          ))}
+        <div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            {stylists.slice(0, MAX_VISIBLE).map((stylist) => (
+              <ServiceCard
+                key={stylist.stylerId || stylist.id}
+                coverImg={stylist.logoUrl || stylist.bannerUrl || stylist.profileImageUrl || ""}
+                name={stylist.businessName || stylist.restaurantName || stylist.name || "Professional"}
+                serviceTypeName={stylist.serviceTypeName || ""}
+                rating={stylist.averageRating || stylist.rating || "0"}
+                reviews={stylist.reviewCount || stylist.reviews || "0"}
+                status={stylist.online ? "Online" : "Offline"}
+                payoutReady={stylist.payoutReady}
+                stylerId={stylist.stylerId || stylist.id}
+                businessName={stylist.businessName || stylist.restaurantName || stylist.name || "Professional"}
+              />
+            ))}
+          </div>
+          {stylists.length > MAX_VISIBLE && (
+            <div className="mt-6 flex items-center justify-center gap-3">
+              <p className="text-[13px] text-black/55">
+                Showing {MAX_VISIBLE} of {stylists.length} in {activeName || "this category"}
+              </p>
+              <Link
+                to={{ pathname: "/search", search: buildServiceQuery(selectedId, activeName) }}
+                className="rounded-full border border-black/15 px-5 py-2.5 text-xs font-semibold text-black/60 transition-colors hover:border-brand/40 hover:text-onSurface"
+              >
+                See more
+              </Link>
+            </div>
+          )}
         </div>
       )}
     </div>

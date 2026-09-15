@@ -1,32 +1,41 @@
 import { Link } from "react-router-dom";
+import barbers from "../assets/images/barbers.jpg";
 
+/**
+ * The sidebar booking card, in the site's quiet register: a hairline card on
+ * white, an 4:3 photo in a hairline frame, and one solid-brand pill CTA (the
+ * same shape as the empty state's). It used to be a dark slab with a shadow
+ * hotlinking an expired-token freepik image, which rendered as a broken
+ * request in production.
+ */
 const Advert = () => {
   return (
-    <div className="bg-[#1d1d1d] text-white rounded-2xl overflow-hidden shadow-md">
-      <p className="px-4 pt-4 pb-2 text-[11px] uppercase tracking-[0.2em] text-white/50 font-semibold">
+    <div className="rounded-lg border border-black/10 bg-white overflow-hidden">
+      <p className="px-5 pt-4 text-[11px] uppercase tracking-[0.2em] text-muted font-semibold">
         Advertisement
       </p>
-      <div className="px-1">
+      <div className="px-5 pt-3">
         <img
-          src="https://img.freepik.com/free-photo/side-view-woman-styling-hair_23-2149659566.jpg?t=st=1708868604~exp=1708872204~hmac=a724d6651959e05a587b791dba7dbab024b8dc529d20566c14741d134583e345&w=826"
-          alt="Woman styling her hair"
-          className="object-cover h-[160px] w-full rounded-lg"
+          src={barbers}
+          alt="Barber at work"
+          className="aspect-[4/3] w-full rounded-md border border-black/10 object-cover"
+          loading="lazy"
         />
       </div>
-      <div className="p-4 pb-2">
-        <p className="font-semibold capitalize leading-snug">
+      <div className="px-5 pt-4">
+        <p className="font-semibold leading-snug text-onSurface">
           Find your perfect fit: top beauty professionals near you
         </p>
-        <p className="lg:text-sm text-white/50 mt-1">
+        <p className="text-sm text-muted mt-1">
           Book from home and enjoy in-home appointments
         </p>
       </div>
-      <div className="p-4">
+      <div className="px-5 pb-5 pt-4">
         <Link
           to="/bookAppointment"
-          className="inline-block py-3 px-6 bg-white text-black rounded-lg text-sm font-semibold hover:bg-gray-100 active:scale-[0.98] transition"
+          className="inline-block rounded-full bg-brand px-5 py-2.5 text-xs font-semibold text-white transition-opacity hover:opacity-90"
         >
-          Book now!
+          Book now
         </Link>
       </div>
     </div>

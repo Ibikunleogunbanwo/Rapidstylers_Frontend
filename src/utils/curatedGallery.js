@@ -45,6 +45,8 @@ const CURATED = [
   { id: "g-natural-hair-3", alt: "Hands twisting a section of natural hair at the scalp", category: "Natural hair" },
   { id: "g-lashes-2", alt: "Lash extension close-up", category: "Eyelash extensions" },
   { id: "g-buzz-cut-1", alt: "Barber fading the sides with clippers", category: "Buzz cut" },
+  { id: "g-buzz-cut-2", alt: "Barber trimming a client's fade in the shop", category: "Buzz cut" },
+  { id: "g-buzz-cut-3", alt: "Barber standing by the chair in the shop", category: "Buzz cut" },
   { id: "g-lashes-4", alt: "Eyelash extensions", category: "Eyelash extensions" },
   { id: "g-lashes-5", alt: "Eyelash extension application", category: "Eyelash extensions" },
   { id: "g-braids-2", alt: "Cornrow braiding", category: "Cornrows" },
@@ -55,6 +57,7 @@ const CURATED = [
   { id: "g-locs-2", alt: "Soft locs styled loose past the shoulder", category: "Locs" },
   { id: "g-natural-hair-1", alt: "Coily natural hair worn long and full", category: "Natural hair" },
   { id: "g-natural-hair-2", alt: "Short twists defined over neat scalp parts", category: "Natural hair" },
+  { id: "g-natural-hair-4", alt: "Stylist sectioning a client's natural hair for braiding", category: "Natural hair" },
   { id: "g-braids-3", alt: "Braided updo with rolled sections, shown from three angles", category: "Braids" },
   { id: "g-braids-4", alt: "Senegalese twists swept to one side", category: "Braids" },
   { id: "g-braids-5", alt: "Long auburn knotless braids", category: "Braids" },
@@ -202,11 +205,11 @@ export const ELEVATE_GRID = ["g-cornrows-1", "g-buzz-cut-1", "g-nails-1", "g-loc
 const SERVICE_FALLBACKS = [
   { words: ["nail"], ids: ["g-nails-1", "g-nails-3", "g-nails-6", "g-nails-2", "g-nails-5"] },
   { words: ["lash"], ids: ["g-lashes-2", "g-lashes-4", "g-lashes-5"] },
-  { words: ["barber", "buzz", "fade", "clipper"], ids: ["g-buzz-cut-1"] },
+  { words: ["barber", "buzz", "fade", "clipper"], ids: ["g-buzz-cut-1", "g-buzz-cut-2", "g-buzz-cut-3"] },
   { words: ["makeup", "mua"], ids: ["g-makeup-1", "g-makeup-2", "g-makeup-3"] },
   {
     words: ["hairstylist", "hair", "braid", "loc", "dreadlock", "cornrow", "natural"],
-    ids: ["g-natural-hair-1", "g-natural-hair-2", "g-natural-hair-3", "g-locs-2", "g-braids-5"],
+    ids: ["g-natural-hair-1", "g-natural-hair-2", "g-natural-hair-3", "g-locs-2", "g-braids-5", "g-natural-hair-4"],
   },
 ];
 
