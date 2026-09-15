@@ -17,10 +17,10 @@ import { fallbackPhotoFor } from "../utils/curatedGallery";
  * complete. The full explanation lives in the tooltip and on the profile
  * page banner.
  */
-const ServiceCard = ({ coverImg, name, rating, reviews, status, distance, stylerId, businessName, serviceTypeName = "", isSaved = false, onToggleSaved, saveLoading = false, payoutReady = true }) => {
+const ServiceCard = ({ coverImg, name, rating, reviews, status, distance, stylerId, businessName, serviceTypeName = "", isSaved = false, onToggleSaved, saveLoading = false, payoutReady = true, gridPosition = 0 }) => {
   const cropped = cloudinaryCard(coverImg);
   const [imgFailed, setImgFailed] = useState(false);
-  const fallback = !coverImg || imgFailed ? fallbackPhotoFor(serviceTypeName, stylerId || name) : null;
+  const fallback = !coverImg || imgFailed ? fallbackPhotoFor(serviceTypeName, stylerId || name, gridPosition) : null;
   const photoSrc = coverImg && !imgFailed ? cropped : fallback ? fallback.src : null;
   const hasRating = rating != null && Number(rating) > 0;
   const hasReviews = reviews != null && Number(reviews) > 0;

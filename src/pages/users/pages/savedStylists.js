@@ -77,9 +77,10 @@ const SavedStylist = ({ setPageTitle }) => {
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-            {stylists.map((styler) => (
+            {stylists.map((styler, index) => (
               <div key={styler.stylerId} className="relative">
                 <ServiceCard
+                  gridPosition={index}
                   coverImg={styler.profileImageUrl}
                   name={styler.businessName || [styler.firstname, styler.lastname].filter(Boolean).join(" ")}
                   serviceTypeName={styler.serviceTypeName || ""}

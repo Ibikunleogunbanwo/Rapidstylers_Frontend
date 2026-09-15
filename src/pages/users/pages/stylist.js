@@ -30,11 +30,11 @@ const Stylist = ({ setPageTitle }) => {
 
         {
           stylerList.length > 0
-            ? (
-              stylerList.map((val, key) => {
+            ? (              stylerList.map((val, key) => {
                 return (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4" key={key}>
-                      <ServiceCard
+                    <ServiceCard
+                      gridPosition={key}
                         coverImg={val.profileImageUrl}
                         name={val.businessName}
                         serviceTypeName={val.serviceTypeName || ""}

@@ -119,6 +119,7 @@ const SearchStyler = ({ setPageTitle, stylerSearchName }) => {
                   {visibleResults.map((val, key) => (
                     <ServiceCard
                       key={key}
+                      gridPosition={key}
                       coverImg={val.profileImageUrl}
                       name={val.businessName}
                       serviceTypeName={val.serviceTypeName || ""}

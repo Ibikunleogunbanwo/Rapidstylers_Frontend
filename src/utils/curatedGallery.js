@@ -230,17 +230,24 @@ const hashSeed = (value) => {
  * repeating one tile down a whole results grid. Deterministic on both: the
  * same stylist shows the same sample photo on every search and reload.
  *
+ * `position` (the card's index in the grid it renders in) is added to the
+ * stylist's hash bucket, so the cards visible in one row pick distinct photos
+ * even when the field's pool is small — a pure per-stylist hash put four
+ * photo-less cards in a tab on the same sample image, which reads as a bug.
+ * Pools smaller than the visible row (3 today for lashes, barber, makeup) can
+ * still repeat once at deep positions; growing those pools needs new photos.
+ *
  * Returns the curated entry ({ src, alt, category, ... }), or null when the
  * service name is unrecognised — the card then falls back to initials.
  */
-export function fallbackPhotoFor(serviceTypeName, seed = "") {
+export function fallbackPhotoFor(serviceTypeName, seed = "", position = 0) {
   const tokens = words(serviceTypeName);
   if (tokens.length === 0) return null;
   const row = SERVICE_FALLBACKS.find((entry) =>
     entry.words.some((word) => tokens.some((token) => wordsMatch(token, word)))
   );
   if (!row) return null;
-  return curatedById(row.ids[hashSeed(seed) % row.ids.length]);
+  return curatedById(row.ids[(hashSeed(seed) + Math.max(0, position)) % row.ids.length]);
 }
 
 /** Filenames this list expects to find in public/images/gallery/. */

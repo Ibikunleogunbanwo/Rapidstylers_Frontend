@@ -148,9 +148,10 @@ const Featured = () => {
       ) : (
         <div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-            {stylists.slice(0, MAX_VISIBLE).map((stylist) => (
+            {stylists.slice(0, MAX_VISIBLE).map((stylist, index) => (
               <ServiceCard
                 key={stylist.stylerId || stylist.id}
+                gridPosition={index}
                 coverImg={stylist.logoUrl || stylist.bannerUrl || stylist.profileImageUrl || ""}
                 name={stylist.businessName || stylist.restaurantName || stylist.name || "Professional"}
                 serviceTypeName={stylist.serviceTypeName || ""}

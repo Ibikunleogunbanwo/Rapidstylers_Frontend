@@ -386,9 +386,10 @@ const SearchResults = () => {
         ) : (
           <>
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {visibleStylists.map((stylist) => (
+              {visibleStylists.map((stylist, index) => (
                 <ServiceCard
                   key={stylist.stylerId || stylist.id}
+                  gridPosition={index}
                   coverImg={stylist.profileImageUrl || ""}
                   name={stylist.businessName || stylist.name || "Professional"}
                   serviceTypeName={stylist.serviceTypeName || ""}
