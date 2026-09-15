@@ -190,8 +190,27 @@ const LandingPage = () => {
         </div>
 
         {/* Featured stylists */}
-        <div className="my-16">
+        <div className="mt-16">
           <Featured />
+        </div>
+
+        {/* Brand loop + quote */}
+        <div className="my-16 px-5 md:px-[50px] text-center grid gap-4 justify-items-center">
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            src={cityLoop}
+            aria-label="RapidStylers logo animation"
+            className="w-full max-w-[420px] rounded-lg"
+          />
+          <div className="flex justify-center">
+            <img src={scissors} alt="" className="h-5" />
+          </div>
+          <p className="text-[13px] text-black/45">
+            Style is a way to say who you are without having to speak
+          </p>
         </div>
 
         {/* benefits for clients */}
@@ -506,7 +525,7 @@ const LandingPage = () => {
         </div>
 
         {/* Stylist by location */}
-        <div className="relative overflow-hidden bg-black">
+        <div className="relative overflow-hidden border-b border-white/10 bg-black">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_80%,rgba(147,129,255,0.12),transparent_50%),radial-gradient(circle_at_80%_20%,rgba(147,129,255,0.08),transparent_50%)]"></div>
           <div className="relative px-4 md:px-[50px] py-20 lg:py-28 max-w-7xl mx-auto">
             <div className="text-center mb-12">
@@ -534,25 +553,6 @@ const LandingPage = () => {
               ))}
             </ul>
           </div>
-        </div>
-
-        {/* Quote */}
-        <div className="my-16 px-5 md:px-[50px] text-center grid gap-4 justify-items-center">
-          <video
-            autoPlay
-            loop
-            muted
-            playsInline
-            src={cityLoop}
-            aria-label="RapidStylers logo animation"
-            className="w-full max-w-[420px] rounded-lg"
-          />
-          <div className="flex justify-center">
-            <img src={scissors} alt="" className="h-5" />
-          </div>
-          <p className="text-[13px] text-black/45">
-            Style is a way to say who you are without having to speak
-          </p>
         </div>
 
         {/* Footer */}
