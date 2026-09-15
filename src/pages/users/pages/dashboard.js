@@ -38,15 +38,21 @@ const Dashboard = ({ setPageTitle }) => {
   const missingAddress = !userDetails?.address;
 
   return (
-    <div className="bg-white border border-[#1d1d1d0a] rounded-2xl shadow-sm overflow-hidden">
+    <div className="bg-white rounded-lg border border-black/10 overflow-hidden">
       <Spinner loading={useSelector((state) => state.user).loading} />
-      <div className="flex items-center justify-between border-b border-[#1d1d1d0a] px-5 py-4 bg-gradient-to-r from-[#9381ff10] to-transparent">
-        <p className="text-[15px] font-bold">Dashboard</p>
-        <p className="text-xs text-gray-400">{today}</p>
+      <div className="flex items-start justify-between gap-4 border-b border-black/10 px-5 py-5 sm:px-6">
+        <div>
+          <p className="text-[11px] uppercase tracking-[0.25em] text-muted">Discover professionals</p>
+          <h1 className="mt-2 text-[clamp(1.25rem,2.5vw,1.75rem)] font-normal leading-[1.1] tracking-[-0.02em] text-onSurface">
+            Your bookings
+          </h1>
+        </div>
+        <p className="shrink-0 pt-1 text-[13px] text-black/50">{today}</p>
       </div>
       {(missingName || missingPhone || missingAddress) && userDetails && (
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-amber-100 bg-amber-50 px-5 py-3.5">
-          <div className="flex items-start gap-2.5">
+        <div className="border-b border-black/10 px-5 py-3.5">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-2.5">
             <svg viewBox="0 0 24 24" fill="none" stroke="#B45309" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 shrink-0 mt-0.5 text-amber-600" aria-hidden="true">
               <path d="M12 15v2m0 4h.01M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z" />
               <path d="M12 7v5" />
@@ -64,6 +70,7 @@ const Dashboard = ({ setPageTitle }) => {
           >
             Complete profile
           </Link>
+          </div>
         </div>
       )}
       {pendingAppointment.length > 0 && (
@@ -99,8 +106,8 @@ const Dashboard = ({ setPageTitle }) => {
           ))}
         </div>
       )}
-      <div className="p-4">
-        <p className="text-sm font-semibold">Appointment history</p>
+      <div className="p-5 sm:p-6">
+        <p className="text-[15px] font-medium">Appointment history</p>
         <div className="grid gap-3 mt-4">
           {
             allAppointment.length > 0 ? (
@@ -143,7 +150,7 @@ const Dashboard = ({ setPageTitle }) => {
               :
               (
                 <div className="text-center py-10">
-                  <div className="grid place-items-center h-14 w-14 mx-auto rounded-full bg-[#9381ff1a] text-[#9381FF]">
+                  <div className="grid place-items-center h-14 w-14 mx-auto rounded-full bg-brand/10 text-brand">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
@@ -156,7 +163,7 @@ const Dashboard = ({ setPageTitle }) => {
         </div>
       </div>
       {/* Pricing & cancellation basics — visible right where bookings live. */}
-      <div className="p-4 border-t border-[#1d1d1d0a]">
+      <div className="p-5 border-t border-black/10 sm:p-6">
         <GoodToKnow />
       </div>
     </div>

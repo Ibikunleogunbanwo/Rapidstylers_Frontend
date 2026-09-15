@@ -3,6 +3,22 @@ import React, { useState, useEffect } from 'react';
 import { Link } from "react-router-dom";
 import { APIService } from "../hooks/remote/apiService";
 
+/**
+ * Card-shaped placeholders matching the ServiceCard grid, shown while a
+ * category's stylists load. Mirroring the grid's shape (4/5 cover, text
+ * block) keeps the section's height stable across tab switches instead of
+ * collapsing to a one-line "Loading...".
+ */
+const CardSkeleton = () => (
+  <div className="overflow-hidden rounded-lg border border-black/10 bg-white" aria-hidden="true">
+    <div className="aspect-[4/5] w-full animate-pulse bg-neutral" />
+    <div className="p-4">
+      <div className="h-4 w-2/3 animate-pulse rounded bg-neutral" />
+      <div className="mt-2.5 h-3 w-1/3 animate-pulse rounded bg-neutral" />
+    </div>
+  </div>
+);
+
 const Featured = () => {
   const [categories, setCategories] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
@@ -83,7 +99,11 @@ const Featured = () => {
         })}
       </div>
       {loading ? (
-        <div className="py-10 text-center text-black/50">Loading...</div>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4" role="status" aria-label="Loading professionals">
+          {[0, 1, 2, 3].map((i) => (
+            <CardSkeleton key={i} />
+          ))}
+        </div>
       ) : stylists.length === 0 ? (
         <div className="mt-2 border-t border-black/10 py-12 text-center">
           <p className="text-[15px] text-onSurface">

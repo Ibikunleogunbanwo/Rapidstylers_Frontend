@@ -50,7 +50,7 @@ const SavedStylist = ({ setPageTitle }) => {
         <div className="flex items-start gap-3">
           <Back />
           <div>
-            <p className="text-[10px] uppercase tracking-[0.25em] text-muted">Your list</p>
+            <p className="text-[11px] uppercase tracking-[0.25em] text-muted">Your list</p>
             <h1 className="mt-2 text-[clamp(1.25rem,2.5vw,1.75rem)] font-normal leading-[1.1] tracking-[-0.02em] text-onSurface">
               Saved professionals
             </h1>
@@ -69,7 +69,7 @@ const SavedStylist = ({ setPageTitle }) => {
           </p>
         ) : stylists.length === 0 ? (
           <div className="border-t border-black/10 pt-10 text-center">
-            <p className="text-[10px] uppercase tracking-[0.25em] text-muted">Nothing saved yet</p>
+            <p className="text-[11px] uppercase tracking-[0.25em] text-muted">Nothing saved yet</p>
             <p className="mx-auto mt-3 max-w-[380px] text-[13px] leading-[1.6] text-black/55">
               You have not saved any professionals yet. Tap the bookmark on any
               professional to keep them here for later.

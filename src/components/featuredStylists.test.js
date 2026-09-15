@@ -65,6 +65,26 @@ describe("Featured (Discover professionals)", () => {
     );
   });
 
+  it("shows a card-shaped skeleton grid while loading, not collapsing text", async () => {
+    let resolveFetch;
+    APIService.stylersBaseOnCategory.mockReturnValue(
+      new Promise((resolve) => { resolveFetch = resolve; })
+    );
+    renderFeatured();
+    const status = await screen.findByRole("status", { name: /loading professionals/i });
+    // Four card skeletons in the same responsive grid as the results.
+    const skeletons = status.querySelectorAll(".animate-pulse");
+    expect(skeletons.length).toBeGreaterThanOrEqual(12); // 3 pulse zones x 4 cards
+    expect(status.querySelector(".aspect-\\[4\\/5\\]")).toBeTruthy();
+    expect(status.className).toContain("lg:grid-cols-4");
+    // No bare text line.
+    expect(screen.queryByText("Loading...")).toBeNull();
+    // Resolving swaps the skeleton out for content.
+    resolveFetch({ data: { data: [{ stylerId: 1, businessName: "Braid Bar" }] } });
+    expect(await screen.findByText("Braid Bar")).toBeTruthy();
+    expect(screen.queryByRole("status")).toBeNull();
+  });
+
   it("keeps the loading state and the grid for a category with stylists", async () => {
     APIService.stylersBaseOnCategory.mockResolvedValue({
       data: { data: [{ stylerId: 1, businessName: "Braid Bar", averageRating: "4.8" }] },
