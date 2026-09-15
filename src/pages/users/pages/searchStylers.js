@@ -58,7 +58,7 @@ const SearchStyler = ({ setPageTitle, stylerSearchName }) => {
         <div className="flex items-start gap-3">
           <Back />
           <div>
-            <p className="text-[10px] uppercase tracking-[0.25em] text-muted">Find and book</p>
+            <p className="text-[11px] uppercase tracking-[0.25em] text-muted">Find and book</p>
             <h1 className="mt-2 text-[clamp(1.25rem,2.5vw,1.75rem)] font-normal leading-[1.1] tracking-[-0.02em] text-onSurface">
               Search for a professional
             </h1>
@@ -140,7 +140,7 @@ const SearchStyler = ({ setPageTitle, stylerSearchName }) => {
             :
             (
               <div className="border-t border-black/10 pt-12 text-center">
-                <p className="text-[10px] uppercase tracking-[0.25em] text-muted">
+                <p className="text-[11px] uppercase tracking-[0.25em] text-muted">
                   {stylerProfileData.length > 0 ? "Nothing in this area" : "No results"}
                 </p>
                 {stylerProfileData.length > 0 ? (
