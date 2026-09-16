@@ -2,6 +2,7 @@ import ServiceCard from "./serviceCard";
 import React, { useState, useEffect } from 'react';
 import { Link } from "react-router-dom";
 import { APIService } from "../hooks/remote/apiService";
+import { vendorOpenState } from "../utils/vendorOpenState";
 
 /**
  * Card-shaped placeholders matching the ServiceCard grid, shown while a
@@ -157,7 +158,11 @@ const Featured = () => {
                 serviceTypeName={stylist.serviceTypeName || ""}
                 rating={stylist.averageRating || stylist.rating || "0"}
                 reviews={stylist.reviewCount || stylist.reviews || "0"}
-                status={stylist.online ? "Online" : "Offline"}
+                status={stylist.visibilityStatus}
+                // The category endpoint ships the professional's weekly hours, so
+                // a featured card states real opening hours and the presence line
+                // stays what it is: signed in right now, nothing more.
+                openState={vendorOpenState(stylist)}
                 payoutReady={stylist.payoutReady}
                 stylerId={stylist.stylerId || stylist.id}
                 businessName={stylist.businessName || stylist.restaurantName || stylist.name || "Professional"}

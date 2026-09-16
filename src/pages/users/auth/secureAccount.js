@@ -6,17 +6,13 @@ import Lottie from "lottie-react";
 import successAnim from "../../../assets/svg-icons/successAnim.json";
 import * as Yup from "yup";
 import PasswordInput from "../../../components/passwordInput";
+import PasswordRequirements from "../../../components/passwordRequirements";
+import { passwordProblem } from "../../../utils/passwordRule";
 import { useDispatch } from "react-redux";
 import { createUserAccount, getUserDetails, userAuthenticate } from "../../../hooks/local/userReducer";
 import { showErrorToastMessage } from "../../../utils/constant";
 import { useNavigate } from "react-router-dom";
-
-const steps = [
-  "Register email address",
-  "Verify email address",
-  "Personal details",
-  "Secure your account",
-];
+import { CustomerSignupCounter, CustomerSignupRail } from "./customerSignupRail";
 
 const SecureAccount = () => {
   useEffect(() => {
@@ -52,12 +48,15 @@ const SecureAccount = () => {
         confirmPassword: "",
       },
       validationSchema: Yup.object({
-        password: Yup.string().required("Password is required")
-          .min(8, "Password must be at least 8 characters")
-          .matches(/[A-Z]/, "Password must contain at least one uppercase letter")
-          .matches(/[a-z]/, "Password must contain at least one lowercase letter")
-          .matches(/[0-9]/, "Password must contain at least one digit")
-          .matches(/[^A-Za-z0-9]/, "Password must contain at least one special character"),
+        // One rule, shared with the change-password and reset screens and read
+        // from the server's own behaviour, so this field cannot agree with a
+        // password the server then refuses. It reports whichever single
+        // requirement is unmet rather than a list of everything.
+        password: Yup.string()
+          .required("Password is required")
+          .test("password-rule", ({ value }) => passwordProblem(value) || "", (value) =>
+            passwordProblem(value) === null
+          ),
         confirmPassword: Yup.string()
           .required('Confirm Password is required')
           .oneOf([Yup.ref('password'), null], 'Passwords must match'),
@@ -116,16 +115,7 @@ const SecureAccount = () => {
             <p className="text-[clamp(1.75rem,3vw,2.5rem)] font-normal leading-[1.15] tracking-[-0.02em]">
               Create your <span className="text-brand">RapidStylers</span> account
             </p>
-            <div className="grid gap-4">
-              {steps.map((step, i) => (
-                <div key={step} className={`flex items-center gap-3 ${i + 1 === 4 ? "" : "opacity-50"}`}>
-                  <div className={`h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold ${i + 1 <= 4 ? "bg-brand text-white" : "border-2 border-white text-white"}`}>
-                    {i + 1}
-                  </div>
-                  <div className="text-sm">{step}</div>
-                </div>
-              ))}
-            </div>
+            <CustomerSignupRail />
           </div>
         </div>
       </div>
@@ -135,9 +125,11 @@ const SecureAccount = () => {
         <div className="grid content-between h-full">
           <div className="p-5 md:p-10 mb-6 md:mb-0 w-full">
             <img src={logo} alt="" className="h-10 mb-8" />
-            <p className="text-[22px] font-normal tracking-[-0.01em] text-onSurface">Secure your account</p>
+            <CustomerSignupCounter />
+            <p className="mt-2 text-[22px] font-normal tracking-[-0.01em] text-onSurface">Secure your account</p>
             <p className="text-black/60 text-sm mt-1">
-              Create a password with at least <span className="text-black">8 characters, 1 uppercase letter, 1 lowercase letter, 1 digit, and 1 special character.</span>
+              Choose the password you will sign in with. The list below is what we ask of it,
+              and it turns black as your password meets each line.
             </p>
             <form onSubmit={createAccountForm.handleSubmit} className="mt-6 grid gap-4">
               <PasswordInput labelName={"Password"}
@@ -162,6 +154,7 @@ const SecureAccount = () => {
                   <span>{submitError}</span>
                 </p>
               )}
+              <PasswordRequirements value={createAccountForm.values.password} />
               <Button text={"Create Account"} variant={"primary"} type={"submit"} />
             </form>
           </div>

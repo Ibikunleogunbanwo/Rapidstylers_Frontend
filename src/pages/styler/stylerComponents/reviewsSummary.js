@@ -38,16 +38,21 @@ const ReviewsSummary = () => {
               {average == null ? "Not rated" : average}
             </p>
             <p className="mt-1 text-[13px] text-gray-500">
-              {count === 0
-                ? "No reviews yet"
-                : `${count} review${count === 1 ? "" : "s"}`}
+              {count > 0
+                ? `${count} review${count === 1 ? "" : "s"}`
+                // With one in the queue, "No reviews yet" would deny a review
+                // the stylist has already been told about; the amber line below
+                // says what is actually going on.
+                : pending > 0
+                  ? "None public yet"
+                  : "No reviews yet"}
             </p>
           </div>
           <span className="shrink-0 text-xs font-medium text-brand">See past reviews</span>
         </div>
         {loaded && pending > 0 && (
           <p className="mt-3 text-[12px] text-amber-700">
-            {pending} review{pending === 1 ? "" : "s"} still waiting on moderation.
+            {pending} review{pending === 1 ? "" : "s"} waiting for approval.
           </p>
         )}
       </div>

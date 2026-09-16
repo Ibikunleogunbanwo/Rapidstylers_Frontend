@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Navigate } from "react-router-dom";
 import { APIService } from "../../hooks/remote/apiService";
-import { uploadToCloudinary } from "../../utils/cloudinaryUpload";
+import { deleteCloudinaryImage, uploadToCloudinary } from "../../utils/cloudinaryUpload";
 import { cloudinaryPortrait } from "../../utils/cloudinaryImage";
 import {
   getAuthToken,
@@ -54,21 +54,33 @@ const MyWork = () => {
     e.preventDefault();
     if (!file || uploading) return;
     setUploading(true);
+    let uploaded = null;
     try {
       // 1. Upload the file to Cloudinary (backend-signed).
-      const { url } = await uploadToCloudinary(file, "portfolio");
-      // 2. Save it to the portfolio with its gallery category.
-      await APIService.createPortfolio({
-        imageUrl: url,
-        name: category,
-        category,
-      });
+      uploaded = await uploadToCloudinary(file, "portfolio");
+      // 2. Save it to the portfolio with its gallery category. The row is what
+      //    claims the image, so a save that fails has to give it back: otherwise
+      //    the file sits on Cloudinary with nothing pointing at it, which is the
+      //    one way this form can leave an orphan behind (the upload itself only
+      //    happens here, on submit, never when the file is picked).
+      try {
+        await APIService.createPortfolio({
+          imageUrl: uploaded.url,
+          name: category,
+          category,
+        });
+      } catch (saveError) {
+        await deleteCloudinaryImage(uploaded.publicId);
+        throw saveError;
+      }
       showSuccessToastMessage("Work added. It now appears in the gallery.");
       setFile(null);
       e.target.reset();
       loadPortfolio();
     } catch (error) {
       // Error toasts are handled inside APIService / uploadToCloudinary throws.
+      // A failed upload has no publicId to discard, so `uploaded` stays null and
+      // there is nothing stranded on Cloudinary to clean up.
     } finally {
       setUploading(false);
     }

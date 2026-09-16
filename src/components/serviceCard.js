@@ -16,8 +16,17 @@ import { fallbackPhotoFor } from "../utils/curatedGallery";
  * stylist simply can't take online bookings until their payout setup is
  * complete. The full explanation lives in the tooltip and on the profile
  * page banner.
+ *
+ * The pill over the photo states whether the professional is open right now on
+ * their own clock (`openState`, from utils/vendorOpenState), and signed-in
+ * presence is demoted to a quiet line in the body. The two used to be one pill
+ * labelled "Online", which read as "open now" to a customer while actually
+ * tracking a login session: a professional who left the app open showed Online
+ * at 3am on a day they do not work. Where a surface has no availability data it
+ * cannot judge hours at all, so it falls back to the presence pill alone rather
+ * than claiming anything.
  */
-const ServiceCard = ({ coverImg, name, rating, reviews, status, distance, stylerId, businessName, serviceTypeName = "", isSaved = false, onToggleSaved, saveLoading = false, payoutReady = true, gridPosition = 0 }) => {
+const ServiceCard = ({ coverImg, name, rating, reviews, status, openState = null, distance, stylerId, businessName, serviceTypeName = "", isSaved = false, onToggleSaved, saveLoading = false, payoutReady = true, gridPosition = 0 }) => {
   const cropped = cloudinaryCard(coverImg);
   const [imgFailed, setImgFailed] = useState(false);
   const fallback = !coverImg || imgFailed ? fallbackPhotoFor(serviceTypeName, stylerId || name, gridPosition) : null;
@@ -25,6 +34,9 @@ const ServiceCard = ({ coverImg, name, rating, reviews, status, distance, styler
   const hasRating = rating != null && Number(rating) > 0;
   const hasReviews = reviews != null && Number(reviews) > 0;
   const isOnline = status === "Online";
+  // Hours first when this surface knows them; presence when it does not.
+  const knowsHours = Boolean(openState && openState.known);
+  const openNow = knowsHours && openState.open;
   const distText =
     distance != null && distance !== ""
       ? String(distance).toLowerCase().includes("km")
@@ -57,9 +69,18 @@ const ServiceCard = ({ coverImg, name, rating, reviews, status, distance, styler
             </div>
           </div>
         )}
-        <span className={`absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold backdrop-blur ${isOnline ? "bg-white/95 text-emerald-700" : "bg-white/85 text-gray-500"}`}>
-          <span className={`h-1.5 w-1.5 rounded-full ${isOnline ? "bg-emerald-500" : "bg-gray-300"}`} />
-          {isOnline ? "Online" : "Offline"}
+        <span
+          title={
+            knowsHours
+              ? openState.hint
+              : isOnline
+              ? "Signed in right now. Opening hours are not loaded on this page."
+              : "Not signed in. Opening hours are not loaded on this page."
+          }
+          className={`absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold backdrop-blur ${openNow || (!knowsHours && isOnline) ? "bg-white/95 text-emerald-700" : "bg-white/85 text-gray-500"}`}
+        >
+          <span className={`h-1.5 w-1.5 rounded-full ${openNow || (!knowsHours && isOnline) ? "bg-emerald-500" : "bg-gray-300"}`} />
+          {knowsHours ? openState.label : isOnline ? "Online" : "Offline"}
         </span>
         {payoutReady === false && (
           <span
@@ -97,6 +118,22 @@ const ServiceCard = ({ coverImg, name, rating, reviews, status, distance, styler
             <span className="text-[10px] uppercase tracking-[0.2em] text-muted">New</span>
           )}
           {hasReviews && <span className="text-xs text-black/55">{reviews} review{Number(reviews) === 1 ? "" : "s"}</span>}
+          {/* When they are next open, or when they close, kept to a quiet line
+              so the pill stays a state rather than a sentence. */}
+          {knowsHours && openState.detail && (
+            <span className="text-xs text-black/55">{openState.detail}</span>
+          )}
+          {/* Presence, said plainly and kept secondary: signed in right now,
+              which is not a claim about being open. */}
+          {knowsHours && isOnline && (
+            <span
+              title="Signed in right now"
+              className="inline-flex items-center gap-1 text-xs text-emerald-700"
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              Online
+            </span>
+          )}
           {distText && <span className="ml-auto text-xs text-black/55">{distText}</span>}
         </div>
       </div>

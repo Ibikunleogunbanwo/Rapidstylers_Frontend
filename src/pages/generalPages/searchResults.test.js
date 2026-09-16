@@ -24,6 +24,10 @@ vi.mock("../../hooks/remote/apiService", () => ({
     getStylerType: vi.fn(),
     searchNearby: vi.fn(),
     searchByCity: vi.fn(),
+    searchByProvince: vi.fn(),
+    // Kept only so a test can prove the open-now filter no longer reaches for a
+    // full profile per result.
+    singleStylerData: vi.fn(),
   },
 }));
 
@@ -252,5 +256,75 @@ describe("SearchResults city search", () => {
     expect(
       await screen.findByText(/No professionals found in this search yet/)
     ).toBeInTheDocument();
+  });
+});
+
+// Opening hours ship with every list row, so the filter reads them in place. It
+// used to fetch each result's full profile, one request per row, just to learn
+// whether that professional was open.
+describe("SearchResults open-now filter", () => {
+  beforeEach(() => {
+    window.scrollTo = vi.fn();
+    APIService.getStylerType.mockResolvedValue({ data: { data: [] } });
+    APIService.singleStylerData.mockReset();
+  });
+
+  // A window around the professional's own now, so the assertion does not depend
+  // on when the suite runs (the platform's hours are read in the vendor's zone).
+  const vendorNow = () => {
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone: "America/Edmonton",
+      weekday: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    }).formatToParts(new Date());
+    const get = (type) => (parts.find((part) => part.type === type) || {}).value;
+    const weekday = { Sun: "0", Mon: "1", Tue: "2", Wed: "3", Thu: "4", Fri: "5", Sat: "6" }[get("weekday")];
+    return { weekday, minutes: (Number(get("hour")) % 24) * 60 + Number(get("minute")) };
+  };
+  const hhmm = (minutes) =>
+    `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
+
+  test("keeps only rows whose own hours say they are open, with no per-result fetch", async () => {
+    const { weekday, minutes } = vendorNow();
+    APIService.searchByProvince.mockResolvedValue({
+      data: {
+        data: [
+          {
+            stylerId: "S1",
+            businessName: "Open Studio",
+            province: "Alberta",
+            timeZone: "America/Edmonton",
+            availability: [
+              { dayOfWeek: weekday, startTime: hhmm(Math.max(0, minutes - 60)), endTime: hhmm(Math.min(1439, minutes + 60)) },
+            ],
+          },
+          // No availability in the payload: it cannot be shown to be open, so an
+          // "Open now" search leaves it out rather than guessing.
+          { stylerId: "S2", businessName: "Shut Studio", province: "Alberta" },
+        ],
+      },
+    });
+
+    renderPage("/search?province=Alberta&openNow=true");
+
+    expect(await screen.findByText(/Open Studio · S1/)).toBeInTheDocument();
+    expect(screen.queryByText(/Shut Studio · S2/)).toBeNull();
+    expect(APIService.singleStylerData).not.toHaveBeenCalled();
+  });
+
+  test("shows every row when the filter is off", async () => {
+    APIService.searchByProvince.mockResolvedValue({
+      data: { data: [
+        { stylerId: "S1", businessName: "Open Studio", province: "Alberta" },
+        { stylerId: "S2", businessName: "Shut Studio", province: "Alberta" },
+      ] },
+    });
+
+    renderPage("/search?province=Alberta");
+
+    expect(await screen.findByText(/Open Studio · S1/)).toBeInTheDocument();
+    expect(screen.getByText(/Shut Studio · S2/)).toBeInTheDocument();
   });
 });

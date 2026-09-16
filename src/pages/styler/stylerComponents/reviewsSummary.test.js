@@ -40,9 +40,22 @@ describe("the dashboard reviews card", () => {
 
     renderCard();
 
-    expect(await screen.findByText(/1 review still waiting on moderation/)).toBeInTheDocument();
+    expect(await screen.findByText("1 review waiting for approval.")).toBeInTheDocument();
     expect(screen.getByText("Not rated")).toBeInTheDocument();
-    expect(screen.getByText("No reviews yet")).toBeInTheDocument();
+    // The card must not deny a review the stylist has been told about.
+    expect(screen.getByText("None public yet")).toBeInTheDocument();
+    expect(screen.queryByText("No reviews yet")).not.toBeInTheDocument();
+  });
+
+  it("says there are no reviews only when there is nothing in the queue either", async () => {
+    APIService.getOwnStylerReviews.mockResolvedValue({
+      data: { data: { reviews: [], reviewCount: 0, averageRating: null, pendingCount: 0 } },
+    });
+
+    renderCard();
+
+    expect(await screen.findByText("No reviews yet")).toBeInTheDocument();
+    expect(screen.queryByText("None public yet")).not.toBeInTheDocument();
   });
 
   it("stays a working link when the reviews cannot be loaded", async () => {

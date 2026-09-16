@@ -2,6 +2,8 @@
 import { useEffect } from "react";
 import Back from "../../../components/goBack";
 import PasswordInput from "../../../components/passwordInput";
+import PasswordRequirements from "../../../components/passwordRequirements";
+import { passwordProblem } from "../../../utils/passwordRule";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import Button from "../../../components/button";
@@ -25,10 +27,14 @@ const ChangePassword = ({setPageTitle}) => {
     },
     validationSchema: Yup.object({
       oldPassword: Yup.string().required("Old Password is required"),
-      password: Yup.string().required("New Password cannot be empty").matches(
-        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*#?.&])[A-Za-z\d@$!%*#?.&]{6,}$/,
-        "Password criteria doesn't match"
-      ),
+      // The same rule as signup, read from the server's own behaviour. This field
+      // used to take six characters and its own list of symbols, so it accepted
+      // passwords the server refuses, including one built on `%`.
+      password: Yup.string()
+        .required("New Password cannot be empty")
+        .test("password-rule", ({ value }) => passwordProblem(value) || "", (value) =>
+          passwordProblem(value) === null
+        ),
       confirmPassword: Yup.string()
         .required('Confirm Password cannot be empty')
         .oneOf([Yup.ref('password'), null], 'Passwords must match'),
@@ -44,49 +50,51 @@ const ChangePassword = ({setPageTitle}) => {
   })
 
   return (
-    <div className="rounded-xl border border-gray-100 bg-white shadow-sm overflow-hidden">
+    <div className="rounded-lg border border-black/10 bg-white">
       <Spinner loading={useSelector((state)=>state.user).loading}/>
-      <div className="flex items-center gap-3 border-b border-gray-100 bg-gradient-to-r from-brand/5 to-white px-4 py-4 sm:px-5">
-        <div className="flex items-center gap-2">
+      <div className="border-b border-black/10 px-5 py-5 sm:px-6">
+        <div className="flex items-start gap-3">
           <Back />
           <div>
-            <h1 className="text-[15px] font-bold text-gray-900">Change password</h1>
-            <p className="mt-0.5 text-xs text-gray-500">Keep your account secure</p>
+            <p className="text-[11px] uppercase tracking-[0.25em] text-muted">Account</p>
+            <h1 className="mt-2 text-[clamp(1.25rem,2.5vw,1.75rem)] font-normal leading-[1.1] tracking-[-0.02em] text-onSurface">
+              Change password
+            </h1>
+            <p className="mt-1.5 text-[13px] text-black/55">
+              Enter your current password, then choose the new one.
+            </p>
           </div>
         </div>
       </div>
-      <form onSubmit={updateUserPassword.handleSubmit}>
-      <div className="px-4 pt-4">
-      <PasswordInput labelName={"Old Password"}
-                      inputValue={updateUserPassword.values.oldPassword}
-                      inputName={"oldPassword"}
-                      inputOnBlur={updateUserPassword.handleBlur}
-                      inputOnChange={updateUserPassword.handleChange}
-                      inputError={updateUserPassword.errors.oldPassword && updateUserPassword.touched.oldPassword ? updateUserPassword.errors.oldPassword : null}/>
-      </div>
-      <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-        <PasswordInput labelName={"New Password"}
-                        inputValue={updateUserPassword.values.password}
-                        inputName={"password"}
+      <form onSubmit={updateUserPassword.handleSubmit} className="p-5 sm:p-6">
+        <PasswordInput labelName={"Old Password"}
+                        inputValue={updateUserPassword.values.oldPassword}
+                        inputName={"oldPassword"}
                         inputOnBlur={updateUserPassword.handleBlur}
                         inputOnChange={updateUserPassword.handleChange}
-                        inputError={updateUserPassword.errors.password && updateUserPassword.touched.password ? updateUserPassword.errors.password : null}/>
+                        inputError={updateUserPassword.errors.oldPassword && updateUserPassword.touched.oldPassword ? updateUserPassword.errors.oldPassword : null}/>
+        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <PasswordInput labelName={"New Password"}
+                          inputValue={updateUserPassword.values.password}
+                          inputName={"password"}
+                          inputOnBlur={updateUserPassword.handleBlur}
+                          inputOnChange={updateUserPassword.handleChange}
+                          inputError={updateUserPassword.errors.password && updateUserPassword.touched.password ? updateUserPassword.errors.password : null}/>
 
-        <PasswordInput labelName={"Confirm Password"}
-                        inputValue={updateUserPassword.values.confirmPassword}
-                        inputName={"confirmPassword"}
-                        inputOnBlur={updateUserPassword.handleBlur}
-                        inputOnChange={updateUserPassword.handleChange}
-                        inputError={updateUserPassword.errors.confirmPassword && updateUserPassword.touched.confirmPassword ? updateUserPassword.errors.confirmPassword : null}/>
-        <div>
+          <PasswordInput labelName={"Confirm Password"}
+                          inputValue={updateUserPassword.values.confirmPassword}
+                          inputName={"confirmPassword"}
+                          inputOnBlur={updateUserPassword.handleBlur}
+                          inputOnChange={updateUserPassword.handleChange}
+                          inputError={updateUserPassword.errors.confirmPassword && updateUserPassword.touched.confirmPassword ? updateUserPassword.errors.confirmPassword : null}/>
+        </div>
+        {/* The list the person watches turn, from the same rule that validates the
+            field, so it cannot describe a rule the server does not enforce. */}
+        <PasswordRequirements value={updateUserPassword.values.password} />
+        <div className="mt-6">
           <Button type={"submit"} text={"Update Password"} variant="primary"/>
-          </div>
-      </div>
+        </div>
       </form>
-      <div className="px-4 flex space-x-1">
-        <span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="rgba(147,129,255,1)"><path d="M12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22ZM12 20C16.4183 20 20 16.4183 20 12C20 7.58172 16.4183 4 12 4C7.58172 4 4 7.58172 4 12C4 16.4183 7.58172 20 12 20ZM11 15H13V17H11V15ZM11 7H13V13H11V7Z"></path></svg></span>
-        <span className="pb-2 opacity-50 italic text-xs">Password must contain at least 1 uppercase, 1 lowercase, 1 digit, 1 special character and 6 character length</span>
-      </div>
     </div>
   );
 };

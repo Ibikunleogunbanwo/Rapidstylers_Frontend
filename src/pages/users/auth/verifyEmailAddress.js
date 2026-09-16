@@ -10,16 +10,10 @@ import Spinner from "../../../components/spinner";
 import { APIService } from "../../../hooks/remote/apiService";
 import GoogleSignInButton from "../../../components/googleSignInButton";
 import { showSuccessToastMessage, showErrorToastMessage, setAuthToken, setRefreshToken } from "../../../utils/constant";
+import { CustomerSignupCounter, CustomerSignupRail } from "./customerSignupRail";
 
 // Google Sign-In client id (public). When absent, the Google sign-up option is hidden.
 const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || "";
-
-const steps = [
-  "Register email address",
-  "Verify email address",
-  "Personal details",
-  "Secure your account",
-];
 
 const VerifyUserEmailAddress = () => {
   useEffect(() => {
@@ -175,8 +169,14 @@ const userEmailAddress = location.state?.emailAddress || sessionStorage.getItem(
     },
     onSubmit: async (values) => {
       const {otpCode} = values
+      // The code is looked up by the address it was issued to, so both travel
+      // together. Sending the code alone made the endpoint refuse every code.
+      if (!userEmailAddress) {
+        setOtpError("We don't have your email on file. Please restart registration so we can send a fresh code.");
+        return;
+      }
       try {
-        const {payload} = await dispatch(verifyOtpCode(otpCode));
+        const {payload} = await dispatch(verifyOtpCode({ emailAddress: userEmailAddress, otpCode }));
         if(payload.statusCode === "200") {
           setOtpError(null);
           // Use the email from the backend response (source of truth) and persist
@@ -226,14 +226,7 @@ const userEmailAddress = location.state?.emailAddress || sessionStorage.getItem(
               Create your <span className="text-brand">RapidStylers</span> account
             </p>
             <div className="grid gap-4">
-              {steps.map((step, i) => (
-                <div key={step} className={`flex items-center gap-3 ${i + 1 === 2 ? "" : "opacity-50"}`}>
-                  <div className={`h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold ${i + 1 <= 2 ? "bg-brand text-white" : "border-2 border-white text-white"}`}>
-                    {i + 1}
-                  </div>
-                  <div className="text-sm">{step}</div>
-                </div>
-              ))}
+              <CustomerSignupRail />
             </div>
           </div>
         </div>
@@ -244,7 +237,8 @@ const userEmailAddress = location.state?.emailAddress || sessionStorage.getItem(
         <div className="grid content-between h-full">
           <div className="p-5 md:p-10 mb-6 md:mb-0 w-full">
             <img src={logo} alt="" className="h-10 mb-8" />
-            <p className="text-[22px] font-normal tracking-[-0.01em] text-onSurface">Verify your email address</p>
+            <CustomerSignupCounter />
+            <p className="mt-2 text-[22px] font-normal tracking-[-0.01em] text-onSurface">Verify your email address</p>
             <p className="text-black/60 text-sm mt-1">
               A verification code was sent to your email address ({userEmailAddress}).
               Please provide the code and click on verify.
@@ -262,15 +256,24 @@ const userEmailAddress = location.state?.emailAddress || sessionStorage.getItem(
               </>
             )}
             <div className="flex justify-between items-center">
-              <p className="text-sm font-semibold text-primary/50 cursor-pointer" onClick={clearUserOTP}>Clear code</p>
+              {/* A button rather than a paragraph with an onClick: the same action
+                  should be reachable by keyboard, and nothing about a sentence
+                  says it can be clicked. */}
+              <button
+                type="button"
+                onClick={clearUserOTP}
+                className="text-[13px] font-semibold text-brand underline-offset-4 hover:underline"
+              >
+                Clear code
+              </button>
               {resendIn > 0 ? (
-                <p className="text-sm font-semibold text-black/40">Resend code in {resendLabel}</p>
+                <p className="text-[13px] text-black/45">Resend code in {resendLabel}</p>
               ) : (
                 <button
                   type="button"
                   onClick={handleResendCode}
                   disabled={resending}
-                  className="text-sm font-semibold text-brand hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="text-[13px] font-semibold text-brand underline-offset-4 hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {resending ? "Sending…" : "Resend code"}
                 </button>
@@ -278,7 +281,7 @@ const userEmailAddress = location.state?.emailAddress || sessionStorage.getItem(
             </div>
             <div
               data-testid="otp-grid"
-              className={`w-full grid grid-cols-6 md:grid-cols-10 gap-4 mt-8 ${shaking ? "animate-shake" : ""}`}
+              className={`w-full grid grid-cols-6 gap-2 mt-8 ${shaking ? "animate-shake" : ""}`}
               onAnimationEnd={() => setShaking(false)}
             >
               {digits.map((digit, index) => (

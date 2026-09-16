@@ -7,6 +7,7 @@ import { useStylerByCategoryList } from "../userLayout/functionalEffects";
 import Spinner from "../../../components/spinner";
 import { useSelector } from "react-redux";
 import { useSavedStylists } from "../../../hooks/useSavedStylists";
+import { vendorOpenState } from "../../../utils/vendorOpenState";
 
 const Stylist = ({ setPageTitle }) => {
   useEffect((() => {
@@ -42,6 +43,7 @@ const Stylist = ({ setPageTitle }) => {
                         distance={val.distanceKm}
                         rating={val.averageRating}
                         reviews={val.reviewCount}
+                        openState={vendorOpenState(val)}
                         stylerId={val.stylerId}
                         businessName={val.businessName}
                         isSaved={savedIds.has(String(val.stylerId))}

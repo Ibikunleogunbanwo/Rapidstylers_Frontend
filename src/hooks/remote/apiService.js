@@ -62,9 +62,19 @@ export class APIService {
             throw(error);
         }
     }
-    static async stylerVerifyOtp(otpCode){
+    /**
+     * Verify the professional signup code.
+     *
+     * The address is required by the endpoint, not optional: OTPs are bound to the
+     * email they were issued for (`findLatestUnusedByEmail`), and the backend
+     * rejects a verification that arrives without one. This used to post the code
+     * alone, so the endpoint saw a blank address and answered "Invalid OTP Code"
+     * for every code, however correct. The address belongs here rather than in the
+     * backend because the flow is holding it on the step it is verifying.
+     */
+    static async stylerVerifyOtp({ emailAddress, otpCode }){
         try{
-            return await ApiClient.post("/styler_verify_otp", { otpCode });
+            return await ApiClient.post("/styler_verify_otp", { emailAddress, otpCode });
         }
         catch(error){
             APIService.extractError(error);
@@ -89,9 +99,49 @@ export class APIService {
             throw(error);
         }
     }
-    static async verifyOtpCode(otpCode){
+    /**
+     * Verify a signup or password-reset code for a customer account.
+     *
+     * Both the address and the code are required: the code is looked up by the
+     * address it was issued to, and an address-less verification is refused before
+     * any code is even compared. Posting the code alone, as this did, made every
+     * signup verification fail with "Invalid OTP Code" regardless of the code the
+     * customer had typed.
+     */
+    static async verifyOtpCode({ emailAddress, otpCode }){
         try{
-            return await ApiClient.post("/verify_otp_code", { otpCode })
+            return await ApiClient.post("/verify_otp_code", { emailAddress, otpCode })
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+    /**
+     * Ask for a password-reset code.
+     *
+     * The endpoint answers identically whether or not the address is registered, so
+     * nobody can use it to learn which addresses have accounts; an unknown address
+     * simply receives no mail.
+     */
+    static async generateResetPasswordToken(data){
+        try{
+            return await ApiClient.post("/generate_reset_password_token", data)
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+    /**
+     * Set a new password after the reset code has been verified.
+     *
+     * The backend refuses this unless a verified code for the same address is on
+     * record, so the step order in the UI is a courtesy rather than the protection.
+     */
+    static async resetUserPassword(data){
+        try{
+            return await ApiClient.post("/reset_user_password", data)
         }
         catch(error){
             APIService.extractError(error);

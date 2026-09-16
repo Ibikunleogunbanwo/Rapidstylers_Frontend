@@ -125,22 +125,22 @@ const BusinessDetails = () => {
     >
       {({ values, errors, touched, handleChange, handleBlur, setFieldValue, setValues, isSubmitting }) => (
         <Form>
-          <p className="text-base md:text-lg font-bold">Please provide your business information:</p>
+          {/* The step's heading and lead come from the shell's step table. */}
 
           {/* Service type selector */}
           <div className="grid grid-cols-2 gap-3 mb-4">
             {loading ? (
-              <p className="col-span-2 text-sm text-gray-500">
+              <p className="col-span-2 text-sm text-black/55">
                 Loading service categories…
               </p>
             ) : serviceTypes.length > 0 ? (
               serviceTypes.map((svc) => (
                 <label
                   key={svc.id}
-                  className={`text-sm text-center rounded p-3 cursor-pointer border transition-colors ${
+                  className={`text-sm text-center rounded-lg p-3 cursor-pointer border transition-colors ${
                     values.serviceTypeId === svc.id
-                      ? "bg-brand text-white border-brand"
-                      : "bg-[#c4c4c416] border-[#c4c4c440] hover:border-brand/40"
+                      ? "border-brand bg-brand/10 text-brand font-medium"
+                      : "border-black/15 text-black/70 hover:border-black/30"
                   }`}
                 >
                   <input
@@ -158,7 +158,7 @@ const BusinessDetails = () => {
                 </label>
               ))
             ) : (
-              <p className="col-span-2 text-sm text-gray-500">
+              <p className="col-span-2 text-sm text-black/55">
                 No service categories available yet.
               </p>
             )}
@@ -189,7 +189,7 @@ const BusinessDetails = () => {
               {/* Say who reads this and why. Clients are given this address to
                   travel to, and a profile without one cannot be listed, so it
                   is the last field a professional should treat as optional. */}
-              <p className="mt-1.5 text-xs leading-[1.5] text-gray-500">
+              <p className="mt-1.5 text-xs leading-[1.5] text-black/55">
                 Clients travel here when they book a visit, so enter the place they should
                 come to, not a mailing address. It shows on your public profile with a
                 directions link and again in their booking confirmation. We cannot approve
@@ -240,13 +240,9 @@ const BusinessDetails = () => {
           </div>
 
           <div className="mt-8 flex gap-3">
-            <button
-              type="button"
-              onClick={() => navigate("/styler-signup/verify-email")}
-              className="py-3 px-5 text-sm text-gray-600 font-medium border border-gray-300 rounded-md hover:bg-gray-50"
-            >
+            <Button variant="ghost" type="button" onClick={() => navigate("/styler-signup/verify-email")}>
               Back
-            </button>
+            </Button>
             <Button text="Continue" variant="primary" type="submit" disabled={isSubmitting} />
           </div>
         </Form>

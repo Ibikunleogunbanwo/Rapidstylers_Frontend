@@ -240,9 +240,11 @@ const Hero = ({ height }) => {
           )}
           <div className="flex justify-between items-center pt-4">
             <Button text={"Continue"} variant={"primary"} type={"submit"} />
-            <p className="text-sm font-medium text-brand underline cursor-pointer" onClick={() => { setSignInVisible(false); navigate('/login'); }}>
+            {/* This used to close the modal and navigate to /login, which is the page
+                the modal is already on, so the link went nowhere. */}
+            <Link to="/resetPassword" className="text-sm font-medium text-brand underline underline-offset-4">
               Forgot password?
-            </p>
+            </Link>
           </div>
         </form>
 

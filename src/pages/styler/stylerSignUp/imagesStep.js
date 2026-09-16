@@ -73,7 +73,6 @@ const ImagesStep = () => {
     >
       {({ values, errors, touched, setFieldValue, isSubmitting }) => (
         <Form>
-          <p className="my-4 font-bold">Upload your photos:</p>
 
           {/* Profile image */}
           <div className="mb-5">
@@ -96,16 +95,16 @@ const ImagesStep = () => {
           <div className="mb-4">
             <span className="font-medium text-sm pb-1 block">Valid ID type:</span>
             {loadingTypes ? (
-              <p className="text-sm text-gray-500">Loading ID types…</p>
+              <p className="text-sm text-black/55">Loading ID types…</p>
             ) : idTypes.length > 0 ? (
               <div className="grid grid-cols-2 gap-2">
                 {idTypes.map((t) => (
                   <label
                     key={t.id}
-                    className={`text-sm text-center rounded p-3 cursor-pointer border transition-colors ${
+                    className={`text-sm text-center rounded-lg p-3 cursor-pointer border transition-colors ${
                       values.identificationTypeId === t.id
-                        ? "bg-brand text-white border-brand"
-                        : "bg-[#c4c4c416] border-[#c4c4c440] hover:border-brand/40"
+                        ? "border-brand bg-brand/10 text-brand font-medium"
+                        : "border-black/15 text-black/70 hover:border-black/30"
                     }`}
                   >
                     <input
@@ -124,7 +123,7 @@ const ImagesStep = () => {
               // The backend stores ID types as numeric ids and rejects
               // anything else, so a hardcoded label list would 500 on
               // submit. Block the step until an admin adds ID types.
-              <div className="p-4 rounded-md border border-amber-200 bg-amber-50 text-sm text-amber-700">
+              <div className="p-4 rounded-lg border border-amber-200 bg-amber-50 text-sm text-amber-700">
                 ID types haven't been set up yet. Ask an admin to add them
                 (e.g. Driver's license, Passport) before completing this step.
               </div>
@@ -151,13 +150,9 @@ const ImagesStep = () => {
           </div>
 
           <div className="mt-8 flex gap-3">
-            <button
-              type="button"
-              onClick={() => navigate("/styler-signup/business-details")}
-              className="py-3 px-5 text-sm text-gray-600 font-medium border border-gray-300 rounded-md hover:bg-gray-50"
-            >
+            <Button variant="ghost" type="button" onClick={() => navigate("/styler-signup/business-details")}>
               Back
-            </button>
+            </Button>
             <Button
               text="Continue"
               variant="primary"

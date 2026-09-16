@@ -7,13 +7,7 @@ import Button from "../../../components/button";
 import { useEffect } from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
-
-const steps = [
-  "Register email address",
-  "Verify email address",
-  "Personal details",
-  "Secure your account",
-];
+import { CustomerSignupCounter, CustomerSignupRail } from "./customerSignupRail";
 
 /** Canadian convention: "123 Main St, Unit 4, Toronto, ON M5V 2T6, Canada" */
 const composeCanadianAddress = (v) =>
@@ -103,16 +97,7 @@ const PersonalDetails = () => {
             <p className="text-[clamp(1.75rem,3vw,2.5rem)] font-normal leading-[1.15] tracking-[-0.02em]">
               Create your <span className="text-brand">RapidStylers</span> account
             </p>
-            <div className="grid gap-4">
-              {steps.map((step, i) => (
-                <div key={step} className={`flex items-center gap-3 ${i + 1 === 3 ? "" : "opacity-50"}`}>
-                  <div className={`h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold ${i + 1 <= 3 ? "bg-brand text-white" : "border-2 border-white text-white"}`}>
-                    {i + 1}
-                  </div>
-                  <div className="text-sm">{step}</div>
-                </div>
-              ))}
-            </div>
+            <CustomerSignupRail />
           </div>
         </div>
       </div>
@@ -122,7 +107,8 @@ const PersonalDetails = () => {
         <div className="grid content-between h-full">
           <div className="p-5 md:p-10 mb-6 md:mb-0 w-full">
             <img src={logo} alt="" className="h-10 mb-8" />
-            <p className="text-[22px] font-normal tracking-[-0.01em] text-onSurface">Personal details</p>
+            <CustomerSignupCounter />
+            <p className="mt-2 text-[22px] font-normal tracking-[-0.01em] text-onSurface">Personal details</p>
             <p className="text-black/60 text-sm mt-1">
               Please provide details about yourself.
             </p>

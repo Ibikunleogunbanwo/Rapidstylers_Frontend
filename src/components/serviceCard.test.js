@@ -141,3 +141,72 @@ describe("ServiceCard in the page design language", () => {
     expect(container.querySelector("img[class*='object-cover']").getAttribute("src")).toMatch(/^\/images\/gallery\//);
   });
 });
+
+// The pill used to read "Online" for a logged-in professional, which customers
+// read as "open now". It now states their hours when this surface knows them,
+// and presence is demoted to a quiet line.
+describe("ServiceCard's open state", () => {
+  const state = (overrides = {}) => ({
+    known: true,
+    open: true,
+    label: "Open now",
+    detail: "Closes 5:00 PM",
+    hint: "Open now, closes 5:00 PM (Mountain Time).",
+    ...overrides,
+  });
+
+  test("states that they are open, with the zone in the explanation", () => {
+    renderCard({ openState: state() });
+
+    expect(screen.getByText("Open now")).toBeInTheDocument();
+    expect(screen.getByText("Closes 5:00 PM")).toBeInTheDocument();
+    expect(screen.getByTitle("Open now, closes 5:00 PM (Mountain Time).")).toBeInTheDocument();
+  });
+
+  test("says when they next open instead of only that they are shut", () => {
+    renderCard({
+      openState: state({
+        open: false,
+        label: "Closed",
+        detail: "Opens Saturday 9:00 AM",
+        hint: "Closed now, opens Saturday 9:00 AM (Mountain Time).",
+      }),
+    });
+
+    expect(screen.getByText("Closed")).toBeInTheDocument();
+    expect(screen.getByText("Opens Saturday 9:00 AM")).toBeInTheDocument();
+  });
+
+  test("keeps signed-in presence secondary to the hours", () => {
+    renderCard({
+      openState: state({ open: false, label: "Closed", detail: "Opens Saturday 9:00 AM" }),
+      status: "Online",
+    });
+
+    // Both facts are on the card, and the pill is the one about hours.
+    expect(screen.getByText("Closed")).toBeInTheDocument();
+    expect(screen.getByText("Online")).toBeInTheDocument();
+    expect(screen.getByTitle("Signed in right now")).toBeInTheDocument();
+  });
+
+  test("shows no presence line when the professional is not signed in", () => {
+    renderCard({ openState: state(), status: "Offline" });
+
+    expect(screen.getByText("Open now")).toBeInTheDocument();
+    expect(screen.queryByText("Online")).not.toBeInTheDocument();
+  });
+
+  test("claims no open state on a surface that has no hours to judge", () => {
+    renderCard({
+      openState: { known: false, open: false, label: "", detail: "", hint: "" },
+      status: "Online",
+    });
+
+    // Presence is all this list knows, so presence is all it says, and the
+    // tooltip admits the hours are not loaded rather than implying they are.
+    expect(screen.getByText("Online")).toBeInTheDocument();
+    expect(screen.queryByText("Open now")).not.toBeInTheDocument();
+    expect(screen.queryByText("Closed")).not.toBeInTheDocument();
+    expect(screen.getByTitle(/Opening hours are not loaded on this page/)).toBeInTheDocument();
+  });
+});

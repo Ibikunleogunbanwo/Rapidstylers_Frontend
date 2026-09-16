@@ -262,3 +262,158 @@ describe("StylistProfile names the vendor's time zone on working hours", () => {
     expect(screen.getByText(/Book during these weekly windows \(Mountain Time\)/)).toBeInTheDocument();
   });
 });
+
+// A badge is a claim the marketplace makes about a real person, so the header
+// renders only what the server proved, and only what the client can explain.
+describe("StylistProfile badges", () => {
+  const unreviewed = (dateRegistered) => ({
+    reviewCount: 0, averageRating: "0", payoutReady: true, dateRegistered,
+  });
+  const chip = (label) => {
+    const row = screen.queryByTestId("profile-badges");
+    return row ? within(row).queryByText(label) : null;
+  };
+
+  test("is rated when there are reviews, with no badge to add", () => {
+    renderProfile();
+
+    expect(screen.getByText("Rated 4.5 out of 5 from 6 reviews")).toBeInTheDocument();
+    expect(screen.queryByTestId("profile-badges")).not.toBeInTheDocument();
+  });
+
+  test("shows no chips when the server proved nothing", () => {
+    renderProfile({ stylerInformation: unreviewed("2026-09-15") });
+
+    expect(screen.getByText("No reviews yet")).toBeInTheDocument();
+    expect(screen.queryByTestId("profile-badges")).not.toBeInTheDocument();
+  });
+
+  test("renders each earned badge with the reason behind it", () => {
+    renderProfile({ badges: ["TOP_RATED", "FIRST_BOOKING"] });
+
+    expect(chip("Top rated")).toBeInTheDocument();
+    // The hint is what makes the chip inspectable rather than decorative.
+    expect(chip("Top rated").getAttribute("title")).toMatch(/4\.7/);
+    expect(chip("First booking completed")).toBeInTheDocument();
+    expect(chip("First booking completed").getAttribute("title")).toMatch(/finished a booking/i);
+  });
+
+  test("carries the New claim on the chip, not in the rating line", () => {
+    renderProfile({ stylerInformation: unreviewed("2026-09-15"), badges: ["NEW"] });
+
+    expect(chip("New")).toBeInTheDocument();
+    expect(screen.getByText("No reviews yet")).toBeInTheDocument();
+    // The line no longer claims newness, and nothing anywhere claims it twice.
+    expect(screen.queryByText("New on RapidStylers")).not.toBeInTheDocument();
+  });
+
+  test("drops a code it cannot explain instead of printing it raw", () => {
+    renderProfile({ stylerInformation: unreviewed("2026-09-15"), badges: ["MYSTERY_BADGE"] });
+
+    expect(screen.queryByTestId("profile-badges")).not.toBeInTheDocument();
+    expect(screen.queryByText("MYSTERY_BADGE")).not.toBeInTheDocument();
+  });
+
+  test("survives a badge payload that is not a list", () => {
+    renderProfile({ stylerInformation: unreviewed("2026-09-15"), badges: "TOP_RATED" });
+
+    expect(screen.queryByTestId("profile-badges")).not.toBeInTheDocument();
+  });
+
+  // The value sits above its label inside each stat cell. Scoped to the stats
+  // grid, because "Reviews" is also the heading of the reviews section below.
+  const statValue = (label) =>
+    within(screen.getByTestId("profile-stats")).getByText(label).parentElement
+      .firstElementChild.textContent;
+
+  test("reports no track record as '-' rather than a verdict of zero", () => {
+    renderProfile({ stylerInformation: unreviewed("2024-09-15"), ratingPercentage: "0" });
+
+    expect(statValue("Success rate")).toBe("-");
+    expect(statValue("Average rating")).toBe("-");
+    // "none yet" is what the appointment tally means, so it stays a number.
+    expect(statValue("Appointments")).toBe("0");
+    expect(statValue("Reviews")).toBe("0");
+  });
+
+  test("still shows the real track record once there are reviews", () => {
+    renderProfile({ ratingPercentage: "86" });
+
+    expect(statValue("Success rate")).toBe("86%");
+    expect(statValue("Average rating")).toBe("4.5");
+    expect(statValue("Reviews")).toBe("6");
+  });
+});
+
+// The profile is where the mismatch was most visible: a page listing Tuesday and
+// Saturday hours, with a badge claiming the professional was online. The hours
+// win, and presence is said plainly beside them.
+describe("StylistProfile open state", () => {
+  const vendorNow = () => {
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone: "America/Edmonton",
+      weekday: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    }).formatToParts(new Date());
+    const get = (type) => (parts.find((part) => part.type === type) || {}).value;
+    const weekday = { Sun: "0", Mon: "1", Tue: "2", Wed: "3", Thu: "4", Fri: "5", Sat: "6" }[get("weekday")];
+    return { weekday, minutes: (Number(get("hour")) % 24) * 60 + Number(get("minute")) };
+  };
+  const hhmm = (minutes) =>
+    `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
+  const unreviewed = { reviewCount: 0, averageRating: "0", payoutReady: true, timeZone: "America/Edmonton" };
+
+  test("is judged on the professional's clock, and says when they close", () => {
+    const { weekday, minutes } = vendorNow();
+    renderProfile({
+      stylerInformation: unreviewed,
+      // A window around the professional's own now, so the assertion does not
+      // depend on when the suite runs.
+      availability: [
+        { dayOfWeek: weekday, startTime: hhmm(Math.max(0, minutes - 60)), endTime: hhmm(Math.min(1439, minutes + 60)) },
+      ],
+    });
+
+    expect(screen.getByText("Open now")).toBeInTheDocument();
+    expect(screen.getByText(/Closes /)).toBeInTheDocument();
+  });
+
+  test("says they are closed and why, rather than staying silent", () => {
+    renderProfile({ stylerInformation: unreviewed });
+
+    expect(screen.getByText("Closed")).toBeInTheDocument();
+    expect(screen.getByText("No weekly hours set")).toBeInTheDocument();
+  });
+
+  test("keeps a signed-in professional's presence secondary to the hours", () => {
+    renderProfile({ stylerInformation: { ...unreviewed, visibilityStatus: "Online" } });
+
+    expect(screen.getByText("Closed")).toBeInTheDocument();
+    expect(screen.getByText("Online")).toBeInTheDocument();
+    expect(screen.getByTitle("Signed in right now")).toBeInTheDocument();
+  });
+
+  test("marks a blocked date as closed even inside working hours", () => {
+    const { weekday, minutes } = vendorNow();
+    const today = new Date(
+      Date.now() - new Date().getTimezoneOffset() * 60000
+    );
+    renderProfile({
+      stylerInformation: unreviewed,
+      availability: [
+        { dayOfWeek: weekday, startTime: hhmm(Math.max(0, minutes - 60)), endTime: hhmm(Math.min(1439, minutes + 60)) },
+      ],
+      exceptions: [
+        {
+          blockedDate: `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(
+            today.getDate()
+          ).padStart(2, "0")}`,
+        },
+      ],
+    });
+
+    expect(screen.getByText("Closed")).toBeInTheDocument();
+  });
+});

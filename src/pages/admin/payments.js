@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { APIService } from "../../hooks/remote/apiService";
-import { AdminPage, AdminInput } from "./adminShell";
+import { AdminPage, AdminInput, AdminPill } from "./adminShell";
 import { getAuthToken, isAdminRole, showErrorToastMessage, showSuccessToastMessage } from "../../utils/constant";
 
-const REFUND_BADGES = {
-  COMPLETED: "bg-green-100 text-green-700",
-  REQUESTED: "bg-amber-100 text-amber-700",
-  FAILED: "bg-red-100 text-red-700",
+/** Refund states as the shell's shared tones, so a completed refund looks the
+ *  same here as a completed anything-else looks on the other admin pages. */
+const REFUND_TONES = {
+  COMPLETED: "positive",
+  REQUESTED: "attention",
+  FAILED: "negative",
 };
 
 const formatMoney = (value) => {
@@ -190,9 +192,9 @@ const Payments = () => {
                         <td className="p-3">{refund.appointmentId}</td>
                         <td className="p-3">{formatMoney(refund.amount)}</td>
                         <td className="p-3">
-                          <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${REFUND_BADGES[refund.status] || "bg-gray-100 text-gray-600"}`}>
+                          <AdminPill tone={REFUND_TONES[refund.status] || "neutral"}>
                             {refund.status}
-                          </span>
+                          </AdminPill>
                         </td>
                         <td className="p-3 text-gray-600">{refund.reason || "-"}</td>
                         <td className="p-3 text-gray-600">{refund.createdBy}</td>
@@ -225,9 +227,9 @@ const Payments = () => {
               <div className="rounded-lg border bg-white p-4">
                 <div className="flex flex-wrap items-center gap-3">
                   <p className="text-sm text-gray-500">Ran at {report.runAt}</p>
-                  <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${report.ok ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+                  <AdminPill tone={report.ok ? "positive" : "negative"}>
                     {report.ok ? "No issues" : `${report.issueCount} issue${report.issueCount === 1 ? "" : "s"}`}
-                  </span>
+                  </AdminPill>
                   <p className="text-sm text-gray-600">
                     {report.stripeIntentsChecked} intents checked · {report.matched} matched
                   </p>

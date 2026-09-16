@@ -1,16 +1,17 @@
 import React, { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { APIService } from "../../hooks/remote/apiService";
-import { AdminPage } from "./adminShell";
+import { AdminPage, AdminPill, AdminStat } from "./adminShell";
 import { getAuthToken, isAdminRole } from "../../utils/constant";
 
-const STAGE_STYLES = {
-  0: "bg-gray-100 text-gray-600",
-  1: "bg-blue-100 text-blue-700",
-  2: "bg-amber-100 text-amber-700",
-  3: "bg-orange-100 text-orange-700",
-  4: "bg-red-100 text-red-700",
-};
+/**
+ * A campaign's stage as a tone, read left to right as a rising escalation: the
+ * reminder is neutral, the middle follow-ups ask for attention, and the final one
+ * is the last attempt. The tones come from the shell rather than being five
+ * hand-picked colour pairs here, which is how this page used to read differently
+ * from the two other pages showing the same kind of state.
+ */
+const STAGE_TONES = { 0: "neutral", 1: "neutral", 2: "attention", 3: "attention", 4: "negative" };
 
 const Recovery = () => {
   document.title = "Recovery Campaigns | RapidStylers";
@@ -55,20 +56,20 @@ const Recovery = () => {
     >
         <p className="mb-5 text-sm text-gray-500">
           Customers who started a sign-up but never created an account, and which recovery email they received
-          (24h reminder → 7-day → 14-day → 1-month). Uses a "created" account after the follow-up stops.
+          (24h reminder, then 7-day, 14-day, 1-month). Uses a created account after the follow-up stops.
         </p>
 
         <div className="mb-5 grid grid-cols-2 gap-3 md:grid-cols-6">
-          <div className="rounded-lg border bg-white p-4"><p className="text-xs text-gray-500">Abandoned</p><p className="mt-1 text-2xl font-bold text-gray-900">{total}</p></div>
-          <div className="rounded-lg border bg-white p-4"><p className="text-xs text-gray-500">24h reminder</p><p className="mt-1 text-2xl font-bold text-blue-600">{byStage[1] || 0}</p></div>
-          <div className="rounded-lg border bg-white p-4"><p className="text-xs text-gray-500">7-day</p><p className="mt-1 text-2xl font-bold text-amber-600">{byStage[2] || 0}</p></div>
-          <div className="rounded-lg border bg-white p-4"><p className="text-xs text-gray-500">14-day</p><p className="mt-1 text-2xl font-bold text-orange-600">{byStage[3] || 0}</p></div>
-          <div className="rounded-lg border bg-white p-4"><p className="text-xs text-gray-500">1-month final</p><p className="mt-1 text-2xl font-bold text-red-600">{byStage[4] || 0}</p></div>
-          <div className="rounded-lg border bg-white p-4"><p className="text-xs text-gray-500">Converted</p><p className="mt-1 text-2xl font-bold text-green-600">{converted}</p></div>
+          <AdminStat label="Abandoned" value={total} />
+          <AdminStat label="24h reminder" value={byStage[1] || 0} />
+          <AdminStat label="7-day" value={byStage[2] || 0} />
+          <AdminStat label="14-day" value={byStage[3] || 0} />
+          <AdminStat label="1-month final" value={byStage[4] || 0} />
+          <AdminStat label="Converted" value={converted} />
         </div>
 
         {loading ? (
-          <p className="text-sm text-gray-500">Loading recovery campaigns...</p>
+          <p className="text-sm text-gray-500">Loading recovery campaigns…</p>
         ) : rows.length === 0 ? (
           <p className="text-sm text-gray-500">No abandoned sign-ups yet.</p>
         ) : (
@@ -91,16 +92,16 @@ const Recovery = () => {
                       <td className="p-3 font-medium text-gray-900">{row.email}</td>
                       <td className="p-3 text-gray-600">{row.attemptedAt || "-"}</td>
                       <td className="p-3">
-                        <span className={`rounded-full px-2 py-1 text-xs font-semibold ${STAGE_STYLES[stage]}`}>
+                        <AdminPill tone={STAGE_TONES[stage] || "neutral"}>
                           {row.stageLabel || `Stage ${stage}`}
-                        </span>
+                        </AdminPill>
                       </td>
                       <td className="p-3 text-gray-600">{row.lastSentAt || "-"}</td>
                       <td className="p-3">
                         {row.converted ? (
-                          <span className="rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-700">Converted</span>
+                          <AdminPill tone="positive">Converted</AdminPill>
                         ) : (
-                          <span className="rounded-full bg-gray-100 px-2 py-1 text-xs font-semibold text-gray-600">Pending</span>
+                          <AdminPill>Pending</AdminPill>
                         )}
                       </td>
                     </tr>

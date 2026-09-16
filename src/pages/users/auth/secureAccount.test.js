@@ -12,7 +12,7 @@ vi.mock("react-redux", () => {
     __testDispatch: dispatch,
   };
 });
-vi.mock("react-router-dom", () => ({ useNavigate: () => vi.fn() }));
+vi.mock("react-router-dom", () => ({ useNavigate: () => vi.fn(), useLocation: () => ({ pathname: "/secureAccount" }) }));
 vi.mock("lottie-react", () => ({
   __esModule: true,
   default: () => <div data-testid="lottie" />,

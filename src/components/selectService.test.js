@@ -417,12 +417,14 @@ describe("Booking confirmation names the stylist's clock", () => {
     );
   });
 
-  it("states the time without a zone when the stylist's row declares none", () => {
-    // Never guess a clock: the picker's own label is what the customer was
-    // shown, and an unknown zone prints nothing rather than "Mountain Time".
+  it("keeps the day but drops the hour when the stylist's clock cannot be named", () => {
+    // Never guess a clock, and never print a time that belongs to no stated
+    // zone: the day survives, and the booking's own row keeps the hour. The
+    // rule itself is held in place by utils/copyTimezone.test.js.
     expect(bookingConfirmationMessage("Tue, 19th", "4:00 pm", "")).toBe(
-      "Booking request sent for Tue, 19th at 4:00 pm. The stylist will confirm shortly."
+      "Booking request sent for Tue, 19th. The stylist will confirm shortly."
     );
+    expect(bookingConfirmationMessage("Tue, 19th", "4:00 pm", "")).not.toMatch(/4:00/);
   });
 
   it("degrades to the plain acknowledgement when no slot was recorded", () => {
@@ -533,5 +535,127 @@ describe("How far the stylist is, in the booking modal", () => {
     // Nobody is travelling, so the visit card and its trip estimate go away
     // rather than reporting a journey that will not happen.
     expect(screen.queryByText(ESTIMATE)).not.toBeInTheDocument();
+  });
+});
+
+// The minute after a booking lands is the only moment the customer can still be
+// saved from missing it, so the confirmation stays on screen and offers the
+// appointment to their own calendar. The entry has to land on the hour the
+// professional's clock said, in whatever zone the customer's calendar uses.
+describe("Adding a fresh booking to a calendar", () => {
+  const bookVisit = async (stylerProps = {}) => {
+    getAuthToken.mockReturnValue("token");
+    APIService.bookAppointment.mockResolvedValue({ data: { data: {} } });
+
+    render(
+      <SelectService
+        serviceName="Braids"
+        servicePrice="80"
+        durationMinutes={90}
+        stylerId="s1"
+        subServiceId="ss1"
+        stylerProvince="Alberta"
+        stylerTimeZone="America/Edmonton"
+        stylerName="Demo Hairstylist Studio"
+        stylerAddress={{ businessAddress: "700 2 St SW", city: "Calgary" }}
+        {...stylerProps}
+      />
+    );
+    fireEvent.click(screen.getByText("Book service"));
+    fireEvent.click(screen.getByText("4:00 pm"));
+    fireEvent.click(screen.getAllByText(/15/)[0]);
+    fireEvent.click(screen.getByText("Book appointment"));
+    return screen.findByTestId("booking-placed");
+  };
+
+  const calendarParams = () => {
+    const link = screen.getByText("Add to Google Calendar");
+    return new URLSearchParams(link.getAttribute("href").split("?")[1]);
+  };
+
+  // Reads a UTC stamp from the calendar link back in the professional's zone.
+  const inStylistZone = (stamp, options) => {
+    const iso = `${stamp.slice(0, 4)}-${stamp.slice(4, 6)}-${stamp.slice(6, 8)}T${stamp.slice(9, 11)}:${stamp.slice(11, 13)}:00Z`;
+    return new Intl.DateTimeFormat("en-US", { timeZone: "America/Edmonton", ...options })
+      .format(new Date(iso));
+  };
+
+  it("offers the appointment to the customer's calendar as soon as it lands", async () => {
+    const panel = await bookVisit();
+
+    expect(panel).toBeInTheDocument();
+    expect(screen.getByText(/Booking request sent for/)).toBeInTheDocument();
+    expect(screen.getByText("Download calendar file (.ics)")).toBeInTheDocument();
+    expect(screen.getByText("Done")).toBeInTheDocument();
+  });
+
+  it("writes the entry at the professional's hour, not the visitor's", async () => {
+    await bookVisit();
+
+    const [start] = calendarParams().get("dates").split("/");
+    // The customer picked 4:00 pm on the 15th in the stylist's calendar, so the
+    // instant carried by the link must be that hour in Calgary.
+    expect(inStylistZone(start, { hour: "numeric", hour12: false })).toBe("16");
+    expect(inStylistZone(start, { day: "numeric" })).toBe("15");
+  });
+
+  it("names the professional's zone and the service in the entry", async () => {
+    await bookVisit();
+
+    const params = calendarParams();
+    expect(params.get("text")).toBe("Braids with Demo Hairstylist Studio");
+    expect(params.get("details")).toContain("Mountain Time");
+    expect(params.get("details")).toContain("America/Edmonton");
+    expect(params.get("location")).toBe("700 2 St SW, Calgary");
+  });
+
+  it("points nowhere when the professional is the one travelling", async () => {
+    locationMock.current = { latitude: 51.0447, longitude: -114.0719, source: "gps" };
+    getAuthToken.mockReturnValue("token");
+    APIService.bookAppointment.mockResolvedValue({ data: { data: {} } });
+
+    render(
+      <SelectService
+        serviceName="Braids"
+        servicePrice="80"
+        stylerId="s1"
+        subServiceId="ss1"
+        stylerProvince="Alberta"
+        stylerTimeZone="America/Edmonton"
+        stylerAddress={{ businessAddress: "700 2 St SW", city: "Calgary" }}
+        // The home-visit fee needs the premises, so the guard that refuses a
+        // booking without a calculable distance does not fire here.
+        stylerLatitude={51.1537}
+        stylerLongitude={-114.1797}
+      />
+    );
+    fireEvent.click(screen.getByText("Book service"));
+    fireEvent.click(screen.getByText("Home service"));
+    fireEvent.click(screen.getByText("4:00 pm"));
+    fireEvent.click(screen.getAllByText(/15/)[0]);
+    fireEvent.click(screen.getByText("Book appointment"));
+    await screen.findByTestId("booking-placed");
+
+    // A home visit has no address in this modal, and inventing one would send
+    // the customer to a door that is not theirs.
+    expect(calendarParams().get("location")).toBeNull();
+    expect(calendarParams().get("details")).toContain("travels to your address");
+  });
+
+  it("hands over a calendar file carrying the same instant as the link", async () => {
+    await bookVisit();
+    URL.createObjectURL = vi.fn(() => "blob:ics");
+    URL.revokeObjectURL = vi.fn();
+
+    fireEvent.click(screen.getByText("Download calendar file (.ics)"));
+
+    expect(URL.createObjectURL).toHaveBeenCalledTimes(1);
+    const blob = URL.createObjectURL.mock.calls[0][0];
+    expect(blob.type).toContain("text/calendar");
+    const text = await blob.text();
+    expect(text).toContain("BEGIN:VCALENDAR");
+    // The two actions must not be able to disagree about the time.
+    const [start] = calendarParams().get("dates").split("/");
+    expect(text).toContain(`DTSTART:${start}`);
   });
 });

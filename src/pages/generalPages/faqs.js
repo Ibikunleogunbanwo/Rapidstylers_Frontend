@@ -98,7 +98,7 @@ const FAQS = [
   {
     category: "Accounts & security",
     q: "Forgot your password?",
-    a: "Use the Forgot password link on the sign-in page. We send a one-time code to your email; enter it, then set a new password. The code expires after a short time for your security.",
+    a: "Use the Forgot password link on the sign-in page. We send a one-time code to your email; enter it, then set a new password. The code expires after a short time for your security. This covers customer accounts. If you signed up as a professional, contact support and we will change it for you.",
   },
 ];
 

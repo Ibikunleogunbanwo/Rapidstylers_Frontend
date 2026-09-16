@@ -18,6 +18,9 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+// Code-versus-comment parsing is shared with the unzoned-time guard, so the two
+// checks cannot disagree about what counts as copy.
+import { splitSourceLine } from "./sourceText.mjs";
 
 /**
  * En dashes (\u2013) are deliberately NOT flagged: this codebase uses them for
@@ -28,54 +31,6 @@ export const EM_DASH = "\u2014";
 
 const SCANNED_EXTENSIONS = [".js", ".jsx"];
 const SKIPPED_DIRS = new Set(["node_modules", "build", "dist", "coverage"]);
-
-/**
- * Splits one line into the part that is code and the part that is comment.
- *
- * A line comment is only a comment when it is not part of a URL
- * (`https://…`), and a trailing `//` only counts when an even number of quotes
- * precede it, so `"a // b"` is not mistaken for one.
- */
-function splitLine(line, inBlockComment) {
-  if (inBlockComment) {
-    const end = line.indexOf("*/");
-    if (end === -1) return { code: "", comment: line, opensBlock: true };
-    const rest = line.slice(end + 2);
-    return splitLine(rest, false);
-  }
-
-  const trimmedAt = line.length - line.trimStart().length;
-  const trimmed = line.trimStart();
-  if (trimmed.startsWith("//") || trimmed.startsWith("*")) {
-    return { code: line.slice(0, trimmedAt), comment: line.slice(trimmedAt), opensBlock: false };
-  }
-
-  const blockAt = line.indexOf("/*");
-  const lineAt = findLineComment(line);
-  if (blockAt !== -1 && (lineAt === -1 || blockAt < lineAt)) {
-    const close = line.indexOf("*/", blockAt);
-    if (close === -1) {
-      return { code: line.slice(0, blockAt), comment: line.slice(blockAt), opensBlock: true };
-    }
-    const before = line.slice(0, blockAt);
-    const after = splitLine(line.slice(close + 2), false);
-    return { code: before + after.code, comment: line.slice(blockAt, close + 2) + after.comment, opensBlock: after.opensBlock };
-  }
-  if (lineAt !== -1) {
-    return { code: line.slice(0, lineAt), comment: line.slice(lineAt), opensBlock: false };
-  }
-  return { code: line, comment: "", opensBlock: false };
-}
-
-function findLineComment(line) {
-  for (let i = 0; i < line.length - 1; i++) {
-    if (line[i] !== "/" || line[i + 1] !== "/") continue;
-    if (line[i - 1] === ":") continue; // https:// — part of a URL
-    const quotes = (line.slice(0, i).match(/["'`]/g) || []).length;
-    if (quotes % 2 === 0) return i;
-  }
-  return -1;
-}
 
 const hasDash = (text) => text.includes(EM_DASH);
 
@@ -89,7 +44,7 @@ export function scanText(text) {
   let inBlockComment = false;
 
   text.split("\n").forEach((raw, index) => {
-    const { code, comment, opensBlock } = splitLine(raw, inBlockComment);
+    const { code, comment, opensBlock } = splitSourceLine(raw, inBlockComment);
     inBlockComment = opensBlock;
     if (hasDash(code)) copy.push({ line: index + 1, text: raw.trim() });
     else if (hasDash(comment)) comments.push({ line: index + 1, text: raw.trim() });

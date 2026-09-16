@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Navigate, Link } from "react-router-dom";
 import { APIService } from "../../hooks/remote/apiService";
 import { cloudinaryAvatar } from "../../utils/cloudinaryImage";
-import { AdminPage } from "./adminShell";
+import { AdminCard, AdminPage, AdminPill } from "./adminShell";
 import {
   getAuthToken,
   isAdminRole,
@@ -10,11 +10,14 @@ import {
   showSuccessToastMessage,
 } from "../../utils/constant";
 
-const STATUS_STYLES = {
-  PENDING: "bg-amber-100 text-amber-800",
-  APPROVED: "bg-green-100 text-green-800",
-  REJECTED: "bg-red-100 text-red-800",
-  SUSPENDED: "bg-gray-200 text-gray-700",
+/** Verification states as the shell's shared tones. They used to be four
+ *  hand-picked colour pairs here and a different set again on the two other pages
+ *  showing the same statuses. */
+const STATUS_TONES = {
+  PENDING: "attention",
+  APPROVED: "positive",
+  REJECTED: "negative",
+  SUSPENDED: "neutral",
 };
 
 const FILTERS = ["All", "PENDING", "APPROVED", "REJECTED", "SUSPENDED"];
@@ -112,15 +115,15 @@ const ManageStylers = () => {
             {imagesLoading ? (
               <p className="text-sm text-gray-500">Loading images…</p>
             ) : images.length === 0 ? (
-              <div className="bg-white rounded-2xl shadow-md p-8 text-center">
+              <AdminCard pad="p-8" className="text-center">
                 <p className="text-sm text-gray-500">
                   No stylist portfolio images uploaded yet. They appear here once stylists add work.
                 </p>
-              </div>
+              </AdminCard>
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {images.map((img) => (
-                  <div key={img.id} className="bg-white rounded-2xl shadow-md overflow-hidden">
+                  <AdminCard key={img.id} pad="p-0" className="overflow-hidden">
                     <div className="relative h-40 bg-gray-100">
                       <img
                         src={img.imageUrl}
@@ -132,7 +135,7 @@ const ManageStylers = () => {
                       </span>
                     </div>
                     <div className="p-3">
-                      <p className="text-sm font-bold text-gray-900 truncate">
+                      <p className="text-sm text-gray-900 truncate">
                         {img.businessName || [img.firstname, img.lastname].filter(Boolean).join(" ") || "Stylist"}
                       </p>
                       <p className="text-xs text-gray-400 truncate mb-2">
@@ -157,7 +160,7 @@ const ManageStylers = () => {
                         {busyImageId === img.id ? "Deleting…" : "Delete image"}
                       </button>
                     </div>
-                  </div>
+                  </AdminCard>
                 ))}
               </div>
             )}
@@ -186,15 +189,15 @@ const ManageStylers = () => {
             {loading ? (
               <p className="text-sm text-gray-500">Loading…</p>
             ) : visible.length === 0 ? (
-              <div className="bg-white rounded-2xl shadow-md p-8 text-center">
+              <AdminCard pad="p-8" className="text-center">
                 <p className="text-sm text-gray-500">
                   No stylists in this view yet. New registrations appear here as Pending.
                 </p>
-              </div>
+              </AdminCard>
             ) : (
               <div className="grid gap-4">
                 {visible.map((s) => (
-                  <div key={s.stylerId} className="bg-white rounded-2xl shadow-md p-5">
+                  <AdminCard key={s.stylerId} pad="p-5">
                     <div className="flex items-start justify-between gap-4 flex-wrap">
                       <div className="flex items-start gap-4">
                         {s.profileImageUrl ? (
@@ -210,7 +213,7 @@ const ManageStylers = () => {
                           </div>
                         )}
                         <div>
-                          <p className="font-bold text-gray-900">
+                          <p className="text-gray-900">
                             {s.firstname} {s.lastname}
                           </p>
                           <p className="text-sm text-gray-500">
@@ -238,11 +241,9 @@ const ManageStylers = () => {
                           )}
                         </div>
                       </div>
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs font-bold ${STATUS_STYLES[s.verificationStatus] || "bg-gray-100 text-gray-600"}`}
-                      >
+                      <AdminPill tone={STATUS_TONES[s.verificationStatus] || "neutral"}>
                         {s.verificationStatus || "-"}
-                      </span>
+                      </AdminPill>
                     </div>
 
                     <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between gap-4 flex-wrap">
@@ -305,7 +306,7 @@ const ManageStylers = () => {
                         )}
                       </div>
                     </div>
-                  </div>
+                  </AdminCard>
                 ))}
               </div>
             )}

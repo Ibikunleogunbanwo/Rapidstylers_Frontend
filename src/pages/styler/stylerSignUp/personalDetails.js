@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import InputWithLabel from "../../../components/inputWithLabel";
 import Button from "../../../components/button";
 import { useStylerSignup } from "../../../context/StylerSignupContext";
+import { readStoredSignupEmail, storeSignupEmail } from "./signupFlow";
 import { APIService } from "../../../hooks/remote/apiService";
 
 /* ── Zod schema ─────────────────────────────────────────────────────── */
@@ -58,7 +59,7 @@ const StylerPersonalDetails = () => {
   const initialValues = {
     firstname: formData.firstname || "",
     lastname: formData.lastname || "",
-    emailAddress: formData.emailAddress || sessionStorage.getItem("stylerSignupEmail") || "",
+    emailAddress: formData.emailAddress || readStoredSignupEmail(),
     phoneNumber: formData.phoneNumber || "",
   };
 
@@ -74,7 +75,7 @@ const StylerPersonalDetails = () => {
       const res = await APIService.stylerGenerateOtp({ emailAddress: values.emailAddress });
       if (res.data?.statusCode === "200") {
         // Persist the signup email so a refresh mid-flow doesn't lose it.
-        sessionStorage.setItem("stylerSignupEmail", values.emailAddress);
+        storeSignupEmail(values.emailAddress);
         updateData({ ...values, phoneNumber: phoneDigits(values.phoneNumber) });
         navigate("/styler-signup/verify-email");
       }
@@ -95,7 +96,8 @@ const StylerPersonalDetails = () => {
     >
       {({ values, errors, touched, handleChange, handleBlur, isSubmitting }) => (
         <Form>
-          <p className="my-4 font-bold">Create an account:</p>
+          {/* The step's heading and lead come from the shell's step table, so
+              every step is titled in one place rather than five. */}
           <div className="grid gap-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <InputWithLabel

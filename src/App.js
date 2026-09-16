@@ -17,6 +17,7 @@ const PersonalDetails = lazy(() => import('./pages/users/auth/personalDetails'))
 const SecureAccount = lazy(() => import('./pages/users/auth/secureAccount'));
 const UserLayout = lazy(() => import('./pages/users/userLayout'));
 const VerifyUserEmailAddress = lazy(() => import('./pages/users/auth/verifyEmailAddress'));
+const ResetPassword = lazy(() => import('./pages/users/auth/resetPassword'));
 const StylerSignUp = lazy(() => import('./pages/styler/stylerSignUp/stylerSignUp'));
 const StylerPersonalDetails = lazy(() => import('./pages/styler/stylerSignUp/personalDetails'));
 const BusinessDetails = lazy(() => import('./pages/styler/stylerSignUp/businessDetails'));
@@ -35,7 +36,6 @@ const StylerProfile = lazy(() => import('./pages/styler/stylerProfile'));
 const UpdateCoverPhoto = lazy(() => import('./pages/styler/updateCoverPhoto'));
 const BusinessInformation = lazy(() => import('./pages/styler/updateBusinessInformation'));
 const PersonalInformation = lazy(() => import('./pages/styler/updatePersonalInformation'));
-const ChangePassword = lazy(() => import('./pages/styler/changePassword'));
 const Reviews = lazy(() => import('./pages/styler/reviews'));
 const AdminLogin = lazy(() => import('./pages/admin/adminLogin'));
 const ManageCategories = lazy(() => import('./pages/admin/manageCategories'));
@@ -81,6 +81,9 @@ function App() {
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
+        {/* The page the sign-in screen's "Forgot password?" link has always
+            pointed at in its copy, and which the FAQ describes in detail. */}
+        <Route path="/resetPassword" element={<ResetPassword />} />
         <Route path="/search" element={<SearchResults />} />
         <Route path="/elevate-your-looks" element={<ElevateLooks />} />
         <Route path="/blog" element={<Blog />} />
@@ -115,7 +118,6 @@ function App() {
           <Route path='update-cover-photo' element={<UpdateCoverPhoto />} />
           <Route path='update-business-information' element={<BusinessInformation />} />
           <Route path='update-personal-information' element={<PersonalInformation />} />
-          <Route path='update-password' element={<ChangePassword />} />
           <Route path='reviews' element={<Reviews />} />
         </Route>
         <Route path="/admin/login" element={<AdminLogin />} />

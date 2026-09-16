@@ -10,6 +10,9 @@ import { getAuthToken, getUserRole, showErrorToastMessage, showSuccessToastMessa
 import { cloudinarySquare, cloudinaryAvatar } from "../../../utils/cloudinaryImage";
 import { fallbackPhotoFor } from "../../../utils/curatedGallery";
 import { vendorTimeZoneLabel } from "../../../utils/vendorTimeZone";
+import { profileRatingLine } from "../../../utils/stylerStanding";
+import { profileBadges } from "../../../utils/profileBadges";
+import { vendorOpenState } from "../../../utils/vendorOpenState";
 import { Section, Eyebrow, Statement, BackHome } from "../../../components/pageSections";
 import SectionPager from "../../../components/sectionPager";
 import Footer from "../../../components/footer";
@@ -111,7 +114,7 @@ const PortfolioLightbox = ({ images, index, onClose, onPrev, onNext }) => {
   );
 };
 
-const WorkingHours = ({ availability, timeZone, province }) => {
+const WorkingHours = ({ availability, timeZone, province, openState, presence }) => {
   const hours = [...(availability || [])].sort((a, b) => Number(a.dayOfWeek) - Number(b.dayOfWeek));
   const zoneLabel = vendorTimeZoneLabel({ timeZone, province });
 
@@ -121,6 +124,28 @@ const WorkingHours = ({ availability, timeZone, province }) => {
       <p className="mt-1 text-[13px] text-black/55">
         Book during these weekly windows{zoneLabel ? ` (${zoneLabel})` : ""}
       </p>
+      {/* Whether they are open right now, on their clock, with signed-in
+          presence kept secondary: the two are different facts and used to be
+          shown as one pill. */}
+      {openState && openState.known && (
+        <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px]" title={openState.hint}>
+          <span
+            className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold ${
+              openState.open ? "border-emerald-600/30 text-emerald-700" : "border-black/10 text-black/55"
+            }`}
+          >
+            <span className={`h-1.5 w-1.5 rounded-full ${openState.open ? "bg-emerald-500" : "bg-gray-300"}`} />
+            {openState.label}
+          </span>
+          {openState.detail && <span className="text-black/55">{openState.detail}</span>}
+          {presence && (
+            <span className="inline-flex items-center gap-1 text-black/45" title="Signed in right now">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              Online
+            </span>
+          )}
+        </p>
+      )}
       {hours.length > 0 ? (
         <div className="mt-4">
           {hours.map((slot) => (
@@ -221,16 +246,31 @@ const StylistProfile = ({ setPageTitle }) => {
     .slice(0, 2)
     .join("")
     .toUpperCase();
-  const ratingLine =
-    info.averageRating != null && info.reviewCount > 0
-      ? `Rated ${info.averageRating} out of 5 from ${info.reviewCount} review${info.reviewCount === 1 ? "" : "s"}`
-      : "New on RapidStylers";
+  // Rating when there is one, otherwise a plain statement that nobody has
+  // reviewed them yet. Whether they are new is the New badge's job, and the
+  // chips below carry only what the platform can prove — see utils/profileBadges.
+  const ratingLine = profileRatingLine(info);
+  const badges = profileBadges(stylerProfile?.badges);
+  // Open right now, on the professional's own clock, from the availability the
+  // payload already carries. Availability rows are wall-clock windows in their
+  // zone, so a visitor in another zone reads their trading hours, not their own.
+  const openState = vendorOpenState({
+    timeZone: info.timeZone,
+    province: info.province,
+    availability: stylerProfile?.availability,
+    exceptions: stylerProfile?.exceptions,
+  });
 
+  // A professional nobody has reviewed yet has no track record, so the two
+  // cells that summarise one read "-" instead of a zero. "0%" and "0" are not
+  // neutral: they read as a verdict on work nobody has judged. The appointment
+  // tally stays a real number, because "none yet" is exactly what it means.
+  const hasReviews = Number(info.reviewCount) > 0;
   const stats = [
     { label: "Appointments", value: stylerProfile?.appointmentCount || 0 },
-    { label: "Success rate", value: `${stylerProfile?.ratingPercentage || 0}%` },
+    { label: "Success rate", value: hasReviews ? `${stylerProfile?.ratingPercentage || 0}%` : "-" },
     { label: "Reviews", value: info.reviewCount || 0 },
-    { label: "Average rating", value: info.averageRating ?? "-" },
+    { label: "Average rating", value: hasReviews ? info.averageRating ?? "-" : "-" },
   ];
 
   const [isSaved, setIsSaved] = useState(false);
@@ -328,7 +368,20 @@ const StylistProfile = ({ setPageTitle }) => {
               <h1 className="mt-3 text-[clamp(1.75rem,3vw,2.5rem)] font-normal leading-[1.08] tracking-[-0.02em]">
                 {displayName}
               </h1>
-              <p className="mt-2 text-[14px] text-black/55">{ratingLine}</p>
+              {badges.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-2" data-testid="profile-badges">
+                  {badges.map((badge) => (
+                    <span
+                      key={badge.code}
+                      title={badge.hint}
+                      className={`inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] ${badge.tone}`}
+                    >
+                      {badge.label}
+                    </span>
+                  ))}
+                </div>
+              )}
+              <p className="mt-3 text-[14px] text-black/55">{ratingLine}</p>
             </div>
           </div>
           <button
@@ -375,7 +428,7 @@ const StylistProfile = ({ setPageTitle }) => {
 
       {/* Track record: hairline stat cells on the muted band */}
       <Section muted pad="py-10 md:py-14">
-        <div className="grid grid-cols-2 gap-x-6 gap-y-8 md:grid-cols-4">
+        <div className="grid grid-cols-2 gap-x-6 gap-y-8 md:grid-cols-4" data-testid="profile-stats">
           {stats.map((stat) => (
             <div key={stat.label} className="border-t border-black/10 pt-4">
               <p className="text-[clamp(1.5rem,2.4vw,2rem)] font-normal leading-none tracking-[-0.02em]">
@@ -407,6 +460,7 @@ const StylistProfile = ({ setPageTitle }) => {
                     stylerProvince={info.province}
                     stylerTimeZone={info.timeZone}
                     stylerAddress={info}
+                    stylerName={displayName}
                   />
                 </div>
               ))
@@ -415,7 +469,13 @@ const StylistProfile = ({ setPageTitle }) => {
             )}
           </div>
           <div className="lg:col-span-2">
-            <WorkingHours availability={stylerProfile.availability} timeZone={info.timeZone} province={info.province} />
+            <WorkingHours
+              availability={stylerProfile.availability}
+              timeZone={info.timeZone}
+              province={info.province}
+              openState={openState}
+              presence={info.visibilityStatus === "Online"}
+            />
           </div>
         </div>
       </Section>

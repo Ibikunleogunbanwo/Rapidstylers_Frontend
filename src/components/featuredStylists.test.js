@@ -147,6 +147,63 @@ describe("Featured (Discover professionals)", () => {
     expect(screen.queryByText(/Showing/)).toBeNull();
   });
 
+  // The category endpoint ships each professional's weekly hours, so the cards
+  // can state real opening hours rather than only reporting a login flag. The
+  // window is built around the professional's own now, so the assertion does not
+  // depend on when the suite runs.
+  const vendorNow = () => {
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone: "America/Edmonton",
+      weekday: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    }).formatToParts(new Date());
+    const get = (type) => (parts.find((part) => part.type === type) || {}).value;
+    const weekday = { Sun: "0", Mon: "1", Tue: "2", Wed: "3", Thu: "4", Fri: "5", Sat: "6" }[get("weekday")];
+    return { weekday, minutes: (Number(get("hour")) % 24) * 60 + Number(get("minute")) };
+  };
+  const hhmm = (minutes) =>
+    `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
+
+  it("states the professional's real hours, read on their own clock", async () => {
+    const { weekday, minutes } = vendorNow();
+    APIService.stylersBaseOnCategory.mockResolvedValue({
+      data: {
+        data: [
+          {
+            stylerId: "DS5713",
+            businessName: "Demo Beauty Co",
+            visibilityStatus: "Online",
+            timeZone: "America/Edmonton",
+            availability: [
+              { dayOfWeek: weekday, startTime: hhmm(Math.max(0, minutes - 60)), endTime: hhmm(Math.min(1439, minutes + 60)) },
+            ],
+          },
+        ],
+      },
+    });
+    renderFeatured();
+
+    expect(await screen.findByText("Open now")).toBeInTheDocument();
+    // Presence is kept, but demoted to what it actually means.
+    expect(screen.getByTitle("Signed in right now")).toBeInTheDocument();
+  });
+
+  it("claims nothing about hours when the row carries none, falling back to presence", async () => {
+    APIService.stylersBaseOnCategory.mockResolvedValue({
+      data: { data: [{ stylerId: 1, businessName: "Braid Bar", visibilityStatus: "Online" }] },
+    });
+    renderFeatured();
+
+    expect(await screen.findByText("Braid Bar")).toBeInTheDocument();
+    // No hours in the payload means no hours claim: not "Closed", which would be
+    // a verdict on data this surface never received.
+    expect(screen.queryByText("Closed")).toBeNull();
+    expect(screen.queryByText("Open now")).toBeNull();
+    expect(screen.getByText("Online")).toBeInTheDocument();
+  });
+
   it("makes every card a link to the public profile, so browsing needs no account", async () => {
     APIService.stylersBaseOnCategory.mockResolvedValue({
       data: { data: [

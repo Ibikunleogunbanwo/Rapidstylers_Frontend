@@ -5,10 +5,14 @@ import VerifyUserEmailAddress from "./verifyEmailAddress";
 // The dispatch/navigate fns are exported so tests can assert auto-submit.
 vi.mock("react-router-dom", () => {
   const navigate = vi.fn();
+  // Handed out as a mutable object so a test can render the page as a visitor who
+  // arrived without an address (a bookmark, a restored tab).
+  const location = { pathname: "/verifyEmailAddress", state: { emailAddress: "test@example.com" } };
   return {
-    useLocation: () => ({ state: { emailAddress: "test@example.com" } }),
+    useLocation: () => location,
     useNavigate: () => navigate,
     __testNavigate: navigate,
+    __testLocation: location,
   };
 });
 vi.mock("react-redux", () => {
@@ -31,7 +35,7 @@ vi.mock("../../../utils/constant", () => ({
   showErrorToastMessage: vi.fn(),
 }));
 import { __testDispatch } from "react-redux";
-import { __testNavigate } from "react-router-dom";
+import { __testNavigate, __testLocation } from "react-router-dom";
 import { verifyOtpCode } from "../../../hooks/local/userReducer";
 import { APIService } from "../../../hooks/remote/apiService";
 // Mirrors the real Button's contract: a label from children or text, and the
@@ -58,6 +62,7 @@ beforeEach(() => {
   document.head.innerHTML = "";
   __testDispatch.mockClear();
   __testNavigate.mockClear();
+  __testLocation.state = { emailAddress: "test@example.com" };
   // CRA's jest config resets mock implementations between tests.
   verifyOtpCode.mockImplementation((code) => code);
   __testDispatch.mockImplementation(() => ({ payload: { statusCode: "200" } }));
@@ -160,7 +165,15 @@ describe("VerifyUserEmailAddress OTP inputs", () => {
     render(<VerifyUserEmailAddress />);
     ["1", "2", "3", "4", "5", "6"].forEach((d, i) => typeDigit(i, d));
 
-    await waitFor(() => expect(__testDispatch).toHaveBeenCalledWith("123456"));
+    // The address travels with the code: codes are looked up by the address they
+    // were issued to, and sending the digits alone made the endpoint refuse every
+    // code, however correct. This is the assertion that would have caught it.
+    await waitFor(() =>
+      expect(__testDispatch).toHaveBeenCalledWith({
+        emailAddress: "test@example.com",
+        otpCode: "123456",
+      })
+    );
     // Successful verification navigates to the next step.
     expect(__testNavigate).toHaveBeenCalledWith("/personalDetails", expect.anything());
   });
@@ -178,7 +191,26 @@ describe("VerifyUserEmailAddress OTP inputs", () => {
       clipboardData: { getData: () => "654321" },
     });
 
-    await waitFor(() => expect(__testDispatch).toHaveBeenCalledWith("654321"));
+    await waitFor(() =>
+      expect(__testDispatch).toHaveBeenCalledWith({
+        emailAddress: "test@example.com",
+        otpCode: "654321",
+      })
+    );
+  });
+
+  test("refuses to submit without an address rather than sending a doomed code", async () => {
+    // The page reads the address from the router state, so a visit that arrived
+    // some other way has none. Asking the server would only get a rejection the
+    // page cannot explain.
+    __testLocation.state = {};
+    sessionStorage.clear();
+
+    render(<VerifyUserEmailAddress />);
+    ["1", "2", "3", "4", "5", "6"].forEach((d, i) => typeDigit(i, d));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(/don't have your email on file/i);
+    expect(__testDispatch).not.toHaveBeenCalled();
   });
 
   test("shows a resend countdown that enables the resend link after it expires", () => {
@@ -278,7 +310,10 @@ describe("VerifyUserEmailAddress OTP inputs", () => {
     // Retyping a complete code re-arms the auto-submit with the new value.
     ["7", "8", "9", "0", "1", "2"].forEach((d, i) => typeDigit(i, d));
     await waitFor(() => expect(__testDispatch).toHaveBeenCalledTimes(2));
-    expect(__testDispatch).toHaveBeenLastCalledWith("789012");
+    expect(__testDispatch).toHaveBeenLastCalledWith({
+      emailAddress: "test@example.com",
+      otpCode: "789012",
+    });
   });
 
   test("shakes the OTP boxes when the code is rejected", async () => {

@@ -174,6 +174,13 @@ const Login = () => {
                 inputOnChange={(e) => setPassword(e.target.value)}
                 placeholder={"Enter your password"}
               />
+              {/* The FAQ promises this link, and the reset page it should reach now
+                  exists. It used to exist only in copy. */}
+              <p className="-mt-1 text-right">
+                <Link to="/resetPassword" className="text-[13px] font-semibold text-brand underline-offset-4 hover:underline">
+                  Forgot password?
+                </Link>
+              </p>
               <TurnstileWidget onVerify={setCaptchaToken} resetSignal={captchaReset} />
               <Button
                 variant={"primary"}

@@ -122,11 +122,67 @@ export function AdminTextarea({ variant = "full", className = "", rows = 4, ...r
 /**
  * The one card. The old pages each hand-rolled `rounded-2xl shadow-md`; the
  * design language's hairline card reads calmer and matches the public site.
+ *
+ * `pad` replaces the default padding outright rather than adding to it, the same
+ * choice `Section` makes in the public language: appending `p-8` to a card that
+ * already says `p-6` is decided by stylesheet order and not by the class list, so
+ * the override cannot be relied on.
  */
-export function AdminCard({ className = "", children }) {
+export function AdminCard({ className = "", pad = "p-6", children }) {
   return (
-    <div className={`rounded-lg border border-black/10 bg-white p-6 ${className}`}>
+    <div className={`rounded-lg border border-black/10 bg-white ${pad} ${className}`}>
       {children}
     </div>
+  );
+}
+
+/**
+ * A labelled number, for the count rows the operations and recovery pages show.
+ *
+ * Those two used to hand-roll the same block in their own copy, and each gave its
+ * numbers its own colour: blue for one stage, amber for the next, red for the last,
+ * green for the good one. A screen of six differently coloured figures reads as
+ * decoration rather than information, and it made a status look like a different
+ * kind of thing on each page. The number is now the same near-black wherever it
+ * appears, and the colour that carries meaning lives in the pill beside it.
+ */
+export function AdminStat({ label, value, hint }) {
+  return (
+    <div className="rounded-lg border border-black/10 bg-white p-4">
+      <p className="text-[11px] uppercase tracking-[0.2em] text-gray-400">{label}</p>
+      <p className="mt-2 text-2xl font-normal text-gray-900">{value ?? 0}</p>
+      {hint && <p className="mt-1 text-xs text-gray-500">{hint}</p>}
+    </div>
+  );
+}
+
+/**
+ * The one status pill, in the four tones a status actually needs.
+ *
+ * There were three drifting badge maps before this (payments and operations each
+ * had their own, one page inlined a fourth), so the same state could be amber on
+ * one screen and orange on another. The tones are named for meaning rather than
+ * colour, so a caller says what it knows and not how it should look.
+ *
+ * These are hairlines with tinted text rather than saturated blocks: the admin
+ * area is read for long stretches, and a wall of full-strength backgrounds is
+ * the kind of wash the public pages had removed.
+ */
+const PILL_TONES = {
+  neutral: "border-black/10 bg-white text-gray-600",
+  positive: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  attention: "border-amber-200 bg-amber-50 text-amber-700",
+  negative: "border-rose-200 bg-rose-50 text-rose-700",
+};
+
+export function AdminPill({ tone = "neutral", children }) {
+  return (
+    <span
+      className={`inline-block rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${
+        PILL_TONES[tone] || PILL_TONES.neutral
+      }`}
+    >
+      {children}
+    </span>
   );
 }

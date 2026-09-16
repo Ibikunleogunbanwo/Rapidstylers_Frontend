@@ -3,6 +3,7 @@ import Back from "../../../components/goBack";
 import ServiceCard from "../../../components/serviceCard";
 import { APIService } from "../../../hooks/remote/apiService";
 import { getAuthToken, showErrorToastMessage, showSuccessToastMessage } from "../../../utils/constant";
+import { vendorOpenState } from "../../../utils/vendorOpenState";
 
 const SavedStylist = ({ setPageTitle }) => {
   const [stylists, setStylists] = useState([]);
@@ -90,6 +91,7 @@ const SavedStylist = ({ setPageTitle }) => {
                   distance={styler.distanceKm}
                   rating={styler.averageRating}
                   reviews={styler.reviewCount}
+                  openState={vendorOpenState(styler)}
                   payoutReady={styler.payoutReady}
                 />
                 <button

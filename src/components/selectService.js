@@ -7,6 +7,7 @@ import { APIService } from "../hooks/remote/apiService";
 import { useDispatch } from "react-redux";
 import { verifySignUpEmailAddress, verifyOtpCode, createUserAccount, userAuthenticate, setUserSession } from "../hooks/local/userReducer";
 import { STRIPE_PUBLISHABLE_KEY, getAuthToken, setAuthToken, setRefreshToken, showErrorToastMessage, showSuccessToastMessage, getBookingIntent, setBookingIntent, clearBookingIntent } from "../utils/constant";
+import { buildAppointmentEvent, googleCalendarUrl, downloadIcs } from "../utils/appointmentCalendar";
 import { useUserLocation } from "../context/LocationContext";
 import { straightLineKm, travelLine } from "../utils/travelEstimate";
 import { vendorTimeZoneLabel, vendorCalendarToday } from "../utils/vendorTimeZone";
@@ -53,20 +54,30 @@ export const formatStylistAddress = (address) => {
  * time they picked, and whose clock that time is on. The date strip and the time
  * pickers already speak in the stylist's calendar and zone, so the confirmation
  * says them out loud too — a Calgary stylist's 4:00 pm is not a Toronto
- * customer's. The zone is left out when the stylist's row declares none rather
- * than guessed at, and the whole line falls back to the plain acknowledgement if
- * somehow nothing was picked.
+ * customer's.
+ *
+ * The hour is stated only when the clock behind it can be named. Without a zone
+ * the day is still named and the hour is dropped, because a bare time is the one
+ * sentence this whole flow exists to prevent: it reads as fact while being
+ * correct in one province and wrong in the next. The time is not lost — it is on
+ * the booking itself, where the customer's own record keeps it — and the line
+ * falls back to the plain acknowledgement if nothing at all was picked.
+ *
+ * `utils/copyTimezone.test.js` holds that rule in place: no clock time comes out
+ * of here without a zone beside it.
  */
 export const bookingConfirmationMessage = (dayLabel, time, zoneLabel) => {
-  const when = dayLabel && time ? `${dayLabel} at ${time}` : dayLabel || time || "";
-  const clock = when && zoneLabel ? ` (${zoneLabel})` : "";
+  const when = dayLabel && time && zoneLabel ? `${dayLabel} at ${time} (${zoneLabel})` : dayLabel;
   return when
-    ? `Booking request sent for ${when}${clock}. The stylist will confirm shortly.`
+    ? `Booking request sent for ${when}. The stylist will confirm shortly.`
     : "Booking request sent. The stylist will confirm shortly.";
 };
 
-const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerId, subServiceId, stylerLatitude, stylerLongitude, stylerProvince, stylerTimeZone, stylerAddress}) => {
+const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerId, subServiceId, stylerLatitude, stylerLongitude, stylerProvince, stylerTimeZone, stylerAddress, stylerName}) => {
   const [bookAppointmentForm, setBookAppointmentForm] = useState(false);
+  // Set once a booking lands, so the confirmation and its calendar action stay
+  // on screen instead of scrolling away with the toast.
+  const [placedBooking, setPlacedBooking] = useState(null);
   const dispatch = useDispatch();
   const { location: userLocation } = useUserLocation() || {};
   // Weekly availability from single_styler: [{dayOfWeek 0-6, startTime, endTime}] or
@@ -202,6 +213,16 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
   // Function to close booking form
   const closeBookingForm = () => {
     setBookAppointmentForm(false);
+    setPlacedBooking(null);
+  };
+
+  // Hands the .ics to the browser. Where that is not possible the Google
+  // Calendar link beside it is the action that always works, so no error state
+  // is needed for a download the customer can simply take the other way.
+  const saveBookingToCalendar = () => {
+    if (placedBooking && placedBooking.event) {
+      downloadIcs(placedBooking.event);
+    }
   };
 
   // Function to select service type
@@ -420,9 +441,24 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
             weekday: "short",
           })}, ${getOrdinalSuffix(selectedDay)}`
         : "";
+      // The appointment is stored as wall-clock time in the professional's zone,
+      // so the calendar entry is built from that same zone rather than from the
+      // visitor's clock. For a home visit there is no address to point at, and a
+      // guessed one would send the customer to the wrong door.
+      const calendarEvent = buildAppointmentEvent({
+        appointmentDate,
+        arrivalTime: to24(selectedTime),
+        durationMinutes,
+        serviceName,
+        stylistName: stylerName,
+        stylerId,
+        stylerTimeZone,
+        stylerProvince,
+        location: selectedOption === "homeService" ? "" : visitAddress,
+      });
+      setPlacedBooking({ event: calendarEvent, dayLabel, time: selectedTime });
       showSuccessToastMessage(bookingConfirmationMessage(dayLabel, selectedTime, stylistZoneLabel));
       clearBookingIntent();
-      closeBookingForm();
     } catch (error) {
       // Card collection errors (thrown by createPaymentMethod) and booking
       // errors from the backend both land here and surface in the footer.
@@ -499,7 +535,11 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
   const verifySignupOtp = async (code) => {
     setSignupBusy(true);
     try {
-      const { payload } = await dispatch(verifyOtpCode(code));
+      // The address travels with the code: the endpoint looks the code up by the
+      // address it was issued to, and refuses a request that arrives without one.
+      const { payload } = await dispatch(
+        verifyOtpCode({ emailAddress: signupEmail.trim(), otpCode: code })
+      );
       if (payload.statusCode === "200") {
         setSignupStep(SIGNUP_STEPS.PASSWORD);
       } else {
@@ -660,20 +700,24 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
         <div className="bg-black/50 h-full w-full px-4 flex justify-center items-center">
           <div className="bg-white relative w-full md:w-[40%] lg:w-[35%] rounded-md border max-h-[60%] md:max-h-[80%] overflow-y-scroll">
             <div className="border-b sticky top-0 bg-white flex justify-between p-6">
-              <select
-                className="active:outline-0 focus:outline-0 text-md font-semibold bg-white"
-                onChange={handleMonthChange}
-                value={selectedMonth}
-              >
-                <option value="" disabled>
-                  Select a month
-                </option>
-                {months.map((month, index) => (
-                  <option key={index} value={month}>
-                    {month}
+              {placedBooking ? (
+                <p className="text-md font-semibold">Booking sent</p>
+              ) : (
+                <select
+                  className="active:outline-0 focus:outline-0 text-md font-semibold bg-white"
+                  onChange={handleMonthChange}
+                  value={selectedMonth}
+                >
+                  <option value="" disabled>
+                    Select a month
                   </option>
-                ))}
-              </select>
+                  {months.map((month, index) => (
+                    <option key={index} value={month}>
+                      {month}
+                    </option>
+                  ))}
+                </select>
+              )}
               <img
                 src={close}
                 alt=""
@@ -681,7 +725,51 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
                 onClick={closeBookingForm}
               />
             </div>
-            <div className="space-y-6 py-6">
+            {/* The moment after a booking lands: what was booked, and the one
+                thing worth doing next. The pickers are hidden rather than
+                unmounted so the customer's chosen slot is still in state if
+                they come back to pick a second appointment. */}
+            {placedBooking && (
+              <div className="px-6 py-8" data-testid="booking-placed">
+                <p className="text-[15px] text-gray-700">
+                  {bookingConfirmationMessage(placedBooking.dayLabel, placedBooking.time, stylistZoneLabel)}
+                </p>
+                {placedBooking.event && (
+                  <>
+                    <p className="mt-6 text-[15px] font-semibold">Add it to your calendar</p>
+                    <p className="mt-2 text-xs text-gray-500">
+                      The appointment is written at {placedBooking.event.zoneLabel || placedBooking.event.zone},
+                      so it lands at the right hour in whatever calendar you use.
+                    </p>
+                    <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+                      <a
+                        href={googleCalendarUrl(placedBooking.event)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center justify-center rounded-full bg-[#1A1A1A] px-6 py-3 text-[13px] font-semibold text-white transition-opacity hover:opacity-85"
+                      >
+                        Add to Google Calendar
+                      </a>
+                      <button
+                        type="button"
+                        onClick={saveBookingToCalendar}
+                        className="inline-flex items-center justify-center rounded-full border border-black/10 px-6 py-3 text-[13px] font-semibold transition-colors hover:border-black/30"
+                      >
+                        Download calendar file (.ics)
+                      </button>
+                    </div>
+                  </>
+                )}
+                <button
+                  type="button"
+                  onClick={closeBookingForm}
+                  className="mt-8 inline-flex items-center justify-center rounded-full border border-black/10 px-6 py-3 text-[13px] font-semibold transition-colors hover:border-black/30"
+                >
+                  Done
+                </button>
+              </div>
+            )}
+            <div className={`space-y-6 py-6 ${placedBooking ? "hidden" : ""}`}>
             <div className="px-6">
               <p className="font-semibold text-[15px]">Select date:</p>
               {/* <MonthDropdown /> */}

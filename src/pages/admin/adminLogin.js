@@ -3,6 +3,7 @@ import { useNavigate, Navigate } from "react-router-dom";
 import { APIService } from "../../hooks/remote/apiService";
 import { getAuthToken, isAdminRole, setAuthToken, setRefreshToken, setAdminRole, setUserRole, showSuccessToastMessage } from "../../utils/constant";
 import TurnstileWidget from "../../components/turnstileWidget";
+import Button from "../../components/button";
 import { AdminInput } from "./adminShell";
 
 const AdminLogin = () => {
@@ -53,7 +54,10 @@ const AdminLogin = () => {
       <div className="w-full max-w-md rounded-lg border border-black/10 bg-white p-8">
         <p className="text-[11px] uppercase tracking-[0.25em] text-gray-400">RapidStylers</p>
         <h1 className="mt-2 text-[clamp(1.5rem,2.5vw,2rem)] font-normal leading-[1.1] tracking-[-0.02em] text-gray-900">Admin Sign In</h1>
-        <p className="text-sm text-gray-500 mt-1">Manage service categories</p>
+        {/* This said "Manage service categories", which was true when categories were
+            the only thing here. It now sits above a nav of six sections, so it says
+            what the area is rather than naming one page inside it. */}
+        <p className="text-sm text-gray-500 mt-1">Sign in to moderate the marketplace</p>
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1">Email address</label>
@@ -76,13 +80,15 @@ const AdminLogin = () => {
             />
           </div>
           <TurnstileWidget onVerify={setCaptchaToken} resetSignal={captchaReset} />
-          <button
+          {/* The shared button, so the admin sign-in keeps the shape every other
+              action in the product has instead of its own radius and hover. */}
+          <Button
             type="submit"
+            variant="primary"
+            text={loading ? "Signing in…" : "Sign In"}
             disabled={loading}
-            className="w-full py-3 bg-brand rounded-md text-sm text-white font-semibold hover:opacity-90 disabled:opacity-60"
-          >
-            {loading ? "Signing in…" : "Sign In"}
-          </button>
+            className="w-full"
+          />
           {errorMsg && (
             <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700 flex items-start gap-2">
               <svg className="w-4 h-4 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>

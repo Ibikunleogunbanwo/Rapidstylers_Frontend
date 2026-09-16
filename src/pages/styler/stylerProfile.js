@@ -1,4 +1,4 @@
-import { showErrorToastMessage, showSuccessToastMessage } from "../../utils/constant";
+import { SUPPORT_EMAIL, showErrorToastMessage, showSuccessToastMessage } from "../../utils/constant";
 import arrow from "../../assets/svg-icons/black-arrow.svg";
 import { Link } from "react-router-dom";
 
@@ -43,10 +43,27 @@ const StylerProfile = () => {
                   <div>Update personal information</div>
                   <div><img src={arrow} alt="" className="h-6"/></div>
                 </Link>
-                <Link to={"/styler-dashboard/update-password"} className="flex justify-between items-center">
-                  <div>Change password</div>
-                  <div><img src={arrow} alt="" className="h-6"/></div>
-                </Link>
+                {/* The password screen this used to open was inert: three fields and
+                    a button, with no form and no request behind either. It is gone
+                    rather than half-built, because a professional cannot change
+                    their own password yet: the reset and update endpoints both look
+                    the account up in the customers table and professionals live in
+                    their own. Saying so, with a way to reach us, beats a screen that
+                    quietly does nothing. */}
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <div>Change password</div>
+                    <p className="pt-1 text-xs opacity-60">
+                      Contact support and we will change it for you.
+                    </p>
+                  </div>
+                  <a
+                    href={"mailto:" + SUPPORT_EMAIL}
+                    className="shrink-0 text-xs font-semibold text-brand underline-offset-4 hover:underline"
+                  >
+                    {SUPPORT_EMAIL}
+                  </a>
+                </div>
                 <Link to={"/styler-dashboard/reviews"} className="flex justify-between items-center">
                   <div>Reviews</div>
                   <div><img src={arrow} alt="" className="h-6"/></div>

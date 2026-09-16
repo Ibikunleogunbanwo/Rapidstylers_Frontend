@@ -6,7 +6,7 @@ import Footer from "../../components/footer";
 import { Section, Eyebrow, PageHeading, BackHome } from "../../components/pageSections";
 import { APIService } from "../../hooks/remote/apiService";
 import { useSavedStylists } from "../../hooks/useSavedStylists";
-import { vendorTimeZone } from "../../utils/vendorTimeZone";
+import { vendorOpenState } from "../../utils/vendorOpenState";
 
 const displayServiceName = (value) => {
   const label = String(value || "").trim();
@@ -40,24 +40,21 @@ const SearchResults = () => {
   const rawPage = Number.parseInt(searchParams.get("page") || "", 10);
   const page = Number.isFinite(rawPage) && rawPage >= 1 ? rawPage : 1;
 
-  const isOpenNow = React.useCallback((stylist) => {
-    if (!openNow) return true;
-    // The vendor's hours live in the vendor's zone: read the vendor's clock,
-    // not the visitor browser's. Stored zone wins; province map covers rows
-    // without one. Mirrors the backend's precedence exactly.
-    const zone = vendorTimeZone(stylist);
-    const now = new Date(new Date().toLocaleString("en-US", { timeZone: zone }));
-    const blocked = (stylist.exceptions || []).some((exception) => exception.blockedDate === now.toISOString().slice(0, 10));
-    if (blocked) return false;
-    const weekday = String(now.getDay());
-    const minutes = now.getHours() * 60 + now.getMinutes();
-    return (stylist.availability || []).some((slot) => {
-      if (String(slot.dayOfWeek) !== weekday) return false;
-      const [startHour, startMinute] = String(slot.startTime || "").split(":").map(Number);
-      const [endHour, endMinute] = String(slot.endTime || "").split(":").map(Number);
-      return minutes >= startHour * 60 + startMinute && minutes < endHour * 60 + endMinute;
-    });
-  }, [openNow]);
+  // One predicate for the filter and the pills on the results, so a professional
+  // can never be filtered out of an "Open now" search while their card reads
+  // "Open now" — the two used to be separate implementations of the same idea.
+  // A row with no availability in its payload counts as not open here, which is
+  // the filter's long-standing behaviour: it cannot be shown to be open.
+  // The hours come with the row itself, so the pill, the filter and the card all
+  // read the same two lists the server sent.
+  const openStateOf = React.useCallback(
+    (stylist) => vendorOpenState(stylist),
+    []
+  );
+  const isOpenNow = React.useCallback(
+    (stylist) => !openNow || openStateOf(stylist).open,
+    [openNow, openStateOf]
+  );
 
   const [stylists, setStylists] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -161,16 +158,15 @@ const SearchResults = () => {
           }
         }
 
+        // Opening hours ride along on every list row the backend returns, so an
+        // "Open now" search filters those rows in place on the professional's own
+        // clock. This used to fetch each result's full profile — one request per
+        // row, up to a page of them — purely to learn whether they were open.
+        //
+        // The nearby branch is exempt: it asks the backend to apply the filter
+        // before paging, so a row there is already known to be open.
         if (openNow && !(lat && lng)) {
-          const detailed = await Promise.all(results.map(async (stylist) => {
-            try {
-              const detail = await APIService.singleStylerData(stylist.stylerId || stylist.id);
-              return { ...stylist, ...(detail.data?.data?.stylerInformation || {}), ...detail.data?.data };
-            } catch (_) {
-              return stylist;
-            }
-          }));
-          results = detailed.filter(isOpenNow);
+          results = results.filter(isOpenNow);
         }
 
         // Client-side secondary filter by province
@@ -401,6 +397,7 @@ const SearchResults = () => {
                   rating={stylist.averageRating || "0"}
                   reviews={stylist.reviewCount || "0"}
                   status={stylist.visibilityStatus === "Online" ? "Online" : "Offline"}
+                  openState={openStateOf(stylist)}
                   distance={stylist.distanceKm}
                   stylerId={stylist.stylerId || stylist.id}
                   businessName={stylist.businessName || stylist.name || "Professional"}

@@ -8,6 +8,7 @@ import ServiceCard from "../../../components/serviceCard";
 import { useUserLocation } from "../../../context/LocationContext";
 import LocationPicker from "../../../components/locationPicker";
 import { useSavedStylists } from "../../../hooks/useSavedStylists";
+import { vendorOpenState } from "../../../utils/vendorOpenState";
 
 const SearchStyler = ({ setPageTitle, stylerSearchName }) => {
   useEffect((() => {
@@ -127,6 +128,7 @@ const SearchStyler = ({ setPageTitle, stylerSearchName }) => {
                       distance={val.distanceKm}
                       rating={val.averageRating}
                       reviews={val.reviewCount}
+                      openState={vendorOpenState(val)}
                       stylerId={val.stylerId}
                       businessName={val.businessName}
                       isSaved={savedIds.has(String(val.stylerId))}

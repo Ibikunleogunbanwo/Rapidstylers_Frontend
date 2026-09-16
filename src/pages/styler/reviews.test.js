@@ -43,7 +43,7 @@ describe("the stylist's reviews page", () => {
     expect(screen.getByText("This is what clients see on your public profile.")).toBeInTheDocument();
   });
 
-  it("reports how many reviews are still in moderation instead of hiding them", async () => {
+  it("reports how many reviews are still waiting for approval instead of hiding them", async () => {
     respond({
       reviews: [review(1)],
       reviewCount: 1,
@@ -53,7 +53,56 @@ describe("the stylist's reviews page", () => {
 
     render(<Reviews />);
 
-    expect(await screen.findByText(/2 reviews waiting on moderation/)).toBeInTheDocument();
+    expect(await screen.findByText("2 reviews waiting for approval")).toBeInTheDocument();
+    // The rule behind that queue is stated, not implied.
+    expect(screen.getByText(/An admin checks every review before it appears on your public profile/))
+      .toBeInTheDocument();
+  });
+
+  it("says nothing is waiting when the queue is empty, so the count is never a guess", async () => {
+    respond({
+      reviews: [review(1)],
+      reviewCount: 1,
+      averageRating: 5,
+      pendingCount: 0,
+    });
+
+    render(<Reviews />);
+
+    expect(await screen.findByText("Nothing waiting for approval")).toBeInTheDocument();
+    // No queue number, because there is no queue.
+    expect(screen.queryByText(/^\d+ reviews? waiting for approval$/)).not.toBeInTheDocument();
+  });
+
+  it("does not tell a stylist there are no reviews while a review is in the queue", async () => {
+    respond({
+      reviews: [],
+      reviewCount: 0,
+      averageRating: null,
+      pendingCount: 1,
+    });
+
+    render(<Reviews />);
+
+    // This is the case that used to read "No reviews yet" over an existing review.
+    expect(await screen.findByText("No public reviews yet")).toBeInTheDocument();
+    expect(screen.queryByText("No reviews yet")).not.toBeInTheDocument();
+    expect(screen.getByText("1 review waiting for approval")).toBeInTheDocument();
+    expect(screen.getByText(/start counting toward\s+your rating/)).toBeInTheDocument();
+  });
+
+  it("counts a single waiting review in the singular", async () => {
+    respond({
+      reviews: [],
+      reviewCount: 0,
+      averageRating: null,
+      pendingCount: 1,
+    });
+
+    render(<Reviews />);
+    await screen.findByText("1 review waiting for approval");
+
+    expect(screen.queryByText("1 reviews waiting for approval")).not.toBeInTheDocument();
   });
 
   it("pages through past reviews rather than dropping them off the page", async () => {
