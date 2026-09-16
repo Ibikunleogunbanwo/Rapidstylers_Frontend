@@ -8,7 +8,7 @@ import { useDispatch } from "react-redux";
 import { verifySignUpEmailAddress, verifyOtpCode, createUserAccount, userAuthenticate, setUserSession } from "../hooks/local/userReducer";
 import { STRIPE_PUBLISHABLE_KEY, getAuthToken, setAuthToken, setRefreshToken, showErrorToastMessage, showSuccessToastMessage, getBookingIntent, setBookingIntent, clearBookingIntent } from "../utils/constant";
 import { useUserLocation } from "../context/LocationContext";
-import { vendorTimeZoneLabel } from "../utils/vendorTimeZone";
+import { vendorTimeZoneLabel, vendorCalendarToday } from "../utils/vendorTimeZone";
 import OtpInputs from "./otpInputs";
 import GoogleSignInButton from "./googleSignInButton";
 import BookingCardField from "./bookingCardField";
@@ -94,7 +94,7 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
     // still request a time for the stylist to confirm, so nothing is blocked.
     if (slots.length === 0) return true;
     if (!selectedDay) return true; // no date picked yet — don't block the grid
-    const weekday = new Date(currentYear, months.indexOf(selectedMonth), selectedDay).getDay();
+    const weekday = new Date(stylistYear, months.indexOf(selectedMonth), selectedDay).getDay();
     const daySlots = slots.filter((s) => Number(s.dayOfWeek) === weekday);
     if (daySlots.length === 0) return false;
     const minutes = toMinutes(timeLabel);
@@ -122,9 +122,11 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
   };
 
   // "YYYY-MM-DD" for a day of the currently selected month (used for slot lookups).
+  // Built on the stylist's calendar year: in a New Year divergence week the
+  // visitor's browser year would not match the stylist's dates.
   const dateKeyFor = (day) =>
     day
-      ? `${currentYear}-${String(months.indexOf(selectedMonth) + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`
+      ? `${stylistYear}-${String(months.indexOf(selectedMonth) + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`
       : "";
 
   // True when the date is blocked by a vacation/sick exception.
@@ -203,9 +205,25 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
   const currentMonthIndex = new Date().getMonth();
   const currentDay = new Date().getDate();
 
-  const [selectedMonth, setSelectedMonth] = useState(months[currentMonthIndex]);
+  // The strip runs on the stylist's calendar, not the visitor's: a Toronto
+  // visitor booking a Vancouver stylist just after their own midnight must
+  // see "today" as the stylist's date (and the stylist's weekday names), or
+  // they could pick the stylist's yesterday. Calendar fields come from the
+  // zone; when Intl cannot resolve them the browser date stands in.
+  const stylistToday = (vendorCalendarToday({ timeZone: stylerTimeZone, province: stylerProvince })
+    || { year: currentYear, month: currentMonthIndex, day: currentDay, weekday: new Date().getDay() });
+  const stylistYear = stylistToday.year;
+  const stylistMonthIndex = stylistToday.month;
+  const stylistDay = stylistToday.day;
+  // The two calendars disagree whenever the stylist's date is not the
+  // visitor's — the divergence note in the strip explains whose calendar
+  // the dates follow.
+  const calendarsDisagree =
+    stylistYear !== currentYear || stylistMonthIndex !== currentMonthIndex || stylistDay !== currentDay;
+
+  const [selectedMonth, setSelectedMonth] = useState(months[stylistMonthIndex]);
   const [daysInMonth, setDaysInMonth] = useState(
-    generateDaysInMonth(currentYear, currentMonthIndex)
+    generateDaysInMonth(stylistYear, stylistMonthIndex)
   );
 
   const handleMonthChange = (event) => {
@@ -216,7 +234,7 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
     setSelectedDay(null);
 
     // Generate days for the selected month
-    const days = generateDaysInMonth(currentYear, months.indexOf(selected));
+    const days = generateDaysInMonth(stylistYear, months.indexOf(selected));
     setDaysInMonth(days);
   };
 
@@ -250,7 +268,7 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
     }
     if (intent.month && months.includes(intent.month)) {
       setSelectedMonth(intent.month);
-      setDaysInMonth(generateDaysInMonth(currentYear, months.indexOf(intent.month)));
+      setDaysInMonth(generateDaysInMonth(stylistYear, months.indexOf(intent.month)));
     }
     if (intent.day) setSelectedDay(intent.day);
     if (intent.time) setSelectedTime(intent.time);
@@ -346,7 +364,7 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
     setBookingError("");
     setIsBooking(true);
     try {
-      const appointmentDate = `${currentYear}-${String(months.indexOf(selectedMonth) + 1).padStart(2, "0")}-${String(selectedDay).padStart(2, "0")}`;
+      const appointmentDate = `${stylistYear}-${String(months.indexOf(selectedMonth) + 1).padStart(2, "0")}-${String(selectedDay).padStart(2, "0")}`;
       const paymentMethodId = await collectPaymentMethodId();
       await APIService.bookAppointment({
         stylerId,
@@ -651,17 +669,23 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
                 <div className="flex overflow-x-scroll gap-2">
                   {daysInMonth.map((day) => {
                     const currentDate = new Date(
-                      currentYear,
+                      stylistYear,
                       months.indexOf(selectedMonth),
                       day
                     );
+                    // Past/present is judged on the stylist's calendar so a
+                    // visitor ahead of the stylist's date can still pick the
+                    // stylist's "today" — it is genuinely in the future for
+                    // the person whose hours are being booked.
                     const isPastDay =
                       currentDate <
-                      new Date(currentYear, currentMonthIndex, currentDay);
+                      new Date(stylistYear, stylistMonthIndex, stylistDay);
                     const dayOpen = isDayAvailable(currentDate.getDay());
-                    const dateKey = `${currentYear}-${String(months.indexOf(selectedMonth) + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+                    const dateKey = `${stylistYear}-${String(months.indexOf(selectedMonth) + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
                     const exceptionBlocked = isDateException(dateKey);
                     const fullyBlocked = !dayOpen || exceptionBlocked;
+                    const isStylistToday =
+                      months.indexOf(selectedMonth) === stylistMonthIndex && day === stylistDay;
 
                     return (
                       <div
@@ -683,12 +707,17 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
                         <div className="w-[80px] flex items-center justify-center h-full">
                           {`${currentDate.toLocaleDateString("en-US", {
                             weekday: "short",
-                          })}, ${getOrdinalSuffix(day)}`}
+                          })}, ${getOrdinalSuffix(day)}${isStylistToday ? " \u00b7 today" : ""}`}
                         </div>
                       </div>
                     );
                   })}
                 </div>
+              )}
+              {calendarsDisagree && (
+                <p className="text-xs text-gray-500 mb-1">
+                  You are in a different calendar day than the stylist. The dates above follow the stylist's calendar, so their “today” may differ from yours.
+                </p>
               )}
               <p className="hidden">{selectedMonth}{selectedDay}</p>
             </div>
@@ -705,7 +734,7 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
                   This stylist hasn't set their availability yet. You can still request a time and they will confirm.
                 </p>
               )}
-              {selectedDay && windowsFor(new Date(currentYear, months.indexOf(selectedMonth), selectedDay).getDay()).length > 0 && (
+              {selectedDay && windowsFor(new Date(stylistYear, months.indexOf(selectedMonth), selectedDay).getDay()).length > 0 && (
                 <p className="text-xs text-gray-500 mb-2">
                   Working hours:{" "}
                   {windowsFor(new Date(currentYear, months.indexOf(selectedMonth), selectedDay).getDay())

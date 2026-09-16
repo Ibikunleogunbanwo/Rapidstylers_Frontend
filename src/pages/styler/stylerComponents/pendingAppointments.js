@@ -1,5 +1,6 @@
 import { useState } from "react";
 import Modal from "../../../components/modals";
+import { vendorTimeZoneLabelStrict } from "../../../utils/vendorTimeZone";
 
 const PendingAppointments = ({
   appointment,
@@ -51,6 +52,9 @@ const PendingAppointments = ({
             <div>
               {appointment?.appointmentDate}
               {appointment?.arrivalTime ? ", " + appointment.arrivalTime : ""}
+              {vendorTimeZoneLabelStrict({ timeZone: appointment?.stylerData?.timeZone, province: appointment?.stylerData?.province })
+                ? ` (${vendorTimeZoneLabelStrict({ timeZone: appointment?.stylerData?.timeZone, province: appointment?.stylerData?.province })})`
+                : ""}
             </div>
           </div>
           {user.address && (

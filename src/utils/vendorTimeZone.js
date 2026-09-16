@@ -54,6 +54,38 @@ export const vendorTimeZoneForProvince = (province) => {
 };
 
 /**
+ * The vendor's calendar right now, as plain fields — {year, month (0-11),
+ * day, weekday (0=Sun)}. A visitor in Toronto at 11:30pm on the 2nd faces a
+ * Vancouver stylist whose calendar still says 9:30pm on the 2nd; a Toronto
+ * visitor at 12:30am on the 3rd faces the same stylist on "their" 2nd. Every
+ * date-strip decision (what counts as past, which cell is today) must use
+ * these fields, not the browser's, so the two calendars cannot silently
+ * disagree. Returns browser-date fields when Intl cannot resolve the zone —
+ * the same degradation the open-now filter applies.
+ */
+export const vendorCalendarToday = (stylist, now = new Date()) => {
+  try {
+    const parts = new Intl.DateTimeFormat("en-CA", {
+      timeZone: vendorTimeZone(stylist),
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      weekday: "short",
+    }).formatToParts(now);
+    const get = (type) => (parts.find((p) => p.type === type) || {}).value;
+    const year = Number(get("year"));
+    const month = Number(get("month")) - 1;
+    const day = Number(get("day"));
+    const weekdayNames = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+    const weekday = weekdayNames[get("weekday")];
+    if ([year, month, day].some(Number.isNaN) || weekday === undefined) return null;
+    return { year, month, day, weekday };
+  } catch {
+    return null;
+  }
+};
+
+/**
  * Human-readable name for a vendor's time zone ("Mountain Time",
  * "Eastern Time"...). `longGeneric` deliberately omits the DST marker so the
  * label stays true year-round — the zone is the contract, not the offset.
@@ -63,6 +95,46 @@ export const vendorTimeZoneLabel = (stylist) => {
   try {
     const part = new Intl.DateTimeFormat("en-US", {
       timeZone: vendorTimeZone(stylist),
+      timeZoneName: "longGeneric",
+    })
+      .formatToParts(new Date())
+      .find((p) => p.type === "timeZoneName");
+    return (part && part.value) || "";
+  } catch {
+    return "";
+  }
+};
+
+/**
+ * Strict label for surfaces that DISPLAY a stored appointment's times (cards,
+ * confirmations): stored zone first, then the province map — but never the
+ * app default. Unlike the booking pickers (where America/Edmonton is the
+ * actual assumption the system applies), a row with no zone data has an
+ * unknown clock, and printing "Mountain Time" could be wrong. Returns ""
+ * when nothing is known; callers render the time bare.
+ */
+export const vendorTimeZoneLabelStrict = (stylist) => {
+  const stored = stylist && stylist.timeZone;
+  if (stored && typeof stored === "string") {
+    try {
+      new Intl.DateTimeFormat("en-US", { timeZone: stored });
+      const part = new Intl.DateTimeFormat("en-US", {
+        timeZone: stored,
+        timeZoneName: "longGeneric",
+      })
+        .formatToParts(new Date())
+        .find((p) => p.type === "timeZoneName");
+      return (part && part.value) || "";
+    } catch {
+      // fall through to the province map
+    }
+  }
+  const province = stylist && stylist.province;
+  if (!province) return "";
+  try {
+    const zone = vendorTimeZoneForProvince(province);
+    const part = new Intl.DateTimeFormat("en-US", {
+      timeZone: zone,
       timeZoneName: "longGeneric",
     })
       .formatToParts(new Date())

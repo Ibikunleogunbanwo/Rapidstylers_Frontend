@@ -3,8 +3,12 @@ import close from "../../../assets/svg-icons/closeBlack.svg";
 import React, { useState } from "react";
 import { APIService } from "../../../hooks/remote/apiService";
 import { showSuccessToastMessage } from "../../../utils/constant";
+import { vendorTimeZoneLabelStrict } from "../../../utils/vendorTimeZone";
 
-const Appointments = ({appointmentDate, arrivalTime, serviceProvider, serviceType, businessAddress,serviceName, numberOfPeople, appointmentStatus, appointmentPrice, servicePrice, travelFee, includedTravelKm, travelDistanceKm, appointmentId, statusCode, paymentStatus, paymentFailureCode, refundStatus, refundAmount, refundCompletedAt}) => {
+const Appointments = ({appointmentDate, arrivalTime, serviceProvider, serviceType, businessAddress,serviceName, numberOfPeople, appointmentStatus, appointmentPrice, servicePrice, travelFee, includedTravelKm, travelDistanceKm, appointmentId, statusCode, paymentStatus, paymentFailureCode, refundStatus, refundAmount, refundCompletedAt, stylerTimeZone, stylerProvince}) => {
+  // The appointment's times live on the stylist's clock; label them so a
+  // cross-province customer is never left guessing whose time it is.
+  const zoneLabel = vendorTimeZoneLabelStrict({ timeZone: stylerTimeZone, province: stylerProvince });
   const [menuVisible, setMenuVisible] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [retryingPayment, setRetryingPayment] = useState(false);
@@ -61,7 +65,7 @@ const Appointments = ({appointmentDate, arrivalTime, serviceProvider, serviceTyp
                 <span className="text-black/50">Date:</span>
                 <span>{appointmentDate}</span>
               </div>
-              <p className="mt-2">{arrivalTime}</p>
+              <p className="mt-2">{arrivalTime}{zoneLabel ? ` (${zoneLabel})` : ""}</p>
             </div>
           </div>
           <div className="px-4 col-span-12 md:col-span-9 order-1 md:order-2">

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { APIService } from "../../hooks/remote/apiService";
 import { getAuthToken, showSuccessToastMessage } from "../../utils/constant";
+import { vendorTimeZoneLabelStrict } from "../../utils/vendorTimeZone";
 import PendingAppointments from "./stylerComponents/pendingAppointments";
 
 const STATUS_META = {
@@ -268,6 +269,10 @@ const StylerCalendar = () => {
                       <p className="text-sm font-semibold text-gray-800 truncate">                            {a.arrivalTime ? `${a.arrivalTime} | ` : ""}
                         {selectedService(a)}
                       </p>
+                      {(() => {
+                        const zone = vendorTimeZoneLabelStrict({ timeZone: a.stylerData?.timeZone, province: a.stylerData?.province });
+                        return zone ? <p className="text-xs text-gray-400">Times shown in {zone}</p> : null;
+                      })()}
                       <p className="text-xs text-gray-500 truncate">
                         {selectedClient(a)} · {a.price || "-"}
                       </p>

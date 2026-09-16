@@ -73,6 +73,19 @@ const StylerPayouts = () => {
 
   const rows = Array.isArray(payouts.appointments) ? payouts.appointments : [];
 
+  // Compact zone tag for the payouts table ("Mountain", "Eastern"...) — the
+  // long form would crowd a dense financial table.
+  const zoneShort = (zone) => {
+    try {
+      const part = new Intl.DateTimeFormat("en-US", { timeZone: zone, timeZoneName: "shortGeneric" })
+        .formatToParts(new Date())
+        .find((p) => p.type === "timeZoneName");
+      return (part && part.value) || "";
+    } catch {
+      return "";
+    }
+  };
+
   return (
     <div className="bg-white rounded-lg border">
       <div className="flex gap-1 items-center border-b border-black/10 p-4 text-[11px] uppercase tracking-[0.25em] text-muted bg-white rounded-t-lg">
@@ -174,7 +187,9 @@ const StylerPayouts = () => {
                     <tr key={row.appointmentId} className="border-t">
                       <td className="px-4 py-3 font-medium">{row.appointmentId}</td>
                       <td className="px-4 py-3 text-black/60">{row.date}</td>
-                      <td className="px-4 py-3 text-black/60">{row.arrivalTime}</td>
+                      <td className="px-4 py-3 text-black/60">
+                        {row.arrivalTime}{row.timeZone ? ` (${zoneShort(row.timeZone)})` : ""}
+                      </td>
                       <td className="px-4 py-3 text-right">${row.total}</td>
                       <td className="px-4 py-3 text-right text-black/50">${row.commission}</td>
                       <td className="px-4 py-3 text-right font-semibold text-emerald-700">${row.stylerShare}</td>

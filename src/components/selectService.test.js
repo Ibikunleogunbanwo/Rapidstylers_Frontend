@@ -1,5 +1,9 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import SelectService from "./selectService";
+// Pin the "browser" clock zone so the stylist-calendar tests below can
+// construct a guaranteed midnight-boundary divergence (Toronto visitor,
+// Alberta stylist). Must run before any Date is created in this file.
+process.env.TZ = "America/Toronto";
 // Resolves to the vi.mock() below (hoisted), so APIService is the mock.
 import { APIService } from "../hooks/remote/apiService";
 import { getBookingIntent, setBookingIntent } from "../utils/constant";
@@ -240,5 +244,85 @@ describe("SelectService shows the stylist's time zone on the pickers", () => {
     fireEvent.click(screen.getByText("Book service"));
 
     expect(screen.getByText(/Times are in the stylist's local time \(Mountain Time\)/)).toBeInTheDocument();
+  });
+});
+
+describe("SelectService date strip runs on the stylist's calendar", () => {
+  test("a visitor a day ahead of the stylist sees the divergence note and the stylist's today", () => {
+    // Pin the browser to 2026-09-16 00:30 Toronto (EDT) — the visitor's
+    // calendar says the 16th, but the stylist's Alberta calendar is still on
+    // the 15th at 22:30. Fake timers make this deterministic at any real hour.
+    vi.useFakeTimers({ now: new Date(2026, 8, 16, 0, 30) });
+    process.env.TZ = "America/Toronto";
+    try {
+      APIService.singleStylerData.mockResolvedValue({
+        data: { data: {
+          availability: [{ dayOfWeek: 2, startTime: "09:00", endTime: "21:00" }],
+          bookedSlots: [],
+          exceptions: [],
+        }},
+      });
+
+      render(
+        <SelectService
+          serviceName="Haircut"
+          servicePrice="60"
+          stylerId="s1"
+          subServiceId="ss1"
+          stylerProvince="Alberta"
+          stylerTimeZone="America/Edmonton"
+        />
+      );
+      fireEvent.click(screen.getByText("Book service"));
+
+      // The divergence is real and the note says so honestly.
+      expect(screen.getByText(/different calendar day than the stylist/)).toBeInTheDocument();
+
+      // The strip's "today" cell is the stylist's 15th (their calendar), even
+      // though the visitor's own calendar says the 16th.
+      expect(screen.getByText(/15th · today/)).toBeInTheDocument();
+      expect(screen.queryByText(/16th · today/)).not.toBeInTheDocument();
+
+      // The stylist's "yesterday by the visitor's clock" (the 15th, a
+      // Tuesday they work) must NOT be hidden as a past day.
+      const fifteenth = [...document.querySelectorAll("div")].find(
+        (el) => el.className.includes("rounded-md") && /Tue, 15th/.test(el.textContent)
+      );
+      expect(fifteenth).toBeDefined();
+      expect(fifteenth.className).not.toContain("hidden");
+    } finally {
+      vi.useRealTimers();
+      process.env.TZ = "UTC";
+    }
+  });
+
+  test("matching calendars show no divergence note", () => {
+    // Toronto 2026-09-15 14:00: the visitor and an Alberta stylist agree on
+    // the date (only one hour apart).
+    vi.useFakeTimers({ now: new Date(2026, 8, 15, 14, 0) });
+    process.env.TZ = "America/Toronto";
+    try {
+      APIService.singleStylerData.mockResolvedValue({
+        data: { data: { availability: [], bookedSlots: [], exceptions: [] } },
+      });
+
+      render(
+        <SelectService
+          serviceName="Haircut"
+          servicePrice="60"
+          stylerId="s1"
+          subServiceId="ss1"
+          stylerProvince="Alberta"
+          stylerTimeZone="America/Edmonton"
+        />
+      );
+      fireEvent.click(screen.getByText("Book service"));
+
+      expect(screen.queryByText(/different calendar day than the stylist/)).not.toBeInTheDocument();
+      expect(screen.getByText(/15th · today/)).toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+      process.env.TZ = "UTC";
+    }
   });
 });

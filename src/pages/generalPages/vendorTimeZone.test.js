@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import SearchResults from "./searchResults";
 import { APIService } from "../../hooks/remote/apiService";
-import { vendorTimeZoneForProvince, vendorTimeZone, vendorTimeZoneLabel, DEFAULT_VENDOR_ZONE } from "../../utils/vendorTimeZone";
+import { vendorTimeZoneForProvince, vendorTimeZone, vendorTimeZoneLabel, vendorTimeZoneLabelStrict, DEFAULT_VENDOR_ZONE } from "../../utils/vendorTimeZone";
 
 // Pin the "browser" to Toronto so the visitor clock is guaranteed one hour
 // ahead of any Alberta vendor. Node re-reads TZ per Date call, so tests below
@@ -117,5 +117,21 @@ describe("vendorTimeZoneLabel", () => {
     // default, so the label still says something true rather than blank.
     expect(vendorTimeZoneLabel({ timeZone: "Not/AZone" })).toBe("Mountain Time");
     expect(vendorTimeZoneLabel(null)).toBe("Mountain Time"); // null stylist -> default zone
+  });
+});
+
+describe("vendorTimeZoneLabelStrict (appointment surfaces)", () => {
+  test("labels a stored zone and a province fallback", () => {
+    expect(vendorTimeZoneLabelStrict({ timeZone: "America/Toronto", province: "Ontario" })).toBe("Eastern Time");
+    expect(vendorTimeZoneLabelStrict({ province: "British Columbia" })).toBe("Pacific Time");
+  });
+
+  test("returns an empty string when nothing is known, instead of the app default", () => {
+    // Unlike the booking pickers, a stored appointment with no zone data has
+    // an unknown clock — printing "Mountain Time" could be wrong, so the
+    // strict label renders bare.
+    expect(vendorTimeZoneLabelStrict({})).toBe("");
+    expect(vendorTimeZoneLabelStrict(null)).toBe("");
+    expect(vendorTimeZoneLabelStrict({ timeZone: "Not/AZone" })).toBe("");
   });
 });

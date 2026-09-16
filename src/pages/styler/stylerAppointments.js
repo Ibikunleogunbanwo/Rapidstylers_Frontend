@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import more from "../../assets/svg-icons/more.svg";
 import { APIService } from "../../hooks/remote/apiService";
 import { getAuthToken, showSuccessToastMessage } from "../../utils/constant";
+import { vendorTimeZoneLabelStrict } from "../../utils/vendorTimeZone";
 import PendingAppointments from "./stylerComponents/pendingAppointments";
 import SectionPager from "../../components/sectionPager";
 
@@ -109,7 +110,11 @@ const StylerAppointments = () => {
     [a.userData?.firstname, a.userData?.lastname].filter(Boolean).join(" ") ||
     a.userData?.emailAddress ||
     "Client";
-  const dateTime = (a) => `${a.appointmentDate}${a.arrivalTime ? ", " + a.arrivalTime : ""}`;
+  // Appointment times run on the stylist's clock; the label makes that
+  // explicit in the accept/decline modal rather than implied.
+  const appointmentZone = (a) =>
+    vendorTimeZoneLabelStrict({ timeZone: a.stylerData?.timeZone, province: a.stylerData?.province });
+  const dateTime = (a) => `${a.appointmentDate}${a.arrivalTime ? ", " + a.arrivalTime : ""}${appointmentZone(a) ? ` (${appointmentZone(a)})` : ""}`;
 
   if (!getAuthToken()) {
     return (

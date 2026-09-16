@@ -4,6 +4,8 @@ import { Provider } from "react-redux";
 import { configureStore } from "@reduxjs/toolkit";
 import Dashboard from "./dashboard";
 import Appointments from "./upcomingAppointments";
+// Resolve to the vi.mock of ../userLayout/functionalEffects.
+import { useAllUserAppointments, useUserPendingAppointments } from "../userLayout/functionalEffects";
 
 vi.mock("../userLayout/functionalEffects", () => ({
   useAllUserAppointments: vi.fn(() => []),
@@ -104,5 +106,49 @@ describe("Upcoming appointment card", () => {
     expect(html).toContain("border");
     expect(html).not.toContain("shadow-");
     expect(html).not.toContain("rounded-2xl");
+  });
+});
+
+describe("Appointment cards name the stylist's time zone", () => {
+  const zoneAppt = {
+    appointmentDate: "2026-09-20",
+    arrivalTime: "14:00",
+    appointmentId: "a1",
+    statusCode: "3",
+    status: "Accepted",
+    price: "55.00",
+    stylerData: { businessName: "Lash Studio", timeZone: "America/Toronto", province: "Ontario" },
+    subServiceData: { name: "Lash refill" },
+  };
+
+  it("the upcoming-appointment card labels the arrival time with the stylist's zone", () => {
+    useUserPendingAppointments.mockReturnValue([zoneAppt]);
+    renderDash({ firstname: "Ada", lastname: "Lovelace", phoneNumber: "1", address: "x" });
+
+    // formatTime12 renders 14:00 as 2:00 PM; the label must sit beside it.
+    expect(screen.getByText(/2:00 PM \(Eastern Time\)/)).toBeInTheDocument();
+  });
+
+  it("a completed card's inline Time row carries the same zone label", () => {
+    useUserPendingAppointments.mockReturnValue([]);
+    useAllUserAppointments.mockReturnValue([{ ...zoneAppt, statusCode: "0", status: "Completed" }]);
+    renderDash({ firstname: "Ada", lastname: "Lovelace", phoneNumber: "1", address: "x" });
+
+    // Both the card and the history row label the zone; assert on the count.
+    expect(screen.getAllByText(/2:00 PM \(Eastern Time\)/).length).toBeGreaterThan(0);
+  });
+
+  it("cards render bare when the payload carries no zone (older cached rows)", () => {
+    useUserPendingAppointments.mockReturnValue([{ ...zoneAppt, stylerData: { businessName: "Lash Studio" } }]);
+    renderDash({ firstname: "Ada", lastname: "Lovelace", phoneNumber: "1", address: "x" });
+
+    // No zone in the payload: the time renders without any parenthetical.
+    // (The history row keeps its own label from an earlier test's render —
+    // scope the assertion to the upcoming card, which renders "2:00 PM" alone.)
+    const upcomingCardTime = screen.getAllByText(/2:00 PM/).find(
+      (el) => !/Time\)/.test(el.textContent)
+    );
+    expect(upcomingCardTime).toBeDefined();
+    expect(upcomingCardTime.textContent).not.toContain("(");
   });
 });

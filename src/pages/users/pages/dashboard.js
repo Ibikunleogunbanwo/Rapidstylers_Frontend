@@ -9,6 +9,12 @@ import Spinner from "../../../components/spinner";
 import { useDispatch, useSelector } from "react-redux";
 import { getUserDetails } from "../../../hooks/local/userReducer";
 import { formatTime12 } from "../../../utils/constant";
+import { vendorTimeZoneLabelStrict } from "../../../utils/vendorTimeZone";
+
+// The zone an appointment's times live in (the stylist's), for the inline
+// Time row on completed cards.
+const appointmentZoneLabel = (val) =>
+  vendorTimeZoneLabelStrict({ timeZone: val?.stylerData?.timeZone, province: val?.stylerData?.province });
 
 const Dashboard = ({ setPageTitle }) => {
   useEffect((() => {
@@ -79,6 +85,8 @@ const Dashboard = ({ setPageTitle }) => {
           {pendingAppointment.map((val, key) => (
             <Appointments appointmentDate={val?.appointmentDate}
                           arrivalTime={formatTime12(val?.arrivalTime)}
+                          stylerTimeZone={val.stylerData?.timeZone}
+                          stylerProvince={val.stylerData?.province}
                           serviceProvider={val.stylerData?.businessName}
                           stylerId={val.stylerData?.stylerId}
                           serviceType={val.subServiceData?.serviceTypeName || "Service"}
@@ -131,7 +139,7 @@ const Dashboard = ({ setPageTitle }) => {
                     </div>
                     <div className="col-span-4 text-end  grid">
                       <div><span className="font-semibold">{val?.price || val.subServiceData?.price}</span> <span className=" text-gray-400">CAD</span></div>
-                      <div><span className="font-semibold text-black/50 text-sm">Time:</span> <span className=" text-gray-400 text-sm">{formatTime12(val?.arrivalTime)}</span></div>
+                      <div><span className="font-semibold text-black/50 text-sm">Time:</span> <span className=" text-gray-400 text-sm">{formatTime12(val?.arrivalTime)}{appointmentZoneLabel(val) ? ` (${appointmentZoneLabel(val)})` : ""}</span></div>
                       <div><span className="font-semibold text-black/50 text-sm">Date:</span> <span className=" text-gray-400 text-sm">{val?.appointmentDate}</span></div>
                     </div>
                     {val?.statusCode === "0" && (
