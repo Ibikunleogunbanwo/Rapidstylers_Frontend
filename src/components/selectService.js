@@ -8,6 +8,7 @@ import { useDispatch } from "react-redux";
 import { verifySignUpEmailAddress, verifyOtpCode, createUserAccount, userAuthenticate, setUserSession } from "../hooks/local/userReducer";
 import { STRIPE_PUBLISHABLE_KEY, getAuthToken, setAuthToken, setRefreshToken, showErrorToastMessage, showSuccessToastMessage, getBookingIntent, setBookingIntent, clearBookingIntent } from "../utils/constant";
 import { useUserLocation } from "../context/LocationContext";
+import { straightLineKm, travelLine } from "../utils/travelEstimate";
 import { vendorTimeZoneLabel, vendorCalendarToday } from "../utils/vendorTimeZone";
 import OtpInputs from "./otpInputs";
 import GoogleSignInButton from "./googleSignInButton";
@@ -26,7 +27,45 @@ const stripePromise = STRIPE_PUBLISHABLE_KEY ? loadStripe(STRIPE_PUBLISHABLE_KEY
 // password — and defer name/address/phone to a later profile step.
 const SIGNUP_STEPS = Object.freeze({ EMAIL: "email", OTP: "otp", PASSWORD: "password", SIGNIN: "signin" });
 
-const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerId, subServiceId, stylerLatitude, stylerLongitude, stylerProvince, stylerTimeZone}) => {
+/**
+ * The stylist's place, split into a street-level line and the area around it,
+ * from whichever parts the profile actually has on file. Only the street line
+ * makes directions meaningful: a city on its own would point at the middle of
+ * town, so it is shown as an area and never as a destination.
+ */
+export const formatStylistAddress = (address) => {
+  if (!address || typeof address !== "object") return { line: "", area: "" };
+  const formatted = String(address.businessAddress || "").trim();
+  const street = String(address.streetAddress || "").trim();
+  const unit = String(address.unit || "").trim();
+  // The saved business address is already a full formatted string; only build
+  // one from parts when there is nothing formatted to show.
+  const line = formatted || [unit ? `Unit ${unit}` : "", street].filter(Boolean).join(" ");
+  const area = [address.city, address.province, address.postalCode]
+    .map((part) => String(part || "").trim())
+    .filter(Boolean)
+    .join(", ");
+  return { line, area };
+};
+
+/**
+ * The line a customer reads the moment their booking request lands: the day and
+ * time they picked, and whose clock that time is on. The date strip and the time
+ * pickers already speak in the stylist's calendar and zone, so the confirmation
+ * says them out loud too — a Calgary stylist's 4:00 pm is not a Toronto
+ * customer's. The zone is left out when the stylist's row declares none rather
+ * than guessed at, and the whole line falls back to the plain acknowledgement if
+ * somehow nothing was picked.
+ */
+export const bookingConfirmationMessage = (dayLabel, time, zoneLabel) => {
+  const when = dayLabel && time ? `${dayLabel} at ${time}` : dayLabel || time || "";
+  const clock = when && zoneLabel ? ` (${zoneLabel})` : "";
+  return when
+    ? `Booking request sent for ${when}${clock}. The stylist will confirm shortly.`
+    : "Booking request sent. The stylist will confirm shortly.";
+};
+
+const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerId, subServiceId, stylerLatitude, stylerLongitude, stylerProvince, stylerTimeZone, stylerAddress}) => {
   const [bookAppointmentForm, setBookAppointmentForm] = useState(false);
   const dispatch = useDispatch();
   const { location: userLocation } = useUserLocation() || {};
@@ -39,6 +78,10 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
   // The stylist's own clock for their hours and slots, passed from the profile
   // page so the pickers can say which time zone the times are written in.
   const stylistZoneLabel = vendorTimeZoneLabel({ timeZone: stylerTimeZone, province: stylerProvince });
+  // The stylist's premises. `visitStreetLine` is the only part precise enough
+  // to navigate to, so it alone earns a directions link.
+  const { line: visitStreetLine, area: visitArea } = formatStylistAddress(stylerAddress);
+  const visitAddress = [visitStreetLine, visitArea].filter(Boolean).join(", ");
 
   // ── In-modal quick-account flow (signed-out customers) ────────────────
   const [signupStep, setSignupStep] = useState(null);           // null | "email" | "otp" | "password"
@@ -295,26 +338,19 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
   // key is configured. Empty when Stripe is disabled (preview/staging builds).
   const bookingCardRef = useRef(null);
 
-  const travelDistanceKm = (() => {
-    const userLat = Number(userLocation?.latitude);
-    const userLng = Number(userLocation?.longitude);
-    const stylerLat = Number(stylerLatitude);
-    const stylerLng = Number(stylerLongitude);
-    if ([userLat, userLng, stylerLat, stylerLng].some((value) => Number.isNaN(value))) {
-      return null;
-    }
-    const toRad = (value) => (value * Math.PI) / 180;
-    const earthKm = 6371;
-    const dLat = toRad(stylerLat - userLat);
-    const dLng = toRad(stylerLng - userLng);
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(toRad(userLat)) *
-        Math.cos(toRad(stylerLat)) *
-        Math.sin(dLng / 2) *
-        Math.sin(dLng / 2);
-    return Math.round(earthKm * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)) * 10) / 10;
-  })();
+  // The customer's own position against the professional's geocoded address.
+  // Computed once because two surfaces read it: the home-service travel fee,
+  // and the visit card, where it answers "is this near me?" before the customer
+  // picks a slot. See utils/travelEstimate for the maths and the wording.
+  const travelDistanceKm = straightLineKm(userLocation, {
+    latitude: stylerLatitude,
+    longitude: stylerLongitude,
+  });
+  // An IP or app-default position can be tens of kilometres out, so the line
+  // says so rather than letting a coarse guess read as a measured distance.
+  const locationIsApproximate =
+    userLocation?.source === "ip" || userLocation?.source === "default";
+  const visitTravelLine = travelLine(travelDistanceKm, { approximate: locationIsApproximate });
 
   useEffect(() => {
     if (!bookAppointmentForm) return;
@@ -376,7 +412,15 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
         travelDistanceKm: selectedOption === "homeService" ? travelDistanceKm : 0,
         paymentMethodId,
       });
-      showSuccessToastMessage("Booking request sent. The stylist will confirm shortly.");
+      // The confirmation repeats the booking back in the stylist's calendar and
+      // names their zone, so the customer is never left holding a bare time
+      // that belongs to someone else's clock.
+      const dayLabel = selectedDay
+        ? `${new Date(stylistYear, months.indexOf(selectedMonth), selectedDay).toLocaleDateString("en-US", {
+            weekday: "short",
+          })}, ${getOrdinalSuffix(selectedDay)}`
+        : "";
+      showSuccessToastMessage(bookingConfirmationMessage(dayLabel, selectedTime, stylistZoneLabel));
       clearBookingIntent();
       closeBookingForm();
     } catch (error) {
@@ -792,6 +836,45 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
                 <p className="hidden">Selected Option: {selectedOption}</p>
               </div>
             </div>
+            {/* Where the client has to go. Visiting the stylist is the default
+                choice, so the address is on screen the moment the modal opens
+                rather than surfacing only after a slot is picked. */}
+            {selectedOption === "visitBarber" && (
+              <div className="px-6">
+                <div className="rounded-md border p-4 text-sm">
+                  <p className="font-semibold mb-1">Where you'll go</p>
+                  {visitStreetLine ? (
+                    <>
+                      <p className="text-gray-600">{visitAddress}</p>
+                      <a
+                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(visitAddress)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-2 inline-block text-xs font-medium text-brand"
+                      >
+                        Get directions
+                      </a>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-gray-500">
+                        This professional has not published an address yet.
+                      </p>
+                      {visitArea && (
+                        <p className="mt-1 text-xs text-gray-400">Based in {visitArea}</p>
+                      )}
+                    </>
+                  )}
+                  {/* How far the trip is, from the location already collected
+                      for the home-service fee. Kept to one line and labelled as
+                      an estimate: it is a straight line with no traffic data,
+                      so it cannot promise a journey, only size it up. */}
+                  {visitTravelLine && (
+                    <p className="mt-3 border-t pt-3 text-xs text-gray-500">{visitTravelLine}</p>
+                  )}
+                </div>
+              </div>
+            )}
             <div className="px-6">
               <p className="font-semibold mb-2 text-[15px]">Additional information</p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">

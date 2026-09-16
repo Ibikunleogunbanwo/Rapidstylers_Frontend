@@ -219,6 +219,15 @@ const ManageStylers = () => {
                           <p className="text-sm text-gray-500">
                             {s.city ? `${s.city}, ${s.province || ""}` : s.province || "-"}
                           </p>
+                          {/* Customers travel to this address, and approval is
+                              refused without one, so it belongs on the card. */}
+                          {s.businessAddress ? (
+                            <p className="text-sm text-gray-500">{s.businessAddress}</p>
+                          ) : (
+                            <p className="text-sm font-semibold text-amber-700">
+                              No business address yet
+                            </p>
+                          )}
                           <p className="text-sm text-gray-400">
                             {s.emailAddress} | {s.phoneNumber || "-"}
                           </p>
@@ -262,7 +271,15 @@ const ManageStylers = () => {
                         {s.verificationStatus !== "APPROVED" && (
                           <button
                             onClick={() => handleAction(s, "APPROVE")}
-                            disabled={busyId === s.stylerId}
+                            // Approval needs somewhere to send the customer: the
+                            // backend refuses without an address, so the button
+                            // says so up front instead of failing on click.
+                            disabled={busyId === s.stylerId || s.addressOnFile === false}
+                            title={
+                              s.addressOnFile === false
+                                ? "Ask this professional for their business address first. Approving without one would leave them unlisted and unbookable."
+                                : ""
+                            }
                             className="py-2 px-4 bg-green-600 rounded-md text-sm text-white font-semibold hover:opacity-90 disabled:opacity-60"
                           >
                             Approve

@@ -49,33 +49,33 @@ const Footer = () => {
   return (
     <div className="bg-black text-white">
       {/* Coming soon — mobile app promo */}
-      <div className="relative overflow-hidden px-4 md:px-[100px] bg-black border-b border-white/10 py-16 md:py-24">
-        <div className="pointer-events-none absolute -top-40 -right-24 h-[420px] w-[420px] rounded-full bg-brand/20 blur-[120px]" aria-hidden="true" />
-        <div className="pointer-events-none absolute -bottom-40 -left-24 h-[380px] w-[380px] rounded-full bg-brand/10 blur-[110px]" aria-hidden="true" />
-
-        <div className="relative grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
-          <div className="col-span-1 lg:col-span-8 pe-0 lg:pe-24 text-center lg:text-start">
+      <div className="relative overflow-hidden px-4 md:px-[100px] bg-black border-b border-white/10 py-10 md:py-14">
+        <div className="relative grid grid-cols-1 sm:grid-cols-[1fr_auto] items-center gap-6 sm:gap-10 lg:gap-16">
+          <div className="text-center sm:text-start">
             <span className="inline-flex items-center gap-2 rounded-full border border-brand/40 bg-brand/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-brand">
               <span className="h-1.5 w-1.5 rounded-full bg-brand animate-pulse" aria-hidden="true" />
               Coming soon
             </span>
-            <h2 className="mt-4 text-3xl md:text-5xl font-bold tracking-tight leading-tight">
+            {/* One band, one screen: the copy carries the pitch and the phone
+                sits beside it rather than stacking under it, which is what made
+                this section taller than the viewport on a phone. */}
+            <h2 className="mt-3 text-2xl md:text-3xl font-bold tracking-tight leading-tight">
               Never miss an appointment!
             </h2>
-            <p className="mt-4 text-white/70 leading-relaxed max-w-xl mx-auto lg:mx-0">
+            <p className="mt-3 max-w-md mx-auto sm:mx-0 text-sm md:text-base text-white/70 leading-relaxed">
               Get easy access to professional styling services from our mobile app,
               delivered right to your phone on Android and iOS devices.
             </p>
-            <div className="flex justify-center lg:justify-start gap-4 mt-8 flex-wrap">
-              <a href="#newsletter" aria-label="Google Play coming soon" className="group flex items-center gap-2.5 rounded-xl border border-white/15 bg-white/5 px-5 py-3 transition hover:border-brand/50 hover:bg-white/10 hover:shadow-lg hover:shadow-brand/20">
-                <img src={playstore} alt="Google Play" className="h-6 w-auto" />
+            <div className="flex flex-wrap justify-center sm:justify-start gap-3 mt-5">
+              <a href="#newsletter" aria-label="Google Play coming soon" className="group flex items-center gap-2.5 rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 transition hover:border-brand/50 hover:bg-white/10">
+                <img src={playstore} alt="Google Play" className="h-5 w-auto" />
                 <span className="text-left leading-tight">
                   <span className="block text-[10px] uppercase tracking-wide text-white/50">Coming soon</span>
                   <span className="block text-sm font-semibold">Google Play</span>
                 </span>
               </a>
-              <a href="#newsletter" aria-label="App Store coming soon" className="group flex items-center gap-2.5 rounded-xl border border-white/15 bg-white/5 px-5 py-3 transition hover:border-brand/50 hover:bg-white/10 hover:shadow-lg hover:shadow-brand/20">
-                <img src={appstore} alt="App Store" className="h-6 w-auto" />
+              <a href="#newsletter" aria-label="App Store coming soon" className="group flex items-center gap-2.5 rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 transition hover:border-brand/50 hover:bg-white/10">
+                <img src={appstore} alt="App Store" className="h-5 w-auto" />
                 <span className="text-left leading-tight">
                   <span className="block text-[10px] uppercase tracking-wide text-white/50">Coming soon</span>
                   <span className="block text-sm font-semibold">App Store</span>
@@ -83,10 +83,10 @@ const Footer = () => {
               </a>
             </div>
           </div>
-          <div className="col-span-1 lg:col-span-4">
-            <div className="relative w-full flex justify-center">
-              <div className="absolute top-1/2 left-1/2 h-64 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand/25 blur-[80px]" aria-hidden="true" />
-              <img src={mockup} alt="RapidStylers mobile app" className="relative max-w-[280px] md:max-w-[360px] w-full h-auto" />
+          <div className="justify-self-center sm:justify-self-end">
+            <div className="relative flex justify-center">
+              <div className="pointer-events-none absolute top-1/2 left-1/2 h-[180px] w-[180px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand/15 blur-[70px]" aria-hidden="true" />
+              <img src={mockup} alt="RapidStylers mobile app" className="relative h-auto w-[130px] sm:w-[150px] md:w-[170px] lg:w-[200px]" />
             </div>
           </div>
         </div>

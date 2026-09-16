@@ -536,6 +536,21 @@ export class APIService {
         }
     }
 
+    /**
+     * The logged-in stylist's own reviews: the approved list clients see, plus a
+     * count of reviews still waiting on moderation. Scoped to the session token,
+     * so a stylist can never request another professional's reviews.
+     */
+    static async getOwnStylerReviews(){
+        try{
+            return await ApiClient.get("/styler/reviews");
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+
     /** Admin view: per-stylist business stats (appointments, revenue, popular services). */
     static async adminStylerBusinessSummaries(){
         try{

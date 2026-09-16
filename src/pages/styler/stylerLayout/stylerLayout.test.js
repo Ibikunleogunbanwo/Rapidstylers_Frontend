@@ -10,7 +10,11 @@ import StylerLayout from "./stylerLayout";
 import StylerTopBar from "./topNav";
 
 vi.mock("../../../hooks/remote/apiService", () => ({
-  APIService: { stylerSignOut: vi.fn() },
+  APIService: {
+    stylerSignOut: vi.fn(),
+    // The listing notice fetches the summary; the columns are stubbed below.
+    getStylerBusinessSummary: vi.fn(() => Promise.resolve({ data: { data: null } })),
+  },
 }));
 
 vi.mock("../../../utils/constant", () => ({
@@ -21,6 +25,8 @@ vi.mock("../../../utils/constant", () => ({
 }));
 
 vi.mock("../stylerComponents/businessSummary", () => ({ default: () => <aside>summary</aside> }));
+vi.mock("../stylerComponents/reviewsSummary", () => ({ default: () => <aside>reviews</aside> }));
+vi.mock("../stylerComponents/listingStatusNotice", () => ({ default: () => null }));
 
 const renderLayout = () =>
   render(
@@ -41,11 +47,12 @@ describe("the stylist sidebar", () => {
       "Services",
       "My work",
       "Payouts",
+      "Reviews",
       "My profile",
     ]) {
       expect(screen.getAllByText(label).length).toBe(1);
     }
-    expect(nav.querySelectorAll("a").length).toBe(8);
+    expect(nav.querySelectorAll("a").length).toBe(9);
   });
 
   it("marks the active section with a quiet brand pill, never the solid slab", () => {

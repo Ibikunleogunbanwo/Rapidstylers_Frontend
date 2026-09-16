@@ -104,6 +104,16 @@ describe("StylistProfile portfolio + reviews pagination", () => {
     expect(screen.queryByText(/Showing/)).not.toBeInTheDocument();
   });
 
+  test("names the empty portfolio instead of leaving a bare heading", () => {
+    renderProfile({ stylerPortfolio: [] });
+
+    expect(screen.getByText("Recent work")).toBeInTheDocument();
+    expect(
+      screen.getByText("This professional has not published work photos yet.")
+    ).toBeInTheDocument();
+    expect(screen.queryByAltText(/^img-/)).not.toBeInTheDocument();
+  });
+
   test("opens the lightbox full-size when a portfolio photo is clicked", () => {
     renderProfile();
 

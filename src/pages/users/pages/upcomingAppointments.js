@@ -5,10 +5,17 @@ import { APIService } from "../../../hooks/remote/apiService";
 import { showSuccessToastMessage } from "../../../utils/constant";
 import { vendorTimeZoneLabelStrict } from "../../../utils/vendorTimeZone";
 
-const Appointments = ({appointmentDate, arrivalTime, serviceProvider, serviceType, businessAddress,serviceName, numberOfPeople, appointmentStatus, appointmentPrice, servicePrice, travelFee, includedTravelKm, travelDistanceKm, appointmentId, statusCode, paymentStatus, paymentFailureCode, refundStatus, refundAmount, refundCompletedAt, stylerTimeZone, stylerProvince}) => {
+const Appointments = ({appointmentDate, arrivalTime, serviceProvider, serviceType, businessAddress,serviceName, numberOfPeople, appointmentStatus, appointmentPrice, servicePrice, travelFee, includedTravelKm, travelDistanceKm, appointmentId, statusCode, paymentStatus, paymentFailureCode, refundStatus, refundAmount, refundCompletedAt, stylerTimeZone, stylerProvince, serviceTime}) => {
   // The appointment's times live on the stylist's clock; label them so a
   // cross-province customer is never left guessing whose time it is.
   const zoneLabel = vendorTimeZoneLabelStrict({ timeZone: stylerTimeZone, province: stylerProvince });
+  // Visiting the stylist is the default way a booking is delivered, and it is
+  // the only one where the customer has to travel, so it is the only one that
+  // needs an address on screen.
+  const isHomeService = String(serviceTime || "").toLowerCase() === "homeservice";
+  const directionsHref = businessAddress
+    ? `https://maps.google.com/?q=${encodeURIComponent(businessAddress)}`
+    : "";
   const [menuVisible, setMenuVisible] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [retryingPayment, setRetryingPayment] = useState(false);
@@ -95,6 +102,33 @@ const Appointments = ({appointmentDate, arrivalTime, serviceProvider, serviceTyp
                   <span className="text-gray-400">CAD</span>
                 </div>
               </div>
+              {/* Where the customer has to be. Shown on the card itself, not
+                  behind the details menu, because a booking you have to travel
+                  to is useless without the address. */}
+              <div className="grid md:col-span-2" data-testid="appointment-delivery">
+                <span className="text-black/50">
+                  {isHomeService ? "Home service:" : "Where to go:"}
+                </span>
+                {isHomeService ? (
+                  <span className="text-[15px]">Your stylist travels to you</span>
+                ) : businessAddress ? (
+                  <span className="flex flex-wrap items-center gap-2">
+                    <span className="text-[15px]">{businessAddress}</span>
+                    <a
+                      href={directionsHref}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-xs font-medium text-brand hover:underline"
+                    >
+                      Get directions
+                    </a>
+                  </span>
+                ) : (
+                  <span className="text-[15px] text-gray-400">
+                    Your stylist has not published an address yet
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -125,14 +159,23 @@ const Appointments = ({appointmentDate, arrivalTime, serviceProvider, serviceTyp
               <div className="grid">
                 <span className="text-black/50">Service type:</span>
                 <span className="">{serviceType}</span>
-              </div>                  <div className="col-span-2 grid">
-                <div className="flex gap-2"><span className="text-black/50">Address:</span>{businessAddress ? (
-                  <a href={`https://maps.google.com/?q=${encodeURIComponent(businessAddress)}`} target="_blank" rel="noreferrer" className="text-brand hover:underline">[ Get directions ]</a>
-                ) : (
-                  <span className="text-gray-400">No address</span>
-                )}</div>
-                <span>{businessAddress}</span>
               </div>
+              <div className="grid">
+                <span className="text-black/50">Delivery:</span>
+                <span className="">{isHomeService ? "Home service" : "Visit the stylist"}</span>
+              </div>
+              {/* Only a visit booking sends the customer somewhere, so only a
+                  visit booking has an address to show. */}
+              {!isHomeService && (
+                <div className="col-span-2 grid">
+                  <div className="flex gap-2"><span className="text-black/50">Where to go:</span>{businessAddress ? (
+                    <a href={directionsHref} target="_blank" rel="noreferrer" className="text-brand hover:underline">[ Get directions ]</a>
+                  ) : (
+                    <span className="text-gray-400">Not published</span>
+                  )}</div>
+                  <span>{businessAddress || "Your stylist has not published an address yet"}</span>
+                </div>
+              )}
               <div className="grid">
                 <span className="text-black/50">Service name:</span>
                 <span>{serviceName}</span>
@@ -141,22 +184,24 @@ const Appointments = ({appointmentDate, arrivalTime, serviceProvider, serviceTyp
                 <span className="text-black/50">Service price:</span>
                 <span>{servicePrice || appointmentPrice} CAD</span>
               </div>
-              <div className="grid">
-                <span className="text-black/50">Travel fee:</span>
-                <span>
-                  {travelFee || "0.00"} CAD
-                  {travelFee && (
-                    <span className="block text-xs text-gray-500">
-                      Free within {includedTravelKm || 15}km, then a flat home-visit fee
-                    </span>
-                  )}
-                </span>
-              </div>
+              {isHomeService && (
+                <div className="grid">
+                  <span className="text-black/50">Travel fee:</span>
+                  <span>
+                    {travelFee || "0.00"} CAD
+                    {travelFee && (
+                      <span className="block text-xs text-gray-500">
+                        Free within {includedTravelKm || 15}km, then a flat home-visit fee
+                      </span>
+                    )}
+                  </span>
+                </div>
+              )}
               <div className="grid">
                 <span className="text-black/50">Total estimate:</span>
                 <span>{appointmentPrice} CAD</span>
               </div>
-              {travelDistanceKm != null && (
+              {isHomeService && travelDistanceKm != null && (
                 <div className="grid">
                   <span className="text-black/50">Estimated distance:</span>
                   <span>{travelDistanceKm}km away</span>

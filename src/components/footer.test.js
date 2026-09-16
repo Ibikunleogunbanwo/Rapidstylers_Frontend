@@ -67,3 +67,34 @@ describe("Footer contact details", () => {
     expect(text).not.toMatch(/@rapidstylers\.com\b/i);
   });
 });
+
+describe("Footer app-promo band", () => {
+  test("keeps the copy and the phone side by side once there is room", () => {
+    const { container } = renderFooter();
+    const grid = container.querySelector("div.grid.grid-cols-1");
+    const band = grid.closest("div.relative.overflow-hidden");
+
+    // The band previously stacked the copy above a full-width phone, which made
+    // it taller than a phone screen on its own. It now shares one row from the
+    // sm breakpoint up, and only the smallest screens stack.
+    expect(grid.className).toContain("sm:grid-cols-[1fr_auto]");
+    expect(grid.className).toContain("items-center");
+    // Padding is bound to the band, not to a viewport-filling py-24.
+    expect(band.className).toContain("py-10");
+    expect(band.className).not.toContain("py-24");
+  });
+
+  test("sizes the phone to sit beside the copy instead of driving the height", () => {
+    renderFooter();
+    const mockup = screen.getByAltText("RapidStylers mobile app");
+
+    // A fixed scale per breakpoint, never a full-width or max-w phone.
+    expect(mockup.className).toContain("w-[130px]");
+    expect(mockup.className).toContain("sm:w-[150px]");
+    expect(mockup.className).not.toContain("max-w-[280px]");
+    expect(mockup.className).not.toContain("md:max-w-[360px]");
+    // Both store links survive the restructure.
+    expect(screen.getByRole("link", { name: "Google Play coming soon" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "App Store coming soon" })).toBeInTheDocument();
+  });
+});

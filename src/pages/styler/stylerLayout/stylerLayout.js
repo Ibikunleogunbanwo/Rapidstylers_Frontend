@@ -1,6 +1,8 @@
 import { Link, Navigate, Outlet, useLocation } from "react-router-dom";
 import StylerTopBar from "./topNav";
 import BusinessSummary from "../stylerComponents/businessSummary";
+import ReviewsSummary from "../stylerComponents/reviewsSummary";
+import ListingStatusNotice from "../stylerComponents/listingStatusNotice";
 import { getAuthToken, getUserRole, clearAllSessionTokens, setIntendedRoute } from "../../../utils/constant";
 import { APIService } from "../../../hooks/remote/apiService";
 
@@ -19,6 +21,7 @@ const NAV_ITEMS = [
   { to: "/styler-dashboard/services", label: "Services" },
   { to: "/styler-dashboard/my-work", label: "My work" },
   { to: "/styler-dashboard/payouts", label: "Payouts" },
+  { to: "/styler-dashboard/reviews", label: "Reviews" },
   { to: "/styler-dashboard/profile", label: "My profile" },
 ];
 
@@ -38,7 +41,12 @@ const StylerLayout = () => {
   return (
     <div className="bg-white min-h-screen">
       <StylerTopBar />
-      <div className="pt-[70px] grid grid-cols-1 lg:grid-cols-12">
+      {/* Explains a profile that is hidden for having no address. Renders
+          nothing at all when there is nothing to say. */}
+      <div className="pt-[70px]">
+        <ListingStatusNotice />
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-12">
         <div className="px-4 col-span-1 lg:col-span-2 hidden lg:block relative">
           <nav className="grid gap-1 pt-8 pb-14 px-8 lg:px-0 text-[13px] font-medium fixed bg-white lg:bg-transparent">
             {NAV_ITEMS.map(({ to, label }) => (
@@ -68,7 +76,8 @@ const StylerLayout = () => {
             <div className="col-span-1 lg:col-span-7">
                 <Outlet />
             </div>
-            <div className="col-span-1 lg:col-span-3">
+            <div className="col-span-1 lg:col-span-3 grid gap-4">
+                <ReviewsSummary />
                 <BusinessSummary />
             </div>
           </div>

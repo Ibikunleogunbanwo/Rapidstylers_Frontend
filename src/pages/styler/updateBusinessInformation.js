@@ -45,11 +45,19 @@ const BusinessInformation = () => {
             placeholder={"e.g RapidStylers"}
             inputName={"businessName"}
           />
-          <div className="md:col-span-2 mb-6"><InputWithLabel
-            labelName={"Physical address"}
-            inputType={"text"}
-            inputName={"businessAddress"}
-          /></div>
+          <div className="md:col-span-2 mb-6">
+            <InputWithLabel
+              labelName={"Physical address"}
+              inputType={"text"}
+              inputName={"businessAddress"}
+            />
+            {/* Same rule as signup: this is where clients travel to. */}
+            <p className="mt-1.5 text-xs leading-[1.5] text-gray-500">
+              Clients travel here when they book a visit, so this must be a place they can
+              come to, not a mailing address. Removing it takes you out of search until a
+              new one is on file.
+            </p>
+          </div>
 
           <Button text={"Update details"} variant={"primary"} />
         </div>

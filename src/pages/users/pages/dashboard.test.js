@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { Provider } from "react-redux";
 import { configureStore } from "@reduxjs/toolkit";
@@ -150,5 +150,67 @@ describe("Appointment cards name the stylist's time zone", () => {
     );
     expect(upcomingCardTime).toBeDefined();
     expect(upcomingCardTime.textContent).not.toContain("(");
+  });
+});
+
+describe("Appointment card states where the booking happens", () => {
+  const visit = {
+    appointmentDate: "2026-09-20",
+    arrivalTime: "14:00",
+    appointmentId: "a-visit",
+    statusCode: "3",
+    status: "Accepted",
+    price: "120",
+    serviceProvider: "Braid Bar",
+    serviceTime: "visitBarber",
+    businessAddress: "700 2 St SW, Calgary, Alberta",
+  };
+  const home = { ...visit, appointmentId: "a-home", serviceTime: "homeService" };
+
+  const renderCard = (props) =>
+    render(
+      <MemoryRouter>
+        <Appointments {...props} />
+      </MemoryRouter>
+    );
+
+  // The card and the details modal both describe the delivery, so scope the
+  // queries to the card the customer actually sees first.
+  const cardOf = (props) => {
+    renderCard(props);
+    return within(screen.getByTestId("appointment-delivery"));
+  };
+
+  it("shows the stylist's address on the card when the customer is visiting", () => {
+    const card = cardOf(visit);
+
+    // No click needed: a booking you have to travel to is useless without the
+    // address, so it is on the card rather than behind the details menu.
+    expect(card.getByText("Where to go:")).toBeTruthy();
+    expect(card.getByText("700 2 St SW, Calgary, Alberta")).toBeTruthy();
+    expect(card.getByRole("link", { name: "Get directions" })).toHaveAttribute(
+      "href",
+      "https://maps.google.com/?q=700%202%20St%20SW%2C%20Calgary%2C%20Alberta"
+    );
+  });
+
+  it("does not send the customer anywhere for a home-service booking", () => {
+    const card = cardOf(home);
+
+    expect(card.getByText("Home service:")).toBeTruthy();
+    expect(card.getByText("Your stylist travels to you")).toBeTruthy();
+    expect(card.queryByText("700 2 St SW, Calgary, Alberta")).toBeNull();
+    expect(card.queryByRole("link", { name: "Get directions" })).toBeNull();
+  });
+
+  it("treats a booking with no delivery recorded as a visit, like the stylist side does", () => {
+    expect(cardOf({ ...visit, serviceTime: null }).getByText("Where to go:")).toBeTruthy();
+  });
+
+  it("says so plainly when the stylist has published no address", () => {
+    const card = cardOf({ ...visit, businessAddress: null });
+
+    expect(card.getByText("Your stylist has not published an address yet")).toBeTruthy();
+    expect(card.queryByRole("link", { name: "Get directions" })).toBeNull();
   });
 });

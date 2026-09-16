@@ -91,6 +91,7 @@ const Dashboard = ({ setPageTitle }) => {
                           stylerId={val.stylerData?.stylerId}
                           serviceType={val.subServiceData?.serviceTypeName || "Service"}
                           businessAddress={val.stylerData?.businessAddress}
+                          serviceTime={val?.serviceTime}
                           serviceName={val.subServiceData?.name}
                           numberOfPeople={val?.noOfPeople || "1"}
                           appointmentStatus={val?.status}

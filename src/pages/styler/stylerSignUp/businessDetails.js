@@ -186,6 +186,15 @@ const BusinessDetails = () => {
                 value={values.address}
                 onChange={handleAddressChange(setValues)}
               />
+              {/* Say who reads this and why. Clients are given this address to
+                  travel to, and a profile without one cannot be listed, so it
+                  is the last field a professional should treat as optional. */}
+              <p className="mt-1.5 text-xs leading-[1.5] text-gray-500">
+                Clients travel here when they book a visit, so enter the place they should
+                come to, not a mailing address. It shows on your public profile with a
+                directions link and again in their booking confirmation. We cannot approve
+                your account or show you in search until we have it.
+              </p>
               {touched.address && errors.address && (
                 <p className="text-red-500 text-xs mt-1">{errors.address}</p>
               )}

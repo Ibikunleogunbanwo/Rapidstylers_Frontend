@@ -406,6 +406,7 @@ const StylistProfile = ({ setPageTitle }) => {
                     stylerLongitude={info.longitude}
                     stylerProvince={info.province}
                     stylerTimeZone={info.timeZone}
+                    stylerAddress={info}
                   />
                 </div>
               ))
@@ -423,6 +424,11 @@ const StylistProfile = ({ setPageTitle }) => {
       <Section muted pad="py-16 md:py-24">
         <Eyebrow>Portfolio</Eyebrow>
         <Statement>Recent work</Statement>
+        {portfolio.length === 0 && (
+          <p className="mt-8 text-[14px] text-black/55">
+            This professional has not published work photos yet.
+          </p>
+        )}
         <div className="mt-10 grid grid-cols-2 gap-4 md:grid-cols-3">
           {portfolio.length > 0 &&
             visiblePortfolio.map((val, key) => (

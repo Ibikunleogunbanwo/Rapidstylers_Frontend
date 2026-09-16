@@ -221,8 +221,29 @@ const LandingPage = () => {
         {/* benefits for clients */}
         <div className="px-4 md:px-[50px] py-16 grid grid-cols-1 lg:grid-cols-2 items-center gap-6 bg-black">
           <div className="">
-            <img src={canada2} alt="" loading="lazy" decoding="async" className="rounded-3xl hidden lg:block" />
-            <img src={canada} alt="" loading="lazy" decoding="async" className="block lg:hidden" />
+            {/* Intrinsic dimensions are declared so the browser reserves the
+                image's space before it loads. Without them this band grew by
+                ~376px once the picture arrived, which shifted every section
+                below it and moved the visitor's restored scroll position with
+                them. */}
+            <img
+              src={canada2}
+              alt=""
+              width="1280"
+              height="1600"
+              loading="lazy"
+              decoding="async"
+              className="rounded-3xl w-full h-auto hidden lg:block"
+            />
+            <img
+              src={canada}
+              alt=""
+              width="2000"
+              height="1162"
+              loading="lazy"
+              decoding="async"
+              className="w-full h-auto block lg:hidden"
+            />
           </div>
           <div className="">
             <h2 className="text-[clamp(1.75rem,3vw,2.5rem)] font-normal leading-[1.1] tracking-[-0.02em] text-white mb-8">Why choose RapidStylers?</h2>
