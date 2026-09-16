@@ -1,22 +1,39 @@
 import { render, screen, fireEvent, within } from "@testing-library/react";
 import StylistProfile from "./stylistProfile";
+// Resolves to the vi.mock() below (hoisted).
+import { APIService } from "../../../hooks/remote/apiService";
 
 vi.mock("react-router-dom", () => ({
   useParams: () => ({ stylerId: btoa("S1"), stylerName: btoa("Pro One") }),
+  // BackHome and Footer render Links; pageSections and SectionPager stay real.
+  Link: ({ to, children }) => <a href={to}>{children}</a>,
 }));
 vi.mock("../userLayout/functionalEffects", () => ({
   useSingleStylerProfile: vi.fn(),
 }));
 vi.mock("react-redux", () => ({
   useSelector: () => ({ loading: false }),
+  useDispatch: () => vi.fn(),
 }));
 vi.mock("../../../components/spinner", () => ({ default: () => null }));
+vi.mock("../../../components/footer", () => ({ default: () => <footer data-testid="footer" /> }));
 vi.mock("../../../components/goBack", () => ({ default: () => <div data-testid="back" /> }));
 vi.mock("../../../components/selectService", () => ({ default: () => null }));
 vi.mock("../../../utils/constant", () => ({
-  getAuthToken: () => null,
+  // Mirror the real implementations' sessionStorage behavior so tests can
+  // drive signed-in/role state by seeding storage directly.
+  getAuthToken: () => sessionStorage.getItem("rapidstylers_auth_token"),
+  getUserRole: () => sessionStorage.getItem("rapidstylers_user_role") || "",
   showErrorToastMessage: vi.fn(),
   showSuccessToastMessage: vi.fn(),
+  // userReducer is in this page's import graph and evaluates
+  // retrieveFromLocalStorage(...) at module scope (initialState).
+  retrieveFromLocalStorage: () => ({}),
+  setAuthToken: vi.fn(),
+  setRefreshToken: vi.fn(),
+  setUserRole: vi.fn(),
+  clearAllSessionTokens: vi.fn(),
+  getRefreshToken: () => null,
 }));
 vi.mock("../../../hooks/remote/apiService", () => ({
   APIService: { listSavedStylists: vi.fn(), saveStylist: vi.fn(), removeSavedStylist: vi.fn() },
@@ -158,5 +175,80 @@ describe("StylistProfile portfolio + reviews pagination", () => {
 
     fireEvent.keyDown(window, { key: "ArrowLeft" });
     expect(within(screen.getByRole("dialog")).getByText("1 / 12")).toBeInTheDocument();
+  });
+});
+
+describe("No-services empty state", () => {
+  test("a visitor sees an honest message and a way out, not a dead end", () => {
+    sessionStorage.removeItem("rapidstylers_auth_token");
+    renderProfile({
+      stylerInformation: {
+        reviewCount: 0, averageRating: "0", payoutReady: true,
+        serviceTypeId: "2", serviceTypeName: "Eyelash Technician",
+      },
+      stylerSubService: [],
+    });
+
+    expect(screen.getByText("Nothing bookable yet")).toBeInTheDocument();
+    expect(screen.getByText(/hasn't added services yet/i)).toBeInTheDocument();
+    const link = screen.getByRole("link", { name: /Browse other eyelash technicians/i });
+    expect(link.getAttribute("href")).toBe(
+      "/search?serviceTypeId=2&serviceTypeName=Eyelash%20Technician"
+    );
+  });
+
+  test("without a category the card still offers the generic search exit", () => {
+    sessionStorage.removeItem("rapidstylers_auth_token");
+    renderProfile({
+      stylerInformation: { reviewCount: 0, averageRating: "0", payoutReady: true },
+      stylerSubService: [],
+    });
+
+    const link = screen.getByRole("link", { name: "Browse professionals" });
+    expect(link.getAttribute("href")).toBe("/search");
+  });
+
+  test("a signed-in stylist sees the owner action instead", () => {
+    sessionStorage.setItem("rapidstylers_auth_token", "styler-jwt");
+    sessionStorage.setItem("rapidstylers_user_role", "STYLER");
+    // With a token present the save-bookmark effect really fires.
+    APIService.listSavedStylists.mockResolvedValue({ data: { data: [] } });
+    try {
+      renderProfile({
+        stylerInformation: { reviewCount: 0, averageRating: "0", payoutReady: true, serviceTypeName: "Barber" },
+        stylerSubService: [],
+      });
+
+      expect(screen.getByText(/You have no services listed/i)).toBeInTheDocument();
+      const link = screen.getByRole("link", { name: /Add your first service/i });
+      expect(link.getAttribute("href")).toBe("/styler-dashboard/services");
+      // The visitor exit must NOT render for the owner view.
+      expect(screen.queryByRole("link", { name: /Browse other/i })).not.toBeInTheDocument();
+    } finally {
+      sessionStorage.clear();
+    }
+  });
+});
+
+describe("StylistProfile names the vendor's time zone on working hours", () => {
+  test("the hours card labels its windows with the stylist's zone", () => {
+    renderProfile({
+      stylerInformation: {
+        reviewCount: 6, averageRating: "4.5", payoutReady: true,
+        province: "British Columbia", timeZone: "America/Vancouver",
+      },
+      availability: [{ dayOfWeek: 2, startTime: "09:00", endTime: "17:00" }],
+    });
+
+    expect(screen.getByText(/Book during these weekly windows \(Pacific Time\)/)).toBeInTheDocument();
+  });
+
+  test("an Alberta stylist (or any default) reads Mountain Time", () => {
+    renderProfile({
+      stylerInformation: { reviewCount: 6, averageRating: "4.5", payoutReady: true, province: "Alberta" },
+      availability: [{ dayOfWeek: 5, startTime: "10:00", endTime: "18:00" }],
+    });
+
+    expect(screen.getByText(/Book during these weekly windows \(Mountain Time\)/)).toBeInTheDocument();
   });
 });

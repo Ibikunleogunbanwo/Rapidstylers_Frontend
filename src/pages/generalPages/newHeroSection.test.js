@@ -197,3 +197,34 @@ describe("Hero header auth-conditional nav", () => {
     await waitFor(() => expect(getPath()).toBe("/"));
   });
 });
+
+describe("Hero service pills", () => {
+  beforeEach(() => {
+    session = null;
+    dispatchMock = vi.fn();
+    useSelector.mockImplementation((selector) =>
+      selector({ user: { userSessionData: session, loading: false } })
+    );
+    useDispatch.mockReturnValue(dispatchMock);
+  });
+
+  test("each service renders as a link that deep-links into a pre-filtered search", async () => {
+    APIService.getStylerType.mockResolvedValue({
+      data: { data: [{ serviceTypeId: 2, serviceTypeName: "Eyelash Technician" }, { serviceTypeId: 7, serviceTypeName: "Barber" }] },
+    });
+    renderHero();
+
+    const lashes = await screen.findByRole("link", { name: /Eyelash Technician/ });
+    expect(lashes.getAttribute("href")).toBe("/search?serviceTypeId=2&serviceTypeName=Eyelash%20Technician");
+    const barber = screen.getByRole("link", { name: /Barber/ });
+    expect(barber.getAttribute("href")).toBe("/search?serviceTypeId=7&serviceTypeName=Barber");
+  });
+
+  test("no stray service pills render before the categories load", () => {
+    APIService.getStylerType.mockResolvedValue({ data: { data: [] } });
+    renderHero();
+
+    // An empty category list must render nothing rather than blank pills.
+    expect(document.querySelectorAll("a[href*='serviceTypeId=']")).toHaveLength(0);
+  });
+});

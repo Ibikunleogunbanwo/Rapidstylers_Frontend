@@ -66,6 +66,34 @@ export const getIntendedRoute = () => sessionStorage.getItem(INTENDED_ROUTE_KEY)
 export const setIntendedRoute = (route) => sessionStorage.setItem(INTENDED_ROUTE_KEY, route);
 export const clearIntendedRoute = () => sessionStorage.removeItem(INTENDED_ROUTE_KEY);
 
+// In-progress booking intent, written when a signed-out visitor opens the
+// booking modal and picked a service/slot before auth interrupted them (in-
+// modal quick-account, hero login, or a page reload mid-booking). Session-
+// scoped like INTENDED_ROUTE: cleared on logout so a shared computer never
+// re-opens someone else's half-formed booking.
+export const BOOKING_INTENT_KEY = "rapidstylers_booking_intent";
+export const getBookingIntent = () => {
+  try {
+    const raw = sessionStorage.getItem(BOOKING_INTENT_KEY);
+    if (!raw) return null;
+    const intent = JSON.parse(raw);
+    // A stale intent must never auto-open a picker with no service on it.
+    if (!intent || typeof intent !== "object" || !intent.stylerId || !intent.subServiceId) return null;
+    return intent;
+  } catch {
+    return null;
+  }
+};
+export const setBookingIntent = (intent) => {
+  try {
+    sessionStorage.setItem(BOOKING_INTENT_KEY, JSON.stringify(intent));
+  } catch {
+    // Storage full or unavailable: booking still works, it just is not
+    // protected against a reload mid-flow.
+  }
+};
+export const clearBookingIntent = () => sessionStorage.removeItem(BOOKING_INTENT_KEY);
+
 // User-picked location (lat/lng/city/province) persists in localStorage so it
 // survives reloads while logged in, but it is SESSION-scoped: on logout OR a
 // token timeout it must be dropped so the next login re-detects from the
@@ -99,6 +127,7 @@ export const clearAllSessionTokens = () => {
   sessionStorage.removeItem(ADMIN_ROLE_KEY);
   sessionStorage.removeItem(USER_ROLE_STORAGE_KEY);
   clearIntendedRoute();
+  clearBookingIntent();
   clearSavedUserLocation();
 };
 

@@ -2,6 +2,7 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import SelectService from "./selectService";
 // Resolves to the vi.mock() below (hoisted), so APIService is the mock.
 import { APIService } from "../hooks/remote/apiService";
+import { getBookingIntent, setBookingIntent } from "../utils/constant";
 
 // react-scripts resets mock implementations between tests, so the factory only
 // creates the fns and beforeEach wires the resolved values — the same pattern
@@ -40,6 +41,10 @@ vi.mock("../utils/constant", () => ({
   retrieveFromLocalStorage: () => ({}),
   showErrorToastMessage: vi.fn(),
   showSuccessToastMessage: vi.fn(),
+  // Booking-intent persistence (signed-out visitors).
+  getBookingIntent: vi.fn(() => null),
+  setBookingIntent: vi.fn(),
+  clearBookingIntent: vi.fn(),
 }));
 
 beforeEach(() => {
@@ -101,5 +106,139 @@ describe("SelectService booking modal viewport containment", () => {
     // The close icon sits in the sticky header of the booking dialog.
     fireEvent.click(document.querySelector("img[alt='']"));
     expect(document.querySelector("div.fixed").className).toContain("hidden");
+  });
+});
+
+describe("Booking intent deep-linking for signed-out visitors", () => {
+  beforeEach(() => {
+    getBookingIntent.mockReturnValue(null);
+  });
+
+  const renderOpen = () => {
+    render(
+      <SelectService
+        serviceName="Braids"
+        servicePrice="80"
+        stylerId="s1"
+        subServiceId="ss1"
+      />
+    );
+    fireEvent.click(screen.getByText("Book service"));
+    return document.querySelector("div.fixed");
+  };
+
+  test("persists the picked slot to sessionStorage once a date and time are chosen", () => {
+    renderOpen();
+
+    // Pick a day and a time; both are needed before the intent is written.
+    fireEvent.click(screen.getByText("4:00 pm"));
+    expect(setBookingIntent).not.toHaveBeenCalled();
+    fireEvent.click(screen.getAllByText(/15/)[0]);
+    expect(setBookingIntent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        stylerId: "s1",
+        subServiceId: "ss1",
+        serviceName: "Braids",
+        time: "4:00 pm",
+      })
+    );
+  });
+
+  test("restores the exact month, day and time from a stored intent on reopen", () => {
+    getBookingIntent.mockReturnValue({
+      stylerId: "s1",
+      subServiceId: "ss1",
+      serviceName: "Braids",
+      month: "October",
+      day: 9,
+      time: "10:30 am",
+      serviceType: "homeService",
+    });
+
+    renderOpen();
+
+    // The restored selection is visible: October selected, 10:30 am and home
+    // service both rendered as the active (brand-colored) choice.
+    expect(document.querySelector("select").value).toBe("October");
+    const activeTime = [...document.querySelectorAll("div")].find(
+      (el) => el.className.includes("bg-brand") && el.textContent.trim() === "10:30 am"
+    );
+    expect(activeTime, "the picked time must be re-highlighted on reopen").toBeTruthy();
+    const activeType = [...document.querySelectorAll("div")].find(
+      (el) => el.className.includes("bg-brand") && el.textContent.trim() === "Home service"
+    );
+    expect(activeType, "the picked service type must be re-highlighted on reopen").toBeTruthy();
+  });
+
+  test("ignores an intent belonging to a different stylist or service", () => {
+    getBookingIntent.mockReturnValue({
+      stylerId: "other-stylist",
+      subServiceId: "ss1",
+      month: "October",
+      day: 9,
+      time: "10:30 am",
+      serviceType: "homeService",
+    });
+
+    renderOpen();
+
+    // September (the current month) stays selected; nothing was hijacked.
+    expect(document.querySelector("select").value).toBe(new Date().toLocaleString("en-US", { month: "long" }));
+    expect([...document.querySelectorAll("div")].some(
+      (el) => el.className.includes("bg-brand") && el.textContent.trim() === "10:30 am"
+    )).toBe(false);
+  });
+
+  test("an outside-hours restored time is dropped instead of reaching the submit button", () => {
+    getBookingIntent.mockReturnValue({
+      stylerId: "s1",
+      subServiceId: "ss1",
+      month: "September",
+      day: 9,
+      time: "4:00 am",
+      serviceType: "visitBarber",
+    });
+    // The stylist works from 9am: 4:00 am is outside working hours.
+    APIService.singleStylerData.mockResolvedValue({
+      data: { data: {
+        availability: [{ dayOfWeek: 2, startTime: "09:00", endTime: "17:00" }],
+        bookedSlots: [],
+        exceptions: [],
+      }},
+    });
+
+    renderOpen();
+
+    const stalePick = [...document.querySelectorAll("div")].find(
+      (el) => el.className.includes("bg-brand") && el.textContent.trim() === "4:00 am"
+    );
+    expect(stalePick, "a restored time outside working hours must not stay selected").toBeUndefined();
+  });
+});
+
+describe("SelectService shows the stylist's time zone on the pickers", () => {
+  test("the arrival-time block names the stylist's local time zone when provided", () => {
+    render(
+      <SelectService
+        serviceName="Haircut"
+        servicePrice="60"
+        stylerId="s1"
+        subServiceId="ss1"
+        stylerProvince="Ontario"
+        stylerTimeZone="America/Toronto"
+      />
+    );
+    fireEvent.click(screen.getByText("Book service"));
+
+    expect(screen.getByText(/Times are in the stylist's local time \(Eastern Time\)/)).toBeInTheDocument();
+  });
+
+  test("with no zone data at all, the line states the app's default assumption", () => {
+    // The backend reads NULL-zone rows as America/Edmonton, so naming Mountain
+    // Time is honest — it is the exact zone the system assumes — and never blank.
+    render(<SelectService serviceName="Haircut" servicePrice="60" stylerId="s1" subServiceId="ss1" />);
+    fireEvent.click(screen.getByText("Book service"));
+
+    expect(screen.getByText(/Times are in the stylist's local time \(Mountain Time\)/)).toBeInTheDocument();
   });
 });

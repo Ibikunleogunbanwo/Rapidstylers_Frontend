@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import LandingPage from "./landing";
+import { APIService } from "../../hooks/remote/apiService";
 
 /**
  * The home page is the one surface the design-system pass has not been applied
@@ -112,5 +113,41 @@ describe("Home page layout", () => {
     expect(block.textContent).not.toMatch(
       /sound familiar|what if|slipping out of reach|feels like a luxury|salon struggle/i
     );
+  });
+});
+
+describe("Home page blog cards", () => {
+  test("the offline fallback renders our own photos, never remote stock URLs", () => {
+    // listBlog deliberately never settles in this file, so the fallback posts
+    // are what render. Their old freepik image URLs carried 2024 signature
+    // params that had expired, so the cards showed broken images exactly when
+    // the backend was down.
+    renderHome();
+
+    const blogSection = document.getElementById("blog");
+    const sources = [...blogSection.querySelectorAll("img")].map((i) => i.getAttribute("src"));
+    expect(sources.length).toBeGreaterThanOrEqual(4);
+    expect(
+      sources.filter((src) => !src.startsWith("/images/gallery/")),
+      "every fallback card must use a verified local gallery photo"
+    ).toEqual([]);
+  });
+
+  test("cards with a post id deep-link to the article, the rest fall back to the blog index", async () => {
+    APIService.listBlog.mockResolvedValueOnce({
+      data: {
+        data: [
+          { id: 11, title: "Deep link post", category: "Guide", dateCreated: "Sep 15, 2026", imageUrl: "" },
+          { id: null, title: "Legacy post", category: "Guide", dateCreated: "Sep 15, 2026", imageUrl: "" },
+        ],
+      },
+    });
+    renderHome();
+
+    const deepLink = (await screen.findByText("Deep link post")).closest("a");
+    expect(deepLink.getAttribute("href")).toBe("/blog/11");
+
+    const fallbackLink = screen.getByText("Legacy post").closest("a");
+    expect(fallbackLink.getAttribute("href")).toBe("/blog");
   });
 });

@@ -54,14 +54,19 @@ const PROVINCES = [
   "Saskatchewan",
 ];
 
+// Offline fallback for when the blog API is unreachable. The old entries used
+// freepik URLs whose 2024 signature links had expired, so the cards rendered
+// broken images exactly when the backend was down. These are our own verified
+// work photos from the public gallery, matched to each article's topic.
 const FALLBACK_BLOGS = [
-  { img: "https://img.freepik.com/free-photo/ai-generated-cute-girl-pic_23-2150649874.jpg?w=826", cat: "Braiding", title: "The Ultimate Guide to Braiding: From Basic to Intricate Styles", date: "May 29, 2024" },
-  { img: "https://img.freepik.com/free-photo/side-view-woman-styling-hair_23-2149659566.jpg?t=st=1708868604~exp=1708872204~hmac=a724d6651959e05a587b791dba7dbab024b8dc529d20566c14741d134583e345&w=826", cat: "Styling", title: "Quick and Easy Hairstyles for Busy Mornings", date: "May 29, 2024" },
-  { img: "https://img.freepik.com/free-photo/medium-shot-woman-arranging-hair_23-2149634993.jpg?t=st=1708868767~exp=1708872367~hmac=44c9b42f97f98a74588368862e364a6e2f7938b61e1563dcc8fd3ef51b42be57&w=826", cat: "Hair Care", title: "Healthy Hair Tips: Essential Care and Maintenance Guide", date: "May 29, 2024" },
-  { img: "https://img.freepik.com/free-photo/cool-girl-with-short-hair-looking-into-camera-background-white-backdrop-brunette-lady-with-glass-beige-outside-posing-backdrop-wall_197531-29357.jpg?t=st=1708868867~exp=1708872467~hmac=8acc269316521de8d8e9ca7cf302d3ef600de561bee3350a281a67bd7644845a&w=826", cat: "Trends", title: "Short and Chic: Modern Hairstyles for Short Haircuts", date: "May 29, 2024" },
+  { img: "/images/gallery/g-braids-2.jpg", cat: "Braiding", title: "The Ultimate Guide to Braiding: From Basic to Intricate Styles", date: "May 29, 2024" },
+  { img: "/images/gallery/g-natural-hair-1.jpg", cat: "Styling", title: "Quick and Easy Hairstyles for Busy Mornings", date: "May 29, 2024" },
+  { img: "/images/gallery/g-natural-hair-3.jpg", cat: "Hair Care", title: "Healthy Hair Tips: Essential Care and Maintenance Guide", date: "May 29, 2024" },
+  { img: "/images/gallery/g-buzz-cut-1.jpg", cat: "Trends", title: "Short and Chic: Modern Hairstyles for Short Haircuts", date: "May 29, 2024" },
 ];
 
 const normalizeBlog = (p) => ({
+  id: p.id ?? null,
   img: p.imageUrl || p.img || "",
   cat: p.category || p.cat || "Article",
   title: p.title || "Untitled",
@@ -106,7 +111,7 @@ const BlogSection = () => {
         {visible.map((post, i) => (
           <Link
             key={post.title + i}
-            to="/blog"
+            to={post.id ? `/blog/${post.id}` : "/blog"}
             className="group"
           >
             <div className="aspect-[4/5] overflow-hidden bg-neutral">

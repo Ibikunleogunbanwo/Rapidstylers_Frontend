@@ -6,8 +6,9 @@ import Input from "../components/input";
 import { APIService } from "../hooks/remote/apiService";
 import { useDispatch } from "react-redux";
 import { verifySignUpEmailAddress, verifyOtpCode, createUserAccount, userAuthenticate, setUserSession } from "../hooks/local/userReducer";
-import { STRIPE_PUBLISHABLE_KEY, getAuthToken, setAuthToken, setRefreshToken, showErrorToastMessage, showSuccessToastMessage } from "../utils/constant";
+import { STRIPE_PUBLISHABLE_KEY, getAuthToken, setAuthToken, setRefreshToken, showErrorToastMessage, showSuccessToastMessage, getBookingIntent, setBookingIntent, clearBookingIntent } from "../utils/constant";
 import { useUserLocation } from "../context/LocationContext";
+import { vendorTimeZoneLabel } from "../utils/vendorTimeZone";
 import OtpInputs from "./otpInputs";
 import GoogleSignInButton from "./googleSignInButton";
 import BookingCardField from "./bookingCardField";
@@ -23,9 +24,9 @@ const stripePromise = STRIPE_PUBLISHABLE_KEY ? loadStripe(STRIPE_PUBLISHABLE_KEY
 // customer tries to book. Identity is required (bookings/tokens/payments are
 // keyed to an account), so we collect the minimum — email, one-time code,
 // password — and defer name/address/phone to a later profile step.
-const SIGNUP_STEPS = Object.freeze({ EMAIL: "email", OTP: "otp", PASSWORD: "password" });
+const SIGNUP_STEPS = Object.freeze({ EMAIL: "email", OTP: "otp", PASSWORD: "password", SIGNIN: "signin" });
 
-const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerId, subServiceId, stylerLatitude, stylerLongitude}) => {
+const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerId, subServiceId, stylerLatitude, stylerLongitude, stylerProvince, stylerTimeZone}) => {
   const [bookAppointmentForm, setBookAppointmentForm] = useState(false);
   const dispatch = useDispatch();
   const { location: userLocation } = useUserLocation() || {};
@@ -35,6 +36,9 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
   // Active bookings [{appointmentDate, arrivalTime, durationMinutes, status}] —
   // their service windows are blocked until cancelled or rejected.
   const [bookedSlots, setBookedSlots] = useState([]);
+  // The stylist's own clock for their hours and slots, passed from the profile
+  // page so the pickers can say which time zone the times are written in.
+  const stylistZoneLabel = vendorTimeZoneLabel({ timeZone: stylerTimeZone, province: stylerProvince });
 
   // ── In-modal quick-account flow (signed-out customers) ────────────────
   const [signupStep, setSignupStep] = useState(null);           // null | "email" | "otp" | "password"
@@ -44,6 +48,8 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
   const [signupBusy, setSignupBusy] = useState(false);
   const [signupError, setSignupError] = useState("");
   const signupOtpRefs = useRef([]);
+  const [signinEmail, setSigninEmail] = useState("");
+  const [signinPassword, setSigninPassword] = useState("");
 
   const toMinutes = (value) => {
     const m = /^(\d{1,2}):(\d{2})\s*(am|pm)?$/i.exec((value || "").trim());
@@ -74,13 +80,19 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
 
   const isDayAvailable = (weekday) => {
     if (availability === null) return true; // still loading — don't block the picker
-    return (availability || []).some((s) => Number(s.dayOfWeek) === weekday);
+    const slots = availability || [];
+    // No hours on file: the amber note in the picker promises the visitor can
+    // still request a date for the stylist to confirm, so nothing is blocked.
+    if (slots.length === 0) return true;
+    return slots.some((s) => Number(s.dayOfWeek) === weekday);
   };
 
   const isTimeAvailable = (timeLabel) => {
     if (availability === null) return true;
     const slots = availability || [];
-    if (slots.length === 0) return false;
+    // No hours on file: the amber note in the picker promises the visitor can
+    // still request a time for the stylist to confirm, so nothing is blocked.
+    if (slots.length === 0) return true;
     if (!selectedDay) return true; // no date picked yet — don't block the grid
     const weekday = new Date(currentYear, months.indexOf(selectedMonth), selectedDay).getDay();
     const daySlots = slots.filter((s) => Number(s.dayOfWeek) === weekday);
@@ -208,6 +220,54 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
     setDaysInMonth(days);
   };
 
+  // ── Booking-intent persistence (signed-out visitors) ────────────────────
+  // The picked service and slot survive auth interruptions: once a date and
+  // time are both picked they are written to sessionStorage, and when this
+  // modal opens again for the same service (in-modal quick-account finished
+  // elsewhere, a hero login, or a page reload mid-booking) the exact slot is
+  // restored. Cleared only when the booking request is actually submitted.
+  useEffect(() => {
+    if (!bookAppointmentForm || !selectedDay || !selectedTime) return;
+    setBookingIntent({
+      stylerId: String(stylerId),
+      subServiceId: String(subServiceId),
+      serviceName,
+      month: selectedMonth,
+      day: selectedDay,
+      time: selectedTime,
+      serviceType: selectedOption,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bookAppointmentForm, selectedDay, selectedTime, selectedOption, selectedMonth]);
+
+  useEffect(() => {
+    if (!bookAppointmentForm) return;
+    const intent = getBookingIntent();
+    if (!intent) return;
+    if (intent.stylerId !== String(stylerId) || intent.subServiceId !== String(subServiceId)) return;
+    if (intent.serviceType === "visitBarber" || intent.serviceType === "homeService") {
+      setSelectedOption(intent.serviceType);
+    }
+    if (intent.month && months.includes(intent.month)) {
+      setSelectedMonth(intent.month);
+      setDaysInMonth(generateDaysInMonth(currentYear, months.indexOf(intent.month)));
+    }
+    if (intent.day) setSelectedDay(intent.day);
+    if (intent.time) setSelectedTime(intent.time);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bookAppointmentForm]);
+
+  // Availability often arrives after the visitor already picked a time (it
+  // loads when the modal opens, or a restored booking intent preselects a
+  // slot). A picked time that turns out to sit outside the stylist's working
+  // hours must not survive to the submit button — drop it so the picker can
+  // show a valid choice instead of failing at request time.
+  useEffect(() => {
+    if (availability === null || !selectedTime || !selectedDay) return;
+    if (!isTimeAvailable(selectedTime)) setSelectedTime(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [availability, selectedTime, selectedDay]);
+
   const [numberOfPeople, setNumberOfPeople] = useState(1);
   const [bookingEstimate, setBookingEstimate] = useState(null);
   const [estimateLoading, setEstimateLoading] = useState(false);
@@ -299,6 +359,7 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
         paymentMethodId,
       });
       showSuccessToastMessage("Booking request sent. The stylist will confirm shortly.");
+      clearBookingIntent();
       closeBookingForm();
     } catch (error) {
       // Card collection errors (thrown by createPaymentMethod) and booking
@@ -420,7 +481,11 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
       // Now sign in so the booking request below carries a valid JWT.
       const signInRes = await dispatch(userAuthenticate({ emailAddress: signupEmail.trim(), password: signupPassword }));
       if (signInRes.payload?.statusCode !== "200") {
-        setSignupError("Account created. Please sign in to finish your booking.");
+        // Account exists now, so send them to the inline sign-in panel with the
+        // email prefilled — never strand the booking on a dead-end message.
+        setSignupPassword("");
+        switchToSignin(signupEmail.trim());
+        setSignupError("Account created. Sign in to finish your booking.");
         return;
       }
       setSignupStep(null);
@@ -437,7 +502,47 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
     setSignupStep(null);
     setSignupError("");
     setSignupPassword("");
+    setSigninPassword("");
     setSignupOtp(["", "", "", "", "", ""]);
+  };
+
+  // Existing customers who open the quick-account flow by mistake (they
+  // already have an account, or they prefer signing in) switch inline. The
+  // booking modal keeps every state var, so the picked slot is untouched.
+  const switchToSignin = (prefillEmail) => {
+    setSignupError("");
+    if (prefillEmail) setSigninEmail(prefillEmail);
+    setSignupStep(SIGNUP_STEPS.SIGNIN);
+  };
+
+  const switchToSignup = () => {
+    setSignupError("");
+    setSigninPassword("");
+    setSignupStep(SIGNUP_STEPS.EMAIL);
+  };
+
+  const handleSigninSubmit = async (e) => {
+    e.preventDefault();
+    setSignupError("");
+    if (!signinEmail.trim() || !signinPassword) {
+      setSignupError("Enter your email and password to sign in.");
+      return;
+    }
+    setSignupBusy(true);
+    try {
+      const res = await dispatch(userAuthenticate({ emailAddress: signinEmail.trim(), password: signinPassword }));
+      if (res.payload?.statusCode !== "200") {
+        setSignupError(res.payload?.message || "That email and password didn't match. Try again.");
+        return;
+      }
+      setSignupStep(null);
+      setSigninPassword("");
+      performBooking();
+    } catch (error) {
+      setSignupError("We couldn't sign you in right now. Please try again.");
+    } finally {
+      setSignupBusy(false);
+    }
   };
 
   // Google sign-in (customer-only on the backend). Auto-creates the customer
@@ -590,6 +695,11 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
             <div className="px-6">
               <p className="font-semibold mb-2 text-[15px]">Arrival time:</p>
               <p className="text-xs text-gray-500 mb-2">This service takes {durationMinutes} minutes.</p>
+              {stylistZoneLabel && (
+                <p className="text-xs text-gray-500 mb-2">
+                  Times are in the stylist's local time ({stylistZoneLabel}).
+                </p>
+              )}
               {availability !== null && availability.length === 0 && (
                 <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-md px-3 py-2 mb-2">
                   This stylist hasn't set their availability yet. You can still request a time and they will confirm.
@@ -601,6 +711,7 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
                   {windowsFor(new Date(currentYear, months.indexOf(selectedMonth), selectedDay).getDay())
                     .map((w) => `${format12(w.startTime)} – ${format12(w.endTime)}`)
                     .join(", ")}
+                  {stylistZoneLabel ? ` (${stylistZoneLabel})` : ""}
                 </p>
               )}
               <div className="grid grid-cols-3 lg:grid-cols-4 gap-2">
@@ -742,6 +853,10 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
                       className="rounded-md bg-brand text-white text-sm py-3 font-medium disabled:opacity-60">
                       {signupBusy ? "Checking…" : "Continue"}
                     </button>
+                    <button type="button" onClick={() => switchToSignin(signupEmail.trim())}
+                      className="text-xs font-semibold text-gray-500 hover:text-gray-700 text-left w-max">
+                      Already have an account? Sign in
+                    </button>
                   </form>
                 )}
 
@@ -765,6 +880,24 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
                       Use a different email
                     </button>
                   </div>
+                )}
+
+                {signupStep === SIGNUP_STEPS.SIGNIN && (
+                  <form onSubmit={handleSigninSubmit} className="grid gap-3">
+                    <Input label={"Email address"} type={"email"} value={signinEmail}
+                      onChange={(e) => setSigninEmail(e.target.value)} placeholder={"you@example.com"} />
+                    <Input label={"Password"} type={"password"} value={signinPassword}
+                      onChange={(e) => setSigninPassword(e.target.value)} />
+                    {signupError && <p className="text-xs text-red-500">{signupError}</p>}
+                    <button type="submit" disabled={signupBusy}
+                      className="rounded-md bg-brand text-white text-sm py-3 font-medium disabled:opacity-60">
+                      {signupBusy ? "Signing in…" : "Sign in & book"}
+                    </button>
+                    <button type="button" onClick={switchToSignup}
+                      className="text-xs font-semibold text-gray-500 hover:text-gray-700 text-left w-max">
+                      Need an account? Create one
+                    </button>
+                  </form>
                 )}
 
                 {signupStep === SIGNUP_STEPS.PASSWORD && (

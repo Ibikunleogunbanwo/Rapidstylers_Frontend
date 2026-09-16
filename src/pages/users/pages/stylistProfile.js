@@ -1,15 +1,18 @@
 import bookmark from "../../../assets/svg-icons/bookmark.svg";
 import SelectService from "../../../components/selectService";
-import Back from "../../../components/goBack"
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { useSingleStylerProfile } from "../userLayout/functionalEffects";
 import Spinner from "../../../components/spinner";
 import { useSelector } from "react-redux";
 import { APIService } from "../../../hooks/remote/apiService";
-import { getAuthToken, showErrorToastMessage, showSuccessToastMessage } from "../../../utils/constant";
-import { cloudinarySquare } from "../../../utils/cloudinaryImage";
+import { getAuthToken, getUserRole, showErrorToastMessage, showSuccessToastMessage } from "../../../utils/constant";
+import { cloudinarySquare, cloudinaryAvatar } from "../../../utils/cloudinaryImage";
+import { fallbackPhotoFor } from "../../../utils/curatedGallery";
+import { vendorTimeZoneLabel } from "../../../utils/vendorTimeZone";
+import { Section, Eyebrow, Statement, BackHome } from "../../../components/pageSections";
 import SectionPager from "../../../components/sectionPager";
+import Footer from "../../../components/footer";
 
 const WEEKDAY_LABELS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
@@ -108,35 +111,89 @@ const PortfolioLightbox = ({ images, index, onClose, onPrev, onNext }) => {
   );
 };
 
-const WorkingHours = ({ availability }) => {
+const WorkingHours = ({ availability, timeZone, province }) => {
   const hours = [...(availability || [])].sort((a, b) => Number(a.dayOfWeek) - Number(b.dayOfWeek));
+  const zoneLabel = vendorTimeZoneLabel({ timeZone, province });
 
   return (
-    <div className="rounded-xl border border-brand/15 bg-brand/[0.04] p-4">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <p className="text-sm font-bold text-gray-900">Working hours</p>
-          <p className="mt-0.5 text-xs text-gray-500">Book during these weekly windows</p>
-        </div>
-        <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-brand ring-1 ring-brand/15">
-          Weekly
-        </span>
-      </div>
+    <div className="border border-black/10 p-5">
+      <Eyebrow>Working hours</Eyebrow>
+      <p className="mt-1 text-[13px] text-black/55">
+        Book during these weekly windows{zoneLabel ? ` (${zoneLabel})` : ""}
+      </p>
       {hours.length > 0 ? (
-        <div className="mt-4 grid gap-2">
+        <div className="mt-4">
           {hours.map((slot) => (
-            <div key={slot.dayOfWeek} className="flex items-center justify-between gap-3 text-xs">
-              <span className="font-semibold text-gray-700">{WEEKDAY_LABELS[Number(slot.dayOfWeek)] || "Day"}</span>
-              <span className="text-gray-500">
+            <div
+              key={slot.dayOfWeek}
+              className="flex items-center justify-between gap-3 border-t border-black/10 py-2.5 text-[13px]"
+            >
+              <span className="font-medium text-onSurface">
+                {WEEKDAY_LABELS[Number(slot.dayOfWeek)] || "Day"}
+              </span>
+              <span className="text-black/55">
                 {formatAvailabilityTime(slot.startTime)} to {formatAvailabilityTime(slot.endTime)}
               </span>
             </div>
           ))}
         </div>
       ) : (
-        <p className="mt-4 rounded-lg bg-white/80 p-3 text-xs leading-5 text-gray-500 ring-1 ring-gray-100">
+        <p className="mt-4 border-t border-black/10 pt-4 text-[13px] leading-[1.55] text-black/55">
           No weekly hours set. Booking requests can still be sent for manual confirmation.
         </p>
+      )}
+    </div>
+  );
+};
+
+// Empty state for a profile with no services yet. A bare "no services" line
+// strands a visitor who arrived from a card or a hero pill with booking
+// intent. Two audiences, one card:
+//   - visitors get a way out: browse their category on /search (same
+//     deep-link contract the hero pills and Discover-professionals use)
+//   - a signed-in stylist viewing the profile gets the owner action instead:
+//     add services from the dashboard.
+const NoServicesCard = ({ categoryName, serviceTypeId }) => {
+  const isStylist = getAuthToken() && getUserRole() === "STYLER";
+  const browseHref = serviceTypeId
+    ? `/search?serviceTypeId=${encodeURIComponent(serviceTypeId)}&serviceTypeName=${encodeURIComponent(categoryName || "")}`
+    : "/search";
+  return (
+    <div className="border border-black/10 bg-neutral p-8">
+      <Eyebrow>Nothing bookable yet</Eyebrow>
+      {isStylist ? (
+        <>
+          <p className="mt-3 max-w-md text-[15px] leading-relaxed text-black/70">
+            You have no services listed, so visitors cannot book you. Add at
+            least one service with a price and your working hours to appear in
+            search and start taking bookings.
+          </p>
+          <Link
+            to="/styler-dashboard/services"
+            className="mt-5 inline-flex items-center rounded-full bg-[#1A1A1A] px-6 py-3 text-[13px] font-semibold text-white transition-opacity hover:opacity-85"
+          >
+            Add your first service
+            <span aria-hidden="true" className="ml-2">→</span>
+          </Link>
+        </>
+      ) : (
+        <>
+          <p className="mt-3 max-w-md text-[15px] leading-relaxed text-black/70">
+            {categoryName
+              ? `This ${categoryName.toLowerCase()} hasn't added services yet, so there is nothing to book here right now.`
+              : "This professional hasn't added services yet, so there is nothing to book here right now."}
+          </p>
+          <p className="mt-2 max-w-md text-[13px] leading-relaxed text-black/50">
+            In the meantime, you can browse other professionals in the same field.
+          </p>
+          <Link
+            to={browseHref}
+            className="mt-5 inline-flex items-center rounded-full bg-[#1A1A1A] px-6 py-3 text-[13px] font-semibold text-white transition-opacity hover:opacity-85"
+          >
+            {categoryName ? `Browse other ${categoryName.toLowerCase()}s` : "Browse professionals"}
+            <span aria-hidden="true" className="ml-2">→</span>
+          </Link>
+        </>
       )}
     </div>
   );
@@ -149,8 +206,33 @@ const StylistProfile = ({ setPageTitle }) => {
   }, [setPageTitle]);
   let { stylerId, stylerName } = useParams();
   stylerId = atob(stylerId);
-  
+  const decodedName = atob(stylerName);
+
   const stylerProfile = useSingleStylerProfile(stylerId);
+  const info = stylerProfile.stylerInformation || {};
+  const categoryName = info.serviceTypeName || stylerProfile.serviceTypeName || "";
+  const avatarUrl = info.profileImageUrl || stylerProfile.profileImageUrl || "";
+  const displayName = info.businessName || stylerProfile.businessName || decodedName;
+  const heroFallback = !avatarUrl ? fallbackPhotoFor(categoryName, stylerId, 0) : null;
+  const initials = displayName
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((word) => word[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+  const ratingLine =
+    info.averageRating != null && info.reviewCount > 0
+      ? `Rated ${info.averageRating} out of 5 from ${info.reviewCount} review${info.reviewCount === 1 ? "" : "s"}`
+      : "New on RapidStylers";
+
+  const stats = [
+    { label: "Appointments", value: stylerProfile?.appointmentCount || 0 },
+    { label: "Success rate", value: `${stylerProfile?.ratingPercentage || 0}%` },
+    { label: "Reviews", value: info.reviewCount || 0 },
+    { label: "Average rating", value: info.averageRating ?? "-" },
+  ];
+
   const [isSaved, setIsSaved] = useState(false);
   const [saveLoading, setSaveLoading] = useState(false);
   const [portfolioPage, setPortfolioPage] = useState(1);
@@ -216,184 +298,221 @@ const StylistProfile = ({ setPageTitle }) => {
   };
 
   return (
-    <div className="bg-white border rounded-lg">
+    <div className="min-h-screen bg-white text-onSurface">
       <Spinner loading={useSelector((state) => state.user).loading} />
-      <div className="flex items-center justify-between border-b p-4 text-[15px] font-bold bg-[#1d1d1d08] rounded-t-lg">
-        <div className="flex gap-2 items-center">
-          <Back />
-          <span>{atob(stylerName)}</span>
-        </div>
-        <button
-          type="button"
-          onClick={toggleSaved}
-          disabled={saveLoading}
-          className={`rounded-md p-2 transition-colors ${isSaved ? "bg-brand/10" : "bg-transparent"}`}
-          aria-label={isSaved ? "Remove saved professional" : "Save professional"}
-          title={isSaved ? "Remove saved professional" : "Save professional"}
-        >
-          <img src={bookmark} alt="" className={`h-5 ${isSaved ? "opacity-100" : "opacity-50"}`} />
-        </button>
-      </div>
-      <div className="p-4">
-        {stylerProfile.stylerInformation?.payoutReady === false && (
-          <div className="mb-6 flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
-            <svg viewBox="0 0 20 20" fill="currentColor" className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" aria-hidden="true"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clipRule="evenodd" /></svg>
+
+      {/* Profile header: avatar, category, name, rating, address, save */}
+      <Section pad="pt-10 md:pt-14 pb-10 md:pb-14">
+        <BackHome />
+        <div className="mt-8 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+          <div className="flex items-center gap-5">
+            {avatarUrl ? (
+              <img
+                src={cloudinaryAvatar(avatarUrl)}
+                alt={displayName}
+                className="h-20 w-20 rounded-full object-cover"
+              />
+            ) : heroFallback ? (
+              <img
+                src={heroFallback.src}
+                alt={heroFallback.alt}
+                className="h-20 w-20 rounded-full object-cover"
+              />
+            ) : (
+              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-neutral text-xl font-semibold text-black/60">
+                {initials}
+              </div>
+            )}
             <div>
-              <p className="text-sm font-bold text-amber-800">Payments pending</p>
-              <p className="text-xs text-amber-700">
-                This professional hasn't finished setting up payouts yet, so online booking is temporarily unavailable.
-              </p>
+              <Eyebrow>{categoryName || "Professional"}</Eyebrow>
+              <h1 className="mt-3 text-[clamp(1.75rem,3vw,2.5rem)] font-normal leading-[1.08] tracking-[-0.02em]">
+                {displayName}
+              </h1>
+              <p className="mt-2 text-[14px] text-black/55">{ratingLine}</p>
             </div>
           </div>
+          <button
+            type="button"
+            onClick={toggleSaved}
+            disabled={saveLoading}
+            aria-pressed={isSaved}
+            className={`inline-flex shrink-0 items-center gap-2 self-start rounded-full border px-5 py-2.5 text-[13px] font-semibold transition-colors disabled:opacity-60 ${
+              isSaved ? "border-brand/40 text-brand" : "border-black/10 text-onSurface hover:border-black/30"
+            }`}
+          >
+            <img src={bookmark} alt="" className={`h-4 ${isSaved ? "opacity-100" : "opacity-60"}`} />
+            {isSaved ? "Saved" : "Save professional"}
+          </button>
+        </div>
+
+        {info.description && (
+          <p className="mt-6 max-w-[680px] text-[14px] leading-[1.6] text-black/60">
+            {info.description}
+          </p>
         )}
-        <div className="mb-8 md:mb-4">
-          <div className="flex justify-between items-center">
-            <span className="font-semibold">Address:</span>
-            {stylerProfile.stylerInformation?.latitude != null && (
-              <a
-                href={`https://maps.google.com/?q=${stylerProfile.stylerInformation.latitude},${stylerProfile.stylerInformation.longitude}`}
-                target="_blank"
-                rel="noreferrer"
-                className="text-sm text-brand hover:underline"
-              >
-                [ Get directions ]
-              </a>
+
+        <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-black/55">
+          <span>{info.businessAddress}</span>
+          {info.latitude != null && (
+            <a
+              href={`https://maps.google.com/?q=${info.latitude},${info.longitude}`}
+              target="_blank"
+              rel="noreferrer"
+              className="font-semibold text-brand hover:underline"
+            >
+              Get directions
+            </a>
+          )}
+        </div>
+
+        {/* Honest, quiet note when online booking is not possible yet */}
+        {info.payoutReady === false && (
+          <p className="mt-8 max-w-[680px] rounded-lg border border-black/10 bg-neutral px-4 py-3 text-[13px] leading-[1.55] text-black/60">
+            This professional hasn't finished setting up payouts yet, so online booking is temporarily unavailable.
+          </p>
+        )}
+      </Section>
+
+      {/* Track record: hairline stat cells on the muted band */}
+      <Section muted pad="py-10 md:py-14">
+        <div className="grid grid-cols-2 gap-x-6 gap-y-8 md:grid-cols-4">
+          {stats.map((stat) => (
+            <div key={stat.label} className="border-t border-black/10 pt-4">
+              <p className="text-[clamp(1.5rem,2.4vw,2rem)] font-normal leading-none tracking-[-0.02em]">
+                {stat.value}
+              </p>
+              <p className="mt-2 text-[13px] text-black/55">{stat.label}</p>
+            </div>
+          ))}
+        </div>
+      </Section>
+
+      {/* Services and hours: the conversion block */}
+      <Section pad="py-16 md:py-24">
+        <Eyebrow>Services</Eyebrow>
+        <Statement>What you can book</Statement>
+        <div className="mt-10 grid gap-10 lg:grid-cols-5 lg:items-start">
+          <div className="lg:col-span-3">
+            {stylerProfile.stylerSubService && stylerProfile.stylerSubService.length > 0 ? (
+              stylerProfile.stylerSubService.map((val, key) => (
+                <div key={key}>
+                  <SelectService
+                    serviceName={val.name}
+                    servicePrice={val.price}
+                    durationMinutes={val.durationMinutes || 60}
+                    subServiceId={val.id}
+                    stylerId={stylerId}
+                    stylerLatitude={info.latitude}
+                    stylerLongitude={info.longitude}
+                    stylerProvince={info.province}
+                    stylerTimeZone={info.timeZone}
+                  />
+                </div>
+              ))
+            ) : (
+              <NoServicesCard categoryName={categoryName} serviceTypeId={info.serviceTypeId} />
             )}
           </div>
-          <div className="text-black/50">
-            {stylerProfile.stylerInformation?.businessAddress}
+          <div className="lg:col-span-2">
+            <WorkingHours availability={stylerProfile.availability} timeZone={info.timeZone} province={info.province} />
           </div>
         </div>
-        <div className="mb-8 md:mb-4">
-          <span className="font-semibold">Bio:</span>
-          <p className="text-black/50">{stylerProfile.stylerInformation?.description}     </p>
-        </div>
-        <div className="mb-8 md:mb-4 grid grid-cols-2 md:grid-cols-4 gap-4 py-4">
-          <div className="border text-center p-3 rounded-md hover:bg-slate-50">
-            <p className="text-lg text-brand">{stylerProfile?.appointmentCount || 0}</p>
-            <p className="text-sm text-black/50">Appointments</p>
-          </div>
-          <div className="border text-center p-3 rounded-md hover:bg-slate-50">
-            <p className="text-lg text-brand">{stylerProfile?.ratingPercentage || 0}%</p>
-            <p className="text-sm text-black/50">Success rate</p>
-          </div>
-          <div className="border text-center p-3 rounded-md hover:bg-slate-50">
-            <p className="text-lg text-brand">{stylerProfile.stylerInformation?.reviewCount || 0}</p>
-            <p className="text-sm text-black/50">Reviews</p>
-          </div>
-          <div className="border text-center p-3 rounded-md hover:bg-slate-50">
-            <p className="text-lg text-brand">{stylerProfile.stylerInformation?.averageRating || "-"}</p>
-            <p className="text-sm text-black/50">Average rating</p>
-          </div>
-        </div>
-        <div className="mb-8 md:mb-4">
-          <span className="font-semibold">Services:</span>
-          <div className="mt-3 grid grid-cols-1 gap-5 md:grid-cols-5 md:items-start">
-            <div className="md:col-span-2">
-              <WorkingHours availability={stylerProfile.availability} />
-            </div>
-            <div className="md:col-span-3">
-              {stylerProfile.stylerSubService && stylerProfile.stylerSubService.length > 0 ? (
-                stylerProfile.stylerSubService.map((val, key) => (
-                  <div key={key}>
-                    <SelectService
-                      serviceName={val.name}
-                      servicePrice={val.price}
-                      durationMinutes={val.durationMinutes || 60}
-                      subServiceId={val.id}
-                      stylerId={stylerId}
-                      stylerLatitude={stylerProfile.stylerInformation?.latitude}
-                      stylerLongitude={stylerProfile.stylerInformation?.longitude}
-                    />
-                  </div>
-                ))
-              ) : (
-                <p className="rounded-lg border border-dashed border-gray-200 p-4 text-sm text-gray-500">
-                  No services available yet.
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
-        <div className="mb-8 md:mb-4">
-          <span className="font-semibold">Portfolio:</span>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
-            {portfolio.length > 0 &&
-              visiblePortfolio.map((val, key) => (
-                <div key={key}>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setLightboxIndex((safePortfolioPage - 1) * PORTFOLIO_PAGE_SIZE + key)
-                    }
-                    aria-label={`View ${val.name} full size`}
-                    className="block w-full cursor-zoom-in overflow-hidden rounded-md"
-                  >
-                    <img
-                      src={cloudinarySquare(val.imageUrl)}
-                      alt={val.name}
-                      className="aspect-square w-full rounded-md object-cover transition-transform duration-300 hover:scale-105"
-                    />
-                  </button>
-                </div>
-              ))}
-          </div>
-          <SectionPager
-            page={safePortfolioPage}
-            totalPages={portfolioTotalPages}
-            totalItems={portfolio.length}
-            pageSize={PORTFOLIO_PAGE_SIZE}
-            onPage={setPortfolioPage}
-          />
-          <PortfolioLightbox
-            images={portfolio}
-            index={lightboxIndex}
-            onClose={() => setLightboxIndex(null)}
-            onPrev={() =>
-              setLightboxIndex((i) =>
-                i === null ? null : (i - 1 + portfolio.length) % portfolio.length
-              )
-            }
-            onNext={() =>
-              setLightboxIndex((i) => (i === null ? null : (i + 1) % portfolio.length))
-            }
-          />
-        </div>
-        <div className="mb-8 md:mb-4">
-          <span className="font-semibold">Reviews:</span>
-          {stylerProfile.stylerInformation?.reviewCount > 0 ? (
-            <div className="mt-4 bg-brand p-4 rounded-md flex gap-3">
-              <div className="text-white font-medium">★</div>
-              <div className="text-white/50">
-                <span className="text-white font-semibold">{stylerProfile.stylerInformation.averageRating}</span>
-                (out of 5) - Based on <span className="text-white font-semibold">{stylerProfile.stylerInformation.reviewCount}</span> review{stylerProfile.stylerInformation.reviewCount === 1 ? "" : "s"}
+      </Section>
+
+      {/* Portfolio on the muted band */}
+      <Section muted pad="py-16 md:py-24">
+        <Eyebrow>Portfolio</Eyebrow>
+        <Statement>Recent work</Statement>
+        <div className="mt-10 grid grid-cols-2 gap-4 md:grid-cols-3">
+          {portfolio.length > 0 &&
+            visiblePortfolio.map((val, key) => (
+              <div key={key}>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setLightboxIndex((safePortfolioPage - 1) * PORTFOLIO_PAGE_SIZE + key)
+                  }
+                  aria-label={`View ${val.name} full size`}
+                  className="block w-full cursor-zoom-in overflow-hidden rounded-md"
+                >
+                  <img
+                    src={cloudinarySquare(val.imageUrl)}
+                    alt={val.name}
+                    className="aspect-square w-full rounded-md object-cover transition-transform duration-300 hover:scale-105"
+                  />
+                </button>
               </div>
-            </div>
-          ) : (
-            <p className="mt-4 text-sm text-black/50">No reviews yet.</p>
-          )}
-          {reviews.length > 0 && (
-            <>
-              {visibleReviews.map((val, key) => (
-                <div className="py-4 border-b" key={key}>
-                  <div className="flex justify-between items-center font-semibold">
-                    <span>{val.userName}</span>
-                    <span className="text-brand">{val.ratingScore}</span>
-                  </div>
-                  <p className="text-black/50">{val.message}</p>
-                </div>
-              ))}
-              <SectionPager
-                page={safeReviewsPage}
-                totalPages={reviewsTotalPages}
-                totalItems={reviews.length}
-                pageSize={REVIEW_PAGE_SIZE}
-                onPage={setReviewsPage}
-              />
-            </>
-          )}
+            ))}
         </div>
-      </div>
+        {portfolio.length > 0 && (
+          <div className="mt-8">
+            <SectionPager
+              page={safePortfolioPage}
+              totalPages={portfolioTotalPages}
+              totalItems={portfolio.length}
+              pageSize={PORTFOLIO_PAGE_SIZE}
+              onPage={setPortfolioPage}
+            />
+          </div>
+        )}
+        <PortfolioLightbox
+          images={portfolio}
+          index={lightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+          onPrev={() =>
+            setLightboxIndex((i) =>
+              i === null ? null : (i - 1 + portfolio.length) % portfolio.length
+            )
+          }
+          onNext={() =>
+            setLightboxIndex((i) => (i === null ? null : (i + 1) % portfolio.length))
+          }
+        />
+      </Section>
+
+      {/* Reviews */}
+      <Section pad="py-16 md:py-24">
+        <Eyebrow>Reviews</Eyebrow>
+        <Statement>What clients say</Statement>
+        {info.reviewCount > 0 ? (
+          <div className="mt-8 border-t border-black/10 pt-6">
+            <p className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+              <span className="text-[2.5rem] font-normal leading-none tracking-[-0.02em]">
+                {info.averageRating}
+              </span>
+              <span className="text-[13px] text-black/55">
+                out of 5, based on {info.reviewCount} review{info.reviewCount === 1 ? "" : "s"}
+              </span>
+            </p>
+          </div>
+        ) : (
+          <p className="mt-8 border-t border-black/10 pt-6 text-[14px] text-black/55">
+            No reviews yet.
+          </p>
+        )}
+        {reviews.length > 0 && (
+          <div className="mt-8">
+            {visibleReviews.map((val, key) => (
+              <div className="border-t border-black/10 py-4" key={key}>
+                <div className="flex items-baseline justify-between gap-4">
+                  <span className="text-[15px] font-medium">{val.userName}</span>
+                  <span className="text-[13px] font-semibold text-brand">{val.ratingScore} / 5</span>
+                </div>
+                <p className="mt-1 text-[14px] leading-[1.55] text-black/55">{val.message}</p>
+              </div>
+            ))}
+            <SectionPager
+              page={safeReviewsPage}
+              totalPages={reviewsTotalPages}
+              totalItems={reviews.length}
+              pageSize={REVIEW_PAGE_SIZE}
+              onPage={setReviewsPage}
+            />
+          </div>
+        )}
+      </Section>
+
+      <Footer />
     </div>
   );
 };

@@ -6,6 +6,7 @@ import Footer from "../../components/footer";
 import { Section, Eyebrow, PageHeading, BackHome } from "../../components/pageSections";
 import { APIService } from "../../hooks/remote/apiService";
 import { useSavedStylists } from "../../hooks/useSavedStylists";
+import { vendorTimeZone } from "../../utils/vendorTimeZone";
 
 const displayServiceName = (value) => {
   const label = String(value || "").trim();
@@ -41,7 +42,11 @@ const SearchResults = () => {
 
   const isOpenNow = React.useCallback((stylist) => {
     if (!openNow) return true;
-    const now = new Date();
+    // The vendor's hours live in the vendor's zone: read the vendor's clock,
+    // not the visitor browser's. Stored zone wins; province map covers rows
+    // without one. Mirrors the backend's precedence exactly.
+    const zone = vendorTimeZone(stylist);
+    const now = new Date(new Date().toLocaleString("en-US", { timeZone: zone }));
     const blocked = (stylist.exceptions || []).some((exception) => exception.blockedDate === now.toISOString().slice(0, 10));
     if (blocked) return false;
     const weekday = String(now.getDay());

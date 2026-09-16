@@ -65,7 +65,15 @@ const Hero = ({ height }) => {
     APIService.getStylerType()
       .then((res) => {
         const items = res.data?.data || [];
-        setServices(items.map((c) => c.serviceTypeName || c.serviceName || c.name || c.serviceType));
+        // Ids ride along so each service pill can deep-link into a pre-filtered search.
+        setServices(
+          items
+            .map((c) => ({
+              id: String(c.serviceTypeId ?? c.id ?? ""),
+              name: c.serviceTypeName || c.serviceName || c.name || c.serviceType || "",
+            }))
+            .filter((c) => c.id && c.name)
+        );
       })
       .catch(() => {});
   }, []);
@@ -130,21 +138,25 @@ const Hero = ({ height }) => {
             {/* Text: below the image on small/medium; overlaid on the video on large */}
             <div className="grow bg-black lg:bg-transparent lg:grow-0 lg:absolute lg:inset-0 lg:flex lg:items-end lg:justify-start">
               <div className="px-4 py-10 sm:px-8 md:px-12 text-center lg:w-[72%] xl:w-[55%] lg:px-0 lg:ps-20 lg:pb-20 lg:text-start">
-                <div className="text-[22px] sm:text-xl md:text-2xl lg:text-[28px] font-bold text-white text-center lg:text-start mb-2 leading-snug">
-                  Get convenient, <span className="text-brand">high-quality beauty services</span> without leaving your home
-                </div>
-                <div className="text-white/70 text-xs sm:text-sm md:text-base text-center lg:text-start max-w-md mx-auto lg:mx-0">
-                  Our platform connects you with top-rated local beauty professionals for in-home appointments.
-                </div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-white/50 text-center lg:text-start">
+                  What you can book today
+                </p>
+                <h1 className="mt-4 text-[clamp(1.9rem,4.5vw,2.75rem)] font-normal leading-[1.08] tracking-[-0.02em] text-white text-center lg:text-start">
+                  Beauty services that <span className="text-brand">come to you</span>
+                </h1>
+                <p className="mt-4 text-white/70 text-sm sm:text-base text-center lg:text-start max-w-md mx-auto lg:mx-0 leading-relaxed">
+                  Top-rated local professionals come to your door. Compare profiles, pick a time, and skip the salon trip.
+                </p>
                 {services.length > 0 && (
-                  <div className="mt-3 flex flex-wrap justify-center lg:justify-start gap-1.5 sm:gap-2">
+                  <div className="mt-6 flex flex-wrap justify-center lg:justify-start gap-2 sm:gap-2.5">
                     {services.map((service) => (
-                      <span
-                        key={service}
-                        className="text-[10px] sm:text-[11px] md:text-xs font-medium bg-white/10 border border-white/30 text-white rounded-full px-2.5 sm:px-3 py-1"
+                      <Link
+                        key={service.id}
+                        to={`/search?serviceTypeId=${encodeURIComponent(service.id)}&serviceTypeName=${encodeURIComponent(service.name)}`}
+                        className="inline-flex items-center rounded-full border border-white/25 bg-white/5 px-4 py-2.5 text-[13px] font-semibold text-white transition-colors hover:border-brand hover:bg-brand/20"
                       >
-                        {service}
-                      </span>
+                        {service.name}
+                      </Link>
                     ))}
                   </div>
                 )}
