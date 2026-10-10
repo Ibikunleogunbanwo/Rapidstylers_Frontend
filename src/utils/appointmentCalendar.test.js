@@ -55,9 +55,10 @@ describe("reading a booking's wall-clock time as an instant", () => {
   });
 
   test("resolves the hour after the autumn change", () => {
-    // 1 November 2026: Edmonton has fallen back to MST (UTC-7).
-    expect(zonedWallTimeToInstant("2026-11-01", "10:00", "America/Edmonton").toISOString())
-      .toBe("2026-11-01T17:00:00.000Z");
+    // Historical transition: Alberta stopped autumn clock changes in 2026.
+    // Use 2025 so this assertion is stable across timezone database versions.
+    expect(zonedWallTimeToInstant("2025-11-02", "10:00", "America/Edmonton").toISOString())
+      .toBe("2025-11-02T17:00:00.000Z");
   });
 
   test("reads both the wire format and the 12-hour label a customer picked", () => {
