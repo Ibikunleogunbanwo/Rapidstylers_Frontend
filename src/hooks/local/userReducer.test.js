@@ -1,10 +1,10 @@
 import { configureStore } from "@reduxjs/toolkit";
 import { APIService } from "../remote/apiService";
-import { createUserAccount, userAuthenticate, userReducer } from "./userReducer";
-import { getAuthToken, getRefreshToken, getUserRole } from "../../utils/constant";
+import { changeUserPassword, createUserAccount, userAuthenticate, userReducer } from "./userReducer";
+import { getAuthToken, getRefreshToken, getUserRole, setAuthToken, setRefreshToken } from "../../utils/constant";
 
 vi.mock("../remote/apiService", () => ({
-  APIService: { signIn: vi.fn(), createUserAccount: vi.fn() },
+  APIService: { signIn: vi.fn(), createUserAccount: vi.fn(), updateUserPassword: vi.fn() },
 }));
 
 const account = { userId: "A1234B", firstname: "Ada" };
@@ -69,5 +69,31 @@ describe("createUserAccount", () => {
 
     expect(getAuthToken()).toBe("");
     expect(s.getState().user.isAuthenticated).toBeFalsy();
+  });
+});
+
+describe("changeUserPassword", () => {
+  test("keeps this device signed in with the fresh tokens the server sends", async () => {
+    setAuthToken("old-jwt");
+    setRefreshToken("old-refresh");
+    APIService.updateUserPassword.mockResolvedValue({
+      data: { statusCode: "200", token: "new-jwt", refreshToken: "new-refresh" },
+    });
+
+    await store().dispatch(changeUserPassword({ oldPassword: "a", newPassword: "b" }));
+
+    expect(getAuthToken()).toBe("new-jwt");
+    expect(getRefreshToken()).toBe("new-refresh");
+  });
+
+  test("a refused change leaves the current tokens alone", async () => {
+    setAuthToken("old-jwt");
+    setRefreshToken("old-refresh");
+    APIService.updateUserPassword.mockResolvedValue({ data: { statusCode: "400", message: "Wrong password" } });
+
+    await store().dispatch(changeUserPassword({ oldPassword: "a", newPassword: "b" }));
+
+    expect(getAuthToken()).toBe("old-jwt");
+    expect(getRefreshToken()).toBe("old-refresh");
   });
 });

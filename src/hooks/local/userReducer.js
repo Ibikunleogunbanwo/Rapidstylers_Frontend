@@ -154,11 +154,21 @@ export const updateUserDetails = createAsyncThunk(
         return response;
     }
 )
+/**
+ * Changing the password signs out every other device. The server hands this
+ * device a fresh pair of tokens, so it stays signed in.
+ */
 export const changeUserPassword = createAsyncThunk(
     "user/updateUserPassword",
     async(data)=>{
         const updateUserPasswordApi = await APIService.updateUserPassword(data);
         const response = await updateUserPasswordApi.data;
+        if (response.statusCode === "200" && response.token) {
+            setAuthToken(response.token);
+            if (response.refreshToken) {
+                setRefreshToken(response.refreshToken);
+            }
+        }
         return response;
     }
 )
