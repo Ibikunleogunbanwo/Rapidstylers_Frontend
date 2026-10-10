@@ -15,6 +15,8 @@ vi.mock("../../../hooks/remote/apiService", () => ({
     stylerSignOut: vi.fn(),
     // The listing notice fetches the summary; the columns are stubbed below.
     getStylerBusinessSummary: vi.fn(() => Promise.resolve({ data: { data: null } })),
+    // The payout-setup notice fetches the connect status; a null leaves it silent.
+    getStylerConnectStatus: vi.fn(() => Promise.resolve({ data: { data: null } })),
   },
 }));
 

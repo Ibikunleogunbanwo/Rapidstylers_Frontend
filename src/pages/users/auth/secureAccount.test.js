@@ -156,6 +156,19 @@ describe("SecureAccount inline server errors", () => {
     expect(screen.queryByText(/Account created successfully/)).not.toBeInTheDocument();
   });
 
+  test("offers a sign-in path when the email already has an account", async () => {
+    navigate.mockClear();
+    __testDispatch.mockResolvedValue({
+      payload: { statusCode: "400", message: "Email Address already exists, Kindly choose another email address" },
+    });
+    render(<SecureAccount />);
+    fillPasswordForm();
+
+    await screen.findByRole("alert");
+    fireEvent.click(screen.getByRole("button", { name: "Sign in instead" }));
+    expect(navigate).toHaveBeenCalledWith("/login");
+  });
+
   test("clears the inline error as soon as the user edits a field", async () => {
     __testDispatch.mockResolvedValue({
       payload: { statusCode: "400", message: "Email address is already registered" },

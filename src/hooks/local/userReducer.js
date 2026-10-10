@@ -56,14 +56,28 @@ const startCustomerSession = (response) => {
  */
 export const createUserAccount = createAsyncThunk(
     "user/createUserAccount",
-    async(data)=>{
-        const apiCreateUserAccount = await APIService.createUserAccount(data);
-        const response = await apiCreateUserAccount.data;
-        if (response.token && response.data?.account) {
-            startCustomerSession(response);
-            return { ...response, data: response.data.account };
+    async(data, { rejectWithValue })=>{
+        try {
+            const apiCreateUserAccount = await APIService.createUserAccount(data);
+            const response = await apiCreateUserAccount.data;
+            if (response.token && response.data?.account) {
+                startCustomerSession(response);
+                return { ...response, data: response.data.account };
+            }
+            return response;
+        } catch (error) {
+            // A server rejection (email already used, validation, lock-out) is a
+            // real HTTP error, so the client throws before the body is seen. The
+            // inline message on the signup screens lives in that body: carry its
+            // statusCode and message as the rejected payload, otherwise the
+            // caller would only ever see a request-level failure and could not
+            // tell "this email already has an account" from a network error.
+            const body = error?.response?.data;
+            return rejectWithValue({
+                statusCode: body?.statusCode ?? String(error?.response?.status ?? "400"),
+                message: body?.message || "We couldn't create your account right now. Please try again.",
+            });
         }
-        return response;
     }
 )
 
@@ -350,7 +364,9 @@ const userSlice = createSlice({
             state.users = null;
             // No toast here: APIService.extractError already surfaced the error
             // before the thunk rejected — toasting again duplicates the message.
-            state.error = action.error?.message || "An error occurred";
+            // A thunk that rejects with a value carries the server's own message
+            // in `payload`; fall back to the transport error for the rest.
+            state.error = action.payload?.message || action.error?.message || "An error occurred";
         })
     },
 })

@@ -188,12 +188,16 @@ export default function ServiceDisputes({ active, onRefund, refundPending }) {
           <label htmlFor="dispute-resolution-note">Resolution note</label>
           <textarea
             id="dispute-resolution-note"
+            aria-describedby="dispute-resolution-note-count"
             value={note}
             disabled={saving}
             maxLength={NOTE_LIMIT}
             onChange={(event) => setNote(event.target.value)}
             className="mt-1 block w-full rounded border p-2"
           />
+          <p id="dispute-resolution-note-count" className="mt-1 text-xs text-gray-500">
+            {note.length}/{NOTE_LIMIT} characters.
+          </p>
           <label className="my-3 flex items-center gap-2">
             <input
               type="checkbox"

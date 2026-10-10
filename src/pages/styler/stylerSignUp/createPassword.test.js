@@ -28,6 +28,17 @@ it('finishes signup when the API returns a numeric success status', async () => 
   fireEvent.click(screen.getByRole('button', { name: 'Create account' }));
   expect(await screen.findByText('Login screen')).toBeInTheDocument();
 });
+it('offers sign in when the email already has an account, keeping the server wording', async () => {
+  const alreadyUsed = new Error('Email Address already exists, Kindly choose another email');
+  alreadyUsed.response = { status: 400, data: { statusCode: '400', message: 'Email Address already exists, Kindly choose another email' } };
+  APIService.createStyler.mockRejectedValue(alreadyUsed);
+  render(<MemoryRouter><CreatePassword /></MemoryRouter>);
+  for (const name of ['password', 'confirmPassword']) fireEvent.change(document.querySelector(`input[name="${name}"]`), { target: { value: 'StrongPass1!' } });
+  fireEvent.click(screen.getByRole('checkbox'));
+  fireEvent.click(screen.getByRole('button', { name: 'Create account' }));
+  await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('already exists'));
+  expect(screen.getByRole('link', { name: 'Sign in' })).toHaveAttribute('href', '/login');
+});
 it('shows password and confirmation errors while typing before blur or submission', async () => {
  render(<MemoryRouter><CreatePassword /></MemoryRouter>);
  fireEvent.change(screen.getByLabelText('Set password:'),{target:{value:'weak'}});

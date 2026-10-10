@@ -124,6 +124,7 @@ test('stylist overview shows real appointments and profile sharing targets its p
   const subject = 'GS123';
   await page.route('**/sign_in', route => route.fulfill({status:200,json:{statusCode:'200',token:`header.${Buffer.from(JSON.stringify({sub:subject})).toString('base64url')}.signature`,refreshToken:'refresh',data:{role:'STYLER',account:{stylerId:subject}}}}));
   await page.route('**/styler_appointments', route => route.fulfill({status:200,json:{statusCode:'200',data:[{appointmentId:'A1',statusCode:'3',appointmentDate:'2026-10-15',arrivalTime:'10:00',userData:{firstname:'Ada',lastname:'Lee'},subServiceData:{name:'Braids'},stylerData:{timeZone:'America/Edmonton'}}]}}));
+  await page.route('**/styler/profile', route => route.fulfill({status:200,json:{statusCode:'200',data:{serviceTypeId:'test-category',firstname:'Ada',lastname:'Lee',emailAddress:'styler@example.test',phoneNumber:'5875551234',businessName:'Test Salon',description:'Calm studio.',streetAddress:'1 Main St',unit:'',city:'Calgary',province:'AB',postalCode:'T2P 1B5',country:'Canada',businessAddress:'1 Main St, Calgary, AB T2P 1B5, Canada',timeZone:'America/Edmonton'}}}));
   await page.goto('/login');
   await page.getByLabel('Email address',{exact:false}).fill('styler@example.test');
   await page.getByLabel('Password:',{exact:true}).fill('TestPassword123!');
@@ -134,8 +135,8 @@ test('stylist overview shows real appointments and profile sharing targets its p
   await page.goto('/styler-dashboard/profile');
   await expect(page.getByRole('link',{name:'View public profile'})).toHaveAttribute('href',new RegExp(`/stylistProfile/${encodeURIComponent(Buffer.from(subject).toString('base64'))}/`));
   await page.getByRole('link',{name:'Update business information'}).click();
-  await expect(page.getByText(/Profile changes currently require support/)).toBeVisible();
-  await expect(page.getByRole('link',{name:'Contact support'})).toHaveAttribute('href',/^mailto:/);
+  await expect(page.getByLabel('Business name:')).toHaveValue('Test Salon');
+  await expect(page.getByRole('button',{name:'Save changes'})).toBeVisible();
 });
 
 test('failed stylist availability read prevents saving defaults and supports retry',async({page})=>{

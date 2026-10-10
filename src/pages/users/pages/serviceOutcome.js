@@ -29,6 +29,7 @@ const ServiceOutcome = ({
   serviceDisputeResolvedAt,
 }) => {
   const reasonId = useId();
+  const reasonHintId = useId();
   const inFlight = useRef(false);
   const [mode, setMode] = useState("");
   const [reason, setReason] = useState("");
@@ -152,6 +153,7 @@ const ServiceOutcome = ({
               </label>
               <textarea
                 id={reasonId}
+                aria-describedby={reasonHintId}
                 value={reason}
                 onChange={(event) => {
                   setReason(event.target.value);
@@ -161,7 +163,7 @@ const ServiceOutcome = ({
                 disabled={pending}
                 className="mt-1 min-h-24 w-full rounded border border-slate-400 p-2"
               />
-              <p className="mt-1 text-xs text-slate-600">
+              <p id={reasonHintId} className="mt-1 text-xs text-slate-600">
                 {reason.length}/{REASON_LIMIT} characters. Our team will review
                 your report before releasing the professional’s payment.
               </p>

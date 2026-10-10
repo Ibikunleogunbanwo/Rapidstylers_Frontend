@@ -577,6 +577,50 @@ export class APIService {
         }
     }
 
+    /** The signed-in stylist's own editable profile: personal, business and photo fields. */
+    static async getStylerOwnProfile(){
+        try{
+            return await ApiClient.get("/styler/profile");
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+
+    /** A stylist changing their own name or phone number. The email is not editable here. */
+    static async updateStylerPersonalInfo(data){
+        try{
+            return await ApiClient.post("/styler/update_personal_info", data);
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+
+    /** A stylist changing their business details and address; a moved address is located again. */
+    static async updateStylerBusinessInfo(data){
+        try{
+            return await ApiClient.post("/styler/update_business_info", data);
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+
+    /** A stylist replacing their own profile and/or cover photo from this page. */
+    static async updateStylerPhotos(data){
+        try{
+            return await ApiClient.post("/styler/update_photos", data);
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+
     /**
      * The logged-in stylist's own reviews: the approved list clients see, plus a
      * count of reviews still waiting on moderation. Scoped to the session token,
@@ -849,6 +893,18 @@ export class APIService {
 
     static async adminResolveServiceDispute(data){
         try { return await ApiClient.post("/admin/resolve_service_dispute", data); }
+        catch (error) { APIService.extractError(error); throw error; }
+    }
+
+    /** Completed, charged bookings whose stylist has not been paid and no payout is scheduled. */
+    static async adminUnpaidPayouts(){
+        try { return await ApiClient.get("/admin/unpaid_payouts"); }
+        catch (error) { APIService.extractError(error); throw error; }
+    }
+
+    /** Sends one unpaid stylist payout now; the backend holds it again if the stylist still cannot receive payouts. */
+    static async adminPayStylistNow(data){
+        try { return await ApiClient.post("/admin/pay_stylist_now", data); }
         catch (error) { APIService.extractError(error); throw error; }
     }
 

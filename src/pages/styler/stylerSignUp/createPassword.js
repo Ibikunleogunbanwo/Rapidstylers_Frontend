@@ -12,6 +12,7 @@ import { APIService } from "../../../hooks/remote/apiService";
 import { uploadToCloudinary, deleteCloudinaryImage } from "../../../utils/cloudinaryUpload";
 import { showSuccessToastMessage } from "../../../utils/constant";
 import { clearSignupUploadPass } from "../../../utils/signupUploadPass";
+import { isAccountAlreadyExists } from "../../../utils/signupReply";
 
 import { submitRegistration } from "./registrationSubmit";
 
@@ -101,7 +102,17 @@ const CreatePassword = () => {
     } catch (err) {
       // APIService.extractError already shows a toast, but set inline too
       if (err.uncertain) markCreationUncertain();
-      setSubmitError(err.uncertain || err.stage === "upload" ? err.message : "Your account details were rejected. Review your details and try again.");
+      // An email that already has an account is not the professional's mistake,
+      // so keep the server's own wording (which names the email) instead of the
+      // generic "details were rejected", and let the form offer a way in below.
+      const serverMessage = err?.response?.data?.message;
+      setSubmitError(
+        err.uncertain || err.stage === "upload"
+          ? err.message
+          : isAccountAlreadyExists(serverMessage)
+            ? serverMessage
+            : "Your account details were rejected. Review your details and try again."
+      );
     } finally {
       setUploadingImages(false);
       setSubmitting(false);
@@ -171,7 +182,7 @@ const CreatePassword = () => {
           {submitError && (
             <div role="alert" className="mt-4 p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
               {submitError}
-              {creationUncertain && <Link to="/login" className="block mt-2 font-semibold underline">Sign in</Link>}
+              {(creationUncertain || isAccountAlreadyExists(submitError)) && <Link to="/login" className="block mt-2 font-semibold underline">Sign in</Link>}
             </div>
           )}
 

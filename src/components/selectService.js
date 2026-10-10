@@ -17,6 +17,7 @@ import TurnstileWidget from "./turnstileWidget";
 import BookingCardField from "./bookingCardField";
 import AddressAutocomplete from "./AddressAutocomplete";
 import { prepareBookingAttempt, clearBookingAttempt, isUncertainBookingFailure } from "../utils/bookingAttempt";
+import { isAccountAlreadyExists } from "../utils/signupReply";
 
 // Google Sign-In client id (public). Empty hides the Google option in the quick-account step.
 const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || "";
@@ -602,7 +603,17 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
         agreeToTerms: true,
       }));
       if (payload?.statusCode !== "200") {
-        setSignupError(payload?.message || "We couldn't create your account right now.");
+        const message = payload?.message || "We couldn't create your account right now.";
+        // An email that already has an account is not something to fix on this
+        // screen: the customer's real next step is to sign in, so switch the
+        // panel (email prefilled) instead of leaving them on a dead end.
+        if (isAccountAlreadyExists(message)) {
+          setSignupPassword("");
+          switchToSignin(signupEmail.trim());
+          setSignupError(message);
+          return;
+        }
+        setSignupError(message);
         return;
       }
       // Creating the account also signed the customer in, so the booking

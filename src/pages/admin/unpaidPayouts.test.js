@@ -1,0 +1,53 @@
+import React from 'react';
+import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import Payments from './payments';
+import { APIService } from '../../hooks/remote/apiService';
+vi.mock('../../hooks/remote/apiService', () => ({ APIService: { adminRefunds: vi.fn(), adminRefund: vi.fn(), adminServiceDisputes: vi.fn(), adminResolveServiceDispute: vi.fn(), adminUnpaidPayouts: vi.fn(), adminPayStylistNow: vi.fn() } }));
+const row = { appointmentId: 'payout-1', stylerId: 'stylist-1', businessName: 'Glow Studio', completedAt: '2026-10-08T10:00', stylistShare: '$40.00', reason: 'NO_PAYOUT_ACCOUNT', connectStatus: 'PENDING', canReceivePayouts: false };
+beforeEach(() => { vi.resetAllMocks(); sessionStorage.setItem('rapidstylers_auth_token', 'jwt'); sessionStorage.setItem('rapidstylers_admin_role', 'admin'); APIService.adminRefunds.mockResolvedValue({ data: { data: [] } }); APIService.adminUnpaidPayouts.mockResolvedValue({ data: { statusCode: '200', data: [row] } }); });
+afterEach(() => { cleanup(); sessionStorage.clear(); });
+const mount = async () => { render(<MemoryRouter><Payments /></MemoryRouter>); await screen.findByText('No refunds yet.'); };
+const open = async () => { fireEvent.click(screen.getByRole('button', { name: 'Unpaid payouts' })); await screen.findByText(row.businessName); };
+it('loads unpaid payouts only on demand and shows the hold reason in words', async () => {
+  await mount();
+  expect(APIService.adminUnpaidPayouts).not.toHaveBeenCalled();
+  await open();
+  expect(screen.getByText('No payout account yet')).toBeInTheDocument();
+  expect(screen.getByText('PENDING')).toBeInTheDocument();
+  expect(screen.getByText('$40.00')).toBeInTheDocument();
+});
+it('confirms a payout, reports the backend hold message, and refetches', async () => {
+  APIService.adminPayStylistNow.mockResolvedValue({ data: { statusCode: '200', message: 'The stylist has no payout account yet; it will be sent once they finish payout setup' } });
+  await mount();
+  await open();
+  fireEvent.click(screen.getByRole('button', { name: 'Pay now' }));
+  expect(screen.getByRole('heading', { name: /Send payout for payout-1/ })).toBeInTheDocument();
+  expect(screen.getByText(/no payout account that can receive payouts yet/)).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Confirm payout' }));
+  expect(await screen.findByRole('status')).toHaveTextContent(/it will be sent once they finish payout setup/);
+  expect(APIService.adminPayStylistNow).toHaveBeenCalledWith({ appointmentId: 'payout-1' });
+  await waitFor(() => expect(APIService.adminUnpaidPayouts).toHaveBeenCalledTimes(2));
+});
+it('rejects malformed lists with retry instead of showing an empty queue', async () => {
+  APIService.adminUnpaidPayouts.mockResolvedValueOnce({ data: { statusCode: '200', data: {} } });
+  await mount();
+  fireEvent.click(screen.getByRole('button', { name: 'Unpaid payouts' }));
+  expect(await screen.findByRole('alert')).toHaveTextContent(/Unable to load unpaid payouts/);
+  fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+  await screen.findByText(row.businessName);
+  expect(APIService.adminUnpaidPayouts).toHaveBeenCalledTimes(2);
+});
+it('serializes payout writes and keeps the backend error on a failed request', async () => {
+  let finish;
+  APIService.adminPayStylistNow.mockReturnValue(new Promise((resolve) => { finish = resolve; }));
+  await mount();
+  await open();
+  fireEvent.click(screen.getByRole('button', { name: 'Pay now' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Confirm payout' }));
+  expect(screen.getByRole('button', { name: 'Sending...' })).toBeDisabled();
+  finish({ data: { statusCode: '500', message: 'Payments are not configured' } });
+  expect(await screen.findByRole('alert')).toHaveTextContent('Payments are not configured');
+  expect(APIService.adminPayStylistNow).toHaveBeenCalledTimes(1);
+  expect(APIService.adminUnpaidPayouts).toHaveBeenCalledTimes(1);
+});

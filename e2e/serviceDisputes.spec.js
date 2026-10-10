@@ -121,3 +121,28 @@ test("admin resolves a service dispute from the queue and the queue refreshes", 
   expect(resolved).toEqual([{ appointmentId: "dispute-1", note: "Refunded and resolved." }]);
   expect(listCalls).toBe(2);
 });
+
+test("admin sends an unpaid payout from the queue and sees the backend hold reply", async ({ page }) => {
+  const payoutRow = { appointmentId: "payout-1", stylerId: "stylist-1", businessName: "Test Salon", completedAt: "2026-10-08T10:00", stylistShare: "$40.00", reason: "NO_PAYOUT_ACCOUNT", connectStatus: "PENDING", canReceivePayouts: false };
+  let listCalls = 0;
+  await page.route("**/admin/unpaid_payouts", route => {
+    listCalls += 1;
+    return route.fulfill({ status: 200, json: { statusCode: "200", data: [payoutRow] } });
+  });
+  const paid = [];
+  await page.route("**/admin/pay_stylist_now", route => {
+    paid.push(route.request().postDataJSON());
+    return route.fulfill({ status: 200, json: { statusCode: "200", message: "The stylist has no payout account yet; it will be sent once they finish payout setup", data: { appointmentId: "payout-1" } } });
+  });
+  await signIn(page, "admin@example.test");
+  await expect(page).toHaveURL(/\/admin\/categories$/);
+  await page.goto("/admin/payments");
+  await page.getByRole("button", { name: "Unpaid payouts" }).click();
+  await expect(page.getByText("Test Salon")).toBeVisible();
+  await expect(page.getByText("No payout account yet")).toBeVisible();
+  await page.getByRole("button", { name: "Pay now" }).click();
+  await page.getByRole("button", { name: "Confirm payout" }).click();
+  await expect(page.getByRole("status")).toContainText("it will be sent once they finish payout setup");
+  expect(paid).toEqual([{ appointmentId: "payout-1" }]);
+  expect(listCalls).toBe(2);
+});

@@ -1,4 +1,5 @@
 import ServiceDisputes from "./serviceDisputes";
+import UnpaidPayouts from "./unpaidPayouts";
 import { useAdminList, AdminListControls } from "./adminList";
 import { useEffect, useRef, useState } from "react";
 import { Navigate } from "react-router-dom";
@@ -128,13 +129,14 @@ const Payments = () => {
   return (
     <AdminPage eyebrow="Admin" title="Admin payments">
         <div className="mb-5 flex flex-wrap gap-2">
-          {[["refunds", `Refunds (${refunds.length})`], ["reconciliation", "Reconciliation"], ["disputes", "Disputes"]].map(([value, label]) => (
+          {[["refunds", `Refunds (${refunds.length})`], ["reconciliation", "Reconciliation"], ["disputes", "Disputes"], ["unpaidPayouts", "Unpaid payouts"]].map(([value, label]) => (
             <button key={value} type="button" onClick={() => setTab(value)} className={`rounded-md border px-3 py-2 text-sm font-semibold ${tab === value ? "border-brand bg-brand text-white" : "border-gray-200 bg-white text-gray-600"}`}>{label}</button>
           ))}
         </div>
 
         <ServiceDisputes active={tab === "disputes"} refundPending={refundPending} onRefund={row => { if (refundPending.current) return; setReview(null); setRefundError(""); setRefundForm(form => form.appointmentId.trim() === row.appointmentId ? ({ ...form, appointmentId: row.appointmentId, password: "" }) : ({ appointmentId: row.appointmentId, amount: "", reason: "", recoverStylistShare: false, password: "" })); setTab("refunds"); }} />
-        {tab === "disputes" ? null : loading ? (
+        <UnpaidPayouts active={tab === "unpaidPayouts"} refundPending={refundPending} />
+        {tab === "disputes" || tab === "unpaidPayouts" ? null : loading ? (
           <p className="text-sm text-gray-500">Loading payments...</p>
         ) : tab === "refunds" ? (
           <div className="grid gap-4">
@@ -198,8 +200,8 @@ const Payments = () => {
                 </div>
                 }
               </div>
-              <label className="mt-3 flex items-center gap-2 text-sm"><input type="checkbox" checked={refundForm.recoverStylistShare} disabled={submitting || Boolean(review)} onChange={event => setRefundForm({ ...refundForm, recoverStylistShare: event.target.checked })} />Recover the stylist’s share</label>
-              <p className="mt-1 text-sm text-gray-600">Recovery is optional; the backend determines the stylist share available for recovery.</p>
+              <label className="mt-3 flex items-center gap-2 text-sm"><input type="checkbox" aria-describedby="recover-share-help" checked={refundForm.recoverStylistShare} disabled={submitting || Boolean(review)} onChange={event => setRefundForm({ ...refundForm, recoverStylistShare: event.target.checked })} />Recover the stylist’s share</label>
+              <p id="recover-share-help" className="mt-1 text-sm text-gray-600">Recovery is optional; the backend determines the stylist share available for recovery.</p>
               {refundError && <p id="refund-error" role="alert" className="mt-3 text-sm text-red-700">{refundError}</p>}
               {review && (
                 <section aria-label="Review refund" className="mt-3 rounded-md border p-3">

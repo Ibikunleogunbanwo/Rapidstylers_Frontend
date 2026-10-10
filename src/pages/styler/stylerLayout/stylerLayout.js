@@ -4,6 +4,7 @@ import StylerTopBar from "./topNav";
 import BusinessSummary from "../stylerComponents/businessSummary";
 import ReviewsSummary from "../stylerComponents/reviewsSummary";
 import ListingStatusNotice from "../stylerComponents/listingStatusNotice";
+import PayoutSetupNotice from "../stylerComponents/payoutSetupNotice";
 import { getAuthToken, getUserRole, setIntendedRoute } from "../../../utils/constant";
 import { logoutSession } from "../../../utils/sessionLogout";
 
@@ -48,6 +49,7 @@ const StylerLayout = () => {
           nothing at all when there is nothing to say. */}
       <div className="pt-[70px]">
         <ListingStatusNotice />
+        <PayoutSetupNotice />
       </div>
       <div className="mx-auto max-w-[1440px] grid grid-cols-1 lg:grid-cols-[200px_minmax(0,1fr)]">
         <div className={`px-4 relative ${menuOpen ? "block" : "hidden"} lg:block`}>
