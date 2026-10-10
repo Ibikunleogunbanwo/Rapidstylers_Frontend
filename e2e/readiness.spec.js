@@ -180,7 +180,7 @@ test('booking discovery has clear sections, category image fallbacks and working
   }
   await expect(page.getByRole('img',{name:'New service illustration'})).toBeVisible();
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
-  await page.screenshot({path:`/private/tmp/booking-clarity-${info.project.name}.png`,fullPage:true});
+  await page.screenshot({path:info.outputPath(`booking-clarity-${info.project.name}.png`),fullPage:true});
   await page.getByRole('link',{name:'Hairstylist',exact:true}).click();
   await expect(page).toHaveURL(new RegExp(`/stylist/${Buffer.from('hair').toString('base64')}/${Buffer.from('Hairstylist').toString('base64')}$`));
   await page.goto('/bookAppointment');
