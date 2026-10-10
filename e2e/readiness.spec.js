@@ -190,3 +190,30 @@ test('booking discovery has clear sections, category image fallbacks and working
   await expect(page.getByPlaceholder('Search for a professional')).toHaveValue('Ada');
   expect(errors).toEqual([]);
 });
+
+
+test('stylist navigation gives every tab a focused workspace and logout survives back and refresh', async ({page}, info) => {
+  await page.goto('/login');
+  await page.getByLabel('Email address', {exact:false}).fill('styler@example.test');
+  await page.getByLabel('Password:', {exact:true}).fill('TestPassword123!');
+  await page.getByRole('button', {name:'Sign In', exact:true}).click();
+  await expect(page).toHaveURL(/\/styler-dashboard$/);
+  await expect(page.getByRole('heading', {level:1, name:'Overview', exact:true})).toBeVisible();
+  const tabs = [['Overview',''],['Appointments','/appointments'],['Calendar','/calendar'],['Availability','/availability'],['Services','/services'],['My work','/my-work'],['Payouts','/payouts'],['Reviews','/reviews'],['My profile','/profile']];
+  for (const [label, path] of tabs) {
+    const toggle = page.getByRole('button', {name:'Open dashboard navigation'});
+    if (await toggle.isVisible()) await toggle.click();
+    await page.getByRole('navigation', {name:'Stylist dashboard'}).getByRole('link', {name:label, exact:true}).click();
+    await expect(page).toHaveURL(new RegExp(`/styler-dashboard${path}$`));
+    await expect(page.getByRole('heading', {level:1, name:label, exact:true})).toBeVisible();
+    await expect(page.getByRole('complementary', {name:'Business overview'})).toHaveCount(path ? 0 : 1);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await page.screenshot({path:info.outputPath(`stylist-${label.replaceAll(' ', '-')}.png`), fullPage:true});
+  }
+  await page.getByRole('button', {name:'Sign out', exact:true}).first().click();
+  await expect(page).toHaveURL(/\/login$/);
+  await page.goBack();
+  await page.reload();
+  await expect(page).toHaveURL(/\/login$/);
+  await expect(page.getByRole('button', {name:'Sign In', exact:true})).toBeVisible();
+});

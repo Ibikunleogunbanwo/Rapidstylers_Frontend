@@ -101,17 +101,14 @@ const Reviews = () => {
           <div className="border-b border-black/10 pb-6">
             <p className="text-[15px] font-medium">No public reviews yet</p>
             <p className="mt-1 text-[14px] leading-[1.55] text-black/55">
-              You have reviews waiting for approval. They appear here, and start counting toward
-              your rating, as soon as an admin approves them.
+              Reviews count toward your rating after admin approval.
             </p>
           </div>
         ) : (
           <div className="border-b border-black/10 pb-6">
             <p className="text-[15px] font-medium">No reviews yet</p>
             <p className="mt-1 text-[14px] leading-[1.55] text-black/55">
-              Reviews appear here once a client reviews a completed appointment. Completed
-              appointments are the only ones a client can review, so keep them marked finished
-              in your appointments list.
+              Clients can review appointments marked finished.
             </p>
           </div>
         )}

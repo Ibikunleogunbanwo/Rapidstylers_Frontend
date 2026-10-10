@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import GoodToKnow from "../../components/goodToKnow";
 import { APIService } from "../../hooks/remote/apiService";
 import { humanizeConnectReason, showErrorToastMessage } from "../../utils/constant";
 
@@ -94,7 +93,7 @@ const StylerDashboard = () => {
               ? "Payouts are enabled. Your share of each completed appointment is paid to your connected Stripe account."
               : connectStatus === "REJECTED"
                 ? "Stripe could not verify your payout account."
-                : "Connect a Stripe account to receive payouts for completed appointments. Your ID and bank details are collected securely by Stripe."}
+                : "Connect a Stripe account to receive payouts for completed appointments. Stripe handles identity and bank details."}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -117,7 +116,7 @@ const StylerDashboard = () => {
             <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5 text-red-600" aria-hidden="true"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" /></svg>
             Rejection reason: <span className="font-medium">{humanizeConnectReason(connectReason)}</span>
           </p>
-          <p className="mt-0.5 text-red-700/80">Reconnect to re-enter your details. Your earnings stay safe until it's sorted.</p>
+          <p className="mt-0.5 text-red-700/80">Reconnect to re-enter your details. Payouts remain disabled until Stripe approves your account.</p>
         </div>
       )}
       <div className="border-b border-black/10 p-4 flex flex-wrap justify-between gap-3">
@@ -136,10 +135,6 @@ const StylerDashboard = () => {
         </ul>}
         <Link to="/styler-dashboard/appointments" className="inline-block mt-4 text-brand underline">Manage appointments</Link>
       </div>
-    </div>
-    {/* Pricing & cancellation basics — right under the get-paid card. */}
-    <div className="mt-4">
-      <GoodToKnow variant="styler" />
     </div>
     </>
   );

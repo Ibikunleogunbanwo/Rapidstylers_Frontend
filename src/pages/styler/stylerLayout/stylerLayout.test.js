@@ -30,9 +30,9 @@ vi.mock("../stylerComponents/businessSummary", () => ({ default: () => <aside>su
 vi.mock("../stylerComponents/reviewsSummary", () => ({ default: () => <aside>reviews</aside> }));
 vi.mock("../stylerComponents/listingStatusNotice", () => ({ default: () => null }));
 
-const renderLayout = () =>
+const renderLayout = (path = "/styler-dashboard/appointments") =>
   render(
-    <MemoryRouter initialEntries={["/styler-dashboard/appointments"]}>
+    <MemoryRouter initialEntries={[path]}>
       <StylerLayout />
     </MemoryRouter>
   );
@@ -52,14 +52,14 @@ describe("the stylist sidebar", () => {
       "Reviews",
       "My profile",
     ]) {
-      expect(screen.getAllByText(label).length).toBe(1);
+      expect(nav.querySelectorAll(`a[href="${label === "Overview" ? "/styler-dashboard" : "/styler-dashboard/" + ({"My work":"my-work","My profile":"profile"}[label] || label.toLowerCase())}"]`).length).toBe(1);
     }
     expect(nav.querySelectorAll("a").length).toBe(9);
   });
 
   it("marks the active section with a quiet brand pill, never the solid slab", () => {
     renderLayout();
-    const active = screen.getByText("Appointments");
+    const active = screen.getByRole("link", { name: "Appointments", exact: true });
     expect(active.className).toMatch(/bg-brand\/10/);
     expect(active.className).toMatch(/text-brand/);
     expect(active.className).not.toMatch(/bg-brand text-white/);
@@ -125,4 +125,17 @@ test("the mobile menu opens, closes on navigation, and supports Escape", () => {
  fireEvent.keyDown(screen.getByRole("navigation"), { key: "Escape" });
  expect(toggle).toHaveAttribute("aria-expanded", "false");
  expect(toggle).toHaveFocus();
+});
+
+test("focused tabs do not repeat overview summaries", () => {
+  renderLayout();
+  expect(screen.queryByText("summary")).not.toBeInTheDocument();
+  expect(screen.queryByText("reviews")).not.toBeInTheDocument();
+  expect(screen.getByRole("main")).toBeInTheDocument();
+  expect(screen.getByRole("heading", { level: 1, name: "Appointments" })).toBeInTheDocument();
+});
+test("overview retains business and review summaries", () => {
+  renderLayout("/styler-dashboard");
+  expect(screen.getByText("summary")).toBeInTheDocument();
+  expect(screen.getByText("reviews")).toBeInTheDocument();
 });

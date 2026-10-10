@@ -88,7 +88,7 @@ describe("the stylist's reviews page", () => {
     expect(await screen.findByText("No public reviews yet")).toBeInTheDocument();
     expect(screen.queryByText("No reviews yet")).not.toBeInTheDocument();
     expect(screen.getByText("1 review waiting for approval")).toBeInTheDocument();
-    expect(screen.getByText(/start counting toward\s+your rating/)).toBeInTheDocument();
+    expect(screen.getByText(/Reviews count toward your rating after admin approval/)).toBeInTheDocument();
   });
 
   it("counts a single waiting review in the singular", async () => {
@@ -132,7 +132,7 @@ describe("the stylist's reviews page", () => {
     render(<Reviews />);
 
     expect(await screen.findByText("No reviews yet")).toBeInTheDocument();
-    expect(screen.getByText(/Completed\s+appointments are the only ones a client can review/)).toBeInTheDocument();
+    expect(screen.getByText(/Clients can review appointments marked finished/)).toBeInTheDocument();
     // Nothing to page through, so the pager stays out of the way.
     expect(screen.queryByRole("button", { name: /next/i })).not.toBeInTheDocument();
   });

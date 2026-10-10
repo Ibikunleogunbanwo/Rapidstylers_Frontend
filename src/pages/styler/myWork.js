@@ -111,9 +111,9 @@ const MyWork = () => {
       <div className="bg-white rounded-lg border border-black/10 p-6">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div>
-            <p className="text-[15px] font-medium text-onSurface">My Work</p>
+            <p className="text-[15px] font-medium text-onSurface">Upload photos</p>
             <p className="text-sm text-gray-400">
-              Showcase your work. Approved photos appear in the public gallery.
+              Upload photos for your public profile. Photos need approval before they appear.
             </p>
           </div>
           <span className="text-sm font-semibold text-brand">
