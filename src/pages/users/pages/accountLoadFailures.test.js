@@ -5,7 +5,7 @@ import Loyalty from './loyalty';
 import Support from './support';
 vi.mock('../../../components/goBack', () => ({ default: () => null }));
 vi.mock('../../../utils/constant', () => ({ getAuthToken: () => 'token', showSuccessToastMessage: vi.fn(), showErrorToastMessage: vi.fn() }));
-vi.mock('../../../hooks/remote/apiService', () => ({ APIService: { getNotificationPreferences: vi.fn(), updateNotificationPreferences: vi.fn(), listNotifications: vi.fn(), markNotificationRead: vi.fn(), getLoyaltyAccount: vi.fn(), listSupportTickets: vi.fn() } }));
+vi.mock('../../../hooks/remote/apiService', () => ({ APIService: { getNotificationPreferences: vi.fn(), updateNotificationPreferences: vi.fn(), listNotifications: vi.fn(), markNotificationRead: vi.fn(), deleteNotification: vi.fn(), deleteAllNotifications: vi.fn(), getLoyaltyAccount: vi.fn(), listSupportTickets: vi.fn() } }));
 import { APIService } from '../../../hooks/remote/apiService';
 beforeEach(() => vi.resetAllMocks());
 test('failed preferences cannot overwrite existing preferences, and retry loads authoritative values', async () => {
@@ -37,6 +37,23 @@ test('notification read prevents repeat submission while pending', async () => {
  expect(APIService.markNotificationRead).toHaveBeenCalledTimes(1);
  await act(async()=>finish({}));
  await waitFor(()=>expect(notification).toBeEnabled());
+});
+test('a notification can be deleted, and clear all asks first', async () => {
+ APIService.listNotifications.mockResolvedValue({data:{data:{items:[{id:'N1',title:'Hello',message:'Update',read:true},{id:'N2',title:'Booked',message:'Confirmed',read:true}]}}});
+ APIService.deleteNotification.mockResolvedValue({});
+ APIService.deleteAllNotifications.mockResolvedValue({});
+ render(<Notifications setPageTitle={vi.fn()} />);
+ await screen.findByText('Hello');
+ fireEvent.click(screen.getAllByRole('button',{name:'Delete this notification'})[0]);
+ await waitFor(()=>expect(screen.queryByText('Hello')).not.toBeInTheDocument());
+ expect(APIService.deleteNotification).toHaveBeenCalledWith('N1');
+ const confirm=vi.spyOn(window,'confirm').mockReturnValueOnce(false).mockReturnValueOnce(true);
+ fireEvent.click(screen.getByRole('button',{name:'Clear all'}));
+ expect(APIService.deleteAllNotifications).not.toHaveBeenCalled();
+ fireEvent.click(screen.getByRole('button',{name:'Clear all'}));
+ expect(await screen.findByText(/You have no notifications/)).toBeInTheDocument();
+ expect(APIService.deleteAllNotifications).toHaveBeenCalledTimes(1);
+ confirm.mockRestore();
 });
 test('support fields have accessible labels', () => {
  APIService.listSupportTickets.mockResolvedValue({data:{data:[]}});

@@ -144,6 +144,8 @@ describe("RapidStylers API contracts", () => {
     await APIService.getNotificationPreferences();
     await APIService.updateNotificationPreferences({ availability: false, price: true, verification: true });
     await APIService.updateSubService({ id: 9, name: "Braids", price: "140", durationMinutes: 90 });
+    await APIService.deleteNotification(7);
+    await APIService.deleteAllNotifications();
 
     expect(ApiClient.get).toHaveBeenNthCalledWith(1, "/notifications");
     expect(ApiClient.get).toHaveBeenNthCalledWith(2, "/notification_preferences");
@@ -151,6 +153,8 @@ describe("RapidStylers API contracts", () => {
     expect(ApiClient.post).toHaveBeenNthCalledWith(2, "/notifications/read_all");
     expect(ApiClient.post).toHaveBeenNthCalledWith(3, "/notification_preferences", { availability: false, price: true, verification: true });
     expect(ApiClient.post).toHaveBeenNthCalledWith(4, "/update_sub_service", { id: 9, name: "Braids", price: "140", durationMinutes: 90 });
+    expect(ApiClient.post).toHaveBeenNthCalledWith(5, "/notifications/delete", { notificationId: 7 });
+    expect(ApiClient.post).toHaveBeenNthCalledWith(6, "/notifications/delete_all");
   });
 
   test("support, loyalty, referral, and admin operations use protected contracts", async () => {

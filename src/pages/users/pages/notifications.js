@@ -9,6 +9,8 @@ const Notifications = ({ setPageTitle }) => {
   const [loadError, setLoadError] = useState(false);
   const [pendingReads, setPendingReads] = useState(new Set());
   const [markingAll, setMarkingAll] = useState(false);
+  const [deleting, setDeleting] = useState(new Set());
+  const [clearing, setClearing] = useState(false);
 
   const load = async () => {
     if (!getAuthToken()) {
@@ -60,6 +62,33 @@ const Notifications = ({ setPageTitle }) => {
     }
   };
 
+  // Deleting is per customer: the backend only removes your own notifications.
+  const deleteOne = async (notification) => {
+    if (clearing || deleting.has(notification.id)) return;
+    setDeleting((current) => new Set(current).add(notification.id));
+    try {
+      await APIService.deleteNotification(notification.id);
+      setItems((current) => current.filter((item) => item.id !== notification.id));
+    } catch (error) {
+      showErrorToastMessage("Unable to delete notification");
+    } finally {
+      setDeleting((current) => { const next = new Set(current); next.delete(notification.id); return next; });
+    }
+  };
+
+  const clearAll = async () => {
+    if (!window.confirm("Delete all notifications? This cannot be undone.")) return;
+    setClearing(true);
+    try {
+      await APIService.deleteAllNotifications();
+      setItems([]);
+    } catch (error) {
+      showErrorToastMessage("Unable to delete notifications");
+    } finally {
+      setClearing(false);
+    }
+  };
+
   const unread = items.filter((item) => !item.read).length;
 
   return (
@@ -72,7 +101,10 @@ const Notifications = ({ setPageTitle }) => {
             <p className="mt-0.5 text-xs text-gray-500">In-app updates from RapidStylers</p>
           </div>
         </div>
-        {unread > 0 && <button type="button" onClick={markAllRead} disabled={markingAll || pendingReads.size > 0} className="text-xs font-semibold text-brand disabled:opacity-50">{markingAll ? "Updating..." : "Mark all read"}</button>}
+        <div className="flex items-center gap-3">
+          {unread > 0 && <button type="button" onClick={markAllRead} disabled={markingAll || clearing || pendingReads.size > 0} className="text-xs font-semibold text-brand disabled:opacity-50">{markingAll ? "Updating..." : "Mark all read"}</button>}
+          {items.length > 0 && <button type="button" onClick={clearAll} disabled={clearing || markingAll} className="text-xs font-semibold text-gray-500 hover:text-red-600 disabled:opacity-50">{clearing ? "Clearing..." : "Clear all"}</button>}
+        </div>
       </div>
       <div className="p-4">
         {!getAuthToken() ? (
@@ -86,13 +118,16 @@ const Notifications = ({ setPageTitle }) => {
         ) : (
           <div className="grid gap-3">
             {items.map((item) => (
-              <button key={item.id} type="button" onClick={() => markRead(item)} disabled={markingAll || pendingReads.has(item.id)} aria-busy={pendingReads.has(item.id)} className={`w-full rounded-lg border p-4 text-left transition hover:border-brand/30 ${item.read ? "border-gray-100 bg-white" : "border-brand/20 bg-brand/[0.04]"}`}>
+              <div key={item.id} className="relative">
+              <button type="button" onClick={() => markRead(item)} disabled={markingAll || pendingReads.has(item.id)} aria-busy={pendingReads.has(item.id)} className={`w-full rounded-lg border p-4 pr-10 text-left transition hover:border-brand/30 ${item.read ? "border-gray-100 bg-white" : "border-brand/20 bg-brand/[0.04]"}`}>
                 <div className="flex items-start justify-between gap-3">
                   <div><p className="text-sm font-bold text-gray-900">{item.title}</p><p className="mt-1 text-sm leading-5 text-gray-600">{item.message}</p></div>
                   {!item.read && <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-brand" aria-label="Unread" />}
                 </div>
                 <p className="mt-2 text-[11px] text-gray-400">{item.createdAt}</p>
               </button>
+              <button type="button" onClick={() => deleteOne(item)} disabled={clearing || deleting.has(item.id)} aria-label="Delete this notification" title="Delete" className="absolute right-2 top-2 rounded-full px-2 py-1 text-lg leading-none text-gray-400 hover:bg-gray-100 hover:text-red-600 disabled:opacity-50">&times;</button>
+              </div>
             ))}
           </div>
         )}

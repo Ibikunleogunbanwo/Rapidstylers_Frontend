@@ -473,6 +473,26 @@ export class APIService {
         }
     }
 
+    static async deleteNotification(notificationId){
+        try{
+            return await ApiClient.post("/notifications/delete", { notificationId });
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+
+    static async deleteAllNotifications(){
+        try{
+            return await ApiClient.post("/notifications/delete_all");
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+
     static async getNotificationPreferences(){
         try{
             return await ApiClient.get("/notification_preferences");
