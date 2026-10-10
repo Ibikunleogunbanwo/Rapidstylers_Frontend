@@ -1,3 +1,4 @@
+import ServiceOutcome from "./serviceOutcome";
 import more from "../../../assets/svg-icons/more.svg";
 import close from "../../../assets/svg-icons/closeBlack.svg";
 import React, { useState } from "react";
@@ -5,7 +6,7 @@ import { APIService } from "../../../hooks/remote/apiService";
 import { showSuccessToastMessage } from "../../../utils/constant";
 import { vendorTimeZoneLabelStrict } from "../../../utils/vendorTimeZone";
 
-const Appointments = ({appointmentDate, arrivalTime, serviceProvider, serviceType, businessAddress,serviceName, numberOfPeople, appointmentStatus, appointmentPrice, servicePrice, travelFee, includedTravelKm, travelDistanceKm, appointmentId, statusCode, paymentStatus, paymentFailureCode, refundStatus, refundAmount, refundCompletedAt, stylerTimeZone, stylerProvince, serviceTime}) => {
+const Appointments = ({appointmentDate, arrivalTime, serviceProvider, serviceType, businessAddress,serviceName, numberOfPeople, appointmentStatus, appointmentPrice, servicePrice, travelFee, includedTravelKm, travelDistanceKm, appointmentId, statusCode, paymentStatus, paymentFailureCode, refundStatus, refundAmount, refundCompletedAt, stylerTimeZone, stylerProvince, serviceTime, disputeWindowEndsAt, serviceConfirmedAt, serviceDisputeStatus, serviceDisputeReason, serviceDisputeResolutionNote, serviceDisputeResolvedAt}) => {
   // The appointment's times live on the stylist's clock; label them so a
   // cross-province customer is never left guessing whose time it is.
   const zoneLabel = vendorTimeZoneLabelStrict({ timeZone: stylerTimeZone, province: stylerProvince });
@@ -134,6 +135,7 @@ const Appointments = ({appointmentDate, arrivalTime, serviceProvider, serviceTyp
         </div>
       </div>
 
+      <ServiceOutcome appointmentId={appointmentId} disputeWindowEndsAt={disputeWindowEndsAt} serviceConfirmedAt={serviceConfirmedAt} serviceDisputeStatus={serviceDisputeStatus} serviceDisputeReason={serviceDisputeReason} serviceDisputeResolutionNote={serviceDisputeResolutionNote} serviceDisputeResolvedAt={serviceDisputeResolvedAt}/>
       {/* appointment details */}
       <div
         className={`fixed w-full h-[100vh] top-0 bottom-0 left-0 right-0 ${

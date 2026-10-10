@@ -832,6 +832,26 @@ export class APIService {
             throw(error);
         }
     }
+    static async confirmService(appointmentId){
+        try { return await ApiClient.post("/confirm_service", { appointmentId }); }
+        catch (error) { APIService.extractError(error); throw error; }
+    }
+
+    static async disputeService(data){
+        try { return await ApiClient.post("/dispute_service", data); }
+        catch (error) { APIService.extractError(error); throw error; }
+    }
+
+    static async adminServiceDisputes(){
+        try { return await ApiClient.get("/admin/service_disputes"); }
+        catch (error) { APIService.extractError(error); throw error; }
+    }
+
+    static async adminResolveServiceDispute(data){
+        try { return await ApiClient.post("/admin/resolve_service_dispute", data); }
+        catch (error) { APIService.extractError(error); throw error; }
+    }
+
     static async cancelAppointment(appointmentId){
         try{
             return await ApiClient.post("/cancel_appointment", { appointmentId });

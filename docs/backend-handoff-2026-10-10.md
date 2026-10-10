@@ -53,3 +53,31 @@ Confirm list pagination/filtering contracts for categories, stylists, blog posts
 A user-controlled signup retry returned HTTP200 from both get_upload_signature calls, then HTTP401 Invalid Signature from both Cloudinary uploads. Cloudinary's expected string lists allowed_formats, folder and timestamp. The current CloudinaryController signer also includes max_file_size; the response instructs the frontend to forward that field. Frontend forwards the exact returned parameters. Fix backend signature generation against supported Cloudinary parameters, preferably the official SDK, and enforce file-size constraints using supported provider/server validation. Verify profile and ID uploads in a real dev provider account before production. Do not expose the Cloudinary API secret in frontend code.
 
 Production logs separately show Google Places REQUEST_DENIED. GeocodingService calls the legacy autocomplete endpoint using GOOGLE_API_KEY. Check API enablement, billing, credentials and the server IP restriction for that endpoint; migrate to the new Places API if this project cannot use the legacy API. Capture Google's safe error_message and return a distinguishable unavailable result instead of silently reporting an empty suggestion list. Manual address entry remains supported.
+
+## 8. Service dispute resolution detail for the customer
+
+The customer now sees the outcome of a service dispute, plus what they reported
+and the team's resolution note, in the appointment card. The frontend already
+renders `serviceDisputeReason`, `serviceDisputeResolutionNote` and
+`serviceDisputeResolvedAt` from the appointment payload and omits each one until
+the backend supplies it, so nothing is broken today, but the resolution note is
+not reachable yet.
+
+Current backend state: `BookAppointmentEntity` stores `serviceDisputeReason`,
+`serviceDisputeStatus` and `serviceDisputedAt`, but there is no field for the
+admin's resolution note or the resolved time. `resolveDispute` writes the note
+to the audit log only, and `AppointmentDTO` exposes neither the reason nor any
+note.
+
+Required backend work:
+
+- Persist the admin's resolution note and a resolved timestamp on the
+  appointment when a dispute is resolved.
+- Expose `serviceDisputeReason`, `serviceDisputeResolutionNote` and
+  `serviceDisputeResolvedAt` on `AppointmentDTO`, populated in `DTOService`
+  alongside the existing `serviceDisputeStatus`/`disputeWindowEndsAt`.
+
+Acceptance: a resolved dispute returns the note and the resolved time; an open
+one returns the customer's reason; all three are null/absent when the
+appointment was never disputed. Keep the note length bounded (the frontend and
+`ServiceDisputeData` already cap it at 1000 characters).

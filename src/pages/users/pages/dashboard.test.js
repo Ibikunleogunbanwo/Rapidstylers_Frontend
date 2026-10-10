@@ -214,3 +214,9 @@ describe("Appointment card states where the booking happens", () => {
     expect(card.queryByRole("link", { name: "Get directions" })).toBeNull();
   });
 });
+
+it('wires the completed booking dispute window into appointment history',()=>{
+ useAllUserAppointments.mockReturnValueOnce([{appointmentId:'completed-1',statusCode:'0',status:'COMPLETED',disputeWindowEndsAt:'2030-01-01T12:00:00',stylerData:{businessName:'Salon'},subServiceData:{name:'Cut'}}]);
+ renderDash({firstname:'Ada',lastname:'L',phoneNumber:'1',address:'x'});
+ expect(screen.getByRole('button',{name:'It happened'})).toBeVisible();expect(screen.getByRole('button',{name:'Report a problem'})).toBeVisible();
+});

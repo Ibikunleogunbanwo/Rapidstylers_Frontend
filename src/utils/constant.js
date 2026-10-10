@@ -1,11 +1,16 @@
 import { useEffect } from "react";
 import { toast } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
+import { resolveApiBaseUrl } from "./apiBaseUrl";
 // Secrets come from the local .env file (gitignored) via CRA's REACT_APP_ vars.
 // Copy .env.example to .env and fill in real values.
 export const API_KEY = process.env.REACT_APP_API_KEY || "";
 export const JSON_CONTENT_TYPE = "application/json";
-export const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "http://localhost:9095/rapid_stylers";
+// A local `vite` run (mode `development`) must never send development traffic
+// to the production API even if .env.local points there — see ./apiBaseUrl.js.
+export const API_BASE_URL = resolveApiBaseUrl(process.env.REACT_APP_API_BASE_URL, {
+  dev: import.meta.env.MODE === "development",
+});
 
 /**
  * The support address we publish. It appears on the support page, in the terms,

@@ -1,3 +1,4 @@
+import ServiceOutcome from "./serviceOutcome";
 import RemoteLoadStatus from "../../../components/remoteLoadStatus";
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
@@ -110,13 +111,16 @@ const Dashboard = ({ setPageTitle }) => {
                           baseTravelFee={val?.baseTravelFee}
                           appointmentId={val?.appointmentId}
                           statusCode={val?.statusCode}
+                          disputeWindowEndsAt={val?.disputeWindowEndsAt}
+                          serviceDisputeStatus={val?.serviceDisputeStatus}
+                          serviceConfirmedAt={val?.serviceConfirmedAt}
                           paymentStatus={val?.paymentStatus}
                           paymentFailureCode={val?.paymentFailureCode}
                           refundId={val?.refundId}
                           refundStatus={val?.refundStatus}
                           refundAmount={val?.refundAmount}
                           refundCompletedAt={val?.refundCompletedAt}
-                          key={key}
+                          key={val?.appointmentId || key}
                           />
           ))}
         </div>
@@ -128,7 +132,7 @@ const Dashboard = ({ setPageTitle }) => {
             allAppointment.length > 0 ? (
               allAppointment.map((val, key) => {
                 return (
-                  <div className="grid grid-cols-12 gap-4 items-start pb-3 border-b last:border-0" key={key}>
+                  <div className="grid grid-cols-12 gap-4 items-start pb-3 border-b last:border-0" key={val?.appointmentId || key}>
                     <div className="grid grid-cols-10 items-center col-span-8">
                       <div className="col-span-2 md:col-span-1">
                         <img src={brandIco} className="h-10" alt="" />
@@ -149,6 +153,7 @@ const Dashboard = ({ setPageTitle }) => {
                       <div><span className="font-semibold text-black/50 text-sm">Time:</span> <span className=" text-gray-400 text-sm">{formatTime12(val?.arrivalTime)}{appointmentZoneLabel(val) ? ` (${appointmentZoneLabel(val)})` : ""}</span></div>
                       <div><span className="font-semibold text-black/50 text-sm">Date:</span> <span className=" text-gray-400 text-sm">{val?.appointmentDate}</span></div>
                     </div>
+                    <div className="col-span-12"><ServiceOutcome appointmentId={val?.appointmentId} disputeWindowEndsAt={val?.disputeWindowEndsAt} serviceDisputeStatus={val?.serviceDisputeStatus} serviceConfirmedAt={val?.serviceConfirmedAt} serviceDisputeReason={val?.serviceDisputeReason} serviceDisputeResolutionNote={val?.serviceDisputeResolutionNote} serviceDisputeResolvedAt={val?.serviceDisputeResolvedAt}/></div>
                     {val?.statusCode === "0" && (
                       <div className="col-span-12">
                         <ReviewForm

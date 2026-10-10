@@ -1,3 +1,4 @@
+import ServiceDisputes from "./serviceDisputes";
 import { useAdminList, AdminListControls } from "./adminList";
 import { useEffect, useRef, useState } from "react";
 import { Navigate } from "react-router-dom";
@@ -21,7 +22,7 @@ const formatMoney = (value) => {
 const Payments = () => {
   const [tab, setTab] = useState("refunds");
   const [refunds, setRefunds] = useState([]);
-  const [refundForm, setRefundForm] = useState({ appointmentId: "", amount: "", reason: "", password: "" });
+  const [refundForm, setRefundForm] = useState({ appointmentId: "", amount: "", reason: "", password: "", recoverStylistShare: false });
   const [submitting, setSubmitting] = useState(false);
   const [review, setReview] = useState(null);
   const [refundError, setRefundError] = useState("");
@@ -65,7 +66,7 @@ const Payments = () => {
       setRefundError("Refund amount must be a positive number. Leave blank for a full refund.");
       return;
     }
-    setReview({ appointmentId, amount: amount || null, reason: refundForm.reason.trim() || null });
+    setReview({ appointmentId, amount: amount || null, reason: refundForm.reason.trim() || null, recoverStylistShare: refundForm.recoverStylistShare });
   };
 
   const issueRefund = async () => {
@@ -83,7 +84,7 @@ const Payments = () => {
       const response = await APIService.adminRefund(review, adminPassword);
       if (response.data?.statusCode === "200") {
         showSuccessToastMessage(`Refund ${response.data?.data?.amount ? `of ${formatMoney(response.data.data.amount)} ` : ""}processed`);
-        setRefundForm({ appointmentId: "", amount: "", reason: "", password: "" });
+        setRefundForm({ appointmentId: "", amount: "", reason: "", password: "", recoverStylistShare: false });
         setReview(null);
         loadRefunds();
       } else {
@@ -127,12 +128,13 @@ const Payments = () => {
   return (
     <AdminPage eyebrow="Admin" title="Admin payments">
         <div className="mb-5 flex flex-wrap gap-2">
-          {[["refunds", `Refunds (${refunds.length})`], ["reconciliation", "Reconciliation"]].map(([value, label]) => (
+          {[["refunds", `Refunds (${refunds.length})`], ["reconciliation", "Reconciliation"], ["disputes", "Disputes"]].map(([value, label]) => (
             <button key={value} type="button" onClick={() => setTab(value)} className={`rounded-md border px-3 py-2 text-sm font-semibold ${tab === value ? "border-brand bg-brand text-white" : "border-gray-200 bg-white text-gray-600"}`}>{label}</button>
           ))}
         </div>
 
-        {loading ? (
+        <ServiceDisputes active={tab === "disputes"} refundPending={refundPending} onRefund={row => { if (refundPending.current) return; setReview(null); setRefundError(""); setRefundForm(form => form.appointmentId.trim() === row.appointmentId ? ({ ...form, appointmentId: row.appointmentId, password: "" }) : ({ appointmentId: row.appointmentId, amount: "", reason: "", recoverStylistShare: false, password: "" })); setTab("refunds"); }} />
+        {tab === "disputes" ? null : loading ? (
           <p className="text-sm text-gray-500">Loading payments...</p>
         ) : tab === "refunds" ? (
           <div className="grid gap-4">
@@ -196,11 +198,13 @@ const Payments = () => {
                 </div>
                 }
               </div>
+              <label className="mt-3 flex items-center gap-2 text-sm"><input type="checkbox" checked={refundForm.recoverStylistShare} disabled={submitting || Boolean(review)} onChange={event => setRefundForm({ ...refundForm, recoverStylistShare: event.target.checked })} />Recover the stylist’s share</label>
+              <p className="mt-1 text-sm text-gray-600">Recovery is optional; the backend determines the stylist share available for recovery.</p>
               {refundError && <p id="refund-error" role="alert" className="mt-3 text-sm text-red-700">{refundError}</p>}
               {review && (
                 <section aria-label="Review refund" className="mt-3 rounded-md border p-3">
                   <h2 className="font-semibold">Review entered refund details</h2>
-                  <dl><dt>Appointment id</dt><dd>{review.appointmentId}</dd><dt>Amount</dt><dd>{review.amount || "Full refund (captured amount unavailable)"}</dd><dt>Reason</dt><dd>{review.reason || "No reason entered"}</dd></dl>
+                  <dl><dt>Appointment id</dt><dd>{review.appointmentId}</dd><dt>Amount</dt><dd>{review.amount || "Full refund (captured amount unavailable)"}</dd><dt>Reason</dt><dd>{review.reason || "No reason entered"}</dd><dt>Recover the stylist’s share: {review.recoverStylistShare ? "Yes" : "No"}</dt></dl>
                   <p className="mt-2 text-sm text-gray-600">Check the customer, currency and available refund amount in your payment records before confirming. Only the details you entered are shown here.</p>
                   <button type="button" disabled={submitting} onClick={() => { setReview(null); setRefundError(""); setRefundForm((form) => ({ ...form, password: "" })); }} className="mt-2 rounded-md border px-3 py-2">Edit refund</button>
                 </section>

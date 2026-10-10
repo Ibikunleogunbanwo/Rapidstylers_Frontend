@@ -239,3 +239,13 @@ describe("RapidStylers API contracts", () => {
     });
   });
 });
+
+describe('service dispute API contracts',()=>{
+ beforeEach(()=>{vi.clearAllMocks();ApiClient.post.mockResolvedValue({data:{statusCode:'200'}});ApiClient.get.mockResolvedValue({data:{statusCode:'200'}});});
+ test('uses authenticated service actions with only their appointment payloads',async()=>{
+  await APIService.confirmService('a1');expect(ApiClient.post).toHaveBeenLastCalledWith('/confirm_service',{appointmentId:'a1'});
+  await APIService.disputeService({appointmentId:'a1',reason:'Did not happen'});expect(ApiClient.post).toHaveBeenLastCalledWith('/dispute_service',{appointmentId:'a1',reason:'Did not happen'});
+  await APIService.adminServiceDisputes();expect(ApiClient.get).toHaveBeenLastCalledWith('/admin/service_disputes');
+  await APIService.adminResolveServiceDispute({appointmentId:'a1',note:'Refund completed'});expect(ApiClient.post).toHaveBeenLastCalledWith('/admin/resolve_service_dispute',{appointmentId:'a1',note:'Refund completed'});
+ });
+});
