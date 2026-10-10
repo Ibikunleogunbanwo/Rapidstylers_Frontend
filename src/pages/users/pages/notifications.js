@@ -31,7 +31,7 @@ const Notifications = ({ setPageTitle }) => {
   };
 
   useEffect(() => {
-    setPageTitle("Account Settings");
+    setPageTitle("Notifications");
     document.title = "Notifications | RapidStylers";
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps

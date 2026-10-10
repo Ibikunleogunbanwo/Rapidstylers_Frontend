@@ -26,6 +26,7 @@ describe("the customer sidebar (desktop list)", () => {
       "Dashboard",
       "Book an Appointment",
       "Account Settings",
+      "Notifications",
       "Saved Stylists",
       "Feedback",
     ]) {
