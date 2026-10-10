@@ -12,7 +12,8 @@ vi.mock("react-redux", () => {
     __testDispatch: dispatch,
   };
 });
-vi.mock("react-router-dom", () => ({ useNavigate: () => vi.fn(), useLocation: () => ({ pathname: "/secureAccount" }) }));
+const navigate = vi.hoisted(() => vi.fn());
+vi.mock("react-router-dom", () => ({ useNavigate: () => navigate, useLocation: () => ({ pathname: "/secureAccount" }) }));
 vi.mock("lottie-react", () => ({
   __esModule: true,
   default: () => <div data-testid="lottie" />,
@@ -20,7 +21,6 @@ vi.mock("lottie-react", () => ({
 vi.mock("../../../hooks/local/userReducer", () => ({
   createUserAccount: vi.fn(),
   getUserDetails: vi.fn(),
-  userAuthenticate: vi.fn(),
 }));
 vi.mock("../../../utils/constant", () => ({
   showErrorToastMessage: vi.fn(),
@@ -179,13 +179,10 @@ describe("SecureAccount inline server errors", () => {
     expect(alert).toHaveTextContent("We couldn't create your account right now");
   });
 
-  test("shows an inline error inside the modal when auto-sign-in is rejected", async () => {
-    // Account creation succeeds, then the follow-up sign-in is rejected.
-    __testDispatch
-      .mockResolvedValueOnce({ payload: { statusCode: "200" } })
-      .mockResolvedValueOnce({
-        payload: { statusCode: "401", message: "Invalid credentials" },
-      });
+  test("creating the account signs the customer in, so the dashboard opens straight away", async () => {
+    navigate.mockClear();
+    // Sign-up answers with the session itself; no second sign-in call follows.
+    __testDispatch.mockResolvedValue({ payload: { statusCode: "200", token: "jwt", data: { userId: "A1234L" } } });
     render(<SecureAccount />);
     fillPasswordForm();
 
@@ -194,9 +191,20 @@ describe("SecureAccount inline server errors", () => {
     });
     fireEvent.click(screen.getByText("Go to Dashboard"));
 
-    const alert = await screen.findByRole("alert");
-    expect(alert).toHaveTextContent("Invalid credentials");
-    // The modal stays open on failure.
-    expect(screen.getByText(/Account created successfully/)).toBeInTheDocument();
+    expect(navigate).toHaveBeenCalledWith("/dashboard");
+  });
+
+  test("without a session in the answer, the customer signs in on the login page", async () => {
+    navigate.mockClear();
+    __testDispatch.mockResolvedValue({ payload: { statusCode: "200" } });
+    render(<SecureAccount />);
+    fillPasswordForm();
+
+    await waitFor(() => {
+      expect(screen.getByText(/Account created successfully/)).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByText("Go to Dashboard"));
+
+    expect(navigate).toHaveBeenCalledWith("/login");
   });
 });

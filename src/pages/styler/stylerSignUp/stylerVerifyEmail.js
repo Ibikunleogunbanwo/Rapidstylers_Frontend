@@ -6,6 +6,7 @@ import { useStylerSignup } from "../../../context/StylerSignupContext";
 import { readStoredSignupEmail, storeSignupEmail } from "./signupFlow";
 import { APIService } from "../../../hooks/remote/apiService";
 import { showSuccessToastMessage } from "../../../utils/constant";
+import { saveSignupUploadPass } from "../../../utils/signupUploadPass";
 
 /** How long before another code can be requested. Emails can be slow, so the
  *  countdown exists to stop a professional asking five times in a minute and
@@ -149,6 +150,8 @@ const StylerVerifyEmail = () => {
         // The flow's guard reads this: the business step is only reachable once
         // the code has been accepted, not merely requested.
         markEmailVerified();
+        // Lets the photo upload at the end of sign-up ask for a signature.
+        saveSignupUploadPass(res.data?.data?.uploadToken);
         showSuccessToastMessage("Email verified! Continue with your registration.");
         navigate("/styler-signup/business-details");
       } else {

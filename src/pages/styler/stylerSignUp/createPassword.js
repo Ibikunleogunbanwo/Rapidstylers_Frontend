@@ -11,6 +11,7 @@ import { clearStoredSignupEmail } from "./signupFlow";
 import { APIService } from "../../../hooks/remote/apiService";
 import { uploadToCloudinary, deleteCloudinaryImage } from "../../../utils/cloudinaryUpload";
 import { showSuccessToastMessage } from "../../../utils/constant";
+import { clearSignupUploadPass } from "../../../utils/signupUploadPass";
 
 /* ── Zod schema (the shared rule, measured from backend PASSWORD_PATTERN) ── */
 const passwordSchema = z
@@ -115,6 +116,7 @@ const CreatePassword = () => {
         // draft, because retyping four steps is the cost of that failure.
         forgetSignupDraft();
         clearStoredSignupEmail();
+        clearSignupUploadPass();
         showSuccessToastMessage("Account created! You can now sign in.");
         navigate("/login");
       } else {

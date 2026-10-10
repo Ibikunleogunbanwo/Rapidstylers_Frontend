@@ -90,7 +90,7 @@ describe("styler signup email verification", () => {
   it("marks the email verified once the accepted code is in", async () => {
     formData.emailAddress = "ada@example.com";
     APIService.stylerVerifyOtp.mockResolvedValue({
-      data: { statusCode: "200", emailAddress: "ada@example.com" },
+      data: { statusCode: "200", emailAddress: "ada@example.com", data: { uploadToken: "upload-pass" } },
     });
 
     renderStep();
@@ -107,6 +107,8 @@ describe("styler signup email verification", () => {
       otpCode: "123456",
     });
     expect(sessionStorage.getItem(SIGNUP_EMAIL_KEY)).toBe("ada@example.com");
+    // The photo upload at the end of sign-up needs this pass to get a signature.
+    expect(sessionStorage.getItem("stylerSignupUploadPass")).toBe("upload-pass");
   });
 
   it("refuses to verify without an address, rather than sending a doomed request", async () => {

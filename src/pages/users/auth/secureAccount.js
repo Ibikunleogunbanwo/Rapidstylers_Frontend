@@ -9,7 +9,7 @@ import PasswordInput from "../../../components/passwordInput";
 import PasswordRequirements from "../../../components/passwordRequirements";
 import { passwordProblem } from "../../../utils/passwordRule";
 import { useDispatch } from "react-redux";
-import { createUserAccount, getUserDetails, userAuthenticate } from "../../../hooks/local/userReducer";
+import { createUserAccount, getUserDetails } from "../../../hooks/local/userReducer";
 import { showErrorToastMessage } from "../../../utils/constant";
 import { useNavigate } from "react-router-dom";
 import { CustomerSignupCounter, CustomerSignupRail } from "./customerSignupRail";
@@ -36,11 +36,10 @@ const SecureAccount = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [dashboardModal, setDashboardModal] = useState(false);
-  const [userEmailAddress, setUserEmailAddress] = useState('');
-  const [userPassword, setUserPassword] = useState('');
-  // Inline server-rejection errors (shown under the form / inside the modal).
+  // Creating the account also signs the customer in; this is who they are now.
+  const [signedInUserId, setSignedInUserId] = useState(null);
+  // Inline server-rejection error, shown under the form.
   const [submitError, setSubmitError] = useState(null);
-  const [loginError, setLoginError] = useState(null);
   const createAccountForm = useFormik(
     {
       initialValues: {
@@ -75,10 +74,8 @@ const SecureAccount = () => {
           const { payload } = await dispatch(createUserAccount(userRegistrationData));
           if(payload.statusCode === "200"){
             setSubmitError(null);
-            setLoginError(null);
+            setSignedInUserId(payload.token ? payload.data?.userId : null);
             setDashboardModal(true);
-            setUserEmailAddress(finalEmailAddress);
-            setUserPassword(password);
           } else {
             setSubmitError(payload.message || "We couldn't create your account right now. Please try again.");
           }
@@ -89,19 +86,14 @@ const SecureAccount = () => {
       }
     }
   )
-  const proceedToDashboard = async() => {
-      let userSignInData = {emailAddress: userEmailAddress, password: userPassword}
-      try {
-        const { payload} = await dispatch(userAuthenticate(userSignInData));
-        if(payload.statusCode === "200"){
-          dispatch(getUserDetails(payload.data.userId));
-          setDashboardModal(false);
-          navigate("/dashboard")
-        } else {
-          setLoginError(payload.message || "We couldn't sign you in. Please try again.");
-        }
-      } catch (error) {
-        setLoginError("We couldn't sign you in right now. Please try again.");
+  const proceedToDashboard = () => {
+      setDashboardModal(false);
+      if (signedInUserId) {
+        dispatch(getUserDetails(signedInUserId));
+        navigate("/dashboard");
+      } else {
+        // The account exists but no session came back: sign in the usual way.
+        navigate("/login");
       }
   }
   return (
@@ -170,14 +162,6 @@ const SecureAccount = () => {
         </div>
       <p className="-mt-8 text-center px-4">Account created successfully. Proceed to your dashboard.</p>
         <div className="px-6 py-8 grid gap-4">
-          {loginError && (
-            <p role="alert" className="text-xs text-red-500 flex items-center gap-1.5">
-              <svg className="h-3.5 w-3.5 shrink-0" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
-              </svg>
-              <span>{loginError}</span>
-            </p>
-          )}
           <Button text={"Go to Dashboard"} variant={"primary"} type={"button"} onClick={()=>proceedToDashboard()}  />
         </div>
       </div>

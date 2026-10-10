@@ -13,6 +13,7 @@ import { straightLineKm, travelLine } from "../utils/travelEstimate";
 import { vendorTimeZoneLabel, vendorCalendarToday } from "../utils/vendorTimeZone";
 import OtpInputs from "./otpInputs";
 import GoogleSignInButton from "./googleSignInButton";
+import TurnstileWidget from "./turnstileWidget";
 import BookingCardField from "./bookingCardField";
 
 // Google Sign-In client id (public). Empty hides the Google option in the quick-account step.
@@ -104,6 +105,9 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
   const signupOtpRefs = useRef([]);
   const [signinEmail, setSigninEmail] = useState("");
   const [signinPassword, setSigninPassword] = useState("");
+  // The sign-in bot check (Turnstile), same as the login page.
+  const [captchaToken, setCaptchaToken] = useState("");
+  const [captchaReset, setCaptchaReset] = useState(0);
 
   const toMinutes = (value) => {
     const m = /^(\d{1,2}):(\d{2})\s*(am|pm)?$/i.exec((value || "").trim());
@@ -580,9 +584,9 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
         setSignupError(payload.message || "We couldn't create your account right now.");
         return;
       }
-      // Now sign in so the booking request below carries a valid JWT.
-      const signInRes = await dispatch(userAuthenticate({ emailAddress: signupEmail.trim(), password: signupPassword }));
-      if (signInRes.payload?.statusCode !== "200") {
+      // Creating the account also signed the customer in, so the booking
+      // request below carries a valid JWT.
+      if (!payload.token) {
         // Account exists now, so send them to the inline sign-in panel with the
         // email prefilled — never strand the booking on a dead-end message.
         setSignupPassword("");
@@ -632,9 +636,11 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
     }
     setSignupBusy(true);
     try {
-      const res = await dispatch(userAuthenticate({ emailAddress: signinEmail.trim(), password: signinPassword }));
+      const res = await dispatch(userAuthenticate({ emailAddress: signinEmail.trim(), password: signinPassword, captchaToken }));
       if (res.payload?.statusCode !== "200") {
         setSignupError(res.payload?.message || "That email and password didn't match. Try again.");
+        // A challenge token works once, so a retry needs a fresh one.
+        setCaptchaReset((n) => n + 1);
         return;
       }
       setSignupStep(null);
@@ -1088,6 +1094,7 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
                       onChange={(e) => setSigninEmail(e.target.value)} placeholder={"you@example.com"} />
                     <Input label={"Password"} type={"password"} value={signinPassword}
                       onChange={(e) => setSigninPassword(e.target.value)} />
+                    <TurnstileWidget onVerify={setCaptchaToken} resetSignal={captchaReset} />
                     {signupError && <p className="text-xs text-red-500">{signupError}</p>}
                     <button type="submit" disabled={signupBusy}
                       className="rounded-md bg-brand text-white text-sm py-3 font-medium disabled:opacity-60">

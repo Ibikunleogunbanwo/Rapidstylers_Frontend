@@ -1,4 +1,6 @@
-import { buildSignedUploadFormData, assertUploadAllowed, cloudinaryUploadUrl } from "./cloudinaryUpload";
+import { buildSignedUploadFormData, assertUploadAllowed, cloudinaryUploadUrl, signatureRequestConfig } from "./cloudinaryUpload";
+import { AUTH_TOKEN_STORAGE_KEY } from "./constant";
+import { saveSignupUploadPass } from "./signupUploadPass";
 
 /** The shape the backend returns today: cloudName + the exact signed parameter set. */
 const SIGNED = {
@@ -113,5 +115,25 @@ describe("assertUploadAllowed", () => {
 describe("cloudinaryUploadUrl", () => {
   test("targets the configured cloud", () => {
     expect(cloudinaryUploadUrl(SIGNED)).toBe("https://api.cloudinary.com/v1_1/rapid/image/upload");
+  });
+});
+
+describe("signatureRequestConfig", () => {
+  afterEach(() => sessionStorage.clear());
+
+  /** A stylist still signing up has no account token, only the pass their email code earned. */
+  test("shows the sign-up upload pass when nobody is signed in", () => {
+    saveSignupUploadPass("upload-pass");
+    expect(signatureRequestConfig()).toEqual({ headers: { Authorization: "Bearer upload-pass" } });
+  });
+
+  test("leaves a signed-in stylist's own token to ApiClient", () => {
+    saveSignupUploadPass("upload-pass");
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, "stylist-token");
+    expect(signatureRequestConfig()).toBeUndefined();
+  });
+
+  test("adds nothing when there is no pass", () => {
+    expect(signatureRequestConfig()).toBeUndefined();
   });
 });

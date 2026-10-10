@@ -1,4 +1,6 @@
 import { ApiClient } from "../hooks/remote/apiClient";
+import { getAuthToken } from "./constant";
+import { readSignupUploadPass } from "./signupUploadPass";
 
 /** Maps Cloudinary format names to the MIME types browsers report for them. */
 const FORMAT_MIME = {
@@ -68,6 +70,17 @@ export function cloudinaryUploadUrl(sig) {
 }
 
 /**
+ * Who is asking for the upload signature. A signed-in stylist's own token is
+ * attached by ApiClient; a stylist still signing up has no account yet, so
+ * they show the upload pass their email code earned them.
+ */
+export function signatureRequestConfig() {
+  const pass = readSignupUploadPass();
+  if (getAuthToken() || !pass) return undefined;
+  return { headers: { Authorization: `Bearer ${pass}` } };
+}
+
+/**
  * Uploads a file directly to Cloudinary using a backend-signed URL.
  * Used at the single commit point of the styler signup (final submit) so
  * images are never pushed to Cloudinary before the account is created.
@@ -79,7 +92,7 @@ export async function uploadToCloudinary(file, folder) {
   const sigUrl = folder
     ? `/get_upload_signature?folderPrefix=${encodeURIComponent(folder)}`
     : "/get_upload_signature";
-  const sigRes = await ApiClient.get(sigUrl);
+  const sigRes = await ApiClient.get(sigUrl, signatureRequestConfig());
   const sig = sigRes.data?.data;
   if (!sig) throw new Error("Failed to get upload credentials");
 

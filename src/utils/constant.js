@@ -43,7 +43,7 @@ export const API_HEADER = {
     'x-api-key' : API_KEY
 }
 
-// JWT issued by user_sign_in / styler_sign_in / admin_sign_in — attached as
+// JWT issued by sign_in, google_sign_in, admin_sign_in or sign-up — attached as
 // Authorization: Bearer <token> by the ApiClient interceptor.
 export const AUTH_TOKEN_STORAGE_KEY = "rapidstylers_auth_token";
 export const ADMIN_ROLE_KEY = "rapidstylers_admin_role";

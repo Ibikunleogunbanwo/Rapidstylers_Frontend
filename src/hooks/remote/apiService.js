@@ -157,15 +157,6 @@ export class APIService {
             throw(error);
         }
     }
-    static async userSignIn(data){
-        try{
-            return await ApiClient.post("/user_sign_in", data);
-        }
-        catch(error){
-            APIService.extractError(error);
-            throw(error);
-        }
-    }
     /** Unified sign-in for customers, stylists and admins — routes by the role in the response. */
     static async signIn(data){
         try{

@@ -35,30 +35,53 @@ export const verifyOtpCode = createAsyncThunk(
     }
 )
 
+/**
+ * Keeps the tokens of a customer session, from sign-up or sign-in alike.
+ * Both answer in the shape /sign_in uses: { token, refreshToken, data: { role, account } }.
+ */
+const startCustomerSession = (response) => {
+    setAuthToken(response.token);
+    if (response.refreshToken) {
+        setRefreshToken(response.refreshToken);
+    }
+    setUserRole("CUSTOMER");
+    saveToLocalStorage("userSessionData", JSON.stringify(response.data.account));
+};
+
+/**
+ * Creating an account also signs the customer in: the answer carries the
+ * session, so no second, unchallenged sign-in call is needed. The reply's
+ * `data` becomes the account, which is what every caller reads.
+ */
 export const createUserAccount = createAsyncThunk(
     "user/createUserAccount",
     async(data)=>{
         const apiCreateUserAccount = await APIService.createUserAccount(data);
         const response = await apiCreateUserAccount.data;
+        if (response.token && response.data?.account) {
+            startCustomerSession(response);
+            return { ...response, data: response.data.account };
+        }
         return response;
     }
 )
 
+/**
+ * Customer sign-in for the hero and booking forms. It goes through /sign_in,
+ * which carries the bot check, so `userData` must include the form's
+ * captchaToken. A stylist or admin who signs in here is turned away rather than
+ * left half signed in as a customer: those accounts sign in on /login.
+ */
 export const userAuthenticate = createAsyncThunk(
     "user/userLogin",
     async(userData) =>{
-        const apiUserLogin = await APIService.userSignIn(userData);
+        const apiUserLogin = await APIService.signIn(userData);
         const response = await apiUserLogin.data;
-        saveToLocalStorage("userSessionData", JSON.stringify(response.data));
-        if (response.token) {
-            setAuthToken(response.token);
+        if (response.data?.role !== "CUSTOMER" || !response.data?.account) {
+            return { statusCode: "400", message: "This sign-in is for customers. Stylists sign in on the main sign-in page." };
         }
-        if (response.refreshToken) {
-            setRefreshToken(response.refreshToken);
-        }
-        // Hero / legacy login path is always a customer session.
-        setUserRole("CUSTOMER");
-        return response;
+        startCustomerSession(response);
+        return { ...response, data: response.data.account };
     }
 )
 
@@ -186,7 +209,13 @@ const userSlice = createSlice({
     },
     initialState : initialState,
     extraReducers : (builder) => {
-        builder.addCase(userAuthenticate.fulfilled, (state,action)=>{
+        builder.addCase(createUserAccount.fulfilled, (state,action)=>{
+            if(action.payload.statusCode === "200" && action.payload.token){
+                state.isAuthenticated = true;
+                state.userSessionData = action.payload.data;
+            }
+        })
+        .addCase(userAuthenticate.fulfilled, (state,action)=>{
             if(action.payload.statusCode === "200"){
                 state.users = action.payload;
                 state.isAuthenticated = true;
@@ -198,10 +227,11 @@ const userSlice = createSlice({
             }
             state.loading= false;
         })
-        .addCase(userAuthenticate.rejected, (state,action)=>{
+        .addCase(userAuthenticate.rejected, (state)=>{
+            // No toast here: APIService.extractError already showed the reason
+            // (wrong password, failed challenge, server down).
             state.loading = false;
             state.isAuthenticated = false;
-            state.error = showErrorToastMessage("Server Down, Contact Admin");
         })
         .addCase(getUserDetails.fulfilled, (state,action)=>{
             if(action.payload.statusCode === "200"){

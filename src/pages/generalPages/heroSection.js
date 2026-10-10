@@ -14,6 +14,7 @@ import { getUserDetails, setUserSession, userAuthenticate, verifySignUpEmailAddr
 import PasswordInput from "../../components/passwordInput";
 import SearchForStyler from "../../components/searchForStyler";
 import GoogleSignInButton from "../../components/googleSignInButton";
+import TurnstileWidget from "../../components/turnstileWidget";
 
 import elevate from "../../assets/images/elevate.webp"
 import { setAuthToken, setRefreshToken, showSuccessToastMessage } from "../../utils/constant";
@@ -29,6 +30,9 @@ const Hero = ({ height }) => {
   const [signInVisible, setSignInVisible] = useState(false);
   const [signUpVisible, setSignUpVisible] = useState(false);
   const [googleError, setGoogleError] = useState("");
+  // The sign-in bot check (Turnstile), same as the login page.
+  const [captchaToken, setCaptchaToken] = useState("");
+  const [captchaReset, setCaptchaReset] = useState(0);
 
   const toggleSignIn = () => {
     setSignInVisible(!signInVisible);
@@ -70,12 +74,15 @@ const Hero = ({ height }) => {
     }),
     onSubmit: async (values) => {
       const { emailAddress, password } = values;
-      let authData = { emailAddress, password };
+      let authData = { emailAddress, password, captchaToken };
       const { payload } = await dispatch(userAuthenticate(authData))
-      if (payload.statusCode === "200") {
+      if (payload?.statusCode === "200") {
         showSuccessToastMessage(`Good ${periodOfTheDay} `+payload.data.firstname);
         dispatch(getUserDetails(payload.data.userId));
         navigate('/dashboard');
+      } else {
+        // A challenge token works once, so a retry needs a fresh one.
+        setCaptchaReset((n) => n + 1);
       }
     }
   })
@@ -231,6 +238,7 @@ const Hero = ({ height }) => {
               }
             />
           </div>
+          <TurnstileWidget onVerify={setCaptchaToken} resetSignal={captchaReset} />
 
           {(userError || googleError) && (
             <div className="mt-3 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700 flex items-start gap-2">
