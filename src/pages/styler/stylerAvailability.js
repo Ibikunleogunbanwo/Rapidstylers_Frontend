@@ -24,6 +24,9 @@ const StylerAvailability = () => {
   // Date exceptions (vacation, sick day, etc.)
   const [exceptions, setExceptions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  const [loaded, setLoaded] = useState(false);
+  const [removingId, setRemovingId] = useState(null);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
   // Exception form
@@ -36,6 +39,7 @@ const StylerAvailability = () => {
   const [travelSaving, setTravelSaving] = useState(false);
 
   const loadAvailability = async () => {
+    setLoadError("");
     setLoading(true);
     try {
       const [slotsRes, exceptionsRes, travelRes] = await Promise.all([
@@ -44,12 +48,13 @@ const StylerAvailability = () => {
         APIService.stylerTravelSettings(),
       ]);
       const existing = slotsRes.data?.data || [];
+      setLoaded(true);
       setSlots((prev) =>
         prev.map((slot) => {
           const match = existing.find((e) => String(e.dayOfWeek) === slot.dayOfWeek);
           return match
             ? { ...slot, enabled: true, startTime: match.startTime, endTime: match.endTime }
-            : slot;
+            : { ...slot, enabled: false };
         })
       );
       setExceptions(exceptionsRes.data?.data || []);
@@ -57,7 +62,7 @@ const StylerAvailability = () => {
       setIncludedTravelKm(String(travel.includedTravelKm ?? 15));
       setBaseTravelFee(travel.baseTravelFee ?? "0.00");
     } catch (error) {
-      // Error toasts are handled inside APIService.
+      setLoadError("Could not load your availability settings.");
     } finally {
       setLoading(false);
     }
@@ -81,6 +86,7 @@ const StylerAvailability = () => {
   };
 
   const handleSave = async () => {
+    if (!loaded || loading || loadError || saving) return;
     const enabled = slots.filter((s) => s.enabled);
     for (const slot of enabled) {
       if (slot.startTime >= slot.endTime) {
@@ -102,6 +108,7 @@ const StylerAvailability = () => {
   };
 
   const addException = async () => {
+    if (!loaded || loading || loadError || exceptionLoading) return;
     if (!exceptionDate) {
       showErrorToastMessage("Please select a date");
       return;
@@ -120,23 +127,28 @@ const StylerAvailability = () => {
   };
 
   const removeException = async (id) => {
+    if (removingId || loading || loadError) return;
+    setRemovingId(id);
     try {
       const res = await APIService.deleteAvailabilityException(id);
       setExceptions(res.data?.data || []);
       showSuccessToastMessage("Date restored to available");
     } catch (error) {
       // Error toasts are handled inside APIService.
+    } finally {
+      setRemovingId(null);
     }
   };
 
   const handleTravelSave = async () => {
+    if (!loaded || loading || loadError || travelSaving) return;
     const km = Number(includedTravelKm);
     const fee = Number(baseTravelFee);
-    if (Number.isNaN(km) || km < 0) {
+    if (!Number.isFinite(km) || km < 0) {
       showErrorToastMessage("Included travel distance must be 0 or more");
       return;
     }
-    if (Number.isNaN(fee) || fee < 0) {
+    if (!Number.isFinite(fee) || fee < 0) {
       showErrorToastMessage("Home visit fee must be 0 or more");
       return;
     }
@@ -169,7 +181,7 @@ const StylerAvailability = () => {
 
         {loading ? (
           <p className="text-sm text-gray-500 py-10 text-center">Loading availability…</p>
-        ) : (
+        ) : loadError ? (<div role="alert" className="p-4 text-sm text-red-700">{loadError} <button type="button" onClick={loadAvailability}>Retry</button></div>) : (
           <div className="grid gap-3">
             {slots.map((slot, index) => (
               <div
@@ -229,13 +241,13 @@ const StylerAvailability = () => {
         )}
         <div className="mt-6 flex items-center justify-between gap-3 border-t border-gray-100 pt-5">
           <p className="text-sm text-gray-500">
-            {enabledCount === 0
+            {!loaded || loadError ? "Working hours unavailable." : enabledCount === 0
               ? "No working hours set. Customers cannot book a time."
               : `${enabledCount} working day${enabledCount === 1 ? "" : "s"} set.`}
           </p>
           <button
             onClick={handleSave}
-            disabled={loading || saving}
+            disabled={!loaded || loading || !!loadError || saving}
             className="rounded-md bg-brand px-6 py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
           >
             {saving ? "Saving…" : "Save hours"}
@@ -278,7 +290,7 @@ const StylerAvailability = () => {
         <div className="mt-5 flex justify-end">
           <button
             onClick={handleTravelSave}
-            disabled={travelSaving}
+            disabled={!loaded || loading || !!loadError || travelSaving}
             className="rounded-md bg-brand px-6 py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
           >
             {travelSaving ? "Saving…" : "Save home visit settings"}
@@ -321,7 +333,7 @@ const StylerAvailability = () => {
           </div>
           <button
             onClick={addException}
-            disabled={exceptionLoading}
+            disabled={!loaded || loading || !!loadError || exceptionLoading}
             className="rounded-md bg-brand px-5 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
           >
             {exceptionLoading ? "Adding…" : "Block date"}
@@ -329,7 +341,7 @@ const StylerAvailability = () => {
         </div>
 
         {/* Exception list */}
-        {exceptions.length === 0 ? (
+        {!loaded || loading || loadError ? (<p className="text-sm text-gray-500">Exceptions unavailable until settings load.</p>) : exceptions.length === 0 ? (
           <p className="text-sm text-gray-400 text-center py-6">No date exceptions. All available dates follow your weekly hours.</p>
         ) : (
           <div className="grid gap-2">
@@ -350,6 +362,7 @@ const StylerAvailability = () => {
                 </div>
                 <button
                   onClick={() => removeException(ex.id)}
+                  disabled={!!removingId}
                   className="text-xs font-semibold text-red-500 hover:text-red-700 transition-colors px-2 py-1 rounded hover:bg-red-50"
                 >
                   Remove

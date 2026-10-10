@@ -11,6 +11,7 @@ const APPOINTMENT_PAGE_SIZE = 10;
 const StylerAppointments = () => {
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [view, setView] = useState("pending"); // "pending" | "past"
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
@@ -19,12 +20,13 @@ const StylerAppointments = () => {
   const [pastPage, setPastPage] = useState(1);
 
   const loadAppointments = async () => {
+    setLoadError("");
     setLoading(true);
     try {
       const res = await APIService.stylerAppointments();
       setAppointments(res.data?.data || []);
     } catch (error) {
-      // Error toasts are handled inside APIService.
+      setLoadError("Could not load your appointments.");
     } finally {
       setLoading(false);
     }
@@ -69,6 +71,7 @@ const StylerAppointments = () => {
   };
 
   const runAction = async (appointmentId, action, note = "") => {
+    if (actionLoading) return;
     setActionLoading(true);
     try {
       if (action === "accept") {
@@ -149,7 +152,7 @@ const StylerAppointments = () => {
 
         {loading ? (
           <div className="mt-10 text-sm text-gray-500">Loading appointments…</div>
-        ) : view === "pending" ? (
+        ) : loadError ? (<div role="alert" className="p-4 text-sm text-red-700">{loadError} <button type="button" onClick={loadAppointments}>Retry</button></div>) : view === "pending" ? (
           pending.length === 0 ? (
             <div className="mt-10 text-sm text-gray-500">
               No pending appointments. New booking requests will appear here.

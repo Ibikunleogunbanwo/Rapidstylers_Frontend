@@ -1,5 +1,6 @@
+import { logoutSession } from "../../utils/sessionLogout";
 import { createAsyncThunk, createSlice, isAnyOf } from "@reduxjs/toolkit";
-import { retrieveFromLocalStorage, showErrorToastMessage, showSuccessToastMessage, setAuthToken, setRefreshToken, setUserRole, clearAllSessionTokens, getRefreshToken } from "../../utils/constant";
+import { retrieveFromLocalStorage, showErrorToastMessage, showSuccessToastMessage, setAuthToken, setRefreshToken, setUserRole, getAuthToken, getUserRole, getSessionRevision } from "../../utils/constant";
 import { APIService } from "../remote/apiService";
 
 const initialState = {
@@ -136,13 +137,35 @@ export const allUserAppointments = createAsyncThunk(
         return response;
     }
 )
+const profileSessionMatches = (session, user) => Boolean(
+    getAuthToken() && session.accountId &&
+    getSessionRevision() === session.sessionRevision &&
+    getUserRole() === session.userRole &&
+    user?.userSessionData?.userId === session.accountId
+);
+
 export const getUserDetails = createAsyncThunk(
     "user/Details",
-    async(userId)=>{
-        const userDetailsAPI = await APIService.getUserDetails(userId);
-        const response = await userDetailsAPI.data;
-        saveToLocalStorage("userDetailsData", JSON.stringify(response.data));
-        return response;
+    async(userId, { getState, fulfillWithValue })=>{
+        const session = {
+            sessionRevision: getSessionRevision(),
+            accountId: getState().user?.userSessionData?.userId,
+            userRole: getUserRole(),
+        };
+        try {
+            const userDetailsAPI = await APIService.getUserDetails(userId);
+            if (!profileSessionMatches(session, getState().user)) {
+                return fulfillWithValue(null, { staleSession: true });
+            }
+            const response = userDetailsAPI.data;
+            saveToLocalStorage("userDetailsData", JSON.stringify(response.data));
+            return fulfillWithValue(response, session);
+        } catch (error) {
+            if (!profileSessionMatches(session, getState().user)) {
+                return fulfillWithValue(null, { staleSession: true });
+            }
+            throw error;
+        }
     }
 )
 
@@ -182,22 +205,10 @@ export const addUserFeedBack = createAsyncThunk(
     }
 )
 
-const logOutSession = async () =>{
-    // Best-effort server-side revocation (fire-and-forget).
-    const refreshToken = getRefreshToken();
-    if (refreshToken) {
-        try { await APIService.logout(refreshToken); } catch (_) { /* ignore */ }
-    }
-    localStorage.removeItem("user");
-    localStorage.removeItem("userSessionData"); 
-    localStorage.removeItem("userDetailsData");
-    clearAllSessionTokens();
-}
-
 export const userLogOut = createAsyncThunk(
     "user/LogOut",
     async()=>{
-        logOutSession();
+        logoutSession();
     }
 )
 
@@ -244,13 +255,14 @@ const userSlice = createSlice({
             state.isAuthenticated = false;
         })
         .addCase(getUserDetails.fulfilled, (state,action)=>{
+            if (action.meta.staleSession || !profileSessionMatches(action.meta, state)) return;
             if(action.payload.statusCode === "200"){
                 state.users = action.payload;
                 state.userDetailsData = action.payload.data;
             }
             state.loading = false;
         })
-        .addCase(userLogOut.fulfilled, (state,action)=>{
+        .addCase(userLogOut.pending, (state)=>{
             state.isAuthenticated = false;
             state.loading = false;
             state.users = null;

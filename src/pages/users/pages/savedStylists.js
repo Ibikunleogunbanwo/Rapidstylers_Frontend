@@ -8,6 +8,8 @@ import { vendorOpenState } from "../../../utils/vendorOpenState";
 const SavedStylist = ({ setPageTitle }) => {
   const [stylists, setStylists] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const [removingId, setRemovingId] = useState(null);
 
   useEffect(() => {
@@ -21,16 +23,18 @@ const SavedStylist = ({ setPageTitle }) => {
       setLoading(false);
       return undefined;
     }
+    setLoading(true);
+    setLoadError(false);
     APIService.listSavedStylists()
       .then((response) => {
         if (mounted) setStylists(response.data?.data || []);
       })
-      .catch(() => {})
+      .catch(() => { if (mounted) setLoadError(true); })
       .finally(() => {
         if (mounted) setLoading(false);
       });
     return () => { mounted = false; };
-  }, []);
+  }, [loadAttempt]);
 
   const removeStylist = async (stylerId) => {
     setRemovingId(stylerId);
@@ -68,6 +72,8 @@ const SavedStylist = ({ setPageTitle }) => {
           <p className="border-t border-black/10 py-10 text-center text-[13px] text-black/55">
             Loading saved professionals...
           </p>
+        ) : loadError ? (
+          <div role="alert">Unable to load saved professionals. <button type="button" onClick={() => setLoadAttempt((current) => current + 1)}>Retry</button></div>
         ) : stylists.length === 0 ? (
           <div className="border-t border-black/10 pt-10 text-center">
             <p className="text-[11px] uppercase tracking-[0.25em] text-muted">Nothing saved yet</p>

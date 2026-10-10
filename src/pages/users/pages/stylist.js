@@ -1,3 +1,4 @@
+import RemoteLoadStatus from "../../../components/remoteLoadStatus";
 import { useParams } from "react-router-dom";
 // import arrow from "../assets/svg-icons/black-arrow.svg"
 import ServiceCard from "../../../components/serviceCard";
@@ -17,11 +18,15 @@ const Stylist = ({ setPageTitle }) => {
   let { stylerTypeId, stylerTypeName } = useParams();
   stylerTypeId = atob(stylerTypeId);
   stylerTypeName = atob(stylerTypeName);
-  const stylerList = useStylerByCategoryList(stylerTypeId);
+  const loadState = useStylerByCategoryList(stylerTypeId, {withState:true});
+  const stylerList = loadState.data ?? loadState;
   const { savedIds, loading: savedLoading, toggleSaved } = useSavedStylists();
+  const reduxLoading = useSelector((state) => state.user).loading;
+  if (loadState.loading || loadState.error) return <RemoteLoadStatus state={loadState} />;
+
   return (
     <div className="bg-white border rounded-lg">
-      <Spinner loading={useSelector((state) => state.user).loading} />
+      <Spinner loading={reduxLoading} />
       <div className="flex gap-1 items-center border-b p-4 text-[15px] font-bold bg-[#1d1d1d08] rounded-t-lg">
         <Back />
         <span>{stylerTypeName}s.</span>

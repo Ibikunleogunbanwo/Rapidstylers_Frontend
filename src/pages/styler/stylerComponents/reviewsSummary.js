@@ -12,12 +12,21 @@ const ReviewsSummary = () => {
   const [summary, setSummary] = useState(null);
   const [loaded, setLoaded] = useState(false);
 
-  useEffect(() => {
-    APIService.getOwnStylerReviews()
+  const load = () => {
+    setLoaded(false);
+    return APIService.getOwnStylerReviews()
       .then((response) => setSummary(response.data?.data || null))
       .catch(() => setSummary(null))
       .finally(() => setLoaded(true));
-  }, []);
+  };
+  useEffect(() => { load(); }, []);
+  if (!summary) return (
+    <div className="rounded-lg border p-4">
+      <Link to="/styler-dashboard/reviews">Reviews</Link>
+      {loaded ? <div role="alert">Could not load your reviews. <button type="button" onClick={load}>Retry</button></div> : <p>Loading reviews…</p>}
+    </div>
+  );
+
 
   const count = Number(summary?.reviewCount || 0);
   const average = summary?.averageRating;

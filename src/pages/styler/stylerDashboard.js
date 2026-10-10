@@ -1,76 +1,50 @@
 // src/components/CalendarDashboard.js
 
 import React, { useEffect, useState } from 'react';
-import { format, addDays, isToday } from 'date-fns';
-import calendar from "../../assets/svg-icons/calendar.svg";
-import arrow from "../../assets/svg-icons/darkArrow.svg";
-import AppointmentDetails from './stylerComponents/appointmentDetails';
+import { Link } from 'react-router-dom';
 import GoodToKnow from "../../components/goodToKnow";
 import { APIService } from "../../hooks/remote/apiService";
 import { humanizeConnectReason, showErrorToastMessage } from "../../utils/constant";
 
 const ALLOWED_ONBOARDING_HOSTS = ["connect.stripe.com", "connect.stripe.ca"];
 
-const timeSlots = {
-  morning: [
-    '6:00-7:00am',
-    '7:00-8:00am',
-    '8:00-9:00am',
-    '9:00-10:00am',
-    '10:00-11:00am',
-    '11:00-12:00pm',
-  ],
-  afternoon: [
-    '12:00-1:00pm',
-    '1:00-2:00pm',
-    '2:00-3:00pm',
-    '3:00-4:00pm',
-    '4:00-5:00pm',
-  ],
-  evening: [
-    '5:00-6:00pm',
-    '6:00-7:00pm',
-    '7:00-8:00pm',
-    '8:00-9:00pm',
-  ],
-};
-
 const StylerDashboard = () => {
-  const [selectedDate, setSelectedDate] = useState(new Date());
-
-  const goToNextDay = () => {
-    setSelectedDate(addDays(selectedDate, 1));
+  const [appointments, setAppointments] = useState([]);
+  const [loadingAppointments, setLoadingAppointments] = useState(true);
+  const [appointmentError, setAppointmentError] = useState("");
+  const loadAppointments = async () => {
+    setLoadingAppointments(true);
+    setAppointmentError("");
+    try {
+      const response = await APIService.stylerAppointments();
+      if (!Array.isArray(response.data?.data)) throw new Error("Invalid appointments");
+      setAppointments(response.data.data.filter(item => ["1", "3"].includes(item.statusCode))
+        .sort((a, b) => `${a.appointmentDate} ${a.arrivalTime}`.localeCompare(`${b.appointmentDate} ${b.arrivalTime}`)));
+    } catch { setAppointmentError("Could not load your appointments."); }
+    finally { setLoadingAppointments(false); }
   };
-
-  const goToPreviousDay = () => {
-    if (!isToday(selectedDate)) {
-      setSelectedDate(addDays(selectedDate, -1));
-    }
-  };
-
-  // const showFullCalendar = () => {
-  //   
-  // };
+  useEffect(() => { loadAppointments(); }, []);
 
   // Stripe Connect payouts — "Get paid" setup for the stylist.
   const [connectStatus, setConnectStatus] = useState(null);
   const [connectReason, setConnectReason] = useState(null);
   const [connecting, setConnecting] = useState(false);
 
-  useEffect(() => {
-    APIService.getStylerConnectStatus()
-      .then((response) => {
-        setConnectStatus(response.data?.data?.status || "NOT_STARTED");
-        setConnectReason(response.data?.data?.disabledReason || null);
-      })
-      .catch(() => {
-        setConnectStatus("NOT_STARTED");
-        setConnectReason(null);
-      });
-  }, []);
+  const [connectError, setConnectError] = useState("");
+  const loadConnectStatus = async () => {
+    setConnectStatus(null);
+    setConnectError("");
+    try {
+      const response = await APIService.getStylerConnectStatus();
+      if (!response.data?.data?.status) throw new Error("Missing status");
+      setConnectStatus(response.data.data.status);
+      setConnectReason(response.data.data.disabledReason || null);
+    } catch { setConnectError("Could not load payout status."); }
+  };
+  useEffect(() => { loadConnectStatus(); }, []);
 
   const startConnect = async () => {
-    if (connecting) return;
+    if (connecting || !connectStatus || connectError) return;
     setConnecting(true);
     try {
       const dashboardUrl = `${window.location.origin}/styler-dashboard`;
@@ -86,7 +60,7 @@ const StylerDashboard = () => {
       }
       if (data?.data?.onboardingUrl) {
         const onboardingUrl = new URL(data.data.onboardingUrl);
-        if (!ALLOWED_ONBOARDING_HOSTS.includes(onboardingUrl.hostname)) {
+        if (onboardingUrl.protocol !== "https:" || !ALLOWED_ONBOARDING_HOSTS.includes(onboardingUrl.hostname)) {
           showErrorToastMessage("Invalid onboarding URL. Please try again.");
         } else {
           window.location.href = data.data.onboardingUrl;
@@ -109,16 +83,6 @@ const StylerDashboard = () => {
         ? { label: "Setup in progress", cls: "bg-amber-50 text-amber-700 border-amber-200" }
         : { label: "Not connected", cls: "bg-gray-50 text-gray-600 border-gray-200" };
 
-  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
-
-  const openDetails = () => {
-    setIsDetailsOpen(true);
-  };
-
-  const closeDetails = () => {
-    setIsDetailsOpen(false);
-  };
-
   return (
     <>
     <div className='border border-black/10 rounded-lg relative'>
@@ -134,8 +98,8 @@ const StylerDashboard = () => {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <span className={`text-xs font-medium border rounded-full px-3 py-1 ${payoutBadge.cls}`}>{payoutBadge.label}</span>
-          {connectStatus !== "COMPLETE" && (
+          {connectError ? <div role="alert"><p>{connectError}</p><button type="button" onClick={loadConnectStatus}>Retry payout status</button></div> : connectStatus ? <span className={`text-xs font-medium border rounded-full px-3 py-1 ${payoutBadge.cls}`}>{payoutBadge.label}</span> : <p role="status">Loading payout status…</p>}
+          {connectStatus && !connectError && connectStatus !== "COMPLETE" && (
             <button
               type="button"
               onClick={startConnect}
@@ -156,46 +120,22 @@ const StylerDashboard = () => {
           <p className="mt-0.5 text-red-700/80">Reconnect to re-enter your details. Your earnings stay safe until it's sorted.</p>
         </div>
       )}
-      <div className='border-b border-black/10 p-4 flex justify-between'>
-        <div className='flex items-center gap-4 text-sm'>
-          <div onClick={goToPreviousDay} disabled={isToday(selectedDate)} className={`border border-black/10 rounded-lg p-2 ${isToday(selectedDate) ? "cursor-default" : "cursor-pointer hover:border-black/25 transition-colors"}`}>
-            <img src={arrow} alt="" className={`h-4 rotate-180 ${isToday(selectedDate) ? "opacity-30" : "opacity-100"}`}/>
-          </div>
-            <div className='border border-black/10 rounded-lg p-2 text-xs font-medium cursor-default'>
-              {format(selectedDate, 'eee, MMMM d')}
-              {/* add yyy to show the current yr */}
-            </div>
-          <div onClick={goToNextDay} className='border border-black/10 rounded-lg p-2 cursor-pointer hover:border-black/25 transition-colors'>
-            <img src={arrow} alt=""  className='h-4'/>
-          </div>
-        </div>
-        <div className='border border-black/10 rounded-lg p-2'>
-          <img src={calendar} alt="" className='h-4'/>
-        </div>
+      <div className="border-b border-black/10 p-4 flex flex-wrap justify-between gap-3">
+        <h2 className="text-sm font-semibold">Active appointments</h2>
+        <Link to="/styler-dashboard/calendar" className="text-sm text-brand underline">Open calendar</Link>
       </div>
-      <div className='p-4 text-sm'>
-        <p className='font-semibold text-[11px] uppercase tracking-[0.25em] text-muted'>Morning</p>
-        <div className='grid grid-cols-2 md:grid-cols-4 gap-4 mt-4'>
-          {timeSlots.morning.map((slot, index) => (
-            <div key={index} className='border border-black/10 p-4 rounded-lg text-center text-xs cursor-pointer hover:border-black/30 transition-colors' onClick={openDetails}>{slot}</div>
-          ))}
-        </div>
-        
-        <p className='font-semibold text-[11px] uppercase tracking-[0.25em] text-muted mt-10'>Afternoon</p>
-        <div className='grid grid-cols-2 md:grid-cols-4 gap-4 mt-4'>
-          {timeSlots.afternoon.map((slot, index) => (
-            <div key={index} className='border border-black/10 p-4 rounded-lg text-center text-xs cursor-pointer hover:border-black/30 transition-colors' onClick={openDetails}>{slot}</div>
-          ))}
-        </div>
-        <p className='font-semibold text-[11px] uppercase tracking-[0.25em] text-muted mt-10'>Evening</p>
-        <div className='grid grid-cols-2 md:grid-cols-4 gap-4 mt-4'>
-          {timeSlots.evening.map((slot, index) => (
-            <div key={index} className='border border-black/10 p-4 rounded-lg text-center text-xs cursor-pointer hover:border-black/30 transition-colors' onClick={openDetails}>{slot}</div>
-          ))}
-        </div>
+      <div className="p-4 text-sm">
+        <p className="mb-3 text-black/60">Oldest first. Pending and confirmed appointments stay here until resolved.</p>
+        {loadingAppointments ? <p role="status">Loading appointments…</p> : appointmentError ? <div role="alert"><p>{appointmentError}</p><button type="button" onClick={loadAppointments} className="mt-2 text-brand underline">Retry appointments</button></div> : appointments.length === 0 ? <p>No active appointments.</p> : <ul className="divide-y divide-black/10">
+          {appointments.slice(0, 5).map(item => <li key={item.appointmentId} className="py-3">
+            <p className="font-semibold">{[item.userData?.firstname, item.userData?.lastname].filter(Boolean).join(" ") || "Client"}</p>
+            <p>{item.subServiceData?.name || "Appointment"}</p>
+            <p className="text-black/60">{item.appointmentDate} · {item.arrivalTime} {item.stylerData?.timeZone || ""}</p>
+            <p>{item.statusCode === "1" ? "Awaiting your response" : "Confirmed"}</p>
+          </li>)}
+        </ul>}
+        <Link to="/styler-dashboard/appointments" className="inline-block mt-4 text-brand underline">Manage appointments</Link>
       </div>
-      {/* Appointment details */}
-      {isDetailsOpen && <AppointmentDetails onclose={closeDetails} />}
     </div>
     {/* Pricing & cancellation basics — right under the get-paid card. */}
     <div className="mt-4">

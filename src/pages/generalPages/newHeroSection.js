@@ -15,11 +15,14 @@ import SearchForStyler from "../../components/searchForStyler";
 import LocationPicker from "../../components/locationPicker";
 import { APIService } from "../../hooks/remote/apiService";
 import { useUserLocation } from "../../context/LocationContext";
-import { getAuthToken, getUserRole, setIntendedRoute } from "../../utils/constant";
+import { getAuthToken, getUserRole, setIntendedRoute, showErrorToastMessage } from "../../utils/constant";
+import useDecorativeMotion from "../../hooks/useDecorativeMotion";
+import heroPoster from "../../assets/images/hero-poster.jpg";
 import largeVideo from "../../assets/Videos/large video.mp4";
 
 const Hero = ({ height }) => {
   const [services, setServices] = useState([]);
+  const allowHeroMotion = useDecorativeMotion();
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -27,7 +30,7 @@ const Hero = ({ height }) => {
   // userSessionData, but stylers/admins only hold a JWT + role flag in
   // sessionStorage — so logged-in means "token present OR session data".
   const userSessionData = useSelector((state) => state.user.userSessionData);
-  const isLoggedIn = Boolean(getAuthToken() || userSessionData);
+  const isLoggedIn = Boolean(getAuthToken());
   const accountRole =
     getUserRole() || userSessionData?.role || (userSessionData ? "CUSTOMER" : "");
   const dashboardPath =
@@ -107,8 +110,10 @@ const Hero = ({ height }) => {
       const { emailAddress } = values;
       let verifyUserEmailData = { emailAddress };
       const { payload } = await dispatch(verifySignUpEmailAddress(verifyUserEmailData));
-      if (payload.statusCode === "200") {
+      if (payload?.statusCode === "200") {
         navigate("/verifyEmailAddress", { state: { emailAddress } });
+      } else {
+        showErrorToastMessage(payload?.message || "Could not start registration. Please try again.");
       }
     }
   });
@@ -124,14 +129,16 @@ const Hero = ({ height }) => {
         <div className="w-full lg:h-full relative">
           {/* Landing */}
           <div className={`relative flex flex-col w-full lg:block lg:h-full ${document.title === "Welcome - RapidStylers" ? "" : "hidden"}`}>
-            {/* Video band: one landscape clip at every breakpoint. Below lg the band
-                is a true 16:9 frame (aspect-video), so the clip sits in its native
-                aspect ratio — no crop, no letterbox. At lg+ the band goes full-bleed
-                behind the overlaid text, as before. */}
+            {/* A static poster keeps mobile and reduced-motion visits lightweight.
+                Eligible desktops retain the full-bleed background video. */}
             <div className="relative w-full aspect-video shrink-0 overflow-hidden lg:aspect-auto lg:h-full">
-              <video autoPlay loop muted playsInline src={largeVideo} className="h-full w-full object-cover object-center">
-                Your browser does not support the video tag.
-              </video>
+              {allowHeroMotion && document.title === "Welcome - RapidStylers" ? (
+                <video autoPlay loop muted playsInline poster={heroPoster} src={largeVideo} className="h-full w-full object-cover object-center">
+                  Your browser does not support the video tag.
+                </video>
+              ) : (
+                <img src={heroPoster} alt="Beauty tools ready for your appointment" fetchpriority="high" className="h-full w-full object-cover object-center" />
+              )}
               {/* Soft blend into the dark text section below (stacked layout only) */}
               <div className="pointer-events-none absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-black/90 to-transparent lg:hidden" aria-hidden="true" />
             </div>

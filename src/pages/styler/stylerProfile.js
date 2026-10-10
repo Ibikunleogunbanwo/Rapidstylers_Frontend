@@ -1,12 +1,20 @@
-import { SUPPORT_EMAIL, showErrorToastMessage, showSuccessToastMessage } from "../../utils/constant";
+import { getAuthToken, getUserRole, SUPPORT_EMAIL, showErrorToastMessage, showSuccessToastMessage } from "../../utils/constant";
 import arrow from "../../assets/svg-icons/black-arrow.svg";
 import { Link } from "react-router-dom";
 
 const StylerProfile = () => {
-    const link = 'https://bitly.com/a/sign_in?rd=/Blc2aqs0vet/links/bit.ly/3NooO35/detaiBlc2aqs0vetBlc2aqs0vet/links/bit.ly/3NooO35/detaiBlc2aqs0vetrrrtrtgwgw';
+    // JWT subject is used only to build a public link; API authorization remains server-side.
+    let link = "";
+    try {
+      const segment = getAuthToken().split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+      const { sub } = JSON.parse(atob(segment));
+      if (getUserRole() === "STYLER" && typeof sub === "string" && sub) {
+        link = `${window.location.origin}/stylistProfile/${encodeURIComponent(btoa(sub))}/${btoa("stylist")}`;
+      }
+    } catch { /* A malformed session needs a new login, never a fabricated profile. */ }
 
   const copyToClipboard = () => {
-    navigator.clipboard.writeText(link)
+    Promise.resolve().then(() => navigator.clipboard.writeText(link))
       .then(() => {
         // console.log('Link copied to clipboard');
         showSuccessToastMessage("Link copied to clipboard")
@@ -24,12 +32,11 @@ const StylerProfile = () => {
           <div className="p-4">
             <div className="text-sm">
               <p>Share profile:</p>
-              <div className="grid md:flex gap-4 justify-between pb-6">
-                <div className="truncate w-full md:w-[80%] text-gray-500">{link}</div>
-                <div className="md:w-[20%] text-end">
-                    <span className="text-xs font-medium cursor-pointer text-brand" onClick={copyToClipboard}>Copy link</span>
-                </div>
-              </div>
+              {link ? <div className="grid gap-3 pb-6">
+                <a href={link} className="text-brand underline">View public profile</a>
+                <p className="break-all text-gray-500">{link}</p>
+                <button type="button" className="text-left text-xs font-medium text-brand" onClick={copyToClipboard}>Copy link</button>
+              </div> : <p className="pb-6" role="alert">Sign in again to load your public profile link.</p>}
               <div className="space-y-6 pt-6 border-t">
                 <Link to={"/styler-dashboard/update-cover-photo"} className="flex justify-between items-center">
                   <div>Update cover photo</div>

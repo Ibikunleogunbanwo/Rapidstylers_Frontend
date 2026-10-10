@@ -17,7 +17,7 @@ import GoogleSignInButton from "../../components/googleSignInButton";
 import TurnstileWidget from "../../components/turnstileWidget";
 
 import elevate from "../../assets/images/elevate.webp"
-import { setAuthToken, setRefreshToken, showSuccessToastMessage } from "../../utils/constant";
+import { setAuthToken, setRefreshToken, showSuccessToastMessage, showErrorToastMessage } from "../../utils/constant";
 import { getPeriodOfDay } from "../../utils/utility";
 // Google Sign-In client id (public). Empty hides the Google button + divider.
 const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || "";
@@ -55,10 +55,12 @@ const Hero = ({ height }) => {
       const { emailAddress } = values;
       let verifyUserEmailData = { emailAddress };
       const { payload } = await dispatch(verifySignUpEmailAddress(verifyUserEmailData));
-      if (payload.statusCode === "200") {
+      if (payload?.statusCode === "200") {
         // Persist the signup email so a refresh mid-flow doesn't lose it.
         sessionStorage.setItem("signupEmail", emailAddress);
         navigate("/verifyEmailAddress", { state: { emailAddress } });
+      } else {
+        showErrorToastMessage(payload?.message || "Could not start registration. Please try again.");
       }
     }
   });

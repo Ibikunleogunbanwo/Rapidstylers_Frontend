@@ -1,3 +1,4 @@
+import RemoteLoadStatus from "../../../components/remoteLoadStatus";
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import brandIco from "../../../assets/svg-icons/brand-appointment-icon.svg";
@@ -23,8 +24,10 @@ const Dashboard = ({ setPageTitle }) => {
   }));
 
   const dispatch = useDispatch();
-  const pendingAppointment = useUserPendingAppointments();
-  const allAppointment = useAllUserAppointments();
+  const pendingState = useUserPendingAppointments({withState:true});
+  const historyState = useAllUserAppointments({withState:true});
+  const pendingAppointment = pendingState.data ?? pendingState;
+  const allAppointment = historyState.data ?? historyState;
   const userDetails = useSelector((state) => state.user.userDetailsData)?.userData || null;
   const today = new Date().toLocaleDateString("en-US", {
     weekday: "long",
@@ -43,9 +46,12 @@ const Dashboard = ({ setPageTitle }) => {
   const missingPhone = !userDetails?.phoneNumber;
   const missingAddress = !userDetails?.address;
 
+  const reduxLoading = useSelector((state) => state.user).loading;
+  if (pendingState.loading || pendingState.error || historyState.loading || historyState.error) return <RemoteLoadStatus state={pendingState.loading || pendingState.error ? pendingState : historyState} />;
+
   return (
     <div className="bg-white rounded-lg border border-black/10 overflow-hidden">
-      <Spinner loading={useSelector((state) => state.user).loading} />
+      <Spinner loading={reduxLoading} />
       <div className="flex items-start justify-between gap-4 border-b border-black/10 px-5 py-5 sm:px-6">
         <div>
           <p className="text-[11px] uppercase tracking-[0.25em] text-muted">Discover professionals</p>

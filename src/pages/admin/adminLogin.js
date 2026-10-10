@@ -60,8 +60,9 @@ const AdminLogin = () => {
         <p className="text-sm text-gray-500 mt-1">Sign in to moderate the marketplace</p>
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">Email address</label>
+            <label htmlFor="admin-email" className="block text-sm font-semibold text-gray-700 mb-1">Email address</label>
             <AdminInput
+              id="admin-email"
               type="email"
               required
               value={emailAddress}
@@ -70,8 +71,9 @@ const AdminLogin = () => {
             />
           </div>
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">Password</label>
+            <label htmlFor="admin-password" className="block text-sm font-semibold text-gray-700 mb-1">Password</label>
             <AdminInput
+              id="admin-password"
               type="password"
               required
               value={password}

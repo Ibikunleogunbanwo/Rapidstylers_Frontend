@@ -15,6 +15,7 @@ import OtpInputs from "./otpInputs";
 import GoogleSignInButton from "./googleSignInButton";
 import TurnstileWidget from "./turnstileWidget";
 import BookingCardField from "./bookingCardField";
+import { prepareBookingAttempt, clearBookingAttempt, isUncertainBookingFailure } from "../utils/bookingAttempt";
 
 // Google Sign-In client id (public). Empty hides the Google option in the quick-account step.
 const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || "";
@@ -79,6 +80,7 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
   // Set once a booking lands, so the confirmation and its calendar action stay
   // on screen instead of scrolling away with the toast.
   const [placedBooking, setPlacedBooking] = useState(null);
+  const bookingInFlight = useRef(false);
   const dispatch = useDispatch();
   const { location: userLocation } = useUserLocation() || {};
   // Weekly availability from single_styler: [{dayOfWeek 0-6, startTime, endTime}] or
@@ -422,12 +424,13 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
   // one-time payment method that is authorized immediately for near-term
   // bookings and kept as a token reference for far-future ones.
   const performBooking = async () => {
+    if (bookingInFlight.current) return;
+    bookingInFlight.current = true;
     setBookingError("");
     setIsBooking(true);
     try {
       const appointmentDate = `${stylistYear}-${String(months.indexOf(selectedMonth) + 1).padStart(2, "0")}-${String(selectedDay).padStart(2, "0")}`;
-      const paymentMethodId = await collectPaymentMethodId();
-      await APIService.bookAppointment({
+      const attempt = await prepareBookingAttempt({
         stylerId,
         subServiceId,
         appointmentDate,
@@ -435,8 +438,9 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
         serviceTime: selectedOption,
         noOfPeople: String(numberOfPeople),
         travelDistanceKm: selectedOption === "homeService" ? travelDistanceKm : 0,
-        paymentMethodId,
-      });
+      }, collectPaymentMethodId);
+      await APIService.bookAppointment(attempt.payload, attempt.key);
+      clearBookingAttempt();
       // The confirmation repeats the booking back in the stylist's calendar and
       // names their zone, so the customer is never left holding a bare time
       // that belongs to someone else's clock.
@@ -466,9 +470,14 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
     } catch (error) {
       // Card collection errors (thrown by createPaymentMethod) and booking
       // errors from the backend both land here and surface in the footer.
-      const message = error?.response?.data?.message || error?.message || "Booking failed. Please try again.";
+      const uncertain = isUncertainBookingFailure(error);
+      if (!uncertain) clearBookingAttempt();
+      const message = uncertain
+        ? "We could not confirm whether your booking was received. Check your appointments, or retry these same details to confirm safely."
+        : error?.response?.data?.message || error?.message || "Booking failed. Please try again.";
       setBookingError(message);
     } finally {
+      bookingInFlight.current = false;
       setIsBooking(false);
     }
   };
@@ -505,10 +514,10 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
     setSignupBusy(true);
     try {
       const { payload } = await dispatch(verifySignUpEmailAddress({ emailAddress: email }));
-      if (payload.statusCode === "200") {
+      if (payload?.statusCode === "200") {
         setSignupStep(SIGNUP_STEPS.OTP);
       } else {
-        setSignupError(payload.message || "We couldn't start registration. Please try again.");
+        setSignupError(payload?.message || "We couldn't start registration. Please try again.");
       }
     } catch (error) {
       setSignupError("We couldn't reach the server. Please try again.");
@@ -544,10 +553,10 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
       const { payload } = await dispatch(
         verifyOtpCode({ emailAddress: signupEmail.trim(), otpCode: code })
       );
-      if (payload.statusCode === "200") {
+      if (payload?.statusCode === "200") {
         setSignupStep(SIGNUP_STEPS.PASSWORD);
       } else {
-        setSignupError(payload.message || "That code is incorrect or has expired. Try again.");
+        setSignupError(payload?.message || "That code is incorrect or has expired. Try again.");
         setSignupOtp(["", "", "", "", "", ""]);
       }
     } catch (error) {
@@ -580,8 +589,8 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
         password: signupPassword,
         agreeToTerms: true,
       }));
-      if (payload.statusCode !== "200") {
-        setSignupError(payload.message || "We couldn't create your account right now.");
+      if (payload?.statusCode !== "200") {
+        setSignupError(payload?.message || "We couldn't create your account right now.");
         return;
       }
       // Creating the account also signed the customer in, so the booking

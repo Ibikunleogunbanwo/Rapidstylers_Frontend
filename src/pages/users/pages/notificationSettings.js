@@ -6,20 +6,31 @@ import { getAuthToken, showErrorToastMessage, showSuccessToastMessage } from "..
 const NotificationSettings = ({ setPageTitle }) => {
   const [preferences, setPreferences] = useState({ availability: true, price: true, verification: true });
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  const load = async () => {
+    if (!getAuthToken()) { setLoading(false); return; }
+    setLoading(true);
+    setLoadError(false);
+    try {
+      const response = await APIService.getNotificationPreferences();
+      const data = response.data?.data;
+      if (!data || !["availability", "price", "verification"].every((key) => typeof data[key] === "boolean")) throw new Error("Invalid preferences");
+      setPreferences(data);
+    } catch (error) {
+      setLoadError(true);
+    } finally { setLoading(false); }
+  };
   useEffect(() => {
     setPageTitle("Account Settings");
     document.title = "Notification settings | RapidStylers";
-    if (!getAuthToken()) { setLoading(false); return; }
-    APIService.getNotificationPreferences()
-      .then((response) => setPreferences({ ...preferences, ...(response.data?.data || {}) }))
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const update = async (key, value) => {
+    if (loading || loadError || saving) return;
     const next = { ...preferences, [key]: value };
     setPreferences(next);
     setSaving(true);
@@ -53,7 +64,7 @@ const NotificationSettings = ({ setPageTitle }) => {
       </div>
       <div className="grid gap-4 p-4">
         <div><p className="font-semibold">Saved professional updates</p><p className="mt-1 text-sm text-gray-500">Choose which changes should also be sent by email. In-app notifications remain available in your inbox.</p></div>
-        {!getAuthToken() ? <p className="text-sm text-gray-500">Please sign in to manage notification preferences.</p> : loading ? <p className="text-sm text-gray-500">Loading preferences...</p> : options.map(([key, label]) => (
+        {!getAuthToken() ? <p className="text-sm text-gray-500">Please sign in to manage notification preferences.</p> : loading ? <p className="text-sm text-gray-500">Loading preferences...</p> : loadError ? <div role="alert">Unable to load notification preferences. <button type="button" onClick={load}>Retry</button></div> : options.map(([key, label]) => (
           <label key={key} className="flex items-start gap-3 rounded-lg border border-gray-100 p-3">
             <input type="checkbox" checked={Boolean(preferences[key])} disabled={saving} onChange={(event) => update(key, event.target.checked)} className="mt-1 h-4 w-4 accent-brand" />
             <span className="text-sm text-gray-700">{label}</span>

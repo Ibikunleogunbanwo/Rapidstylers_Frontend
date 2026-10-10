@@ -36,12 +36,16 @@ const Reviews = () => {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
 
-  useEffect(() => {
-    document.title = "Reviews | RapidStylers";
-    APIService.getOwnStylerReviews()
+  const load = () => {
+    setLoading(true);
+    return APIService.getOwnStylerReviews()
       .then((response) => setSummary(response.data?.data || null))
       .catch(() => setSummary(null))
       .finally(() => setLoading(false));
+  };
+  useEffect(() => {
+    document.title = "Reviews | RapidStylers";
+    load();
   }, []);
 
   if (loading) {
@@ -56,7 +60,7 @@ const Reviews = () => {
   if (!summary) {
     return (
       <div className="bg-white rounded-lg border p-10 text-center text-sm text-black/50">
-        Could not load your reviews. Refresh the page to try again.
+        Could not load your reviews. <button type="button" onClick={load}>Retry</button>
       </div>
     );
   }

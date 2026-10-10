@@ -17,12 +17,15 @@ const Recovery = () => {
   document.title = "Recovery Campaigns | RapidStylers";
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
 
   const load = () => {
     setLoading(true);
+    setLoadError("");
+    setLoading(true);
     APIService.adminRecoveryCampaigns()
       .then((res) => setRows(Array.isArray(res.data?.data) ? res.data.data : []))
-      .catch(() => setRows([]))
+      .catch(() => setLoadError("Unable to load recovery campaigns."))
       .finally(() => setLoading(false));
   };
 
@@ -70,7 +73,9 @@ const Recovery = () => {
 
         {loading ? (
           <p className="text-sm text-gray-500">Loading recovery campaigns…</p>
-        ) : rows.length === 0 ? (
+        ) : loadError ? (
+            <div role="alert">{loadError} <button type="button" onClick={load}>Retry</button></div>
+          ) : rows.length === 0 ? (
           <p className="text-sm text-gray-500">No abandoned sign-ups yet.</p>
         ) : (
           <div className="overflow-x-auto rounded-lg border bg-white">

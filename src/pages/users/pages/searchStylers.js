@@ -1,5 +1,5 @@
 import search from "../../../assets/svg-icons/search.svg";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Spinner from "../../../components/spinner";
 import { useDispatch, useSelector } from "react-redux";
 import Back from "../../../components/goBack";
@@ -14,12 +14,15 @@ const SearchStyler = ({ setPageTitle, stylerSearchName }) => {
   useEffect((() => {
     setPageTitle("Book Appointment");
     document.title = "Search | RapidStylers";
-  }));
+  }), [setPageTitle]);
   const dispatch = useDispatch();
   const { location: userLocation } = useUserLocation();
   const [locationPickerOpen, setLocationPickerOpen] = useState(false);
   const [userSearchWord, setUserSearchWord] = useState(stylerSearchName);
   const [stylerProfileData, setStylerProfileData] = useState([]);
+  const [searchLoading, setSearchLoading] = useState(true);
+  const [searchError, setSearchError] = useState(false);
+  const searchRequest = useRef(0);
   const { savedIds, loading: savedLoading, toggleSaved } = useSavedStylists();
 
   const displayLocation = userLocation
@@ -36,21 +39,26 @@ const SearchStyler = ({ setPageTitle, stylerSearchName }) => {
       )
     : stylerProfileData;
 
-  const searchForAStyler = async()=>{
-    try{
-        const { payload } = await dispatch(searchStyler(userSearchWord));
-        setStylerProfileData(payload.data);
+  const searchForAStyler = async (term = userSearchWord) => {
+    const request = ++searchRequest.current;
+    setSearchLoading(true);
+    setSearchError(false);
+    try {
+      const action = await dispatch(searchStyler(term));
+      if (action.meta?.requestStatus === "rejected" || action.error || !Array.isArray(action.payload?.data)) throw new Error("Search failed");
+      if (request === searchRequest.current) setStylerProfileData(action.payload.data);
+    } catch (error) {
+      if (request === searchRequest.current) setSearchError(true);
+    } finally {
+      if (request === searchRequest.current) setSearchLoading(false);
     }
-    catch(e){}
-  }
-  useEffect(()=>{
-    searchForAStyler();
-    // Intentionally runs only when the parent's search term changes (or on mount).
-    // Manual searches go through the Search button, so searchForAStyler is not a
-    // dependency — including it (or memoizing it on userSearchWord) would fire a
-    // network request on every keystroke.
+  };
+  useEffect(() => {
+    setUserSearchWord(stylerSearchName || "");
+    searchForAStyler(stylerSearchName || "");
+    return () => { searchRequest.current += 1; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  },[stylerSearchName]);
+  }, [stylerSearchName]);
 
   return (
     <div className="rounded-lg border border-black/10 bg-white">
@@ -101,7 +109,7 @@ const SearchStyler = ({ setPageTitle, stylerSearchName }) => {
                 placeholder="Search for a professional"
               />
             </div>
-            <button onClick={searchForAStyler} className="shrink-0 rounded-full bg-[#1A1A1A] px-7 py-3 text-[13px] font-semibold text-white transition-opacity hover:opacity-85">
+            <button onClick={() => searchForAStyler()} className="shrink-0 rounded-full bg-[#1A1A1A] px-7 py-3 text-[13px] font-semibold text-white transition-opacity hover:opacity-85">
               Search
             </button>
           </div>
@@ -109,7 +117,7 @@ const SearchStyler = ({ setPageTitle, stylerSearchName }) => {
 
         <div className="mt-8">
         {
-          visibleResults.length > 0
+          searchLoading ? <p role="status">Searching professionals...</p> : searchError ? <div role="alert">Unable to search professionals. <button type="button" onClick={() => searchForAStyler()}>Retry</button></div> : visibleResults.length > 0
             ? (
               <>
                 <p className="mb-4 text-[13px] text-black/55">

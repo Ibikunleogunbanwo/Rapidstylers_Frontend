@@ -25,21 +25,25 @@ const Payments = () => {
   const [report, setReport] = useState(null);
   const [reconciling, setReconciling] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
 
   const loadRefunds = async () => {
+    setLoading(true);
+    setLoadError("");
     try {
       const response = await APIService.adminRefunds();
       setRefunds(response.data?.data || []);
     } catch (error) {
-      // APIService displays the error.
+      setLoadError("Unable to load refunds.");
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
     if (getAuthToken() && isAdminRole()) {
       loadRefunds();
-    }
-    setLoading(false);
+    } else setLoading(false);
   }, []);
 
   const issueRefund = async () => {
@@ -169,7 +173,7 @@ const Payments = () => {
             </div>
 
             <div className="overflow-x-auto rounded-lg border bg-white">
-              {refunds.length === 0 ? (
+              {loadError ? (<div role="alert">{loadError} <button type="button" onClick={loadRefunds}>Retry</button></div>) : refunds.length === 0 ? (
                 <p className="p-4 text-sm text-gray-500">No refunds yet.</p>
               ) : (
                 <table className="w-full text-left text-sm">

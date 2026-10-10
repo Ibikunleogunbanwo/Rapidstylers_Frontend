@@ -11,12 +11,16 @@ const StylerPayouts = () => {
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState(false);
 
-  useEffect(() => {
-    document.title = "Payouts | RapidStylers";
-    APIService.getStylerPayouts()
+  const load = () => {
+    setLoading(true);
+    return APIService.getStylerPayouts()
       .then((response) => setPayouts(response.data?.data || null))
       .catch(() => setPayouts(null))
       .finally(() => setLoading(false));
+  };
+  useEffect(() => {
+    document.title = "Payouts | RapidStylers";
+    load();
   }, []);
 
   const startConnect = async () => {
@@ -59,7 +63,7 @@ const StylerPayouts = () => {
   if (!payouts) {
     return (
       <div className="bg-white rounded-lg border p-10 text-center text-sm text-black/50">
-        Could not load your payout summary.
+        Could not load your payout summary. <button type="button" onClick={load}>Retry</button>
       </div>
     );
   }

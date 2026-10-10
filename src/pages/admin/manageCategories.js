@@ -13,6 +13,7 @@ const ManageCategories = () => {
   document.title = "Manage Categories | RapidStylers";
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [newName, setNewName] = useState("");
   const [newDescription, setNewDescription] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -21,9 +22,11 @@ const ManageCategories = () => {
   const [editDescription, setEditDescription] = useState("");
 
   const loadServices = () => {
+    setLoading(true);
+    setLoadError("");
     APIService.getStylerType()
       .then((res) => setServices(res.data?.data || []))
-      .catch(() => setServices([]))
+      .catch(() => setLoadError("Unable to load categories."))
       .finally(() => setLoading(false));
   };
 
@@ -122,6 +125,8 @@ const ManageCategories = () => {
           <p className="font-semibold text-gray-900 mb-3">Existing categories</p>
           {loading ? (
             <p className="text-sm text-gray-500">Loading…</p>
+          ) : loadError ? (
+            <div role="alert">{loadError} <button type="button" onClick={loadServices}>Retry</button></div>
           ) : services.length === 0 ? (
             <p className="text-sm text-gray-500">No categories yet. Add your first one above.</p>
           ) : (

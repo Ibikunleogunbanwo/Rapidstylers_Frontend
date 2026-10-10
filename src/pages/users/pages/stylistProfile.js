@@ -1,3 +1,4 @@
+import RemoteLoadStatus from "../../../components/remoteLoadStatus";
 import bookmark from "../../../assets/svg-icons/bookmark.svg";
 import SelectService from "../../../components/selectService";
 import { useEffect, useState } from "react";
@@ -233,7 +234,8 @@ const StylistProfile = ({ setPageTitle }) => {
   stylerId = atob(stylerId);
   const decodedName = atob(stylerName);
 
-  const stylerProfile = useSingleStylerProfile(stylerId);
+  const loadState = useSingleStylerProfile(stylerId, {withState:true});
+  const stylerProfile = loadState.data ?? loadState;
   const info = stylerProfile.stylerInformation || {};
   const categoryName = info.serviceTypeName || stylerProfile.serviceTypeName || "";
   const avatarUrl = info.profileImageUrl || stylerProfile.profileImageUrl || "";
@@ -311,7 +313,7 @@ const StylistProfile = ({ setPageTitle }) => {
         }
       })
       .catch(() => {});
-    return () => { mounted = false; };
+      return () => { mounted = false; };
   }, [stylerId]);
 
   const toggleSaved = async () => {
@@ -337,9 +339,12 @@ const StylistProfile = ({ setPageTitle }) => {
     }
   };
 
+  const reduxLoading = useSelector((state) => state.user).loading;
+  if (loadState.loading || loadState.error) return <RemoteLoadStatus state={loadState} />;
+
   return (
     <div className="min-h-screen bg-white text-onSurface">
-      <Spinner loading={useSelector((state) => state.user).loading} />
+      <Spinner loading={reduxLoading} />
 
       {/* Profile header: avatar, category, name, rating, address, save */}
       <Section pad="pt-10 md:pt-14 pb-10 md:pb-14">

@@ -90,6 +90,13 @@ const SearchResults = () => {
   useEffect(() => {
     setActiveServiceId(serviceTypeId);
     setOpenNowFilter(openNow);
+    let active = true;
+    // A superseded request may finish after navigation; it must not update this search.
+    const currentResponse = async (request) => {
+      const response = await request;
+      if (!active) throw new Error("Search superseded");
+      return response;
+    };
     const run = async () => {
       setLoading(true);
       setTotalCount(null);
@@ -107,14 +114,14 @@ const SearchResults = () => {
             filters.page = page;
             filters.pageSize = PAGE_SIZE;
           }
-          const res = await APIService.searchNearby(
+          const res = await currentResponse(APIService.searchNearby(
             parseFloat(lat),
             parseFloat(lng),
             parseFloat(radius),
             serviceTypeId,
             city,
             filters
-          );
+          ));
           const data = res.data?.data;
           if (lat && lng && !province && data && Array.isArray(data.items)) {
             // Backend already sliced this page — use its totals directly.
@@ -135,19 +142,19 @@ const SearchResults = () => {
             results = Array.isArray(data) ? data : [];
           }
         } else if (serviceTypeId) {
-          const res = await APIService.stylersBaseOnCategory(serviceTypeId);
+          const res = await currentResponse(APIService.stylersBaseOnCategory(serviceTypeId));
           results = res.data?.data || [];
         } else if (name) {
-          const res = await APIService.searchForStyler(name);
+          const res = await currentResponse(APIService.searchForStyler(name));
           results = res.data?.data || [];
         } else if (province) {
-          const res = await APIService.searchByProvince(province);
+          const res = await currentResponse(APIService.searchByProvince(province));
           results = res.data?.data || [];
         } else if (city) {
           // City with no other filters: the dedicated city search. The backend
           // widens to the city's province when the city has nobody, and marks
           // the payload so the page can say so.
-          const res = await APIService.searchByCity(city);
+          const res = await currentResponse(APIService.searchByCity(city));
           cityScopedResponse = true;
           const data = res.data?.data;
           if (data && !Array.isArray(data) && Array.isArray(data.items)) {
@@ -191,13 +198,14 @@ const SearchResults = () => {
 
         setStylists(results);
       } catch (error) {
-        setStylists([]);
+        if (active) setStylists([]);
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     };
     run();
-    // navigate/searchParams are stable (React Router v6) and the URL is the
+    return () => { active = false; };
+    // navigate/searchParams are stable (React Router) and the URL is the
     // source of truth for every search input, so including them is safe.
   }, [lat, lng, radius, serviceTypeId, name, province, city, openNow, page, isOpenNow, navigate, searchParams]);
   // Re-filter by service type from the dropdown on the results page

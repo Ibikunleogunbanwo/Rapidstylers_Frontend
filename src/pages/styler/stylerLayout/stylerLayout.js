@@ -1,10 +1,11 @@
-import { Link, Navigate, Outlet, useLocation } from "react-router-dom";
+import { useRef, useState } from "react";
+import { Link, Navigate, Outlet, useLocation, useNavigate } from "react-router-dom";
 import StylerTopBar from "./topNav";
 import BusinessSummary from "../stylerComponents/businessSummary";
 import ReviewsSummary from "../stylerComponents/reviewsSummary";
 import ListingStatusNotice from "../stylerComponents/listingStatusNotice";
-import { getAuthToken, getUserRole, clearAllSessionTokens, setIntendedRoute } from "../../../utils/constant";
-import { APIService } from "../../../hooks/remote/apiService";
+import { getAuthToken, getUserRole, setIntendedRoute } from "../../../utils/constant";
+import { logoutSession } from "../../../utils/sessionLogout";
 
 /**
  * The stylist dashboard shell. The sidebar used to be eight copies of the same
@@ -27,6 +28,13 @@ const NAV_ITEMS = [
 
 const StylerLayout = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuButtonRef = useRef(null);
+  const closeMenu = () => {
+    if (menuOpen) menuButtonRef.current?.focus();
+    setMenuOpen(false);
+  };
   // Role gate: the whole /styler-dashboard area is styler-only. Without this a
   // logged-out visitor or a customer can open the shell and its sidebar.
   if (!getAuthToken() || getUserRole() !== "STYLER") {
@@ -34,25 +42,30 @@ const StylerLayout = () => {
     return <Navigate to="/login" replace />;
   }
   const signOut = () => {
-    APIService.stylerSignOut();
-    clearAllSessionTokens();
-    window.location.href = "/";
+    logoutSession();
+    navigate("/login", { replace: true });
   };
   return (
     <div className="bg-white min-h-screen">
-      <StylerTopBar />
+      <StylerTopBar toggleSideBar={() => setMenuOpen(open => !open)} menuOpen={menuOpen} menuButtonRef={menuButtonRef} />
       {/* Explains a profile that is hidden for having no address. Renders
           nothing at all when there is nothing to say. */}
       <div className="pt-[70px]">
         <ListingStatusNotice />
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-12">
-        <div className="px-4 col-span-1 lg:col-span-2 hidden lg:block relative">
-          <nav className="grid gap-1 pt-8 pb-14 px-8 lg:px-0 text-[13px] font-medium fixed bg-white lg:bg-transparent">
+        <div className={`px-4 col-span-1 lg:col-span-2 relative ${menuOpen ? "block" : "hidden"} lg:block`}>
+          <nav id="styler-dashboard-navigation" aria-label="Stylist dashboard" onKeyDown={event => {
+            if (event.key === "Escape") {
+              closeMenu();
+              menuButtonRef.current?.focus();
+            }
+          }} className="grid gap-1 py-4 lg:pt-8 lg:pb-14 px-4 lg:px-0 text-[13px] font-medium lg:fixed bg-white lg:bg-transparent">
             {NAV_ITEMS.map(({ to, label }) => (
               <Link
                 key={to}
                 to={to}
+                onClick={closeMenu}
                 aria-current={location.pathname === to ? "page" : undefined}
                 className={`py-2.5 px-4 rounded-full transition-colors ${
                   location.pathname === to

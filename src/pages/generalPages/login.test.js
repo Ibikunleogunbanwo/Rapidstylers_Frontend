@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent, act } from "@testing-library/react";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { Provider } from "react-redux";
 import { configureStore } from "@reduxjs/toolkit";
@@ -26,6 +26,8 @@ vi.mock("../../hooks/remote/apiService", () => {
   const APIService = { signIn: vi.fn() };
   return { APIService };
 });
+
+import { APIService } from "../../hooks/remote/apiService";
 
 const store = configureStore({ reducer: { user: userReducer } });
 
@@ -130,3 +132,29 @@ describe("Login signed-in redirect guard", () => {
     expect(window.sessionStorage.getItem("rapidstylers_intended_route")).toBeNull();
   });
 });
+ describe("Login validation", () => {
+ beforeEach(() => { sessionStorage.clear(); vi.clearAllMocks(); });
+ test("required credentials are linked to accessible field errors without a request", () => {
+ renderLogin(); fireEvent.submit(screen.getByRole("button", {name: "Sign In"}).closest("form"));
+ const email = screen.getByLabelText("Email address:"); const password = screen.getByLabelText("Password:");
+ for (const input of [email, password]) {
+ expect(input).toHaveAttribute("aria-invalid", "true");
+ expect(document.getElementById(input.getAttribute("aria-describedby"))).toHaveTextContent(/required/i);
+ }
+ expect(APIService.signIn).not.toHaveBeenCalled();
+ });
+ test("malformed email does not submit and pending sign-in cannot submit twice", async () => {
+ renderLogin(); const email = screen.getByPlaceholderText("you@example.com");
+ fireEvent.change(email, {target: {value: "invalid"}});
+ fireEvent.change(screen.getByPlaceholderText("Enter your password"), {target: {value: "secret"}});
+ const form = email.closest("form"); fireEvent.submit(form);
+ expect(APIService.signIn).not.toHaveBeenCalled();
+ fireEvent.change(email, {target: {value: "a@example.com"}});
+ let resolve; APIService.signIn.mockReturnValue(new Promise(r => {resolve = r;}));
+ fireEvent.submit(form); fireEvent.submit(form);
+ expect(screen.getByRole("button", {name: "Signing in..."})).toBeDisabled();
+ expect(APIService.signIn).toHaveBeenCalledTimes(1);
+ await act(async () => resolve({data: {}}));
+ expect(screen.getByRole("button", {name: "Sign In"})).toBeEnabled();
+ });
+ });

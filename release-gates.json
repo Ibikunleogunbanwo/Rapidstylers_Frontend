@@ -1,0 +1,10 @@
+{
+  "description": "Set a gate to passed only after its evidence has been verified for this release. Do not include credentials.",
+  "gates": [
+    { "id": "bookingReplay", "status": "pending", "evidence": "", "requirement": "Backend replays committed bookings correctly and handles failed, pending and concurrent retries." },
+    { "id": "schemaValidation", "status": "pending", "evidence": "", "requirement": "Fresh and existing database migrations pass; production schema validation is verified." },
+    { "id": "stylistProfileUpdates", "status": "pending", "evidence": "", "requirement": "Authenticated profile-save and account-timezone contracts are implemented and tested, or an approved support-only release scope is recorded." },
+    { "id": "providerWorkflows", "status": "pending", "evidence": "", "requirement": "OTP, signed uploads, Stripe test payments/webhooks/cancellation/refunds and ownership denials pass; dev CI including secret scan passes for the candidate." },
+    { "id": "browserCompatibility", "status": "pending", "evidence": "", "requirement": "Supported Safari and Firefox flows are verified in addition to Chromium." }
+  ]
+}

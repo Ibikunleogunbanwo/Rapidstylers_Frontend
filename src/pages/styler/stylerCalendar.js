@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { APIService } from "../../hooks/remote/apiService";
 import { getAuthToken, showSuccessToastMessage } from "../../utils/constant";
-import { vendorTimeZoneLabelStrict } from "../../utils/vendorTimeZone";
+import { vendorCalendarToday, vendorTimeZoneLabelStrict } from "../../utils/vendorTimeZone";
 import PendingAppointments from "./stylerComponents/pendingAppointments";
 
 const STATUS_META = {
@@ -28,7 +28,9 @@ const dayOf = (dateStr) => {
 const StylerCalendar = () => {
   document.title = "Calendar | RapidStylers";
   const [appointments, setAppointments] = useState([]);
+  const calendarZoneInitialized = useRef(false);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [cursor, setCursor] = useState(() => {
     const now = new Date();
     return { year: now.getFullYear(), month: now.getMonth() };
@@ -38,12 +40,20 @@ const StylerCalendar = () => {
   const [actionLoading, setActionLoading] = useState(false);
 
   const loadAppointments = async () => {
+    setLoadError("");
     setLoading(true);
     try {
       const res = await APIService.stylerAppointments();
-      setAppointments(res.data?.data || []);
+      const rows = res.data?.data || [];
+      setAppointments(rows);
+      const professional = rows.find((row) => row.stylerData?.timeZone || row.stylerData?.province)?.stylerData;
+      if (professional && !calendarZoneInitialized.current) {
+        const today = vendorCalendarToday(professional);
+        if (today) setCursor({ year: today.year, month: today.month });
+        calendarZoneInitialized.current = true;
+      }
     } catch (error) {
-      // Error toasts are handled inside APIService.
+      setLoadError("Could not load your appointments.");
     } finally {
       setLoading(false);
     }
@@ -63,6 +73,7 @@ const StylerCalendar = () => {
   }
 
   const runAction = async (appointmentId, action, note = "") => {
+    if (actionLoading) return;
     setActionLoading(true);
     try {
       if (action === "accept") {
@@ -86,7 +97,11 @@ const StylerCalendar = () => {
 
   const firstWeekday = new Date(cursor.year, cursor.month, 1).getDay();
   const daysInMonth = new Date(cursor.year, cursor.month + 1, 0).getDate();
-  const todayKey = dayOf(new Date().toISOString());
+  const professional = appointments.find((row) => row.stylerData?.timeZone || row.stylerData?.province)?.stylerData;
+  const localNow = new Date();
+  const today = professional ? vendorCalendarToday(professional) : null;
+  const calendarToday = today || { year: localNow.getFullYear(), month: localNow.getMonth(), day: localNow.getDate() };
+  const todayKey = `${calendarToday.year}-${String(calendarToday.month + 1).padStart(2, "0")}-${String(calendarToday.day).padStart(2, "0")}`;
 
   const byDay = {};
   appointments.forEach((a) => {
@@ -154,8 +169,7 @@ const StylerCalendar = () => {
             </button>
             <button
               onClick={() => {
-                const now = new Date();
-                setCursor({ year: now.getFullYear(), month: now.getMonth() });
+                setCursor({ year: calendarToday.year, month: calendarToday.month });
                 setSelectedDay(null);
               }}
               className="px-3 py-1.5 rounded-md border border-gray-200 text-sm font-semibold text-gray-600 hover:border-brand hover:text-brand"
@@ -169,7 +183,7 @@ const StylerCalendar = () => {
           <p className="text-sm text-gray-500 py-10 text-center">
             Loading appointments…
           </p>
-        ) : (
+        ) : loadError ? (<div role="alert" className="p-4 text-sm text-red-700">{loadError} <button type="button" onClick={loadAppointments}>Retry</button></div>) : (
           <>
             {/* Weekday header */}
             <div className="grid grid-cols-7 border-b border-gray-100 pb-2 mb-2">
@@ -187,6 +201,8 @@ const StylerCalendar = () => {
                 ) : (
                   <button
                     key={cell.key}
+                    aria-label={cell.key}
+                    aria-current={cell.key === todayKey ? "date" : undefined}
                     onClick={() => setSelectedDay(selectedDay === cell.key ? null : cell.key)}
                     className={`min-h-[92px] rounded-lg border p-1.5 text-left align-top transition-colors ${
                       selectedDay === cell.key

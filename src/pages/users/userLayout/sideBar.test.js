@@ -3,7 +3,7 @@
  * guards: one nav list per breakpoint, the quiet brand-tinted active pill,
  * and the hairline top bar — never the solid purple slab or the dark band.
  */
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import UserSideBar from "./sideBar";
 import UserTopBar from "./topBar";
@@ -65,4 +65,15 @@ describe("the customer top bar", () => {
     expect(bar.className).not.toMatch(/1d1d1d/);
     expect(bar.className).not.toMatch(/text-white/);
   });
+});
+
+test("customer navigation has an accessible menu and close control", () => {
+ const toggle = vi.fn(), close = vi.fn();
+ render(<MemoryRouter><UserTopBar toggleSideBar={toggle} menuOpen={true} />
+ <UserSideBar sideBarVisibility={true} closeSideBar={close} /></MemoryRouter>);
+ const menu = screen.getByRole("button", { name: "Close dashboard navigation" });
+ expect(menu).toHaveAttribute("aria-expanded", "true");
+ fireEvent.click(menu); expect(toggle).toHaveBeenCalledOnce();
+ fireEvent.click(screen.getByRole("button", { name: "Close navigation" }));
+ expect(close).toHaveBeenCalledOnce();
 });

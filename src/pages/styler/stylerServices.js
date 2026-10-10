@@ -16,6 +16,7 @@ const formatDuration = (minutes) => {
 const Services = () => {
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [addServiceModal, setAddServiceModal] = useState(false);
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
@@ -25,13 +26,15 @@ const Services = () => {
   const [modalError, setModalError] = useState("");
 
   const loadServices = async () => {
+    setLoadError("");
     const session = getAuthToken();
-    if (!session) return;
+    if (!session) { setLoading(false); return; }
+    setLoading(true);
     try {
       const response = await APIService.listSubServices("self");
       setServices(response.data?.data || []);
     } catch (error) {
-      setServices([]);
+      setLoadError("Could not load your services.");
     } finally {
       setLoading(false);
     }
@@ -41,7 +44,8 @@ const Services = () => {
     loadServices();
   }, []);
 
-  const closeServiceModal = () => {
+  const closeServiceModal = (force = false) => {
+    if (saving && force !== true) return;
     setAddServiceModal(false);
     setEditingService(null);
     setName("");
@@ -59,6 +63,11 @@ const Services = () => {
   };
 
   const addService = async () => {
+    if (saving) return;
+    if (!Number.isFinite(Number(price)) || Number(price) <= 0) {
+      setModalError("Enter a finite positive price greater than zero");
+      return;
+    }
     const duration = Number(durationMinutes);
     if (!name.trim() || !price.trim()) {
       showErrorToastMessage("Enter a service name and price");
@@ -87,7 +96,7 @@ const Services = () => {
         });
         showSuccessToastMessage("Service added");
       }
-      closeServiceModal();
+      closeServiceModal(true);
       await loadServices();
     } catch (error) {
       setModalError(error?.response?.data?.message || error?.message || "Failed to save service");
@@ -123,7 +132,7 @@ const Services = () => {
           <tbody className="text-[13px]">
             {loading ? (
               <tr><td className="px-4 py-6 text-gray-500" colSpan="6">Loading services...</td></tr>
-            ) : services.length === 0 ? (
+            ) : loadError ? (<tr><td colSpan="6"><div role="alert" className="p-4 text-sm text-red-700">{loadError} <button type="button" onClick={loadServices}>Retry</button></div></td></tr>) : services.length === 0 ? (
               <tr><td className="px-4 py-6 text-gray-500" colSpan="6">No services added yet.</td></tr>
             ) : services.map((service, index) => (
               <tr className="hover:bg-black/[0.04]" key={service.id || index}>
@@ -141,7 +150,7 @@ const Services = () => {
 
       <Modal
         isVisible={addServiceModal}
-        onClose={closeServiceModal}
+        onClose={() => closeServiceModal()}
         modalTitle={editingService ? "Edit service" : "Add new service"}
         width="md:w-1/2 lg:w-1/3"
       >
@@ -162,7 +171,7 @@ const Services = () => {
           <p className="mt-1 text-xs text-gray-500">Choose how long this service blocks the calendar.</p>
         </div>
         {modalError && (
-          <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700 flex items-start gap-2">
+          <div role="alert" className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700 flex items-start gap-2">
             <svg className="w-4 h-4 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
             <span>{modalError}</span>
           </div>

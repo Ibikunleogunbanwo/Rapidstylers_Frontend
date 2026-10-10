@@ -67,7 +67,7 @@ describe("BusinessSummary", () => {
 
     render(<BusinessSummary />);
 
-    const eye = await screen.findByRole("img");
+    const eye = await screen.findByRole("button", { name: "Show revenue" });
     fireEvent.click(eye);
     expect(screen.getByText("$90.00")).toBeInTheDocument();
     expect(screen.getByText(/Gross \$100.00 − commission \$10.00/)).toBeInTheDocument();

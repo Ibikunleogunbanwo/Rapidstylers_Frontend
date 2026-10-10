@@ -10,13 +10,18 @@ const formatMoney = (value) => {
 
 const BusinessSummary = () => {
   const [revenueVisible, setRevenueVisible] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [summary, setSummary] = useState(null);
 
-  useEffect(() => {
-    APIService.getStylerBusinessSummary()
+  const load = () => {
+    setLoading(true);
+    return APIService.getStylerBusinessSummary()
       .then((response) => setSummary(response.data?.data || null))
-      .catch(() => setSummary(null));
-  }, []);
+      .catch(() => setSummary(null))
+      .finally(() => setLoading(false));
+  };
+  useEffect(() => { load(); }, []);
+
 
   const toggleVisibility = () => {
     setRevenueVisible(!revenueVisible);
@@ -27,6 +32,7 @@ const BusinessSummary = () => {
 
     return ( 
         <div className="grid gap-4">
+            {!loading && !summary && <div role="alert">Could not load your business summary. <button type="button" onClick={load}>Retry</button></div>}
             <div className="rounded-lg border border-black/10">
               <p className="p-4 border-b border-black/10 text-[11px] uppercase tracking-[0.25em] text-muted truncate">Business summary</p>
               <div className="p-4 grid grid-cols-2 gap-4 overflow-hidden">
@@ -57,9 +63,9 @@ const BusinessSummary = () => {
                 <div className="col-span-2">
                   <div className="flex items-center w-full gap-2">
                     <div className="text-[13px] text-gray-500 truncate">Net revenue (after commission):</div>
-                    <div onClick={toggleVisibility} className="cursor-pointer">
+                    <button type="button" onClick={toggleVisibility} aria-label={revenueVisible ? "Hide revenue" : "Show revenue"} aria-pressed={revenueVisible} className="cursor-pointer">
                         <img src={revenueVisible? show : hidden} alt="" className="h-[18px] mt-[2px]"/>
-                    </div>
+                    </button>
                   </div>
                   <span className="font-semibold">{revenueVisible ? (summary ? formatMoney(summary.netRevenue) : "-") : '********'}</span>
                   {revenueVisible && summary && (
@@ -71,7 +77,7 @@ const BusinessSummary = () => {
             <div className="rounded-lg border border-black/10 overflow-hidden">
               <p className="p-4 border-b border-black/10 text-[11px] uppercase tracking-[0.25em] text-muted">Popular services</p>
               {popularServices.length === 0 ? (
-                <p className="p-4 text-sm text-gray-500">{summary ? "No bookings yet. Services will appear here once clients book them." : "Loading…"}</p>
+                <p className="p-4 text-sm text-gray-500">{summary ? "No bookings yet. Services will appear here once clients book them." : loading ? "Loading…" : "Could not load your business summary."}</p>
               ) : (
                 <div className="p-4 grid gap-4">
                   {popularServices.map((service, index) => (

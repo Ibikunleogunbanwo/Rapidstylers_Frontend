@@ -95,3 +95,13 @@ describe("SavedStylist panel", () => {
     expect(APIService.listSavedStylists).not.toHaveBeenCalled();
   });
 });
+
+test("failed saved list shows retry rather than empty state", async () => {
+ getAuthToken.mockReturnValue("token");
+ APIService.listSavedStylists.mockRejectedValueOnce(new Error('offline')).mockResolvedValueOnce({data:{data:[]}});
+ renderPanel();
+ expect(await screen.findByRole('alert')).toHaveTextContent(/Unable to load saved/);
+ expect(screen.queryByText('Nothing saved yet')).not.toBeInTheDocument();
+ fireEvent.click(screen.getByRole('button',{name:'Retry'}));
+ expect(await screen.findByText('Nothing saved yet')).toBeInTheDocument();
+});

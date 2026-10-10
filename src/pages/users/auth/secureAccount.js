@@ -72,12 +72,12 @@ const SecureAccount = () => {
         let userRegistrationData = { firstname, lastname, country, address, state, emailAddress: finalEmailAddress, phoneNumber, password, agreeToTerms: agreeToTerms === true };
         try {
           const { payload } = await dispatch(createUserAccount(userRegistrationData));
-          if(payload.statusCode === "200"){
+          if(payload?.statusCode === "200"){
             setSubmitError(null);
             setSignedInUserId(payload.token ? payload.data?.userId : null);
             setDashboardModal(true);
           } else {
-            setSubmitError(payload.message || "We couldn't create your account right now. Please try again.");
+            setSubmitError(payload?.message || "We couldn't create your account right now. Please try again.");
           }
         } catch (error) {
           // APIService.extractError already surfaced network/server errors as a toast.

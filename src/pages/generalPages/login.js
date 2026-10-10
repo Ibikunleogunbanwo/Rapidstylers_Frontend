@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import { z } from "zod";
+import React, { useState, useRef } from "react";
 import { Link, useNavigate, Navigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { APIService } from "../../hooks/remote/apiService";
@@ -21,6 +22,11 @@ const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || "";
  * "Continue with Google" is customer-only and hidden unless a client id is
  * configured.
  */
+const loginSchema = z.object({
+  emailAddress: z.string().trim().min(1, "Email address is required").email("Enter a valid email address"),
+  password: z.string().min(1, "Password is required"),
+});
+
 const Login = () => {
   document.title = "Sign In | RapidStylers";
   const navigate = useNavigate();
@@ -28,6 +34,8 @@ const Login = () => {
   const [emailAddress, setEmailAddress] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const submitting = useRef(false);
+  const [fieldErrors, setFieldErrors] = useState({});
   const [errorMsg, setErrorMsg] = useState("");
   // Cloudflare Turnstile token (empty when no site key is configured). Bumped
   // after a failed attempt because the token is single use.
@@ -86,10 +94,18 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (submitting.current) return;
+    const validation = loginSchema.safeParse({ emailAddress, password });
+    if (!validation.success) {
+      setFieldErrors(validation.error.issues.reduce((errors, issue) => ({ ...errors, [issue.path[0]]: errors[issue.path[0]] || issue.message }), {}));
+      return;
+    }
+    setFieldErrors({});
+    submitting.current = true;
     setErrorMsg("");
     setLoading(true);
     try {
-      const res = await APIService.signIn({ emailAddress, password, captchaToken });
+      const res = await APIService.signIn({ ...validation.data, captchaToken });
       await completeAuth(res);
     } catch (error) {
       // Error toasts are handled in APIService; also show inline
@@ -99,6 +115,7 @@ const Login = () => {
       // so ask for a fresh one before the next attempt.
       setCaptchaReset((n) => n + 1);
     } finally {
+      submitting.current = false;
       setLoading(false);
     }
   };
@@ -157,10 +174,11 @@ const Login = () => {
               </>
             )}
 
-            <form onSubmit={handleSubmit} className="grid gap-4">
+            <form noValidate onSubmit={handleSubmit} className="grid gap-4">
               <InputWithLabel
                 labelName={"Email address"}
                 inputType={"email"}
+                inputError={fieldErrors.emailAddress}
                 inputName={"emailAddress"}
                 inputValue={emailAddress}
                 inputOnChange={(e) => setEmailAddress(e.target.value)}
@@ -169,6 +187,7 @@ const Login = () => {
               <PasswordInput
                 labelName={"Password"}
                 inputType={"password"}
+                inputError={fieldErrors.password}
                 inputName={"password"}
                 inputValue={password}
                 inputOnChange={(e) => setPassword(e.target.value)}
@@ -184,13 +203,14 @@ const Login = () => {
               <TurnstileWidget onVerify={setCaptchaToken} resetSignal={captchaReset} />
               <Button
                 variant={"primary"}
+                disabled={loading}
                 type={"submit"}
                 text={loading ? "Signing in..." : "Sign In"}
               />
             </form>
 
             {errorMsg && (
-              <div className="mt-3 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700 flex items-start gap-2">
+              <div role="alert" className="mt-3 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700 flex items-start gap-2">
                 <svg className="w-4 h-4 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
                 <span>{errorMsg}</span>
               </div>

@@ -1,3 +1,4 @@
+import { setAuthToken, setUserRole } from "./utils/constant";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { act } from "react-dom/test-utils";
 import App from "./App";
@@ -44,6 +45,8 @@ vi.mock("./pages/users/pages/searchStylers", () => ({ default: () => <div data-t
 
 const renderCustomerArea = async (path) => {
   window.history.pushState({}, "", path);
+  setAuthToken("customer-test");
+  setUserRole("CUSTOMER");
   store.dispatch(setUserSession({ data: { userId: 1 } }));
   await act(async () => {
     render(
@@ -187,3 +190,5 @@ test("a signed-out customer signs in through App and lands on /dashboard, not ho
     signInMock.mockRestore();
   }
 });
+
+afterEach(() => sessionStorage.clear());

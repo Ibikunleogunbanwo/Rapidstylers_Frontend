@@ -1,6 +1,6 @@
 // import arrow from "../assets/svg-icons/black-arrow.svg"
 // import { Link } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Input from "../../../components/input";
 import Button from "../../../components/button";
 import { useFormik } from "formik";
@@ -13,14 +13,15 @@ const Feedback = ({setPageTitle}) => {
   useEffect((() => {
     setPageTitle("Feedback");
     document.title = "Feedback | RapidStylers";
-  }));
+  }), [setPageTitle]);
   const dispatch = useDispatch();
+  const [submitError, setSubmitError] = useState("");
   const feedbackType = [{value:'', label:'Select...'},
                         { value: 'Improvement suggestion', label: 'Improvement suggestion' },
                         {value: 'Report a bug', label: 'Report a bug'}]
 
-  const userEmailAddress = useSelector((state)=>state.user.userSessionData).emailAddress;
-  const userId = useSelector((state)=>state.user.userSessionData).userId;
+  const userEmailAddress = useSelector((state)=>state.user.userSessionData)?.emailAddress || "";
+  const userId = useSelector((state)=>state.user.userSessionData)?.userId;
   const submitUserFeedback = useFormik({
     initialValues: {
       emailAddress: userEmailAddress,
@@ -32,12 +33,16 @@ const Feedback = ({setPageTitle}) => {
       feedbackType: Yup.string().required("Feedback type is required"),
       message: Yup.string().required("Feedback content is required"),
     }),
-    onSubmit: (values, {resetForm}) => {
+    onSubmit: async (values, {resetForm}) => {
       const {emailAddress, feedbackType, message} = values;
       let userFeedbackData = {userId, emailAddress, feedbackType, message};
-      const { payload } = dispatch(addUserFeedBack(userFeedbackData));
-      if(payload.statusCode === "200") {
+      setSubmitError("");
+      try {
+        const action = await dispatch(addUserFeedBack(userFeedbackData));
+        if (action.meta?.requestStatus === "rejected" || action.error || String(action.payload?.statusCode) !== "200") throw new Error("Feedback failed");
         resetForm();
+      } catch (error) {
+        setSubmitError("Unable to submit feedback. Please try again.");
       }
     },
   })
@@ -81,10 +86,10 @@ const Feedback = ({setPageTitle}) => {
                          selectError={submitUserFeedback.touched.feedbackType && submitUserFeedback.errors.feedbackType ? submitUserFeedback.errors.feedbackType : null} />
           </div>
           <div className="grid gap-1 col-span-1 md:col-span-2">
-            <span className="font-medium text-sm">Your feedback</span>
+            <label htmlFor="feedback-message" className="font-medium text-sm">Your feedback</label>
             <textarea
               name="message"
-              id=""
+              id="feedback-message"
               onBlur={submitUserFeedback.handleBlur}
               onChange={submitUserFeedback.handleChange}
               value={submitUserFeedback.values.message}
@@ -96,7 +101,8 @@ const Feedback = ({setPageTitle}) => {
             <span className="text-xs text-red-600">{submitUserFeedback.errors.message && submitUserFeedback.touched.message ? submitUserFeedback.errors.message : null}</span>
           </div>
           <div className="col-span-1 md:col-span-2">
-            <Button text={'Submit'} type={'submit'} variant="primary"/>
+            {submitError && <p role="alert">{submitError}</p>}
+            <Button text={submitUserFeedback.isSubmitting ? 'Submitting...' : 'Submit'} disabled={submitUserFeedback.isSubmitting} type={'submit'} variant="primary"/>
           </div>
           <div className="col-span-1 md:col-span-2 mt-3 text-slate-600">
             <p className=" font-semibold">Privacy note:</p>

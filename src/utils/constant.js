@@ -5,7 +5,7 @@ import 'react-toastify/dist/ReactToastify.css';
 // Copy .env.example to .env and fill in real values.
 export const API_KEY = process.env.REACT_APP_API_KEY || "";
 export const JSON_CONTENT_TYPE = "application/json";
-export const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "https://localhost:9090/rapid_stylers";
+export const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "http://localhost:9095/rapid_stylers";
 
 /**
  * The support address we publish. It appears on the support page, in the terms,
@@ -121,13 +121,22 @@ export const clearAuthToken = () => {
  * the ApiClient 401 auto-refresh silently resurrects the session after
  * sign-out, and stale role flags leave the header showing a signed-in user.
  */
+let sessionRevision = 0;
+export const getSessionRevision = () => {
+  try { return Number(sessionStorage.getItem("rapidstylers_session_revision")) || 0; }
+  catch (_) { return sessionRevision; }
+};
+
 export const clearAllSessionTokens = () => {
+  sessionRevision = getSessionRevision() + 1;
+  try { sessionStorage.setItem("rapidstylers_session_revision", String(sessionRevision)); } catch (_) {}
   sessionStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
   sessionStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY);
   sessionStorage.removeItem(ADMIN_ROLE_KEY);
   sessionStorage.removeItem(USER_ROLE_STORAGE_KEY);
   clearIntendedRoute();
   clearBookingIntent();
+  sessionStorage.removeItem("rapidstylers_booking_attempt");
   clearSavedUserLocation();
 };
 

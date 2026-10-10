@@ -54,6 +54,7 @@ vi.mock("../utils/constant", () => ({
   getBookingIntent: vi.fn(() => null),
   setBookingIntent: vi.fn(),
   clearBookingIntent: vi.fn(),
+  getSessionRevision: () => 0,
 }));
 
 beforeEach(() => {
@@ -411,6 +412,24 @@ describe("Stylist address in the booking modal", () => {
 });
 
 describe("Booking confirmation names the stylist's clock", () => {
+  it("retries an uncertain booking with the same idempotency key", async () => {
+    sessionStorage.clear();
+    getAuthToken.mockReturnValue("token");
+    APIService.bookAppointment.mockReset();
+    APIService.bookAppointment.mockRejectedValueOnce(Object.assign(new Error("timeout"), { code: "ECONNABORTED" }))
+      .mockResolvedValueOnce({ data: { data: {} } });
+    render(<SelectService serviceName="Braids" servicePrice="80" stylerId="s1" subServiceId="ss1" stylerProvince="Alberta" />);
+    fireEvent.click(screen.getByText("Book service"));
+    fireEvent.click(screen.getByText("4:00 pm"));
+    fireEvent.click(screen.getAllByText(/15/)[0]);
+    fireEvent.click(screen.getByText("Book appointment"));
+    expect(await screen.findByText(/could not confirm whether your booking/i)).toBeInTheDocument();
+    const key = APIService.bookAppointment.mock.calls[0][1];
+    expect(key).toEqual(expect.any(String));
+    fireEvent.click(screen.getByText("Book appointment"));
+    await screen.findByTestId("booking-placed");
+    expect(APIService.bookAppointment.mock.calls[1][1]).toBe(key);
+  });
   it("puts the stylist's zone beside the picked time", () => {
     expect(bookingConfirmationMessage("Tue, 19th", "4:00 pm", "Mountain Time")).toBe(
       "Booking request sent for Tue, 19th at 4:00 pm (Mountain Time). The stylist will confirm shortly."

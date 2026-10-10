@@ -1,0 +1,12 @@
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import { vi } from 'vitest';
+import StylerProfile from './stylerProfile';
+import Cover from './updateCoverPhoto';
+import Business from './updateBusinessInformation';
+import Personal from './updatePersonalInformation';
+import {setAuthToken,setUserRole} from '../../utils/constant';
+beforeEach(() => {sessionStorage.clear();setUserRole('STYLER');setAuthToken(`header.${btoa(JSON.stringify({sub:'GS123'}))}.signature`); Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:vi.fn().mockResolvedValue()}});});
+it('shares the signed-in stylist public page using an accessible copy button',async()=>{ render(<MemoryRouter><StylerProfile/></MemoryRouter>); const link=screen.getByRole('link',{name:'View public profile'}).href; expect(link).toContain(`/stylistProfile/${encodeURIComponent(btoa('GS123'))}/`); fireEvent.click(screen.getByRole('button',{name:'Copy link'})); await waitFor(()=>expect(navigator.clipboard.writeText).toHaveBeenCalledWith(link)); });
+it('does not offer a fabricated share link when identity cannot be read',()=>{setAuthToken('invalid');render(<MemoryRouter><StylerProfile/></MemoryRouter>);expect(screen.queryByRole('button',{name:'Copy link'})).not.toBeInTheDocument();expect(screen.getByText(/Sign in again to load/)).toBeInTheDocument();});
+it.each([Cover,Business,Personal])('explains unavailable profile updates with a working support contact',Component=>{render(<MemoryRouter><Component/></MemoryRouter>);expect(screen.getByText(/Profile changes currently require support/)).toBeInTheDocument();expect(screen.getByRole('link',{name:'Contact support'})).toHaveAttribute('href',expect.stringContaining('mailto:'));expect(screen.queryByRole('button',{name:/Update/})).not.toBeInTheDocument();});

@@ -27,24 +27,29 @@ const ManageStylers = () => {
   const [tab, setTab] = useState("verification"); // "verification" | "images"
   const [stylers, setStylers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [filter, setFilter] = useState("All");
   const [busyId, setBusyId] = useState(null); // stylerId currently being acted on
   const [images, setImages] = useState([]);
   const [imagesLoading, setImagesLoading] = useState(false);
+  const [imagesError, setImagesError] = useState("");
   const [busyImageId, setBusyImageId] = useState(null);
 
   const loadQueue = () => {
+    setLoading(true);
+    setLoadError("");
     APIService.getStylerVerificationQueue()
       .then((res) => setStylers(res.data?.data || []))
-      .catch(() => setStylers([]))
+      .catch(() => setLoadError("Unable to load stylists."))
       .finally(() => setLoading(false));
   };
 
   const loadImages = () => {
     setImagesLoading(true);
+    setImagesError("");
     APIService.getAllPortfolios()
       .then((res) => setImages(res.data?.data || []))
-      .catch(() => setImages([]))
+      .catch(() => setImagesError("Unable to load gallery images."))
       .finally(() => setImagesLoading(false));
   };
 
@@ -114,7 +119,7 @@ const ManageStylers = () => {
           <div>
             {imagesLoading ? (
               <p className="text-sm text-gray-500">Loading images…</p>
-            ) : images.length === 0 ? (
+            ) : imagesError ? (<div role="alert">{imagesError} <button type="button" onClick={loadImages}>Retry</button></div>) : images.length === 0 ? (
               <AdminCard pad="p-8" className="text-center">
                 <p className="text-sm text-gray-500">
                   No stylist portfolio images uploaded yet. They appear here once stylists add work.
@@ -188,7 +193,9 @@ const ManageStylers = () => {
 
             {loading ? (
               <p className="text-sm text-gray-500">Loading…</p>
-            ) : visible.length === 0 ? (
+            ) : loadError ? (
+            <div role="alert">{loadError} <button type="button" onClick={loadQueue}>Retry</button></div>
+          ) : visible.length === 0 ? (
               <AdminCard pad="p-8" className="text-center">
                 <p className="text-sm text-gray-500">
                   No stylists in this view yet. New registrations appear here as Pending.

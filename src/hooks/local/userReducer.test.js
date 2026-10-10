@@ -1,10 +1,10 @@
 import { configureStore } from "@reduxjs/toolkit";
 import { APIService } from "../remote/apiService";
-import { changeUserPassword, createUserAccount, userAuthenticate, userReducer } from "./userReducer";
+import { changeUserPassword, createUserAccount, userAuthenticate, userReducer, userLogOut, setUserSession, getUserDetails } from "./userReducer";
 import { getAuthToken, getRefreshToken, getUserRole, setAuthToken, setRefreshToken } from "../../utils/constant";
 
 vi.mock("../remote/apiService", () => ({
-  APIService: { signIn: vi.fn(), createUserAccount: vi.fn(), updateUserPassword: vi.fn() },
+  APIService: { signIn: vi.fn(), createUserAccount: vi.fn(), updateUserPassword: vi.fn(), logout: vi.fn(), getUserDetails: vi.fn() },
 }));
 
 const account = { userId: "A1234B", firstname: "Ada" };
@@ -97,3 +97,51 @@ describe("changeUserPassword", () => {
     expect(getRefreshToken()).toBe("old-refresh");
   });
 });
+
+ test("logout immediately clears browser and Redux session while revocation is pending", async () => {
+    const pending = new Promise(() => {});
+    APIService.logout.mockReturnValue(pending);
+    setAuthToken("old-jwt"); setRefreshToken("old-refresh");
+    localStorage.setItem("theme", "dark");
+    const s = store(); s.dispatch(setUserSession({data: account}));
+    const result = s.dispatch(userLogOut());
+    expect(getAuthToken()).toBe("");
+    expect(getRefreshToken()).toBe("");
+    expect(localStorage.getItem("userSessionData")).toBeNull();
+    expect(s.getState().user.userSessionData).toBeNull();
+    expect(localStorage.getItem("theme")).toBe("dark");
+    await result;
+    expect(APIService.logout).toHaveBeenCalledWith("old-refresh");
+ });
+
+ describe("profile completion belongs to the requesting session", () => {
+ const beginProfile = (s) => {
+   let complete;
+   APIService.getUserDetails.mockReturnValue(new Promise(resolve => { complete = resolve; }));
+   const request = s.dispatch(getUserDetails());
+   return { request, complete: () => complete({data: {statusCode: "200", data: {...account, firstname: "Old profile"}}}) };
+ };
+ const signIn = (s, user = account) => { setAuthToken("jwt"); s.dispatch(setUserSession({data: user})); };
+ test("a deferred profile cannot repopulate account data after logout", async () => {
+   const s = store(); signIn(s); const profile = beginProfile(s);
+   await s.dispatch(userLogOut()); profile.complete(); await profile.request;
+   expect(localStorage.getItem("userDetailsData")).toBeNull();
+   expect(s.getState().user.userDetailsData).toBeNull();
+   expect(s.getState().user.users).toBeNull();
+ });
+ test("an old account profile cannot overwrite the next signed-in account", async () => {
+   const s = store(); signIn(s); const profile = beginProfile(s);
+   const next = {userId: "NEW123", firstname: "New account"};
+   signIn(s, next); profile.complete(); await profile.request;
+   expect(localStorage.getItem("userDetailsData")).toBeNull();
+   expect(s.getState().user.userSessionData).toEqual(next);
+   expect(s.getState().user.users).toEqual({data: next});
+   expect(s.getState().user.userDetailsData).toBeFalsy();
+ });
+ test("access token rotation keeps a valid account profile response", async () => {
+   const s = store(); signIn(s); const profile = beginProfile(s);
+   setAuthToken("rotated-jwt"); profile.complete(); await profile.request;
+   expect(s.getState().user.userDetailsData.firstname).toBe("Old profile");
+   expect(JSON.parse(localStorage.getItem("userDetailsData")).firstname).toBe("Old profile");
+ });
+ });

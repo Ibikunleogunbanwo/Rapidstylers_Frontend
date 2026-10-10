@@ -5,10 +5,10 @@ import UserTopBar from "./topBar";
 import UserSideBar from "./sideBar";
 import Humour from "../../../components/rapidStylerHumour";
 import Advert from "../../../components/advert";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import LogOut from "../auth/logout";
-import { setIntendedRoute } from "../../../utils/constant";
+import { setIntendedRoute, getAuthToken, getUserRole } from "../../../utils/constant";
 import BookAppointment from "../pages/bookAnAppointment";
 import UpdateInformation from "../pages/updatePersonal";
 import SavedStylist from "../pages/savedStylists";
@@ -26,10 +26,12 @@ const UserLayout = () => {
     const [sideBarVisibility, setSideBarVisibility] = useState(false);
     const [pageTitle, setPageTitle] = useState("");
     const [stylerSearchName, setStylerSearchName] = useState("");
+    const menuButtonRef = useRef(null);
     const toggleSideBar = () => {
         setSideBarVisibility(!sideBarVisibility);
     }
     const closeSideBar = () => {
+        menuButtonRef.current?.focus();
         setSideBarVisibility(false);
     }
     // The customer area mounts this shell at each flat URL (App.js), so an
@@ -37,6 +39,7 @@ const UserLayout = () => {
     // prefix, leaving the dashboard routes unreachable (everything fell to
     // NotFound). Resolve the page directly from the current pathname instead.
     const { pathname } = useLocation();
+    const isBookingPage = pathname === "/bookAppointment";
     const page = (() => {
         switch (pathname) {
             case "/dashboard": return <Dashboard setPageTitle={setPageTitle} />;
@@ -58,28 +61,33 @@ const UserLayout = () => {
     // Signed-out visitors on a customer route are sent to /login (remembering
     // the page they wanted) so signing in returns them there — not bounced to
     // the public home page.
-    if(!userSession){
+    const token = getAuthToken();
+    const role = getUserRole();
+    if (token && role !== "CUSTOMER") {
+        return <Navigate to={role === "STYLER" ? "/styler-dashboard" : role === "ADMIN" ? "/admin/categories" : "/login"} replace />;
+    }
+    if(!token || !userSession){
         setIntendedRoute(pathname);
         return <Navigate to="/login" replace />;
     }
     return (
         <div>
-            <UserTopBar toggleSideBar={toggleSideBar} />
+            <UserTopBar toggleSideBar={toggleSideBar} menuOpen={sideBarVisibility} menuButtonRef={menuButtonRef} />
             <div className="grid grid-cols-1 lg:grid-cols-12 pt-[70px]">
                 <div className="px-4 col-span-1 lg:col-span-2">
                     <UserSideBar sideBarVisibility={sideBarVisibility} sideBarTitle={pageTitle} closeSideBar={closeSideBar} />
                 </div>
                 <div className="p-2 col-span-1 lg:col-span-10">
                     <div className="grid grid-cols-1 lg:grid-cols-10 gap-4">
-                        <div className="col-span-1 lg:col-span-7">
+                        <div className={isBookingPage ? "col-span-1 lg:col-span-10" : "col-span-1 lg:col-span-7"}>
                             {page}
                         </div>
-                        <div className="col-span-1 lg:col-span-3">
+                        {!isBookingPage && <div className="col-span-1 lg:col-span-3">
                             <div className="grid md:grid-cols-2 lg:grid-cols-1 gap-4 p-4 md:p-0">
                                 <Humour />
                                 <Advert />
                             </div>
-                        </div>
+                        </div>}
                     </div>
                 </div>
             </div>

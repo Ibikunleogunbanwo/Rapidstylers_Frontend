@@ -50,11 +50,9 @@ export default function IdleTimeout() {
   const signOut = useCallback(() => {
     if (signedOutRef.current) return;
     signedOutRef.current = true;
-    // Fire-and-forget revoke + teardown; logOutSession catches its own errors.
-    dispatch(userLogOut());
-    // Role read live so a session that signed in after mount still redirects
-    // to the right login page.
     const target = readRole() === "ADMIN" ? "/admin/login" : "/login";
+    // Capture the destination before synchronous teardown removes the role.
+    dispatch(userLogOut());
     toast.info("You've been signed out due to inactivity.", { autoClose: 5000 });
     navigate(target, { replace: true });
   }, [dispatch, navigate]);

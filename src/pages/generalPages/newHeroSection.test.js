@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, within, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, within, waitFor, act } from "@testing-library/react";
 import { MemoryRouter, useLocation } from "react-router-dom";
 import Hero from "./newHeroSection";
 
@@ -30,6 +30,10 @@ let session;
 let dispatchMock;
 
 const renderHero = (initialPath = "/") => {
+  if (session) {
+    sessionStorage.setItem("rapidstylers_auth_token", "test-jwt");
+    sessionStorage.setItem("rapidstylers_user_role", session.role || "CUSTOMER");
+  }
   let currentPath = initialPath;
   function LocationSpy() {
     currentPath = useLocation().pathname;
@@ -226,5 +230,47 @@ describe("Hero service pills", () => {
 
     // An empty category list must render nothing rather than blank pills.
     expect(document.querySelectorAll("a[href*='serviceTypeId=']")).toHaveLength(0);
+  });
+});
+
+
+describe("Hero media loading", () => {
+  let media;
+  let listener;
+  beforeEach(() => {
+    document.title = "Welcome - RapidStylers";
+    useSelector.mockImplementation((selector) => selector({ user: { userSessionData: null, loading: false } }));
+    useDispatch.mockReturnValue(vi.fn());
+    APIService.getStylerType.mockReturnValue(new Promise(() => {}));
+    media = { matches: false, addEventListener: (_, callback) => { listener = callback; }, removeEventListener: vi.fn() };
+    window.matchMedia = vi.fn(() => media);
+  });
+
+  test.each([[390, false], [1440, true]])("uses a static image at width %i with reduced motion %s", (width, reducedMotion) => {
+    window.matchMedia = vi.fn((query) => ({ ...media, matches: width >= 1024 && !reducedMotion }));
+    renderHero();
+    expect(document.querySelector("video")).toBeNull();
+    expect(screen.getByAltText("Beauty tools ready for your appointment")).toHaveAttribute("src");
+  });
+
+  test("loads the video only on desktop when motion is allowed", () => {
+    media.matches = true;
+    renderHero();
+    expect(document.querySelector("video")).toHaveAttribute("src", expect.stringContaining("large%20video.mp4"));
+    expect(window.matchMedia).toHaveBeenCalledWith("(min-width: 1024px) and (prefers-reduced-motion: no-preference)");
+  });
+
+  test("removes the video source when motion eligibility changes", () => {
+    media.matches = true;
+    renderHero();
+    act(() => { media.matches = false; listener(); });
+    expect(document.querySelector("video")).toBeNull();
+  });
+
+  test("does not download a hidden landing video on other pages", () => {
+    document.title = "Elevate your looks | RapidStylers";
+    media.matches = true;
+    renderHero();
+    expect(document.querySelector("video")).toBeNull();
   });
 });

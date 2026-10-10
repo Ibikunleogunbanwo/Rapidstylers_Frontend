@@ -13,6 +13,7 @@ import photoCalgarySkyline from "../../assets/images/canada/calgary-skyline-dusk
 import photoTorontoAerial from "../../assets/images/canada/toronto-aerial.jpg";
 import photoAutumnLeaves from "../../assets/images/canada/autumn-leaves.jpg";
 import photoMontrealWheel from "../../assets/images/canada/montreal-wheel.jpg";
+import useDecorativeMotion from "../../hooks/useDecorativeMotion";
 import cityLoop from "../../assets/images/canada/city-loop.mp4";
 import Hero from "./newHeroSection";
 // import rapidGIF from "../../assets/Videos/stylers.gif";
@@ -135,6 +136,7 @@ const BlogSection = () => {
 };
 
 const LandingPage = () => {
+  const allowDecorativeMotion = useDecorativeMotion();
   document.title="Welcome - RapidStylers";
 
   useEffect(() => {
@@ -201,15 +203,16 @@ const LandingPage = () => {
 
         {/* Brand loop + quote */}
         <div className="my-16 px-5 md:px-[50px] text-center grid gap-4 justify-items-center">
-          <video
+          {allowDecorativeMotion ? <video
             autoPlay
             loop
             muted
             playsInline
             src={cityLoop}
             aria-label="RapidStylers logo animation"
+            poster={photoCalgarySkyline}
             className="w-full max-w-[420px] rounded-lg"
-          />
+          /> : <img src={photoCalgarySkyline} alt="Calgary skyline at dusk" loading="lazy" className="w-full max-w-[420px] rounded-lg" />}
           <div className="flex justify-center">
             <img src={scissors} alt="" className="h-5" />
           </div>

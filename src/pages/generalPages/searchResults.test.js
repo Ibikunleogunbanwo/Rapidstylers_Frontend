@@ -1,5 +1,5 @@
-import { render, screen, fireEvent } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
+import { render, screen, fireEvent, act } from "@testing-library/react";
+import { MemoryRouter, Link } from "react-router-dom";
 import SearchResults from "./searchResults";
 import { APIService } from "../../hooks/remote/apiService";
 
@@ -328,3 +328,19 @@ describe("SearchResults open-now filter", () => {
     expect(screen.getByText(/Shut Studio · S2/)).toBeInTheDocument();
   });
 });
+
+ test("a superseded city response cannot overwrite the current results", async () => {
+   let finishOld;
+   APIService.getStylerType.mockResolvedValue({ data: { data: [] } });
+   APIService.searchByCity.mockImplementation(city => city === "Calgary"
+     ? new Promise(resolve => { finishOld = resolve; })
+     : Promise.resolve({ data: { data: stylists(1, { businessName: "Current Edmonton", city: "Edmonton" }) } }));
+   render(<MemoryRouter initialEntries={["/search?city=Calgary"]}>
+     <Link to="/search?city=Edmonton">Change city</Link><SearchResults />
+   </MemoryRouter>);
+   fireEvent.click(screen.getByRole("link", { name: "Change city" }));
+   await screen.findByText(/Current Edmonton/);
+   await act(async () => finishOld({ data: { data: stylists(1, { businessName: "Stale Calgary", city: "Calgary" }) } }));
+   expect(screen.getByText(/Current Edmonton/)).toBeInTheDocument();
+   expect(screen.queryByText(/Stale Calgary/)).not.toBeInTheDocument();
+ });

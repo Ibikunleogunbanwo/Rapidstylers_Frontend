@@ -15,6 +15,7 @@ const ManageBlog = () => {
   document.title = "Manage Blog | RapidStylers";
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
   const [editItem, setEditItem] = useState(null); // { id } while editing
@@ -23,9 +24,11 @@ const ManageBlog = () => {
   const [editError, setEditError] = useState("");
 
   const loadPosts = () => {
+    setLoading(true);
+    setLoadError("");
     APIService.listBlog()
       .then((res) => setPosts(res.data?.data || []))
-      .catch(() => setPosts([]))
+      .catch(() => setLoadError("Unable to load articles."))
       .finally(() => setLoading(false));
   };
 
@@ -155,6 +158,8 @@ const ManageBlog = () => {
           <p className="font-semibold text-gray-900 mb-3">Published articles</p>
           {loading ? (
             <p className="text-sm text-gray-500">Loading…</p>
+          ) : loadError ? (
+            <div role="alert">{loadError} <button type="button" onClick={loadPosts}>Retry</button></div>
           ) : posts.length === 0 ? (
             <p className="text-sm text-gray-500">No articles yet. Write your first one above.</p>
           ) : (

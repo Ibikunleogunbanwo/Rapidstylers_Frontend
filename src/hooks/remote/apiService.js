@@ -673,9 +673,18 @@ export class APIService {
             throw(error);
         }
     }
-    static async bookAppointment(data){
+    static async bookAppointment(data, idempotencyKey){
         try{
-            return await ApiClient.post("/book_appointment", data);
+            if (!idempotencyKey) throw new Error("Booking retry protection is unavailable. Please reopen the booking form.");
+            const response = await ApiClient.post("/book_appointment", data, {
+                headers: { "Idempotency-Key": idempotencyKey },
+            });
+            if (String(response.data?.statusCode) !== "200") {
+                throw Object.assign(new Error("The server did not confirm the booking outcome."), {
+                    code: "ERR_BOOKING_UNCONFIRMED",
+                });
+            }
+            return response;
         }
         catch(error){
             // Application-level failures arrive rejected by the ApiClient
@@ -759,9 +768,12 @@ export class APIService {
             throw(error);
         }
     }
-    static async stylerSignOut(){
+    static async stylerSignOut(accessToken){
         try{
-            return await ApiClient.get(`/styler_sign_out`);
+            return await ApiClient.get(`/styler_sign_out`, {
+                skipAuthRefresh: true,
+                headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+            });
         }
         catch(error){
             // Best-effort — local sign-out must succeed even if the call fails.
@@ -1070,7 +1082,7 @@ export class APIService {
     /** Revoke the refresh token server-side and clear local session. */
     static async logout(refreshToken){
         try{
-            return await ApiClient.post("/auth/logout", { refreshToken });
+            return await ApiClient.post("/auth/logout", { refreshToken }, { skipAuthRefresh: true });
         }
         catch(error){
             // Best-effort: even if the backend call fails, clear local state.

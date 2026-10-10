@@ -63,7 +63,8 @@ describe("the dashboard reviews card", () => {
 
     renderCard();
 
-    expect(await screen.findByText("Not rated")).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "Retry" })).toBeInTheDocument();
+    expect(screen.queryByText("No reviews yet")).not.toBeInTheDocument();
     expect(screen.getByRole("link")).toHaveAttribute("href", "/styler-dashboard/reviews");
   });
 });

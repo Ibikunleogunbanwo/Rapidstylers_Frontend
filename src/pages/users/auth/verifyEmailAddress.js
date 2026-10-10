@@ -177,7 +177,7 @@ const userEmailAddress = location.state?.emailAddress || sessionStorage.getItem(
       }
       try {
         const {payload} = await dispatch(verifyOtpCode({ emailAddress: userEmailAddress, otpCode }));
-        if(payload.statusCode === "200") {
+        if(payload?.statusCode === "200") {
           setOtpError(null);
           // Use the email from the backend response (source of truth) and persist
           // it so a refresh on the next step keeps the flow working.
@@ -189,7 +189,7 @@ const userEmailAddress = location.state?.emailAddress || sessionStorage.getItem(
           // these updates in call order, so the message below wins and the
           // empty boxes are ready for an immediate retype.
           clearUserOTP();
-          setOtpError(payload.message || "The code you entered is incorrect or has expired. Check your email and try again, or request a new code.");
+          setOtpError(payload?.message || "The code you entered is incorrect or has expired. Check your email and try again, or request a new code.");
           setShaking(true);
         }
       } catch (error) {

@@ -99,9 +99,9 @@ index.css               Tailwind layers and global UI styling
 
 ## Stack
 
-- **React 18** with **Vite 8** and React Router v6.
+- **React 18** with **Vite 8** and React Router v7.
 - **Redux Toolkit** for shared app state and async workflows.
-- **Tailwind CSS** for layout and visual styling.
+- **Tailwind CSS 4** for layout and visual styling.
 - **MUI 5** for selected controls and interface pieces.
 - **Formik** as the form-state layer, with **Zod** for validation (new/edited forms; older Yup forms migrate opportunistically — see CONTRIBUTING.md).
 - **Axios** through a centralized API client that attaches API key and JWT headers.
@@ -114,7 +114,7 @@ index.css               Tailwind layers and global UI styling
 
 Prerequisites:
 
-- Node.js 18+
+- Node.js 22.12+ (or 24+)
 - npm 9+
 - RapidStylers backend running locally or reachable over HTTPS
 - Matching frontend/backend API key values
@@ -128,7 +128,13 @@ cp .env.example .env
 npm start
 ```
 
-The dev app runs on `http://localhost:3000`.
+The dev app runs on `http://localhost:3000`. Vite loads `.env.local` in preference to `.env`; verify that it does not override your localhost API with production. To explicitly select the development API for a run:
+
+```bash
+REACT_APP_API_BASE_URL=http://localhost:9095/rapid_stylers npm run dev
+```
+
+The backend also needs its existing `ENCRYPT_KEY` in its own local configuration. Do not generate a replacement against a database containing existing encrypted card references.
 
 ### Environment Variables
 
@@ -137,7 +143,7 @@ The dev app runs on `http://localhost:3000`.
 REACT_APP_API_KEY=your_api_key
 
 # Include /rapid_stylers and no trailing slash
-REACT_APP_API_BASE_URL=http://localhost:9090/rapid_stylers
+REACT_APP_API_BASE_URL=http://localhost:9095/rapid_stylers
 
 # Must match the backend integration key if enabled
 REACT_APP_DECRYPT_KEY=your_decrypt_key
@@ -195,21 +201,42 @@ After changing Vercel environment variables, redeploy. The build bakes environme
 
 ## Testing
 
-Latest verification from the MVP hardening pass:
-
-```text
-Frontend tests: 203 passed, 1 local-only failure (while `IdleTimeout.js` holds temporary 60 s test windows — committed values are green)
-Frontend build: compiled successfully
-Backend tests: 369 passed
-```
-
-Run before pushing frontend changes:
+Verification on October 10, 2026 covers unit tests and a production frontend served with the Vercel security headers. Browser tests intercept all external traffic with deterministic fixtures; they do not verify live backend or Stripe behavior. See [release readiness](docs/release-readiness-2026-10-10.md) for results and backend blockers.
 
 ```bash
 npm test
 npm run build
 node scripts/verify-build-chunks.js
+npm audit --audit-level=moderate
+npx playwright install chromium
+npm run test:e2e
 ```
+
+Tailwind 4 requires Safari 16.4+, Chrome 111+, or Firefox 128+. The current automated mobile project uses Chromium with an iPhone viewport; actual Safari and Firefox require separate verification.
+
+Work remains on `dev`. Promote to `main` only after frontend checks and non-production integration gates pass.
+
+## Promote dev to main
+
+The release script keeps the local checkout on `dev` and publishes the verified commit to `origin/dev` and `origin/main`. It never stages files, commits, merges divergent history, or force-pushes.
+
+Before using it:
+
+1. Review and commit the intended changes on `dev`. Check the staged diff for secrets and unrelated files; avoid blindly staging the entire workspace.
+2. Resolve the pending entries in `release-gates.json`. Set each status to `passed` and record evidence such as test reports and CI run links. These entries are manual release attestations; the script cannot independently verify backend or provider evidence. Keep credentials out of the file.
+3. Confirm dev CI, including the secret scan, is green. Install Node 22.12+ and the Chromium test browser (`npx playwright install chromium`).
+
+```bash
+npm run release:check
+# When the checks and recorded release gates pass:
+npm run release:push
+```
+
+Both commands fetch remote history and require a clean, committed `dev` branch that contains `origin/main` and `origin/dev`. They run `npm ci`, dependency audit, unit tests, production build, strict chunk validation, and functional browser tests. The script rechecks the branch, commit and working tree afterward. Default check mode publishes nothing.
+
+Push mode atomically fast-forwards both remote branches to the tested commit. Divergence, a concurrent incompatible remote update, branch protection, or a remote without atomic-push support causes failure. Integrate remote changes on `dev` and run the checks again; do not bypass protection. A transport failure during push can leave the result uncertain; inspect the remote branch SHAs before retrying. Publishing `main` may trigger configured deployment pipelines.
+
+The release gates remain pending, so promotion is blocked until their prerequisites are satisfied.
 
 ## Troubleshooting
 

@@ -43,6 +43,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Dependency vulnerability audit
+        run: npm audit --audit-level=moderate
+
       - name: Run tests
         env:
           CI: 'true'
@@ -53,6 +56,17 @@ jobs:
           CI: 'true'
         run: npm run build
 
+      - name: Verify build chunks
+        env:
+          BUILD_VERIFY_REQUIRE_PRESENT: '1'
+        run: node scripts/verify-build-chunks.js
+
+      - name: Install functional test browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Browser functional tests
+        run: npm run test:e2e
+
       - name: Upload test results on failure
         if: failure()
         uses: actions/upload-artifact@v4
@@ -61,4 +75,6 @@ jobs:
           path: |
             build/
             *.log
+            playwright-report/
+            test-results/
           retention-days: 7

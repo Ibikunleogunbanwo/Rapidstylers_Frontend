@@ -23,10 +23,12 @@ vi.mock("../../../context/LocationContext", () => ({
 }));
 
 let dispatchPayload;
+let dispatchResult;
+let dispatchOverride;
 vi.mock("react-redux", () => ({
   // useDispatch must return the dispatch function; the component awaits it and
   // destructures { payload }. dispatchPayload is assigned in beforeEach.
-  useDispatch: () => async () => ({ payload: dispatchPayload }),
+  useDispatch: () => (action) => dispatchOverride ? dispatchOverride(action) : Promise.resolve(dispatchResult || { payload: dispatchPayload }),
   useSelector: vi.fn(() => ({ loading: false })),
 }));
 
@@ -40,6 +42,8 @@ const renderPanel = () =>
 describe("SearchStyler panel", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    dispatchResult = null;
+    dispatchOverride = null;
   });
 
   test("renders in the design language: hairline shell, no shadow, no gradient header", () => {
@@ -100,4 +104,23 @@ describe("SearchStyler panel", () => {
 
     expect(screen.getByText("Safety & security")).toBeInTheDocument();
   });
+});
+
+test("rejected thunk reports failure rather than pretending search is empty", async () => {
+ dispatchResult = {meta:{requestStatus:'rejected'},payload:{data:[{stylerId:'S1',businessName:'Invalid result',province:'Alberta'}]}};
+ renderPanel();
+ expect(await screen.findByRole('alert')).toHaveTextContent(/Unable to search/);
+ expect(screen.queryByText('Invalid result')).not.toBeInTheDocument();
+ expect(screen.queryByText('No results')).not.toBeInTheDocument();
+});
+test("older search cannot replace newer results", async () => {
+ let finishOld;
+ dispatchOverride = (action) => action.payload === 'Ada' ? Promise.resolve({payload:{data:[{stylerId:'S2',businessName:'New Ada',province:'Alberta'}]}}) : new Promise(resolve=>{finishOld=resolve;});
+ renderPanel();
+ fireEvent.change(screen.getByLabelText(/Search by name/),{target:{value:'Ada'}});
+ fireEvent.click(screen.getByRole('button',{name:'Search'}));
+ expect(await screen.findByText('New Ada')).toBeInTheDocument();
+ finishOld({payload:{data:[{stylerId:'S1',businessName:'Old result',province:'Alberta'}]}});
+ await waitFor(()=>expect(screen.queryByText('Old result')).not.toBeInTheDocument());
+ expect(screen.getByText('New Ada')).toBeInTheDocument();
 });

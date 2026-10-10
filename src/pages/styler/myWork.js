@@ -30,15 +30,18 @@ const MyWork = () => {
   document.title = "My Work | RapidStylers";
   const [portfolio, setPortfolio] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [category, setCategory] = useState(CATEGORIES[0]);
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
 
   const loadPortfolio = () => {
-    APIService.getOwnPortfolio()
+    setLoading(true);
+    setLoadError("");
+    return APIService.getOwnPortfolio()
       .then((res) => setPortfolio(res.data?.data || []))
-      .catch(() => setPortfolio([]))
+      .catch(() => setLoadError("Could not load your portfolio."))
       .finally(() => setLoading(false));
   };
 
@@ -121,8 +124,9 @@ const MyWork = () => {
         {/* Upload form */}
         <form onSubmit={handleUpload} className="mt-5 grid gap-4 md:grid-cols-[1fr_220px_auto] items-end">
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">Photo</label>
+            <label htmlFor="portfolio-photo" className="block text-sm font-semibold text-gray-700 mb-1">Photo</label>
             <input
+              id="portfolio-photo"
               type="file"
               accept="image/*"
               required
@@ -132,8 +136,9 @@ const MyWork = () => {
             />
           </div>
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">Category</label>
+            <label htmlFor="portfolio-category" className="block text-sm font-semibold text-gray-700 mb-1">Category</label>
             <select
+              id="portfolio-category"
               value={category}
               onChange={(e) => setCategory(e.target.value)}
               className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand"
@@ -163,7 +168,7 @@ const MyWork = () => {
         <p className="text-sm font-semibold mb-4">Your photos</p>
         {loading ? (
           <p className="text-sm text-gray-500">Loading…</p>
-        ) : portfolio.length === 0 ? (
+        ) : loadError ? (<div role="alert" className="p-4 text-sm text-red-700">{loadError} <button type="button" onClick={loadPortfolio}>Retry</button></div>) : portfolio.length === 0 ? (
           <p className="text-sm text-gray-400">
             No work uploaded yet. Add your first photo above.
           </p>
@@ -183,10 +188,10 @@ const MyWork = () => {
                 <button
                   type="button"
                   onClick={() => handleDelete(item)}
-                  disabled={deletingId === item.id}
+                  disabled={!!deletingId}
                   aria-label={`Delete ${item.name || item.category || "photo"}`}
                   title="Remove photo"
-                  className="absolute top-2 right-2 flex h-8 w-8 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-red-600 disabled:opacity-40"
+                  className="absolute top-2 right-2 flex h-8 w-8 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100 hover:bg-red-600 disabled:opacity-40"
                 >
                   {deletingId === item.id ? (
                     <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">

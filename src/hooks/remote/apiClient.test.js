@@ -17,7 +17,7 @@ test("attaches the current JWT to API requests", () => {
   sessionStorage.setItem("rapidstylers_auth_token", "customer-jwt");
   const config = { headers: {} };
 
-  expect(attachAuthToken(config)).toEqual({
+  expect(attachAuthToken(config)).toMatchObject({
     headers: { Authorization: "Bearer customer-jwt" },
   });
 

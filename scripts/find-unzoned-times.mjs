@@ -58,12 +58,7 @@ export const ZONE_CARRIER =
  * guard fails on them, so this list cannot quietly grow into a way of switching
  * the rule off.
  */
-export const EXEMPT_FILES = {
-  "src/pages/styler/stylerDashboard.js":
-    "opening-hours bands the professional picks for their own weekly calendar " +
-    "('6:00-7:00am'). They are that professional's own clock by definition, are " +
-    "never shown to a customer, and have no zone to name beyond their own.",
-};
+export const EXEMPT_FILES = {};
 
 const SCANNED_EXTENSIONS = [".js", ".jsx"];
 const SKIPPED_DIRS = new Set(["node_modules", "build", "dist", "coverage"]);

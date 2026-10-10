@@ -1,3 +1,4 @@
+import { logoutSession } from "../../utils/sessionLogout";
 /**
  * The shared chrome for the admin area. Every admin page used to duplicate the
  * same three pieces — the grey canvas, the heading + sign-out row, and the
@@ -10,7 +11,7 @@
  * (font-normal display headings, tracked eyebrows) but on a compact grey
  * canvas with hairline cards instead of the public pages' editorial bands.
  */
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 /** The admin section nav. `current` is underlined; the rest stay quiet links. */
 const ADMIN_LINKS = [
@@ -43,12 +44,13 @@ export function AdminNav() {
 
 /** The sign-out button every page header carries. */
 export function AdminSignOut() {
+  const navigate = useNavigate();
   return (
     <button
       type="button"
       onClick={() => {
-        localStorage.clear();
-        window.location.href = "/admin/login";
+        logoutSession();
+        navigate("/admin/login", { replace: true });
       }}
       className="text-sm font-semibold text-gray-500 hover:text-gray-800"
     >

@@ -6,9 +6,13 @@
  * section nav, the nav underlines the current route, and AdminCard is hairline
  * — no shadow, no big radius.
  */
-import { render, screen } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
+import { render, screen, fireEvent } from "@testing-library/react";
+import { MemoryRouter, useLocation } from "react-router-dom";
 import { AdminPage, AdminNav, AdminCard, AdminInput, AdminTextarea } from "./adminShell";
+
+import { APIService } from "../../hooks/remote/apiService";
+import { setAuthToken, setRefreshToken, setUserRole, getAuthToken, getRefreshToken } from "../../utils/constant";
+vi.mock("../../hooks/remote/apiService", () => ({ APIService: { logout: vi.fn() } }));
 
 const renderAt = (ui, path = "/admin/categories") =>
   render(<MemoryRouter initialEntries={[path]}>{ui}</MemoryRouter>);
@@ -126,3 +130,17 @@ describe("AdminInput and AdminTextarea", () => {
     expect(input.className).not.toMatch(/w-full/);
   });
 });
+
+ test("admin logout removes all auth but keeps preferences and reaches admin login while revoke hangs", () => {
+ APIService.logout.mockReturnValue(new Promise(() => {}));
+ setAuthToken("jwt"); setRefreshToken("refresh"); setUserRole("ADMIN");
+ localStorage.setItem("theme", "dark");
+ function Probe() { return <p>{useLocation().pathname}</p>; }
+ renderAt(<><AdminPage title="T" /><Probe /></>);
+ fireEvent.click(screen.getByRole("button", {name: "Sign out"}));
+ expect(getAuthToken()).toBe(""); expect(getRefreshToken()).toBe("");
+ expect(localStorage.getItem("theme")).toBe("dark");
+ expect(screen.getByText("/admin/login")).toBeInTheDocument();
+ expect(APIService.logout).toHaveBeenCalledWith("refresh");
+ sessionStorage.clear(); localStorage.clear();
+ });

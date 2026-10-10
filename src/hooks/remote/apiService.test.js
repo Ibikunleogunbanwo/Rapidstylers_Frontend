@@ -34,13 +34,20 @@ describe("RapidStylers API contracts", () => {
       noOfPeople: "1",
     };
 
-    await APIService.bookAppointment(booking);
+    await APIService.bookAppointment(booking, "booking-intent-1");
 
-    expect(ApiClient.post).toHaveBeenCalledWith("/book_appointment", booking);
+    expect(ApiClient.post).toHaveBeenCalledWith("/book_appointment", booking, {
+      headers: { "Idempotency-Key": "booking-intent-1" },
+    });
     expect(ApiClient.post.mock.calls[0][1]).toEqual(
       expect.objectContaining({ subServiceId: "42" })
     );
     expect(ApiClient.post.mock.calls[0][1]).not.toHaveProperty("price");
+  });
+
+  test("an empty replay response cannot confirm a booking", async () => {
+    ApiClient.post.mockResolvedValueOnce({ data: { statusCode: null, message: null, data: null } });
+    await expect(APIService.bookAppointment({}, "retry-key")).rejects.toMatchObject({ code: "ERR_BOOKING_UNCONFIRMED" });
   });
 
   test("booking estimate uses server-side travel fee contract", async () => {

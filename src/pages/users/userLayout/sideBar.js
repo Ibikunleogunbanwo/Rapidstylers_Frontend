@@ -25,7 +25,7 @@ const UserSideBar = ({ sideBarVisibility, sideBarTitle, closeSideBar }) => {
     return (
         <div>
             {/* Desktop */}
-            <div className="hidden md:block">
+            <div className="hidden lg:block">
                 <nav className="grid gap-1 pt-8 pb-14 px-8 lg:px-0 text-[13px] font-medium fixed bg-white lg:bg-transparent">
                     {NAV_ITEMS.map(({ to, title, label }) => (
                         <Link
@@ -51,11 +51,11 @@ const UserSideBar = ({ sideBarVisibility, sideBarTitle, closeSideBar }) => {
             </div>
 
             {/* Mobile */}
-            <div className={`w-full fixed md:hidden ${sideBarVisibility ? "block" : "hidden"}`}>
+            <div id="customer-dashboard-navigation" onKeyDown={event => { if (event.key === "Escape") closeSideBar(); }} className={`w-full fixed inset-x-0 top-[70px] bottom-0 overflow-y-auto z-40 lg:hidden ${sideBarVisibility ? "block" : "hidden"}`}>
                 <div className="bg-white p-8 m-2 rounded-lg border border-black/10 shadow-sm h-full">
                     <div className="flex justify-between">
                         <img src={logo} alt="" className="h-10" />
-                        <img src={close} alt="" onClick={closeSideBar} className="h-5" />
+                        <button type="button" aria-label="Close navigation" onClick={closeSideBar} className="p-2"><img src={close} alt="" className="h-5" /></button>
                     </div>
                     <nav className="grid gap-1 mt-8">
                         {NAV_ITEMS.map(({ to, title, label }) => (

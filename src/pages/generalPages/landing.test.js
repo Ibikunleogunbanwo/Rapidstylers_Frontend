@@ -151,3 +151,18 @@ describe("Home page blog cards", () => {
     expect(fallbackLink.getAttribute("href")).toBe("/blog");
   });
 });
+
+
+describe("Canada band media loading", () => {
+  test.each([false, true])("only loads city video when desktop motion eligibility is %s", (eligible) => {
+    window.matchMedia = vi.fn(() => ({ matches: eligible, addEventListener: vi.fn(), removeEventListener: vi.fn() }));
+    renderHome();
+    const video = document.querySelector("video");
+    if (eligible) {
+      expect(video).toHaveAttribute("src", expect.stringContaining("city-loop.mp4"));
+    } else {
+      expect(video).toBeNull();
+      expect(screen.getByAltText("Calgary skyline at dusk")).toHaveAttribute("src", expect.stringContaining("calgary-skyline-dusk.jpg"));
+    }
+  });
+});
