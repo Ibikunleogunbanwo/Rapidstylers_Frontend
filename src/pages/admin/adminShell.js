@@ -21,6 +21,7 @@ const ADMIN_LINKS = [
   { to: "/admin/operations", label: "Operations" },
   { to: "/admin/payments", label: "Payments" },
   { to: "/admin/recovery", label: "Recovery" },
+  { to: "/admin/announcements", label: "Announcements" },
 ];
 
 export function AdminNav() {

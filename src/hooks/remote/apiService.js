@@ -916,6 +916,12 @@ export class APIService {
         catch (error) { APIService.extractError(error); throw error; }
     }
 
+    /** In-app announcement to every active customer, or one customer when recipientEmail is set. */
+    static async adminSendAnnouncement(data){
+        try { return await ApiClient.post("/admin/send_announcement", data); }
+        catch (error) { APIService.extractError(error); throw error; }
+    }
+
     /** Completed, charged bookings whose stylist has not been paid and no payout is scheduled. */
     static async adminUnpaidPayouts(){
         try { return await ApiClient.get("/admin/unpaid_payouts"); }
