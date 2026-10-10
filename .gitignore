@@ -38,6 +38,7 @@ skill-observations/
 !/docs/release-readiness-2026-10-10.md
 !/docs/stylist-dashboard-review-2026-10-10.md
 !/docs/page-by-page-audit-2026-10-10.md
+!/docs/auth-transport-proposal-2026-10-10.md
 
 npm-debug.log*
 yarn-debug.log*
