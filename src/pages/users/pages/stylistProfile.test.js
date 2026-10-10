@@ -397,20 +397,16 @@ describe("StylistProfile open state", () => {
 
   test("marks a blocked date as closed even inside working hours", () => {
     const { weekday, minutes } = vendorNow();
-    const today = new Date(
-      Date.now() - new Date().getTimezoneOffset() * 60000
-    );
+    // The professional's own date, not the machine's: a laptop west of UTC
+    // used to block yesterday early in the morning and fail.
+    const blockedDate = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Edmonton" }).format(new Date());
     renderProfile({
       stylerInformation: unreviewed,
       availability: [
         { dayOfWeek: weekday, startTime: hhmm(Math.max(0, minutes - 60)), endTime: hhmm(Math.min(1439, minutes + 60)) },
       ],
       exceptions: [
-        {
-          blockedDate: `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(
-            today.getDate()
-          ).padStart(2, "0")}`,
-        },
+        { blockedDate },
       ],
     });
 
