@@ -105,3 +105,30 @@ test("hides the pager when a list fits on one page", async () => {
   await screen.findByText("Service 1");
   expect(screen.queryByText(/Showing/)).not.toBeInTheDocument();
 });
+
+test("a home visit shows the stylist where to go", async () => {
+  const appointment = {
+    ...makeAppointment(1),
+    serviceTime: "homeService",
+    travelDistanceKm: 22.2,
+    includedTravelKm: 15,
+    baseTravelFee: "25.00",
+    serviceAddress: "10 Main St NW, Calgary, AB",
+  };
+  APIService.stylerAppointments.mockResolvedValue({ data: { data: [appointment] } });
+
+  render(<StylerAppointments />);
+
+  // In the list, under the client's name.
+  expect(await screen.findByText("10 Main St NW, Calgary, AB")).toBeInTheDocument();
+
+  // And in the details, with a directions link.
+  await act(async () => {
+    await userEvent.click(screen.getByRole("img", { name: /more appointment actions/i }));
+  });
+  expect(await screen.findByText(/Appointment details/i)).toBeInTheDocument();
+  expect(screen.getAllByText("10 Main St NW, Calgary, AB")).toHaveLength(2);
+  expect(screen.getByText("Get directions").getAttribute("href")).toContain(
+    encodeURIComponent("10 Main St NW, Calgary, AB")
+  );
+});

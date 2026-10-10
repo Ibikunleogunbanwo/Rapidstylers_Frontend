@@ -178,6 +178,11 @@ const StylerAppointments = () => {
                           </span>
                         )}
                       </span>
+                      {appointment.serviceTime === "homeService" && appointment.serviceAddress && (
+                        <span className="text-xs text-black/50 truncate">
+                          {appointment.serviceAddress}
+                        </span>
+                      )}
                       <span
                         className={`text-xs font-medium mt-1 ${
                           appointment.statusCode === "1"

@@ -16,6 +16,9 @@ vi.mock("../hooks/remote/apiService", () => ({
     singleStylerData: vi.fn(),
     estimateBooking: vi.fn(),
     bookAppointment: vi.fn(),
+    // The home-visit address field asks these for suggestions.
+    placeAutocomplete: vi.fn(),
+    placeDetails: vi.fn(),
   },
 }));
 vi.mock("react-router-dom", () => ({ useNavigate: () => vi.fn() }));
@@ -62,7 +65,16 @@ beforeEach(() => {
     data: { data: { availability: [], bookedSlots: [], exceptions: [] } },
   });
   APIService.estimateBooking.mockResolvedValue({ data: { data: null } });
+  APIService.placeAutocomplete.mockResolvedValue({ data: { data: [] } });
 });
+
+// Types an address into the home-visit field and leaves it, the way a customer
+// does when no suggestion is picked; the field then hands over the typed text.
+const enterVisitAddress = (text) => {
+  const field = screen.getByPlaceholderText("Start typing your address…");
+  fireEvent.change(field, { target: { value: text } });
+  fireEvent.blur(field);
+};
 
 const renderOpen = () => {
   render(
@@ -650,6 +662,7 @@ describe("Adding a fresh booking to a calendar", () => {
     );
     fireEvent.click(screen.getByText("Book service"));
     fireEvent.click(screen.getByText("Home service"));
+    enterVisitAddress("10 Main St, Calgary");
     fireEvent.click(screen.getByText("4:00 pm"));
     fireEvent.click(screen.getAllByText(/15/)[0]);
     fireEvent.click(screen.getByText("Book appointment"));
@@ -676,5 +689,86 @@ describe("Adding a fresh booking to a calendar", () => {
     // The two actions must not be able to disagree about the time.
     const [start] = calendarParams().get("dates").split("/");
     expect(text).toContain(`DTSTART:${start}`);
+  });
+});
+
+// A home visit is priced from the customer's address, measured by the server,
+// so a request cannot name its own (smaller) distance. The professional also
+// needs the address to know where to go.
+describe("Home visit address", () => {
+  const openHomeVisit = () => {
+    getAuthToken.mockReturnValue("token");
+    APIService.bookAppointment.mockResolvedValue({ data: { data: {} } });
+    render(
+      <SelectService
+        serviceName="Braids"
+        servicePrice="80"
+        stylerId="s1"
+        subServiceId="ss1"
+        stylerProvince="Alberta"
+        stylerTimeZone="America/Edmonton"
+      />
+    );
+    fireEvent.click(screen.getByText("Book service"));
+    fireEvent.click(screen.getByText("Home service"));
+  };
+
+  test("asks for the address before pricing the visit", () => {
+    openHomeVisit();
+
+    expect(screen.getByText("Where should the professional come?")).toBeInTheDocument();
+    expect(screen.getByText("Add your address above to see the travel fee.")).toBeInTheDocument();
+    expect(APIService.estimateBooking).not.toHaveBeenCalledWith(
+      expect.objectContaining({ serviceTime: "homeService" })
+    );
+  });
+
+  test("sends the address, not a distance, for the estimate", async () => {
+    openHomeVisit();
+    enterVisitAddress("10 Main St, Calgary");
+
+    await waitFor(() =>
+      expect(APIService.estimateBooking).toHaveBeenCalledWith(
+        expect.objectContaining({ serviceTime: "homeService", serviceAddress: "10 Main St, Calgary" })
+      )
+    );
+    const homeCall = APIService.estimateBooking.mock.calls.find(([body]) => body.serviceTime === "homeService");
+    expect(homeCall[0]).not.toHaveProperty("travelDistanceKm");
+  });
+
+  test("shows the server's reason when the address cannot be priced", async () => {
+    APIService.estimateBooking.mockImplementation((body) =>
+      body.serviceTime === "homeService"
+        ? Promise.reject({ response: { data: { message: "We couldn't find that address. Check it and try again" } } })
+        : Promise.resolve({ data: { data: null } })
+    );
+    openHomeVisit();
+    enterVisitAddress("nowhere at all");
+
+    expect(
+      await screen.findByText("We couldn't find that address. Check it and try again")
+    ).toBeInTheDocument();
+  });
+
+  test("will not book a home visit without an address", () => {
+    openHomeVisit();
+    fireEvent.click(screen.getByText("4:00 pm"));
+    fireEvent.click(screen.getAllByText(/15/)[0]);
+    fireEvent.click(screen.getByText("Book appointment"));
+
+    expect(APIService.bookAppointment).not.toHaveBeenCalled();
+  });
+
+  test("books the visit with the address the customer gave", async () => {
+    openHomeVisit();
+    enterVisitAddress("10 Main St, Calgary");
+    fireEvent.click(screen.getByText("4:00 pm"));
+    fireEvent.click(screen.getAllByText(/15/)[0]);
+    fireEvent.click(screen.getByText("Book appointment"));
+    await screen.findByTestId("booking-placed");
+
+    const [body] = APIService.bookAppointment.mock.calls.at(-1);
+    expect(body).toEqual(expect.objectContaining({ serviceTime: "homeService", serviceAddress: "10 Main St, Calgary" }));
+    expect(body).not.toHaveProperty("travelDistanceKm");
   });
 });

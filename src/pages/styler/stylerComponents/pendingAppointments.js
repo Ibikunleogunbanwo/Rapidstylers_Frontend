@@ -102,6 +102,19 @@ const PendingAppointments = ({
                   {withinFreeRadius ? "Within free radius" : "Flat fee applies"}
                 </span>
               </div>
+              {appointment?.serviceAddress && (
+                <div className="mt-3 text-sm">
+                  <p className="text-gray-700">{appointment.serviceAddress}</p>
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(appointment.serviceAddress)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-1 inline-block text-xs font-medium text-brand"
+                  >
+                    Get directions
+                  </a>
+                </div>
+              )}
               <p className="mt-2 text-xs text-gray-500">
                 {withinFreeRadius
                   ? `No travel fee within ${appointment.includedTravelKm}km.`

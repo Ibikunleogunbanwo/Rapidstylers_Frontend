@@ -15,6 +15,7 @@ import OtpInputs from "./otpInputs";
 import GoogleSignInButton from "./googleSignInButton";
 import TurnstileWidget from "./turnstileWidget";
 import BookingCardField from "./bookingCardField";
+import AddressAutocomplete from "./AddressAutocomplete";
 import { prepareBookingAttempt, clearBookingAttempt, isUncertainBookingFailure } from "../utils/bookingAttempt";
 
 // Google Sign-In client id (public). Empty hides the Google option in the quick-account step.
@@ -359,6 +360,14 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
   const [numberOfPeople, setNumberOfPeople] = useState(1);
   const [bookingEstimate, setBookingEstimate] = useState(null);
   const [estimateLoading, setEstimateLoading] = useState(false);
+  // Why the estimate could not be priced, in the server's words (for example an
+  // address it could not find on the map).
+  const [estimateError, setEstimateError] = useState("");
+  // Where a home visit happens. The server finds this address on the map and
+  // measures the trip itself, so the travel fee comes from the address and not
+  // from a distance the browser worked out.
+  const [homeVisitAddress, setHomeVisitAddress] = useState("");
+  const needsHomeVisitAddress = selectedOption === "homeService" && !homeVisitAddress.trim();
   const [isBooking, setIsBooking] = useState(false);
   const [bookingError, setBookingError] = useState("");
   // One-time Stripe card element, mounted inside <Elements> when a publishable
@@ -366,9 +375,9 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
   const bookingCardRef = useRef(null);
 
   // The customer's own position against the professional's geocoded address.
-  // Computed once because two surfaces read it: the home-service travel fee,
-  // and the visit card, where it answers "is this near me?" before the customer
-  // picks a slot. See utils/travelEstimate for the maths and the wording.
+  // The visit card reads it to answer "is this near me?" before the customer
+  // picks a slot. The home-visit fee does not use it: the server measures that
+  // from the visit address. See utils/travelEstimate for the maths and wording.
   const travelDistanceKm = straightLineKm(userLocation, {
     latitude: stylerLatitude,
     longitude: stylerLongitude,
@@ -381,7 +390,8 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
 
   useEffect(() => {
     if (!bookAppointmentForm) return;
-    if (selectedOption === "homeService" && travelDistanceKm === null) {
+    setEstimateError("");
+    if (needsHomeVisitAddress) {
       setBookingEstimate(null);
       return;
     }
@@ -392,13 +402,15 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
       subServiceId,
       serviceTime: selectedOption,
       noOfPeople: String(numberOfPeople),
-      travelDistanceKm: selectedOption === "homeService" ? travelDistanceKm : 0,
+      ...(selectedOption === "homeService" ? { serviceAddress: homeVisitAddress.trim() } : {}),
     })
       .then((res) => {
         if (mounted) setBookingEstimate(res.data?.data || null);
       })
-      .catch(() => {
-        if (mounted) setBookingEstimate(null);
+      .catch((error) => {
+        if (!mounted) return;
+        setBookingEstimate(null);
+        setEstimateError(error?.response?.data?.message || "");
       })
       .finally(() => {
         if (mounted) setEstimateLoading(false);
@@ -406,7 +418,7 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
     return () => {
       mounted = false;
     };
-  }, [bookAppointmentForm, selectedOption, numberOfPeople, stylerId, subServiceId, travelDistanceKm]);
+  }, [bookAppointmentForm, selectedOption, numberOfPeople, stylerId, subServiceId, homeVisitAddress]);
 
   // Collects a one-time Stripe payment method from the card element (only used
   // when a publishable key is configured). Returns a pm_ id or the original
@@ -437,7 +449,7 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
         arrivalTime: to24(selectedTime),
         serviceTime: selectedOption,
         noOfPeople: String(numberOfPeople),
-        travelDistanceKm: selectedOption === "homeService" ? travelDistanceKm : 0,
+        ...(selectedOption === "homeService" ? { serviceAddress: homeVisitAddress.trim() } : {}),
       }, collectPaymentMethodId);
       await APIService.bookAppointment(attempt.payload, attempt.key);
       clearBookingAttempt();
@@ -490,8 +502,8 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
       showErrorToastMessage("Please select a date and arrival time");
       return;
     }
-    if (selectedOption === "homeService" && travelDistanceKm === null) {
-      showErrorToastMessage("We could not calculate the travel distance for home service. Please update your location and try again.");
+    if (needsHomeVisitAddress) {
+      showErrorToastMessage("Add the address where the professional should come.");
       return;
     }
     if (!getAuthToken()) {
@@ -978,6 +990,21 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
                 </div>
               </div>
             )}
+            {/* Where the professional has to go. The server prices the trip from
+                this address, and the professional sees it on the booking. */}
+            {selectedOption === "homeService" && (
+              <div className="px-6">
+                <div className="rounded-md border p-4 text-sm">
+                  <p className="font-semibold mb-1">Where should the professional come?</p>
+                  <AddressAutocomplete
+                    label="Visit address:"
+                    placeholder="Start typing your address…"
+                    value={homeVisitAddress}
+                    onChange={(address) => setHomeVisitAddress(address?.formattedAddress || "")}
+                  />
+                </div>
+              </div>
+            )}
             <div className="px-6">
               <p className="font-semibold mb-2 text-[15px]">Additional information</p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -990,10 +1017,12 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
                   <p className="font-semibold">Booking estimate</p>
                   {estimateLoading && <span className="text-xs text-gray-400">Updating...</span>}
                 </div>
-                {selectedOption === "homeService" && travelDistanceKm === null ? (
+                {needsHomeVisitAddress ? (
                   <p className="text-amber-600">
-                    Travel distance is unavailable. Update your location before requesting home service.
+                    Add your address above to see the travel fee.
                   </p>
+                ) : estimateError ? (
+                  <p className="text-amber-600">{estimateError}</p>
                 ) : bookingEstimate ? (
                   <div className="grid gap-2">
                     <div className="flex justify-between gap-4">
@@ -1013,7 +1042,7 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
                     </div>
                     {selectedOption === "homeService" && (
                       <div className="flex justify-between gap-4 text-xs text-gray-500">
-                        <span>Estimated distance</span>
+                        <span>Distance from the professional</span>
                         <span>{bookingEstimate.travelDistanceKm}km</span>
                       </div>
                     )}
