@@ -69,7 +69,7 @@ export const StylerSignUpFlow = () => {
   const notice = location.state?.signupNotice;
 
   return (
-    <div className="h-screen grid grid-cols-1 lg:grid-cols-12 bg-white">
+    <div className="min-h-screen grid grid-cols-1 lg:grid-cols-12 bg-white">
       {/* Left panel: what this flow is, and how far along the visitor is. */}
       <div className="col-span-1 lg:col-span-8 h-screen overflow-hidden hidden lg:block relative">
         <div className="bg-stylerDoodle h-full w-full bg-repeat bg-auto"></div>
@@ -113,7 +113,7 @@ export const StylerSignUpFlow = () => {
       {/* Right panel: the step itself. */}
       <div className="col-span-1 lg:col-span-4">
         <div className="grid content-between h-full">
-          <div className="p-5 md:p-10 mb-6 md:mb-0 w-full max-h-screen overflow-y-auto">
+          <div className="p-5 md:p-10 mb-6 md:mb-0 w-full lg:max-h-screen lg:overflow-y-auto">
             <img src={logo} alt="RapidStylers" className="h-10 mb-8" />
 
             {/* The counter is the mobile answer to the rail, and repeats the

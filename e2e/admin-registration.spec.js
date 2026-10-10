@@ -49,7 +49,7 @@ async function completeSignup(page){
 }
 
 test('stylist registration completes all five steps, restores photos and clears draft',async({page},info)=>{
- let payload;await page.route('**/create_styler',r=>{payload=r.request().postDataJSON();return r.fulfill({json:{statusCode:'200',data:{}}});});await completeSignup(page);await page.screenshot({path:info.outputPath('stylist-registration.png'),fullPage:true});await page.getByRole('button',{name:'Create account',exact:true}).click();await expect(page).toHaveURL(/\/login$/);expect(payload.serviceTypeId).toBe('7');expect(payload.identificationTypeId).toBe('2');expect(payload.agreeToTerms).toBe(true);expect(payload.profileImageUrl).toContain('cloudinary');
+ let payload;await page.route('**/create_styler',r=>{payload=r.request().postDataJSON();return r.fulfill({json:{statusCode:'200',data:{}}});});await completeSignup(page);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);if(info.project.name==='mobile')expect(await page.getByRole('button',{name:'Create account',exact:true}).evaluate(el=>el.closest('form').parentElement.parentElement.scrollHeight<=el.closest('form').parentElement.parentElement.clientHeight)).toBe(true);await page.screenshot({path:info.outputPath('stylist-registration.png'),fullPage:true});await page.getByRole('button',{name:'Create account',exact:true}).click();await expect(page).toHaveURL(/\/login$/);expect(payload.serviceTypeId).toBe('7');expect(payload.identificationTypeId).toBe('2');expect(payload.agreeToTerms).toBe(true);expect(payload.profileImageUrl).toContain('cloudinary');
  expect(await page.evaluate(()=>Object.keys(sessionStorage).filter(key=>/Signup.*(draft|email|pass)/i.test(key)))).toEqual([]);
 });
 
