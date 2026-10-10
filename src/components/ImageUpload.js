@@ -76,10 +76,16 @@ const ImageUpload = ({
     const selected = e.target.files?.[0];
     if (!selected) return;
 
+    if (!["image/jpeg", "image/png", "image/webp", "image/gif"].includes(selected.type)) {
+      const msg = "Choose a JPG, PNG, WebP or GIF image";
+      setError(msg); onError?.(msg); e.target.value = ""; return;
+    }
+
     // Client-side validation
     if (selected.size > 5 * 1024 * 1024) {
       const msg = "Image must be under 5 MB";
       setError(msg);
+      e.target.value = "";
       onError?.(msg);
       return;
     }
@@ -101,6 +107,7 @@ const ImageUpload = ({
     } catch (err) {
       const msg = err.message || "Upload failed";
       setError(msg);
+      e.target.value = "";
       onError?.(msg);
     } finally {
       setUploading(false);
@@ -155,7 +162,7 @@ const ImageUpload = ({
         onChange={handleFile}
         className="hidden"
       />
-      {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
+      {error && <p role="alert" className="text-red-500 text-xs mt-1">{error}</p>}
     </div>
   );
 };

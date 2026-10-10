@@ -28,3 +28,11 @@ it('finishes signup when the API returns a numeric success status', async () => 
   fireEvent.click(screen.getByRole('button', { name: 'Create account' }));
   expect(await screen.findByText('Login screen')).toBeInTheDocument();
 });
+it('shows password and confirmation errors while typing before blur or submission', async () => {
+ render(<MemoryRouter><CreatePassword /></MemoryRouter>);
+ fireEvent.change(screen.getByLabelText('Set password:'),{target:{value:'weak'}});
+ await waitFor(()=>expect(screen.getByRole('alert')).toHaveTextContent('between 8 and 30'));
+ fireEvent.change(screen.getByLabelText('Set password:'),{target:{value:'StrongPass1!'}});
+ fireEvent.change(screen.getByLabelText('Confirm password:'),{target:{value:'different'}});
+ await waitFor(()=>expect(screen.getByRole('alert')).toHaveTextContent('Passwords do not match'));
+});

@@ -179,7 +179,7 @@ const BusinessDetails = () => {
               inputValue={values.businessName}
               inputOnChange={handleChange}
               inputOnBlur={handleBlur}
-              inputError={touched.businessName && errors.businessName ? errors.businessName : ""}
+              inputError={(touched.businessName || Boolean(values.businessName)) && errors.businessName ? errors.businessName : ""}
             />
 
             <div>
@@ -211,7 +211,7 @@ const BusinessDetails = () => {
                 inputValue={values.city}
                 inputOnChange={handleChange}
                 inputOnBlur={handleBlur}
-                inputError={touched.city && errors.city ? errors.city : ""}
+                inputError={(touched.city || Boolean(values.city)) && errors.city ? errors.city : ""}
               />
               <InputWithLabel
                 labelName="Province"
@@ -220,7 +220,7 @@ const BusinessDetails = () => {
                 inputValue={values.province}
                 inputOnChange={handleChange}
                 inputOnBlur={handleBlur}
-                inputError={touched.province && errors.province ? errors.province : ""}
+                inputError={(touched.province || Boolean(values.province)) && errors.province ? errors.province : ""}
               />
               <InputWithLabel
                 labelName="Postal code"
@@ -229,7 +229,7 @@ const BusinessDetails = () => {
                 inputValue={values.postalCode}
                 inputOnChange={handleChange}
                 inputOnBlur={handleBlur}
-                inputError={touched.postalCode && errors.postalCode ? errors.postalCode : ""}
+                inputError={(touched.postalCode || Boolean(values.postalCode)) && errors.postalCode ? errors.postalCode : ""}
               />
             </div>
           </div>

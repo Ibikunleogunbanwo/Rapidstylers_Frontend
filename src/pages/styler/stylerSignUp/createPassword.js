@@ -126,7 +126,7 @@ const CreatePassword = () => {
               inputValue={values.password}
               inputOnChange={handleChange}
               inputOnBlur={handleBlur}
-              inputError={touched.password && errors.password ? errors.password : ""}
+              inputError={(touched.password || Boolean(values.password)) && errors.password ? errors.password : ""}
             />
             <InputWithLabel
               labelName="Confirm password"
@@ -136,7 +136,7 @@ const CreatePassword = () => {
               inputValue={values.confirmPassword}
               inputOnChange={handleChange}
               inputOnBlur={handleBlur}
-              inputError={touched.confirmPassword && errors.confirmPassword ? errors.confirmPassword : ""}
+              inputError={(touched.confirmPassword || Boolean(values.confirmPassword)) && errors.confirmPassword ? errors.confirmPassword : ""}
             />
           </div>
 

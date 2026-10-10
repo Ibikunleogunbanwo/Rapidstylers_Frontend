@@ -52,10 +52,10 @@ const Button = ({
 
   const variantClasses =
     {
-      primary: "bg-brand text-white shadow-lg shadow-brand/20 hover:bg-brand/85",
+      primary: "bg-violet-700 text-white shadow-lg shadow-violet-700/20 hover:bg-violet-800",
       // For dark surfaces, where a brand-coloured button would not stand out.
       light: "bg-white text-gray-900 hover:bg-gray-100",
-      ghost: "border border-brand/30 bg-transparent text-brand hover:bg-brand/10",
+      ghost: "border border-violet-700 bg-transparent text-violet-700 hover:bg-violet-50",
     }[resolvedVariant] || "";
 
   const sizeClasses =

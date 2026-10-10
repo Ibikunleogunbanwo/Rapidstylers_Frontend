@@ -10,7 +10,10 @@ export async function submitRegistration({ files, payload, upload, remove, creat
   const failed = results.find(result => result.status === 'rejected');
   if (failed) {
     await cleanup();
-    throw Object.assign(new Error("Photo upload failed. Check your connection and try again."), { stage: "upload" });
+    const message = failed.reason?.code === "UPLOAD_AUTHORIZATION"
+      ? "Photo uploads are temporarily unavailable. Please try again later or contact support."
+      : "Photo upload failed. Check your connection and try again.";
+    throw Object.assign(new Error(message), { stage: "upload" });
   }
   if (uploaded.some(result => !result?.url)) {
     await cleanup();

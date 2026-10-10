@@ -106,7 +106,9 @@ export async function uploadToCloudinary(file, folder) {
 
   if (!cloudRes.ok) {
     const errBody = await cloudRes.json().catch(() => ({}));
-    throw new Error(errBody.error?.message || "Upload failed");
+    throw Object.assign(new Error("Photo upload failed"), {
+      code: [401, 403].includes(cloudRes.status) ? "UPLOAD_AUTHORIZATION" : "UPLOAD_FAILED",
+    });
   }
 
   const result = await cloudRes.json();

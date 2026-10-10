@@ -33,7 +33,7 @@ describe("Button", () => {
 
     const button = screen.getByRole("button");
     expect(button).toHaveTextContent("Update details");
-    expect(button.className).toContain("bg-brand");
+    expect(button.className).toContain("bg-violet-700");
   });
 
   test("falls back to the base styling for an unknown variant instead of rendering nothing", () => {
@@ -82,7 +82,7 @@ describe("Button", () => {
 
     const button = screen.getByRole("button");
     expect(button.className).toContain("w-full");
-    expect(button.className).toContain("bg-brand");
+    expect(button.className).toContain("bg-violet-700");
   });
 
   test("spreads extra attributes onto the element", () => {
@@ -105,7 +105,7 @@ describe("Button", () => {
 
     const button = screen.getByRole("button");
     expect(button).toHaveTextContent("Continue");
-    expect(button.className).toContain("bg-brand");
+    expect(button.className).toContain("bg-violet-700");
     expect(button).toHaveAttribute("type", "submit");
   });
 

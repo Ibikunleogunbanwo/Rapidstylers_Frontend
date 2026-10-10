@@ -73,9 +73,9 @@ export const StylerSignUpFlow = () => {
       {/* Left panel: what this flow is, and how far along the visitor is. */}
       <div className="col-span-1 lg:col-span-8 h-screen overflow-hidden hidden lg:block relative">
         <div className="bg-stylerDoodle h-full w-full bg-repeat bg-auto"></div>
-        <div className="absolute inset-0 bg-black/60"></div>
+        <div className="absolute inset-0 bg-slate-950/90"></div>
         <div className="absolute inset-0 flex items-center justify-center text-white px-10">
-          <div className="max-w-sm grid gap-8">
+          <div className="max-w-sm grid gap-8 rounded-2xl bg-slate-950 p-8">
             <p className="text-[clamp(1.75rem,3vw,2.5rem)] font-normal leading-[1.15] tracking-[-0.02em]">
               Become a <span className="text-brand">RapidStylers</span> professional
             </p>
@@ -87,11 +87,11 @@ export const StylerSignUpFlow = () => {
                   <li
                     key={entry.label}
                     aria-current={here ? "step" : undefined}
-                    className={`flex items-center gap-3 ${here ? "" : "opacity-50"}`}
+                    className={`flex items-center gap-3 ${here ? "" : "text-slate-200"}`}
                   >
                     <span
                       className={`h-8 w-8 shrink-0 rounded-full flex items-center justify-center text-xs font-bold ${
-                        done || here ? "bg-brand text-white" : "border-2 border-white text-white"
+                        done || here ? "bg-violet-700 text-white" : "border-2 border-slate-300 text-slate-200"
                       }`}
                     >
                       {i + 1}

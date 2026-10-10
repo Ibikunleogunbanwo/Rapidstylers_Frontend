@@ -17,19 +17,19 @@ import { passwordRequirements } from "../utils/passwordRule";
  */
 const PasswordRequirements = ({ value = "", className = "", spacing = "mt-6" }) => (
   <div className={className}>
-    <p className="text-[11px] uppercase tracking-[0.25em] text-muted">Password must contain</p>
+    <p className="text-[11px] uppercase tracking-[0.25em] text-slate-600">Password must contain</p>
     <ul className={`${spacing} border-t border-black/10`} aria-label="Password requirements">
       {passwordRequirements(value).map((requirement) => (
         <li
           key={requirement.key}
           className={`border-b border-black/10 py-2 text-[13px] transition-colors ${
-            requirement.met ? "text-onSurface" : "text-black/45"
+            requirement.met ? "text-emerald-800" : "text-slate-700"
           }`}
         >
-          {requirement.label}
+          <span aria-hidden="true" className="mr-2 inline-block w-4 font-semibold">{requirement.met ? "✓" : "○"}</span>{requirement.label}
           {/* The row is already legible as met or unmet; this is the same fact
               for anyone who cannot see the colour change. */}
-          <span className="sr-only">{requirement.met ? " met" : " not met yet"}</span>
+          <span className="ml-2 text-xs font-medium">{requirement.met ? " met" : " not met yet"}</span>
         </li>
       ))}
     </ul>

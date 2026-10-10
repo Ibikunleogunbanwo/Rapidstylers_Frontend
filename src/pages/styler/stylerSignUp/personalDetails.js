@@ -115,7 +115,7 @@ const StylerPersonalDetails = () => {
                 inputValue={values.firstname}
                 inputOnChange={handleChange}
                 inputOnBlur={handleBlur}
-                inputError={touched.firstname && errors.firstname ? errors.firstname : ""}
+                inputError={(touched.firstname || Boolean(values.firstname)) && errors.firstname ? errors.firstname : ""}
               />
               <InputWithLabel
                 labelName="Last name"
@@ -125,7 +125,7 @@ const StylerPersonalDetails = () => {
                 inputValue={values.lastname}
                 inputOnChange={handleChange}
                 inputOnBlur={handleBlur}
-                inputError={touched.lastname && errors.lastname ? errors.lastname : ""}
+                inputError={(touched.lastname || Boolean(values.lastname)) && errors.lastname ? errors.lastname : ""}
               />
             </div>
             <InputWithLabel
@@ -136,7 +136,7 @@ const StylerPersonalDetails = () => {
               inputValue={values.emailAddress}
               inputOnChange={handleChange}
               inputOnBlur={handleBlur}
-              inputError={touched.emailAddress && errors.emailAddress ? errors.emailAddress : ""}
+              inputError={(touched.emailAddress || Boolean(values.emailAddress)) && errors.emailAddress ? errors.emailAddress : ""}
             />
             <InputWithLabel
               labelName="Phone number"
@@ -146,7 +146,7 @@ const StylerPersonalDetails = () => {
               inputValue={values.phoneNumber}
               inputOnChange={(event) => handleChange({ target: { name: "phoneNumber", value: formatCanadianPhone(event.target.value) } })}
               inputOnBlur={handleBlur}
-              inputError={touched.phoneNumber && errors.phoneNumber ? errors.phoneNumber : ""}
+              inputError={(touched.phoneNumber || Boolean(values.phoneNumber)) && errors.phoneNumber ? errors.phoneNumber : ""}
             />
           </div>
           {submitError && <p role="alert" className="mt-4 text-sm text-red-600">{submitError}</p>}

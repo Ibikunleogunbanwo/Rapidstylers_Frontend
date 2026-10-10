@@ -39,3 +39,7 @@ it('handles interceptor business rejection as definitive failure',async()=>{cons
 it('classifies upload failures separately from account rejection', async () => {
   await expect(submitRegistration({ files: {}, payload: {}, upload: async () => { throw new Error('private storage internals'); }, remove: async () => {}, create: vi.fn() })).rejects.toMatchObject({ stage: 'upload', message: 'Photo upload failed. Check your connection and try again.' });
 });
+it('shows a provider authorization failure without blaming the user connection or exposing details',async()=>{
+ const error=Object.assign(new Error('private signature'),{code:'UPLOAD_AUTHORIZATION'});
+ await expect(submitRegistration({files:{},payload:{},upload:async()=>{throw error;},remove:vi.fn(),create:vi.fn()})).rejects.toMatchObject({stage:'upload',message:'Photo uploads are temporarily unavailable. Please try again later or contact support.'});
+});

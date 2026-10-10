@@ -1,23 +1,28 @@
-import { useId } from "react";
+import { useId, useState } from "react";
 const InputWithLabel = ({ labelName, inputType, placeholder, inputValue, inputOnChange, inputOnBlur, inputError, inputName }) => {
     const id = useId();
+    const [revealed, setRevealed] = useState(false);
+    const password = inputType === "password";
     const hasError = inputError && inputError.length > 0;
     return (
         <div className="grid w-full">
             <label htmlFor={id} className="font-medium text-sm pb-1">{labelName}:</label>
-            <input id={id} aria-invalid={Boolean(inputError)} aria-describedby={inputError ? `${id}-error` : undefined}
-                type={inputType}
+            <div className="relative"><input id={id} aria-invalid={Boolean(inputError)} aria-describedby={inputError ? `${id}-error` : undefined}
+                type={password && revealed ? "text" : inputType}
                 value={inputValue}
                 name={inputName}
                 onBlur={inputOnBlur}
                 onChange={inputOnChange}
-                className={`w-full p-3 text-sm rounded-md border bg-[#c4c4c410] placeholder:text-xs placeholder:font-extralight active:outline-0 focus:outline-brand transition-colors ${
-                    hasError ? "border-red-400 focus:outline-red-400" : "border-[#c4c4c440]"
+                className={`w-full p-3 text-sm rounded-md border bg-white text-slate-900 ${password ? "pr-14" : ""} placeholder:text-xs placeholder:font-extralight active:outline-0 focus:outline-brand transition-colors ${
+                    hasError ? "border-red-600 focus:outline-red-600" : "border-slate-400"
                 }`}
                 placeholder={placeholder}
             />
+            {password && <button type="button" aria-label={`${revealed ? "Hide" : "Show"} ${labelName}`} aria-pressed={revealed} onClick={() => setRevealed(v => !v)} className="absolute right-1 top-1 flex h-10 w-10 items-center justify-center rounded text-slate-700 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-violet-700">
+                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>{revealed && <path d="m3 3 18 18"/>}</svg>
+            </button>}</div>
             {hasError && (
-                <p id={`${id}-error`} role="alert" className="text-red-500 text-xs mt-1">{inputError}</p>
+                <p id={`${id}-error`} role="alert" className="text-red-700 text-xs mt-1">{inputError}</p>
             )}
         </div>
     );

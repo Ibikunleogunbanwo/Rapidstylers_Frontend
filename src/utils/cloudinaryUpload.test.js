@@ -144,3 +144,10 @@ test('preserves signup upload authorization through the actual request intercept
  expect(attachAuthToken(signatureRequestConfig()).headers.Authorization).toBe('Bearer upload-pass');
  sessionStorage.clear();
 });
+
+test('classifies provider authorization failures without exposing signature details',async()=>{
+ const {ApiClient}=await import('../hooks/remote/apiClient');const {uploadToCloudinary}=await import('./cloudinaryUpload');
+ const get=vi.spyOn(ApiClient,'get').mockResolvedValue({data:{data:SIGNED}});
+ vi.stubGlobal('fetch',vi.fn().mockResolvedValue({ok:false,status:401,json:async()=>({error:{message:'Invalid Signature private-value'}})}));
+ try {await expect(uploadToCloudinary(jpeg(),'profile')).rejects.toMatchObject({code:'UPLOAD_AUTHORIZATION',message:'Photo upload failed'});} finally {get.mockRestore();vi.unstubAllGlobals();}
+});
