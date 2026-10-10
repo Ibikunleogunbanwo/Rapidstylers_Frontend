@@ -1,11 +1,10 @@
 import { Formik, Form } from "formik";
 import { z } from "zod";
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import InputWithLabel from "../../../components/inputWithLabel";
 import AddressAutocomplete from "../../../components/AddressAutocomplete";
 import Button from "../../../components/button";
-import GoodToKnow from "../../../components/goodToKnow";
 import { APIService } from "../../../hooks/remote/apiService";
 import { useStylerSignup } from "../../../context/StylerSignupContext";
 
@@ -14,12 +13,13 @@ const businessSchema = z.object({
   serviceTypeId: z.string().min(1, "Select a service type"),
   businessName: z
     .string()
+    .trim()
     .min(1, "Business name is required")
     .min(3, "Business name must be at least 3 characters"),
-  address: z.string().min(1, "Business address is required"),
-  city: z.string().min(1, "City is required"),
-  province: z.string().min(1, "Province is required"),
-  postalCode: z.string().min(1, "Postal code is required"),
+  address: z.string().trim().min(1, "Business address is required"),
+  city: z.string().trim().min(1, "City is required"),
+  province: z.string().trim().min(1, "Province is required"),
+  postalCode: z.string().trim().min(1, "Postal code is required"),
 });
 
 function toFormikErrors(zodError) {
@@ -38,20 +38,22 @@ const BusinessDetails = () => {
   const [serviceTypes, setServiceTypes] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const loadServiceTypes = () => {
+    setLoading(true);
     APIService.getStylerType()
       .then((res) => {
-        const items = res.data?.data || [];
+        const items = Array.isArray(res.data?.data) ? res.data.data : [];
         setServiceTypes(
-          items.map((c) => ({
-            id: c.serviceTypeId || c.id,
+          items.filter(c => c && typeof c === "object").map((c) => ({
+            id: String(c.serviceTypeId ?? c.id ?? ""),
             name: c.serviceTypeName || c.serviceName || c.name,
-          }))
+          })).filter(c => c.id && c.name)
         );
       })
       .catch(() => setServiceTypes([]))
       .finally(() => setLoading(false));
-  }, []);
+  };
+  useEffect(loadServiceTypes, []);
 
   const initialValues = {
     serviceTypeId: formData.serviceTypeId || "",
@@ -158,9 +160,10 @@ const BusinessDetails = () => {
                 </label>
               ))
             ) : (
-              <p className="col-span-2 text-sm text-black/55">
-                No service categories available yet.
-              </p>
+              <div className="col-span-2 text-sm text-black/55" role="status">
+                Service options are unavailable.
+                <button type="button" className="block mt-2 text-brand underline" onClick={loadServiceTypes}>Retry loading services</button>
+              </div>
             )}
           </div>
           {touched.serviceTypeId && errors.serviceTypeId && (
@@ -190,10 +193,8 @@ const BusinessDetails = () => {
                   travel to, and a profile without one cannot be listed, so it
                   is the last field a professional should treat as optional. */}
               <p className="mt-1.5 text-xs leading-[1.5] text-black/55">
-                Clients travel here when they book a visit, so enter the place they should
-                come to, not a mailing address. It shows on your public profile with a
-                directions link and again in their booking confirmation. We cannot approve
-                your account or show you in search until we have it.
+                Clients travel here when they book a visit. This address appears on your public
+                profile and booking confirmations. Enter the address where you provide services.
               </p>
               {touched.address && errors.address && (
                 <p className="text-red-500 text-xs mt-1">{errors.address}</p>
@@ -233,11 +234,7 @@ const BusinessDetails = () => {
             </div>
           </div>
 
-          {/* Pricing & payout basics — shown during onboarding so pros know the
-              economics before they finish signing up. */}
-          <div className="mt-8">
-            <GoodToKnow variant="styler" />
-          </div>
+          <Link to="/faqs" target="_blank" className="inline-block mt-6 text-sm text-brand underline">Read the professional FAQ</Link>
 
           <div className="mt-8 flex gap-3">
             <Button variant="ghost" type="button" onClick={() => navigate("/styler-signup/verify-email")}>

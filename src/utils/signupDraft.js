@@ -1,3 +1,4 @@
+import { claimPhotoNamespace } from "./signupPhotoOwnership";
 /**
  * What professional signup remembers across a reload.
  *
@@ -35,7 +36,7 @@ export const DRAFT_KEY = "stylerSignupDraft";
  * absent from the context today; this is the fence that keeps it out if that
  * ever changes, rather than a rule someone has to remember.
  */
-const NOT_REMEMBERED = ["password"];
+const NOT_REMEMBERED = ["password", "confirmPassword", "agreeToTerms"];
 
 /** Whether an answer is something other than blank. */
 const holdsSomething = (value) => {
@@ -65,8 +66,9 @@ export const readSignupDraft = () => {
     const parsed = JSON.parse(raw);
     if (!parsed || typeof parsed !== "object") return null;
     return {
-      formData: parsed.formData && typeof parsed.formData === "object" ? parsed.formData : {},
+      formData: parsed.formData && typeof parsed.formData === "object" && !Array.isArray(parsed.formData) ? rememberable(parsed.formData) : {},
       emailVerified: parsed.emailVerified === true,
+      ...(parsed.creationUncertain === true ? { creationUncertain: true } : {}),
     };
   } catch {
     return null;
@@ -80,9 +82,9 @@ export const readSignupDraft = () => {
  * looked at the page leaves no trace behind, and clearing a field really does
  * clear it instead of leaving the old value to come back on refresh.
  */
-export const writeSignupDraft = ({ formData, emailVerified } = {}) => {
+export const writeSignupDraft = ({ formData, emailVerified, creationUncertain } = {}) => {
   const remembered = rememberable(formData);
-  const worthKeeping = emailVerified === true || Object.values(remembered).some(holdsSomething);
+  const worthKeeping = creationUncertain === true || emailVerified === true || Object.values(remembered).some(holdsSomething);
 
   try {
     if (!worthKeeping) {
@@ -91,7 +93,7 @@ export const writeSignupDraft = ({ formData, emailVerified } = {}) => {
     }
     sessionStorage.setItem(
       DRAFT_KEY,
-      JSON.stringify({ formData: remembered, emailVerified: emailVerified === true })
+      JSON.stringify({ formData: remembered, emailVerified: emailVerified === true, ...(creationUncertain === true ? { creationUncertain: true } : {}) })
     );
   } catch {
     // Storage blocked or full. The flow carries on from memory, and a refresh
@@ -110,7 +112,39 @@ export const clearSignupDraft = () => {
 
 /* ── The picked photos ──────────────────────────────────────────────────── */
 
-const DB_NAME = "rapidstylers-signup";
+const LEGACY_DB_NAME = "rapidstylers-signup";
+const PHOTO_TAB_KEY = "stylerSignupPhotoTab";
+let memoryPhotoTab = "";
+let ownedPhotoNamespace;
+let ownedPhotoStorageId;
+window.addEventListener("pagehide", () => {
+  ownedPhotoNamespace = undefined;
+  ownedPhotoStorageId = undefined;
+});
+window.addEventListener("pageshow", (event) => {
+  if (event.persisted) photoDbName();
+});
+const photoDbName = async () => {
+  try {
+    let tab = sessionStorage.getItem(PHOTO_TAB_KEY);
+    if (!tab) {
+      tab = crypto.randomUUID();
+      sessionStorage.setItem(PHOTO_TAB_KEY, tab);
+    }
+    if (!ownedPhotoNamespace || ownedPhotoStorageId !== tab) {
+      ownedPhotoNamespace = claimPhotoNamespace(tab);
+      ownedPhotoStorageId = tab;
+    }
+    const owned = await ownedPhotoNamespace;
+    sessionStorage.setItem(PHOTO_TAB_KEY, owned);
+    ownedPhotoStorageId = owned;
+    return `${LEGACY_DB_NAME}-${owned}`;
+  } catch {
+    // Storage-blocked tabs retain photos only for this document's lifetime.
+    memoryPhotoTab ||= crypto.randomUUID();
+    return `${LEGACY_DB_NAME}-${memoryPhotoTab}`;
+  }
+};
 const DB_VERSION = 1;
 const PHOTO_STORE = "photos";
 
@@ -126,8 +160,9 @@ export const PHOTO_KEYS = ["profileImageFile", "identificationImageFile"];
  */
 const OPEN_TIMEOUT_MS = 800;
 
-const openPhotoDb = () =>
-  new Promise((resolve) => {
+const openPhotoDb = async () => {
+  const name = await photoDbName();
+  return new Promise((resolve) => {
     if (typeof indexedDB === "undefined") return resolve(null);
 
     let settled = false;
@@ -142,7 +177,10 @@ const openPhotoDb = () =>
 
     let request;
     try {
-      request = indexedDB.open(DB_NAME, DB_VERSION);
+      // Old storage was shared by every tab. Delete it rather than importing
+      // photos that could belong to another professional.
+      indexedDB.deleteDatabase?.(LEGACY_DB_NAME);
+      request = indexedDB.open(name, DB_VERSION);
     } catch {
       return settle(null);
     }
@@ -155,6 +193,7 @@ const openPhotoDb = () =>
     request.onerror = () => settle(null);
     request.onblocked = () => settle(null);
   });
+};
 
 /**
  * The photos picked before the reload, keyed the way the flow holds them.

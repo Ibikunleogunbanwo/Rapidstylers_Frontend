@@ -88,16 +88,21 @@ const Probe = () => {
     markEmailVerified,
     restoringPhotos,
     forgetSignupDraft,
+    creationUncertain,
+    markCreationUncertain,
   } = useStylerSignup();
 
   return (
     <div>
+      <p data-testid="creationUncertain">{String(creationUncertain)}</p>
+      <button onClick={markCreationUncertain}>uncertain</button>
       <p data-testid="firstname">{formData.firstname || "(empty)"}</p>
       <p data-testid="emailVerified">{String(emailVerified)}</p>
       <p data-testid="profilePhoto">{imageFiles.profileImageFile?.name || "(none)"}</p>
       <p data-testid="restoringPhotos">{String(restoringPhotos)}</p>
       <button onClick={() => updateData({ firstname: "Ada" })}>answer</button>
       <button onClick={markEmailVerified}>verify</button>
+      <button onClick={() => updateData({ emailAddress: "new@example.com" })}>change email</button>
       <button
         onClick={() => updateImageFiles({ profileImageFile: new File(["p"], "me.png") })}
       >
@@ -234,4 +239,32 @@ describe("signup answers across a reload", () => {
     await waitFor(() => expect(sessionStorage.getItem(DRAFT_KEY)).toBeNull());
     await waitFor(() => expect(fake.rows.size).toBe(0));
   });
+});
+
+it('invalidates verification and upload permission when the signup email changes', async () => {
+  sessionStorage.setItem('stylerSignupUploadPass', 'old-pass');
+  renderFlow();
+  await settled();
+  fireEvent.click(screen.getByRole('button', { name: 'verify' }));
+  fireEvent.click(screen.getByRole('button', { name: 'change email' }));
+  expect(screen.getByTestId('emailVerified')).toHaveTextContent('false');
+  expect(sessionStorage.getItem('stylerSignupUploadPass')).toBeNull();
+});
+
+it('holds an uncertain creation outcome for the current signup flow', async () => {
+  renderFlow();
+  await settled();
+  fireEvent.click(screen.getByRole('button', { name: 'uncertain' }));
+  expect(screen.getByTestId('creationUncertain')).toHaveTextContent('true');
+  fireEvent.click(screen.getByRole('button', { name: 'answer' }));
+  expect(screen.getByTestId('creationUncertain')).toHaveTextContent('true');
+});
+
+it('keeps the create lock after the signup provider remounts', async () => {
+  const first = renderFlow();
+  await settled();
+  fireEvent.click(screen.getByRole('button', { name: 'uncertain' }));
+  first.unmount();
+  renderFlow();
+  expect(screen.getByTestId('creationUncertain')).toHaveTextContent('true');
 });

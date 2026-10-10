@@ -77,7 +77,7 @@ export function cloudinaryUploadUrl(sig) {
 export function signatureRequestConfig() {
   const pass = readSignupUploadPass();
   if (getAuthToken() || !pass) return undefined;
-  return { headers: { Authorization: `Bearer ${pass}` } };
+  return { headers: { Authorization: `Bearer ${pass}` }, skipAuthRefresh: true };
 }
 
 /**
@@ -123,7 +123,8 @@ export async function deleteCloudinaryImage(publicId) {
   try {
     await ApiClient.post(
       "/delete_cloudinary_image",
-      { publicId }
+      { publicId },
+      signatureRequestConfig()
     );
   } catch {
     // Ignore — orphan cleanup is best-effort.

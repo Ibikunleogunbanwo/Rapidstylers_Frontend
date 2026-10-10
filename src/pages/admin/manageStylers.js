@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import { useAdminList, AdminListControls } from "./adminList";
+import React, { useState, useEffect, useRef } from "react";
 import { Navigate, Link } from "react-router-dom";
 import { APIService } from "../../hooks/remote/apiService";
 import { cloudinaryAvatar } from "../../utils/cloudinaryImage";
@@ -6,7 +7,6 @@ import { AdminCard, AdminPage, AdminPill } from "./adminShell";
 import {
   getAuthToken,
   isAdminRole,
-  clearAllSessionTokens,
   showSuccessToastMessage,
 } from "../../utils/constant";
 
@@ -34,6 +34,9 @@ const ManageStylers = () => {
   const [imagesLoading, setImagesLoading] = useState(false);
   const [imagesError, setImagesError] = useState("");
   const [busyImageId, setBusyImageId] = useState(null);
+  const writeLock = useRef(false);
+  const [actionError, setActionError] = useState("");
+  const writing = busyId !== null || busyImageId !== null;
 
   const loadQueue = () => {
     setLoading(true);
@@ -62,11 +65,19 @@ const ManageStylers = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab]);
 
+  const visible = filter === "All" ? stylers : stylers.filter(s => s.verificationStatus === filter);
+  const list = useAdminList(visible, s => [s.firstname, s.lastname, s.businessName, s.emailAddress, s.city, s.serviceTypeName].filter(Boolean).join(" "));
+
   if (!getAuthToken() || !isAdminRole()) {
     return <Navigate to="/admin/login" replace />;
   }
 
   const handleAction = async (styler, action) => {
+    if (writeLock.current) return;
+    const name = styler.businessName || [styler.firstname, styler.lastname].filter(Boolean).join(" ") || "this stylist";
+    if (action !== "APPROVE" && !window.confirm(`${action === "REJECT" ? "Reject" : "Suspend"} ${name}? This changes their verification status and may prevent bookings.`)) return;
+    writeLock.current = true;
+    setActionError("");
     setBusyId(styler.stylerId);
     try {
       await APIService.adminUpdateStylerVerification({
@@ -78,19 +89,16 @@ const ManageStylers = () => {
       );
       loadQueue();
     } catch (error) {
-      // Error toasts are handled in APIService
+      setActionError(error?.response?.data?.message || error?.message || "Unable to update stylist.");
     } finally {
+      writeLock.current = false;
       setBusyId(null);
     }
   };
 
-  const visible =
-    filter === "All"
-      ? stylers
-      : stylers.filter((s) => s.verificationStatus === filter);
-
   return (
     <AdminPage eyebrow="Admin" title="Stylist Management">
+        {actionError && <p role="alert" className="mb-4 text-sm text-red-700">{actionError}</p>}
         {/* Section tabs */}
         <div className="flex gap-2 mb-5">
           <button
@@ -147,19 +155,23 @@ const ManageStylers = () => {
                         {img.emailAddress || ""} · {img.createdAt || ""}
                       </p>
                       <button
-                        onClick={() => {
-                          if (window.confirm("Delete this image from the gallery? The stylist will be emailed.")) {
-                            setBusyImageId(img.id);
-                            APIService.adminDeletePortfolioImage(img.id)
-                              .then(() => {
-                                showSuccessToastMessage("Image removed and stylist notified");
-                                loadImages();
-                              })
-                              .catch(() => {})
-                              .finally(() => setBusyImageId(null));
+                        onClick={async () => {
+                          if (writeLock.current || !window.confirm("Delete this image from the gallery? The stylist will be emailed.")) return;
+                          writeLock.current = true;
+                          setActionError("");
+                          setBusyImageId(img.id);
+                          try {
+                            await APIService.adminDeletePortfolioImage(img.id);
+                            showSuccessToastMessage("Image removed and stylist notified");
+                            loadImages();
+                          } catch (error) {
+                            setActionError(error?.response?.data?.message || error?.message || "Unable to delete image.");
+                          } finally {
+                            writeLock.current = false;
+                            setBusyImageId(null);
                           }
                         }}
-                        disabled={busyImageId === img.id}
+                        disabled={writing}
                         className="w-full py-1.5 rounded-md bg-red-50 text-red-600 text-xs font-bold hover:bg-red-100 disabled:opacity-60"
                       >
                         {busyImageId === img.id ? "Deleting…" : "Delete image"}
@@ -177,7 +189,7 @@ const ManageStylers = () => {
               {FILTERS.map((f) => (
                 <button
                   key={f}
-                  onClick={() => setFilter(f)}
+                  onClick={() => { setFilter(f); list.setPage(1); }}
                   className={`px-4 py-1.5 rounded-full text-sm font-semibold border ${
                     filter === f
                       ? "bg-brand text-white border-brand"
@@ -191,11 +203,12 @@ const ManageStylers = () => {
               ))}
             </div>
 
+            <AdminListControls list={list} label="Search stylists" />
             {loading ? (
               <p className="text-sm text-gray-500">Loading…</p>
             ) : loadError ? (
             <div role="alert">{loadError} <button type="button" onClick={loadQueue}>Retry</button></div>
-          ) : visible.length === 0 ? (
+          ) : list.filteredCount === 0 ? (
               <AdminCard pad="p-8" className="text-center">
                 <p className="text-sm text-gray-500">
                   No stylists in this view yet. New registrations appear here as Pending.
@@ -203,7 +216,7 @@ const ManageStylers = () => {
               </AdminCard>
             ) : (
               <div className="grid gap-4">
-                {visible.map((s) => (
+                {list.visibleItems.map((s) => (
                   <AdminCard key={s.stylerId} pad="p-5">
                     <div className="flex items-start justify-between gap-4 flex-wrap">
                       <div className="flex items-start gap-4">
@@ -282,7 +295,7 @@ const ManageStylers = () => {
                             // Approval needs somewhere to send the customer: the
                             // backend refuses without an address, so the button
                             // says so up front instead of failing on click.
-                            disabled={busyId === s.stylerId || s.addressOnFile === false}
+                            disabled={writing || s.addressOnFile === false}
                             title={
                               s.addressOnFile === false
                                 ? "Ask this professional for their business address first. Approving without one would leave them unlisted and unbookable."
@@ -296,7 +309,7 @@ const ManageStylers = () => {
                         {s.verificationStatus !== "REJECTED" && (
                           <button
                             onClick={() => handleAction(s, "REJECT")}
-                            disabled={busyId === s.stylerId}
+                            disabled={writing}
                             className="py-2 px-4 bg-red-600 rounded-md text-sm text-white font-semibold hover:opacity-90 disabled:opacity-60"
                           >
                             Reject
@@ -305,7 +318,7 @@ const ManageStylers = () => {
                         {s.verificationStatus !== "SUSPENDED" && (
                           <button
                             onClick={() => handleAction(s, "SUSPEND")}
-                            disabled={busyId === s.stylerId}
+                            disabled={writing}
                             className="py-2 px-4 bg-gray-600 rounded-md text-sm text-white font-semibold hover:opacity-90 disabled:opacity-60"
                           >
                             Suspend

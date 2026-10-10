@@ -13,6 +13,8 @@ import { uploadToCloudinary, deleteCloudinaryImage } from "../../../utils/cloudi
 import { showSuccessToastMessage } from "../../../utils/constant";
 import { clearSignupUploadPass } from "../../../utils/signupUploadPass";
 
+import { submitRegistration } from "./registrationSubmit";
+
 /* ── Zod schema (the shared rule, measured from backend PASSWORD_PATTERN) ── */
 const passwordSchema = z
   .object({
@@ -47,10 +49,10 @@ function toFormikErrors(zodError) {
 /* ── Component ──────────────────────────────────────────────────────── */
 const CreatePassword = () => {
   const navigate = useNavigate();
-  const { formData, imageFiles, forgetSignupDraft } = useStylerSignup();
+  const { formData, imageFiles, forgetSignupDraft, creationUncertain, markCreationUncertain } = useStylerSignup();
   const [submitting, setSubmitting] = useState(false);
   const [uploadingImages, setUploadingImages] = useState(false);
-  const [submitError, setSubmitError] = useState("");
+  const [submitError, setSubmitError] = useState(creationUncertain ? "We could not confirm whether your account was created. Try signing in before registering again." : "");
 
   const initialValues = {
     password: "",
@@ -64,51 +66,24 @@ const CreatePassword = () => {
     return toFormikErrors(result.error);
   };
 
-  /** Best-effort removal of images uploaded but not attached to an account. */
-  const cleanupUploadedImages = async (uploads) => {
-    for (const u of uploads) {
-      if (u?.publicId) await deleteCloudinaryImage(u.publicId);
-    }
-  };
-
   const handleSubmit = async (values) => {
+    if (creationUncertain || submitting) return;
     setSubmitting(true);
     setSubmitError("");
 
-    // The single commit point: upload the picked images to Cloudinary and
-    // create the account. Nothing reaches Cloudinary before this step, so
-    // abandoning the wizard never leaves orphaned images. If the account
-    // creation fails after the upload, the images are deleted again.
-    let uploaded = [];
     try {
       setUploadingImages(true);
-      const jobs = [];
-      if (imageFiles.profileImageFile) {
-        jobs.push(uploadToCloudinary(imageFiles.profileImageFile, "profile"));
-      }
-      if (imageFiles.identificationImageFile) {
-        jobs.push(uploadToCloudinary(imageFiles.identificationImageFile, "id"));
-      }
-      const results = await Promise.all(jobs);
-      uploaded = results.filter(Boolean);
-
-      const profileImageUrl = results[0]?.url || formData.profileImageUrl || "";
-      const identificationImageUrl =
-        results[1]?.url || formData.identificationImageUrl || "";
-
-      // Merge password with all previous step data. identificationTypeId must
-      // be a real numeric id from list_identification (the backend parses it
-      // as a Long) — never default it here or the request will 500.
-      const payload = {
-        ...formData,
-        password: values.password,
-        agreeToTerms: values.agreeToTerms === true,
-        profileImageUrl,
-        identificationImageUrl,
-      };
-
-      const res = await APIService.createStyler(payload);
-      if (res.data?.statusCode === "200") {
+      const res = await submitRegistration({
+        files: imageFiles,
+        payload: { ...formData, password: values.password, agreeToTerms: values.agreeToTerms === true },
+        upload: uploadToCloudinary,
+        remove: deleteCloudinaryImage,
+        create: (payload) => {
+          setUploadingImages(false);
+          return APIService.createStyler(payload);
+        },
+      });
+      if (Number(res.data?.statusCode) === 200) {
         // The account exists, so the remembered answers have served their purpose.
         // Keeping them would offer the next professional who signs up in this tab a
         // form filled in with the details of the one before them, and keep their ID
@@ -121,12 +96,12 @@ const CreatePassword = () => {
         navigate("/login");
       } else {
         setSubmitError(res.data?.message || "Registration failed. Please try again.");
-        await cleanupUploadedImages(uploaded);
+
       }
     } catch (err) {
       // APIService.extractError already shows a toast, but set inline too
-      setSubmitError("Registration failed. Please check your details and try again.");
-      await cleanupUploadedImages(uploaded);
+      if (err.uncertain) markCreationUncertain();
+      setSubmitError(err.uncertain || err.stage === "upload" ? err.message : "Your account details were rejected. Review your details and try again.");
     } finally {
       setUploadingImages(false);
       setSubmitting(false);
@@ -194,13 +169,14 @@ const CreatePassword = () => {
 
           {/* Submit error */}
           {submitError && (
-            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
+            <div role="alert" className="mt-4 p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
               {submitError}
+              {creationUncertain && <Link to="/login" className="block mt-2 font-semibold underline">Sign in</Link>}
             </div>
           )}
 
           <div className="mt-8 flex gap-3">
-            <Button variant="ghost" type="button" onClick={() => navigate("/styler-signup/photos")}>
+            <Button variant="ghost" type="button" disabled={submitting} onClick={() => navigate("/styler-signup/photos")}>
               Back
             </Button>
             <Button
@@ -213,7 +189,7 @@ const CreatePassword = () => {
               }
               variant="primary"
               type="submit"
-              disabled={isSubmitting || submitting}
+              disabled={isSubmitting || submitting || creationUncertain}
             />
           </div>
         </Form>

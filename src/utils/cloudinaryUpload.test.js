@@ -124,7 +124,7 @@ describe("signatureRequestConfig", () => {
   /** A stylist still signing up has no account token, only the pass their email code earned. */
   test("shows the sign-up upload pass when nobody is signed in", () => {
     saveSignupUploadPass("upload-pass");
-    expect(signatureRequestConfig()).toEqual({ headers: { Authorization: "Bearer upload-pass" } });
+    expect(signatureRequestConfig()).toEqual({ headers: { Authorization: "Bearer upload-pass" }, skipAuthRefresh: true });
   });
 
   test("leaves a signed-in stylist's own token to ApiClient", () => {
@@ -136,4 +136,11 @@ describe("signatureRequestConfig", () => {
   test("adds nothing when there is no pass", () => {
     expect(signatureRequestConfig()).toBeUndefined();
   });
+});
+
+test('preserves signup upload authorization through the actual request interceptor', async()=>{
+ const {attachAuthToken}=await import('../hooks/remote/apiClient');
+ saveSignupUploadPass('upload-pass');
+ expect(attachAuthToken(signatureRequestConfig()).headers.Authorization).toBe('Bearer upload-pass');
+ sessionStorage.clear();
 });

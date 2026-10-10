@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useId } from "react";
 import { uploadToCloudinary } from "../utils/cloudinaryUpload";
 
 // Subtle two-tone checkerboard used behind object-contain upload previews so the
@@ -59,6 +59,7 @@ const ImageUpload = ({
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const inputRef = useRef(null);
+  const inputId = useId();
 
   // Deferred mode: preview the picked file locally until it's committed.
   useEffect(() => {
@@ -108,7 +109,7 @@ const ImageUpload = ({
 
   return (
     <div className={`grid w-full ${className}`}>
-      <span className="font-medium text-sm pb-1">{label}:</span>
+      <label htmlFor={inputId} className="font-medium text-sm pb-1">{label}:</label>
       <div
         onClick={() => !uploading && inputRef.current?.click()}
         className={`relative w-full ${aspectClass} rounded-md border-2 border-dashed cursor-pointer overflow-hidden transition-colors ${
@@ -147,6 +148,7 @@ const ImageUpload = ({
         )}
       </div>
       <input
+        id={inputId}
         ref={inputRef}
         type="file"
         accept={accept}

@@ -35,3 +35,15 @@ Consider HttpOnly Secure cookie or BFF sessions to reduce JavaScript access to c
 ## Frontend-owned verification
 
 Actual Safari and Firefox checks remain frontend work. Chromium desktop/mobile fixture tests verify frontend behavior but do not establish real provider or backend correctness. CI must pass before future promotion; GitHub previously allowed normal main pushes while reporting a required-check bypass, so repository administrators should enforce the intended branch protection and deployment gating.
+
+## 6. Stylist registration and upload reconciliation
+
+The frontend now preserves the verified signup upload token on signature and cleanup requests. Verify that this limited token can sign and reclaim only assets owned by that signup, expires promptly, and cannot delete another account's files. Exercise profile-upload success followed by ID-upload failure and rejected account creation. Add server cleanup for abandoned assets.
+
+Account creation needs a reliable way to resolve an unknown outcome after a network interruption (idempotent replay or an authenticated status/recovery contract). The frontend currently preserves uploaded assets and blocks another create request when the result is unknown, with a sign-in recovery link. Verify duplicate email handling, OTP/token expiry, and field validation return safe, useful errors.
+
+## 7. Admin refunds and data contracts
+
+Provide an authorized payment lookup before refund confirmation: customer, currency, captured amount, previous refunds and remaining refundable amount. Define partial refund behavior; the inspected implementation marks the appointment refunded and prevents a later refund even after a partial refund. Ensure provider idempotency and reconciliation prevent duplicate refunds after lost responses. Until then, frontend review displays entered values and asks the admin to check payment records.
+
+Confirm list pagination/filtering contracts for categories, stylists, blog posts, support tickets, reviews, logs, business accounts and payouts. Frontend search and pagination currently cover only records returned by each existing endpoint.

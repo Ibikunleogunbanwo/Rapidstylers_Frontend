@@ -182,14 +182,14 @@ export const earliestIncompleteStep = ({
  * skipped a step they did not skip.
  */
 const NOTICES = {
-  0: "Professional signup runs in order and each step builds on the one before it, so it starts with your personal details.",
-  1: "Your email address needs verifying before the next step, so enter the code we sent you and you can continue.",
-  2: "Your business details come before the photos and the password, so this step is next.",
-  3: "We cannot create your account without your profile photo and a photo of your ID, so those come first.",
+  0: "Signup runs in order. Enter your personal details to continue.",
+  1: "Your email needs verifying. Enter the code to continue.",
+  2: "Complete your business details before adding photos.",
+  3: "Add your profile photo and ID photo before creating your account.",
 };
 
 const LOST_PROGRESS_NOTICE =
-  "We no longer have the details you entered earlier, and each step builds on the one before it, so the flow starts again with your personal details.";
+  "We no longer have your saved details. Enter your personal details again.";
 
 export const signupNotice = ({ target, startedBefore = false }) => {
   if (target === 0 && startedBefore) return LOST_PROGRESS_NOTICE;

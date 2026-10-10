@@ -10,6 +10,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import BusinessDetails from "./businessDetails";
+import { APIService } from "../../../hooks/remote/apiService";
 
 const updateData = vi.fn();
 
@@ -107,4 +108,23 @@ describe("styler signup business details", () => {
     );
     await waitFor(() => expect(screen.getByText("photos step")).toBeInTheDocument());
   });
+});
+
+it('accepts numeric service IDs returned by the API', async () => {
+  APIService.getStylerType.mockResolvedValueOnce({ data: { data: [{ serviceTypeId: 1, serviceTypeName: 'Barber' }] } });
+  renderStep();
+  await fillEverythingButAddress();
+  await userEvent.type(screen.getByLabelText('Business address'), '700 2 St SW');
+  await userEvent.click(screen.getByRole('button', { name: 'Continue' }));
+  expect(await screen.findByText('photos step')).toBeInTheDocument();
+});
+
+it('offers retry when service options are unavailable without losing typed fields', async () => {
+  APIService.getStylerType.mockRejectedValueOnce(new Error('offline'));
+  APIService.getStylerType.mockResolvedValueOnce({ data: { data: [{ serviceTypeId: 1, serviceTypeName: 'Barber' }] } });
+  renderStep();
+  await userEvent.type(field('businessName'), 'Ada Studio');
+  await userEvent.click(await screen.findByRole('button', { name: 'Retry loading services' }));
+  expect(await screen.findByRole('radio', { name: /barber/i })).toBeInTheDocument();
+  expect(field('businessName')).toHaveValue('Ada Studio');
 });

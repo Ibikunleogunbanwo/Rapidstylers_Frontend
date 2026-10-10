@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import { useAdminList, AdminListControls } from "./adminList";
+import React, { useEffect, useRef, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { APIService } from "../../hooks/remote/apiService";
 import { AdminPage, AdminPill, AdminStat } from "./adminShell";
@@ -19,20 +20,27 @@ const Recovery = () => {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
 
+  const pending = useRef(false);
   const load = () => {
+    if (pending.current) return;
+    pending.current = true;
     setLoading(true);
     setLoadError("");
-    setLoading(true);
     APIService.adminRecoveryCampaigns()
-      .then((res) => setRows(Array.isArray(res.data?.data) ? res.data.data : []))
+      .then((res) => {
+        if (!Array.isArray(res.data?.data) || (res.data?.statusCode && String(res.data.statusCode) !== "200")) throw new Error("Invalid recovery response");
+        setRows(res.data.data);
+      })
       .catch(() => setLoadError("Unable to load recovery campaigns."))
-      .finally(() => setLoading(false));
+      .finally(() => { pending.current = false; setLoading(false); });
   };
 
   useEffect(() => {
     if (getAuthToken() && isAdminRole()) load();
     else setLoading(false);
   }, []);
+
+  const campaignList = useAdminList(rows, row => JSON.stringify(row));
 
   if (!getAuthToken() || !isAdminRole()) return <Navigate to="/admin/login" replace />;
 
@@ -51,6 +59,7 @@ const Recovery = () => {
         <button
           type="button"
           onClick={load}
+          disabled={loading}
           className="rounded-md border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-600"
         >
           Refresh
@@ -59,16 +68,16 @@ const Recovery = () => {
     >
         <p className="mb-5 text-sm text-gray-500">
           Customers who started a sign-up but never created an account, and which recovery email they received
-          (24h reminder, then 7-day, 14-day, 1-month). Uses a created account after the follow-up stops.
+          (24h reminder, then 7-day, 14-day, 1-month). Follow-ups stop when an account is created. Counts reflect all campaigns returned by the service.
         </p>
 
         <div className="mb-5 grid grid-cols-2 gap-3 md:grid-cols-6">
-          <AdminStat label="Abandoned" value={total} />
-          <AdminStat label="24h reminder" value={byStage[1] || 0} />
-          <AdminStat label="7-day" value={byStage[2] || 0} />
-          <AdminStat label="14-day" value={byStage[3] || 0} />
-          <AdminStat label="1-month final" value={byStage[4] || 0} />
-          <AdminStat label="Converted" value={converted} />
+          <AdminStat label="Abandoned" value={loading ? "Loading…" : loadError ? "Unavailable" : total} />
+          <AdminStat label="24h reminder" value={loading ? "Loading…" : loadError ? "Unavailable" : byStage[1] || 0} />
+          <AdminStat label="7-day" value={loading ? "Loading…" : loadError ? "Unavailable" : byStage[2] || 0} />
+          <AdminStat label="14-day" value={loading ? "Loading…" : loadError ? "Unavailable" : byStage[3] || 0} />
+          <AdminStat label="1-month final" value={loading ? "Loading…" : loadError ? "Unavailable" : byStage[4] || 0} />
+          <AdminStat label="Converted" value={loading ? "Loading…" : loadError ? "Unavailable" : converted} />
         </div>
 
         {loading ? (
@@ -78,7 +87,9 @@ const Recovery = () => {
           ) : rows.length === 0 ? (
           <p className="text-sm text-gray-500">No abandoned sign-ups yet.</p>
         ) : (
-          <div className="overflow-x-auto rounded-lg border bg-white">
+          <div className="rounded-lg border bg-white p-4">
+            <AdminListControls list={campaignList} label="Search campaigns" />
+            <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>
                 <tr className="border-b text-xs text-gray-500">
@@ -90,7 +101,7 @@ const Recovery = () => {
                 </tr>
               </thead>
               <tbody>
-                {rows.map((row, idx) => {
+                {campaignList.visibleItems.map((row, idx) => {
                   const stage = Number(row.stage) || 0;
                   return (
                     <tr key={idx} className="border-b last:border-0">
@@ -114,6 +125,7 @@ const Recovery = () => {
                 })}
               </tbody>
             </table>
+            </div>
           </div>
         )}
     </AdminPage>

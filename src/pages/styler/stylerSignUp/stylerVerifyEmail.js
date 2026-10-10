@@ -103,6 +103,7 @@ const StylerVerifyEmail = () => {
   };
 
   const handleResendCode = async () => {
+    if (verifying || resending || resendIn > 0) return;
     setError("");
     if (!signupEmail) {
       setError("We don't have your email address on file. Go back a step and enter it again so we can send a fresh code.");
@@ -110,7 +111,11 @@ const StylerVerifyEmail = () => {
     }
     setResending(true);
     try {
-      await APIService.stylerGenerateOtp({ emailAddress: signupEmail });
+      const res = await APIService.stylerGenerateOtp({ emailAddress: signupEmail });
+      if (String(res.data?.statusCode) !== "200") {
+        setError(res.data?.message || "Could not send a new code. Please try again.");
+        return;
+      }
       showSuccessToastMessage("A new verification code is on its way. The previous one no longer works.");
       // The old digits no longer match the fresh code, so the boxes are emptied
       // rather than left looking answered.
@@ -118,7 +123,7 @@ const StylerVerifyEmail = () => {
       clearCode();
       setResendIn(RESEND_SECONDS);
     } catch (err) {
-      // APIService.extractError already surfaced the reason as a toast.
+      setError("Could not send a new code. Please try again.");
     } finally {
       setResending(false);
     }
@@ -126,6 +131,7 @@ const StylerVerifyEmail = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (verifying || resending) return;
     const code = otp.join("");
     if (code.length !== 6) {
       setError("Please enter all 6 digits");
@@ -210,7 +216,7 @@ const StylerVerifyEmail = () => {
             <button
               type="button"
               onClick={handleResendCode}
-              disabled={resending}
+              disabled={resending || verifying}
               className="text-[13px] font-semibold text-brand underline-offset-4 hover:underline disabled:opacity-50"
             >
               {resending ? "Sending..." : "Resend code"}
@@ -250,7 +256,7 @@ const StylerVerifyEmail = () => {
             text={verifying ? "Verifying..." : "Verify"}
             variant="primary"
             type="submit"
-            disabled={verifying}
+            disabled={verifying || resending}
           />
         </div>
       </form>

@@ -26,18 +26,8 @@ const ADMIN_LINKS = [
 export function AdminNav() {
   const { pathname } = useLocation();
   return (
-    <nav className="mb-6 flex flex-wrap gap-x-5 gap-y-2 text-sm font-semibold">
-      {ADMIN_LINKS.map(({ to, label }) =>
-        to === pathname ? (
-          <span key={to} className="text-brand underline underline-offset-4">
-            {label}
-          </span>
-        ) : (
-          <Link key={to} to={to} className="text-gray-500 hover:text-gray-800">
-            {label}
-          </Link>
-        )
-      )}
+    <nav aria-label="Admin sections" className="mb-6 flex gap-5 overflow-x-auto border-b border-black/10 pb-3 text-sm font-semibold">
+      {ADMIN_LINKS.map(({ to, label }) => <Link key={to} to={to} aria-current={to === pathname ? "page" : undefined} className={`shrink-0 ${to === pathname ? "text-brand underline underline-offset-4" : "text-gray-500 hover:text-gray-800"}`}>{label}</Link>)}
     </nav>
   );
 }
@@ -67,9 +57,9 @@ export function AdminSignOut() {
  */
 export function AdminPage({ eyebrow, title, actions, children }) {
   return (
-    <div className="min-h-screen bg-[#f5f5f5] px-4 py-10">
+    <div className="min-h-screen bg-[#f5f5f5] px-4 py-6 md:py-8">
       <div className="mx-auto max-w-5xl">
-        <div className="mb-5 flex items-end justify-between gap-4">
+        <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="text-[11px] uppercase tracking-[0.25em] text-gray-400">{eyebrow}</p>
             <h1 className="mt-2 text-[clamp(1.5rem,2.5vw,2rem)] font-normal leading-[1.1] tracking-[-0.02em] text-gray-900">
@@ -82,7 +72,7 @@ export function AdminPage({ eyebrow, title, actions, children }) {
           </div>
         </div>
         <AdminNav />
-        {children}
+        <main>{children}</main>
       </div>
     </div>
   );

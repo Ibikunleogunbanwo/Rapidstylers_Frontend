@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useAdminList, AdminListControls } from "./adminList";
+import { useEffect, useRef, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { APIService } from "../../hooks/remote/apiService";
 import { AdminPage, AdminInput, AdminPill } from "./adminShell";
-import { getAuthToken, isAdminRole, showErrorToastMessage, showSuccessToastMessage } from "../../utils/constant";
+import { getAuthToken, isAdminRole, showSuccessToastMessage } from "../../utils/constant";
 
 /** Refund states as the shell's shared tones, so a completed refund looks the
  *  same here as a completed anything-else looks on the other admin pages. */
@@ -22,6 +23,11 @@ const Payments = () => {
   const [refunds, setRefunds] = useState([]);
   const [refundForm, setRefundForm] = useState({ appointmentId: "", amount: "", reason: "", password: "" });
   const [submitting, setSubmitting] = useState(false);
+  const [review, setReview] = useState(null);
+  const [refundError, setRefundError] = useState("");
+  const [reconciliationError, setReconciliationError] = useState("");
+  const refundPending = useRef(false);
+  const reconciliationPending = useRef(false);
   const [report, setReport] = useState(null);
   const [reconciling, setReconciling] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -46,44 +52,56 @@ const Payments = () => {
     } else setLoading(false);
   }, []);
 
-  const issueRefund = async () => {
+  const reviewRefund = () => {
+    setRefundError("");
+    setRefundForm((form) => ({ ...form, password: "" }));
     const appointmentId = refundForm.appointmentId.trim();
     if (!appointmentId) {
-      showErrorToastMessage("Appointment id is required");
+      setRefundError("Appointment id is required.");
       return;
     }
-    if (refundForm.amount.trim() && (Number.isNaN(Number(refundForm.amount)) || Number(refundForm.amount) <= 0)) {
-      showErrorToastMessage("Refund amount must be a positive number. Leave blank for a full refund");
+    const amount = refundForm.amount.trim();
+    if (amount && (!Number.isFinite(Number(amount)) || Number(amount) <= 0)) {
+      setRefundError("Refund amount must be a positive number. Leave blank for a full refund.");
       return;
     }
-    // Step-up: refunds move money, so re-prove the admin password on each request.
+    setReview({ appointmentId, amount: amount || null, reason: refundForm.reason.trim() || null });
+  };
+
+  const issueRefund = async () => {
+    if (refundPending.current || !review) return;
     const adminPassword = refundForm.password;
+    setRefundForm((form) => ({ ...form, password: "" }));
+    setRefundError("");
     if (!adminPassword.trim()) {
-      showErrorToastMessage("Re-authentication required. Please re-enter your admin password");
+      setRefundError("Re-authentication required. Please re-enter your admin password.");
       return;
     }
+    refundPending.current = true;
     setSubmitting(true);
     try {
-      const response = await APIService.adminRefund({
-        appointmentId,
-        amount: refundForm.amount.trim() || null,
-        reason: refundForm.reason.trim() || null,
-      }, adminPassword);
+      const response = await APIService.adminRefund(review, adminPassword);
       if (response.data?.statusCode === "200") {
         showSuccessToastMessage(`Refund ${response.data?.data?.amount ? `of ${formatMoney(response.data.data.amount)} ` : ""}processed`);
         setRefundForm({ appointmentId: "", amount: "", reason: "", password: "" });
+        setReview(null);
         loadRefunds();
       } else {
-        showErrorToastMessage(response.data?.message || "Refund failed");
+        setRefundError(response.data?.message || "Refund failed.");
       }
     } catch (error) {
-      // APIService displays the error.
+      setRefundError("Refund request failed. Verify the payment status before retrying.");
     } finally {
+      refundPending.current = false;
       setSubmitting(false);
     }
   };
 
   const runReconciliation = async () => {
+    if (reconciliationPending.current) return;
+    reconciliationPending.current = true;
+    setReconciliationError("");
+    setReport(null);
     setReconciling(true);
     try {
       const response = await APIService.adminPaymentReconciliation();
@@ -92,14 +110,17 @@ const Payments = () => {
         showSuccessToastMessage(response.data?.message || "Reconciliation complete");
       } else {
         setReport(null);
-        showErrorToastMessage(response.data?.message || "Reconciliation failed");
+        setReconciliationError(response.data?.message || "Reconciliation failed.");
       }
     } catch (error) {
-      // APIService displays the error.
+      setReconciliationError("Unable to run reconciliation.");
     } finally {
+      reconciliationPending.current = false;
       setReconciling(false);
     }
   };
+
+  const refundList = useAdminList(refunds, row => JSON.stringify(row));
 
   if (!getAuthToken() || !isAdminRole()) return <Navigate to="/admin/login" replace />;
 
@@ -122,57 +143,81 @@ const Payments = () => {
               </p>
               <div className="mt-3 grid gap-3 md:grid-cols-3">
                 <div>
-                  <label className="block mb-1 text-xs text-gray-500">Appointment id *</label>
+                  <label htmlFor="refund-appointmentId" className="block mb-1 text-xs text-gray-500">Appointment id *</label>
                   <AdminInput
                     type="text"
+                    id="refund-appointmentId"
+                    aria-describedby={refundError ? "refund-error" : undefined}
+                    disabled={submitting || Boolean(review)}
                     value={refundForm.appointmentId}
                     onChange={(e) => setRefundForm({ ...refundForm, appointmentId: e.target.value })}
                     placeholder="e.g. aB3xY"
                   />
                 </div>
                 <div>
-                  <label className="block mb-1 text-xs text-gray-500">Amount (blank = full refund)</label>
+                  <label htmlFor="refund-amount" className="block mb-1 text-xs text-gray-500">Amount (blank = full refund)</label>
                   <AdminInput
                     type="number"
                     min="0"
                     step="0.01"
+                    id="refund-amount"
+                    aria-describedby={refundError ? "refund-error" : undefined}
+                    disabled={submitting || Boolean(review)}
                     value={refundForm.amount}
                     onChange={(e) => setRefundForm({ ...refundForm, amount: e.target.value })}
                     placeholder="e.g. 25.00"
                   />
                 </div>
                 <div>
-                  <label className="block mb-1 text-xs text-gray-500">Reason</label>
+                  <label htmlFor="refund-reason" className="block mb-1 text-xs text-gray-500">Reason</label>
                   <AdminInput
                     type="text"
+                    id="refund-reason"
+                    disabled={submitting || Boolean(review)}
                     value={refundForm.reason}
                     onChange={(e) => setRefundForm({ ...refundForm, reason: e.target.value })}
                     placeholder="e.g. Client cancellation"
                   />
                 </div>
-                <div className="mt-3">
-                  <label className="block mb-1 text-xs text-gray-500">Re-authenticate (admin password)</label>
+                {review && <div className="mt-3">
+                  <label htmlFor="refund-password" className="block mb-1 text-xs text-gray-500">Re-authenticate (admin password)</label>
                   <AdminInput
                     type="password"
+                    id="refund-password"
+                    autoFocus
+                    aria-describedby={refundError ? "refund-error" : undefined}
+                    disabled={submitting}
                     value={refundForm.password}
                     onChange={(e) => setRefundForm({ ...refundForm, password: e.target.value })}
                     placeholder="Re-enter your admin password"
                     autoComplete="current-password"
                   />
-                  <p className="mt-1 text-[11px] text-gray-400">Refunds move money, so you must re-prove your password on each refund.</p>
+                  <p className="mt-1 text-[11px] text-gray-400">Enter your password to confirm this refund.</p>
                 </div>
+                }
               </div>
+              {refundError && <p id="refund-error" role="alert" className="mt-3 text-sm text-red-700">{refundError}</p>}
+              {review && (
+                <section aria-label="Review refund" className="mt-3 rounded-md border p-3">
+                  <h2 className="font-semibold">Review entered refund details</h2>
+                  <dl><dt>Appointment id</dt><dd>{review.appointmentId}</dd><dt>Amount</dt><dd>{review.amount || "Full refund (captured amount unavailable)"}</dd><dt>Reason</dt><dd>{review.reason || "No reason entered"}</dd></dl>
+                  <p className="mt-2 text-sm text-gray-600">Check the customer, currency and available refund amount in your payment records before confirming. Only the details you entered are shown here.</p>
+                  <button type="button" disabled={submitting} onClick={() => { setReview(null); setRefundError(""); setRefundForm((form) => ({ ...form, password: "" })); }} className="mt-2 rounded-md border px-3 py-2">Edit refund</button>
+                </section>
+              )}
               <button
                 type="button"
-                onClick={issueRefund}
+                onClick={review ? issueRefund : reviewRefund}
                 disabled={submitting}
                 className="mt-3 rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white"
               >
-                {submitting ? "Processing..." : "Issue refund"}
+                {submitting ? "Processing..." : review ? "Confirm refund" : "Review refund"}
               </button>
             </div>
 
-            <div className="overflow-x-auto rounded-lg border bg-white">
+            <div className="rounded-lg border bg-white p-4">
+              {!loading && !loadError && <AdminListControls list={refundList} label="Search refunds" />}
+              <div className="overflow-x-auto">
               {loadError ? (<div role="alert">{loadError} <button type="button" onClick={loadRefunds}>Retry</button></div>) : refunds.length === 0 ? (
                 <p className="p-4 text-sm text-gray-500">No refunds yet.</p>
               ) : (
@@ -190,7 +235,7 @@ const Payments = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {refunds.map((refund) => (
+                    {refundList.visibleItems.map((refund) => (
                       <tr key={refund.id || refund.refundId} className="border-b align-top last:border-0">
                         <td className="p-3 font-semibold">{refund.refundId}</td>
                         <td className="p-3">{refund.appointmentId}</td>
@@ -209,6 +254,7 @@ const Payments = () => {
                   </tbody>
                 </table>
               )}
+              </div>
             </div>
           </div>
         ) : (
@@ -227,6 +273,7 @@ const Payments = () => {
               </div>
             </div>
 
+            {reconciliationError && <p role="alert">{reconciliationError}</p>}
             {report ? (
               <div className="rounded-lg border bg-white p-4">
                 <div className="flex flex-wrap items-center gap-3">

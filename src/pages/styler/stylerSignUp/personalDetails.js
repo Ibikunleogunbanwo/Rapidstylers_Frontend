@@ -21,18 +21,22 @@ const phoneDigits = (value) => (value || "").replace(/\D/g, "").replace(/^1(?=\d
 const personalSchema = z.object({
   firstname: z
     .string()
+    .trim()
     .min(1, "First name is required")
     .min(3, "First name must be at least 3 characters"),
   lastname: z
     .string()
+    .trim()
     .min(1, "Last name is required")
     .min(3, "Last name must be at least 3 characters"),
   emailAddress: z
     .string()
+    .trim()
     .min(1, "Email is required")
     .email("Enter a valid email address"),
   phoneNumber: z
     .string()
+    .trim()
     .min(1, "Phone number is required")
     .refine(
       (val) => phoneDigits(val).length === 10,
@@ -55,6 +59,7 @@ const StylerPersonalDetails = () => {
   const navigate = useNavigate();
   const { formData, updateData } = useStylerSignup();
   const [sending, setSending] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
   const initialValues = {
     firstname: formData.firstname || "",
@@ -71,6 +76,8 @@ const StylerPersonalDetails = () => {
 
   const handleSubmit = async (values) => {
     setSending(true);
+    setSubmitError("");
+    values = personalSchema.parse(values);
     try {
       const res = await APIService.stylerGenerateOtp({ emailAddress: values.emailAddress });
       if (res.data?.statusCode === "200") {
@@ -79,9 +86,9 @@ const StylerPersonalDetails = () => {
         updateData({ ...values, phoneNumber: phoneDigits(values.phoneNumber) });
         navigate("/styler-signup/verify-email");
       }
-      // Error toasts are handled by APIService.extractError
+      else setSubmitError(res.data?.message || "Could not send a verification code. Please try again.");
     } catch (err) {
-      // Error already toasted
+      setSubmitError("Could not send a verification code. Please try again.");
     } finally {
       setSending(false);
     }
@@ -142,6 +149,7 @@ const StylerPersonalDetails = () => {
               inputError={touched.phoneNumber && errors.phoneNumber ? errors.phoneNumber : ""}
             />
           </div>
+          {submitError && <p role="alert" className="mt-4 text-sm text-red-600">{submitError}</p>}
           <div className="mt-8">
             <Button
               text={sending ? "Sending code..." : "Continue"}

@@ -213,3 +213,18 @@ describe("styler signup email verification", () => {
     expect(screen.getByText(/Invalid OTP code/)).toBeInTheDocument();
   });
 });
+
+it('reports a rejected resend without clearing the existing code', async () => {
+  formData.emailAddress = 'ada@example.com';
+  APIService.stylerGenerateOtp.mockResolvedValueOnce({ data: { statusCode: '400', message: 'Please wait before resending' } });
+  vi.useFakeTimers();
+  try {
+    renderStep();
+    enterCode('123456');
+    act(() => vi.advanceTimersByTime(60_000));
+    fireEvent.click(screen.getByRole('button', { name: 'Resend code' }));
+    await act(async () => {});
+    expect(screen.getByRole('alert')).toHaveTextContent('Please wait before resending');
+    expect(document.querySelector('input[maxlength="1"]').value).toBe('1');
+  } finally { vi.useRealTimers(); }
+});

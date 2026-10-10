@@ -49,7 +49,7 @@ describe("AdminPage shell", () => {
   it("underlines only the current route in the nav", () => {
     renderAt(<AdminPage eyebrow="Admin" title="T"><p>b</p></AdminPage>, "/admin/payments");
     const nav = screen.getByRole("navigation");
-    const current = Array.from(nav.querySelectorAll("span")).find(
+    const current = Array.from(nav.querySelectorAll("a")).find(
       (n) => n.textContent === "Payments"
     );
     expect(current.className).toMatch(/underline/);
@@ -144,3 +144,9 @@ describe("AdminInput and AdminTextarea", () => {
  expect(APIService.logout).toHaveBeenCalledWith("refresh");
  sessionStorage.clear(); localStorage.clear();
  });
+
+it("marks current navigation accessibly and exposes a main landmark",()=>{
+ renderAt(<AdminPage title="Payments"><p>body</p></AdminPage>,"/admin/payments");
+ expect(screen.getByRole("link",{name:"Payments"})).toHaveAttribute("aria-current","page");
+ expect(screen.getByRole("main")).toBeInTheDocument();
+});

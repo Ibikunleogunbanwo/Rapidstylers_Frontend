@@ -8,6 +8,8 @@ import {
   writeSignupDraft,
 } from "../utils/signupDraft";
 
+import { clearSignupUploadPass } from "../utils/signupUploadPass";
+
 const StylerSignupContext = createContext(null);
 
 /**
@@ -83,6 +85,8 @@ export function StylerSignupProvider({ children }) {
   // Read once, so the first render is decided on the answers this tab already
   // holds rather than on empty fields that would bounce the professional back.
   const [storedDraft] = useState(readSignupDraft);
+  const [creationUncertain, setCreationUncertain] = useState(storedDraft?.creationUncertain === true);
+  const markCreationUncertain = useCallback(() => setCreationUncertain(true), []);
 
   // Image files picked on the photos step. Kept OUT of formData (which is
   // the create_styler payload) so File objects never get JSON-serialized.
@@ -129,8 +133,8 @@ export function StylerSignupProvider({ children }) {
   // This runs on the mount render as well, which is what removes a draft that no
   // longer holds anything rather than leaving it to be read back later.
   useEffect(() => {
-    writeSignupDraft({ formData: enteredOnly(formData), emailVerified });
-  }, [formData, emailVerified]);
+    writeSignupDraft({ formData: enteredOnly(formData), emailVerified, creationUncertain });
+  }, [formData, emailVerified, creationUncertain]);
 
   // Photos are written whenever the picked set changes, but not before the stored
   // ones have been read back: this effect runs on the mount render too, and
@@ -143,7 +147,13 @@ export function StylerSignupProvider({ children }) {
 
   /** Merge partial data from the current step */
   const updateData = useCallback((partial) => {
-    setFormData((prev) => ({ ...prev, ...partial }));
+    setFormData((prev) => {
+      if (partial.emailAddress !== undefined && partial.emailAddress !== prev.emailAddress) {
+        setEmailVerified(false);
+        clearSignupUploadPass();
+      }
+      return { ...prev, ...partial };
+    });
   }, []);
 
   /** Merge picked image files (photos step) */
@@ -175,6 +185,8 @@ export function StylerSignupProvider({ children }) {
         markEmailVerified,
         restoringPhotos,
         forgetSignupDraft,
+        creationUncertain,
+        markCreationUncertain,
       }}
     >
       {children}

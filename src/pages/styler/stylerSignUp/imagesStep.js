@@ -32,18 +32,20 @@ const ImagesStep = () => {
   const [idTypes, setIdTypes] = useState([]);
   const [loadingTypes, setLoadingTypes] = useState(true);
 
-  useEffect(() => {
+  const loadIdTypes = () => {
+    setLoadingTypes(true);
     APIService.listIdentificationTypes()
       .then((res) => {
-        const items = res.data?.data || [];
-        setIdTypes(items.map((t) => ({
-          id: t.id || t.identificationId,
+        const items = Array.isArray(res.data?.data) ? res.data.data : [];
+        setIdTypes(items.filter(t => t && typeof t === "object").map((t) => ({
+          id: String(t.id ?? t.identificationId ?? ""),
           name: t.identificationName || t.name,
-        })));
+        })).filter(t => t.id && t.name));
       })
       .catch(() => setIdTypes([]))
       .finally(() => setLoadingTypes(false));
-  }, []);
+  };
+  useEffect(loadIdTypes, []);
 
   const initialValues = {
     profileImageFile: imageFiles.profileImageFile || null,
@@ -69,7 +71,6 @@ const ImagesStep = () => {
       initialValues={initialValues}
       validate={validate}
       onSubmit={handleSubmit}
-      enableReinitialize
     >
       {({ values, errors, touched, setFieldValue, isSubmitting }) => (
         <Form>
@@ -124,8 +125,8 @@ const ImagesStep = () => {
               // anything else, so a hardcoded label list would 500 on
               // submit. Block the step until an admin adds ID types.
               <div className="p-4 rounded-lg border border-amber-200 bg-amber-50 text-sm text-amber-700">
-                ID types haven't been set up yet. Ask an admin to add them
-                (e.g. Driver's license, Passport) before completing this step.
+                ID types are unavailable. Try loading them again.
+                <button type="button" className="block mt-2 underline" onClick={loadIdTypes}>Retry loading ID types</button>
               </div>
             )}
             {touched.identificationTypeId && errors.identificationTypeId && (

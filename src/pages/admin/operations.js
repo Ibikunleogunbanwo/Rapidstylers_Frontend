@@ -1,11 +1,15 @@
-import { useEffect, useState } from "react";
-import { Navigate } from "react-router-dom";
+import { useAdminList, AdminListControls } from "./adminList";
+import { useEffect, useRef, useState } from "react";
+import { Navigate, useSearchParams } from "react-router-dom";
 import { APIService } from "../../hooks/remote/apiService";
-import { AdminPage, AdminInput, AdminPill, AdminStat } from "./adminShell";
+import { AdminPage, AdminInput, AdminTextarea, AdminPill, AdminStat } from "./adminShell";
 import { getAuthToken, isAdminRole, showErrorToastMessage, showSuccessToastMessage } from "../../utils/constant";
 
+const SECTIONS = [["overview", "Overview"], ["tickets", "Support"], ["reviews", "Reviews"], ["logs", "Audit log"], ["business", "Business"], ["settings", "Settings"], ["payouts", "Payouts"]];
 const Operations = () => {
-  const [tab, setTab] = useState("overview");
+  const [params, setParams] = useSearchParams();
+  const tab = SECTIONS.some(([key]) => key === params.get("section")) ? params.get("section") : "overview";
+  const setTab = value => { activeList.setSearch(""); setActionError(""); setTicketDraft(null); setParams({section:value}); };
   const [kpis, setKpis] = useState(null);
   const [tickets, setTickets] = useState([]);
   const [reviews, setReviews] = useState([]);
@@ -14,65 +18,98 @@ const Operations = () => {
   const [savingCommission, setSavingCommission] = useState(false);
   const [connectStatuses, setConnectStatuses] = useState([]);
   const [businessSummaries, setBusinessSummaries] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loadingSections, setLoadingSections] = useState({});
+  const completed = useRef(new Set());
+  const activeReads = useRef(new Set());
+  const actionLock = useRef(false);
+  const [ticketDraft, setTicketDraft] = useState(null);
   const [readErrors, setReadErrors] = useState({});
   const [pendingAction, setPendingAction] = useState(false);
   const [actionError, setActionError] = useState("");
 
-  const load = async () => {
-    setLoading(true);
-    const requests = [
-      ["overview", () => APIService.adminKpis(), setKpis, null],
-      ["tickets", () => APIService.adminSupportTickets(), setTickets, []],
-      ["reviews", () => APIService.adminReviewQueue(), setReviews, []],
-      ["logs", () => APIService.adminAuditLogs(), setLogs, []],
-      ["settings", () => APIService.getCommissionSetting(), data => setCommission(data?.commissionPercent ?? ""), null],
-      ["payouts", () => APIService.adminStylerConnectStatuses(), setConnectStatuses, []],
-      ["business", () => APIService.adminStylerBusinessSummaries(), setBusinessSummaries, []],
-    ];
-    const errors = {};
-    await Promise.all(requests.map(async ([section, request, update, fallback]) => {
-      try { const response = await request(); update(response.data?.data ?? fallback); }
-      catch (error) { errors[section] = "Unable to load this section."; }
-    }));
-    setReadErrors(errors);
-    setLoading(false);
+  const load = async (section = tab) => {
+    if (activeReads.current.has(section)) return;
+    activeReads.current.add(section);
+    setLoadingSections(previous => ({...previous, [section]:true}));
+    setReadErrors(previous => ({...previous, [section]:""}));
+    const requests = {
+      overview: [() => APIService.adminKpis(), setKpis],
+      tickets: [() => APIService.adminSupportTickets(), setTickets],
+      reviews: [() => APIService.adminReviewQueue(), setReviews],
+      logs: [() => APIService.adminAuditLogs(), setLogs],
+      settings: [() => APIService.getCommissionSetting(), data => setCommission(String(data.commissionPercent ?? ""))],
+      payouts: [() => APIService.adminStylerConnectStatuses(), setConnectStatuses],
+      business: [() => APIService.adminStylerBusinessSummaries(), setBusinessSummaries],
+    };
+    try {
+      const [request, update] = requests[section];
+      const response = await request();
+      const data = response.data?.data;
+      if (["overview", "settings"].includes(section) ? !data || typeof data !== "object" || Array.isArray(data) : !Array.isArray(data)) throw new Error("Invalid section response");
+      update(data);
+    } catch { setReadErrors(previous => ({...previous, [section]:"Unable to load this section."})); }
+    finally {
+      completed.current.add(section);
+      activeReads.current.delete(section);
+      setLoadingSections(previous => ({...previous, [section]:false}));
+    }
   };
-
-  useEffect(() => { if (getAuthToken() && isAdminRole()) load(); else setLoading(false); }, []);
+  useEffect(() => { if (getAuthToken() && isAdminRole() && !completed.current.has(tab)) load(tab); }, [tab]);
+  const loading = loadingSections[tab] || !completed.current.has(tab);
 
   const moderate = async (reviewId, action) => {
-    if (pendingAction) return;
+    if (actionLock.current) return;
+    actionLock.current = true;
     setPendingAction(true); setActionError("");
-    try { await APIService.adminUpdateReviewModeration({ reviewId, action }); showSuccessToastMessage(`Review ${action.toLowerCase()}d`); await load(); }
+    try { await APIService.adminUpdateReviewModeration({ reviewId, action }); showSuccessToastMessage(action === "APPROVED" ? "Review approved" : "Review rejected"); await load("reviews"); }
     catch (error) { setActionError("Unable to update review. Please try again."); }
-    finally { setPendingAction(false); }
+    finally { actionLock.current = false; setPendingAction(false); }
   };
-  const updateTicket = async (ticket) => {
-    if (pendingAction) return;
-    const enteredStatus = window.prompt("Status: OPEN, IN_PROGRESS, RESOLVED, or CLOSED", ticket.status);
-    if (enteredStatus === null) return;
-    const status = enteredStatus.trim().toUpperCase();
-    if (!["OPEN", "IN_PROGRESS", "RESOLVED", "CLOSED"].includes(status)) {
-      setActionError("Choose a valid ticket status: OPEN, IN_PROGRESS, RESOLVED, or CLOSED."); return;
-    }
-    const adminResponse = window.prompt("Response to customer", ticket.adminResponse || "");
-    if (adminResponse === null) return;
+  const saveTicket = async event => {
+    event.preventDefault();
+    if (actionLock.current || !ticketDraft) return;
+    actionLock.current = true;
     setPendingAction(true); setActionError("");
-    try { await APIService.adminUpdateSupportTicket({ ticketId: ticket.id, status, adminResponse }); showSuccessToastMessage("Ticket updated"); await load(); }
-    catch (error) { setActionError("Unable to update ticket. Please try again."); }
-    finally { setPendingAction(false); }
+    try {
+      await APIService.adminUpdateSupportTicket(ticketDraft);
+      showSuccessToastMessage("Ticket updated");
+      setTicketDraft(null);
+      await load("tickets");
+    } catch { setActionError("Unable to update ticket. Please try again."); }
+    finally { actionLock.current = false; setPendingAction(false); }
   };
-  const saveCommission = async () => { const value = parseFloat(commission); if (Number.isNaN(value) || value < 0 || value > 100) { showErrorToastMessage("Commission must be between 0 and 100"); return; } setSavingCommission(true); try { await APIService.updateCommissionSetting(value); showSuccessToastMessage("Commission updated. It applies to new bookings"); load(); } catch (error) { /* APIService displays the error. */ } finally { setSavingCommission(false); } };
+  const saveCommission = async () => {
+    const value = Number(commission);
+    if (!commission.trim() || !Number.isFinite(value) || value < 0 || value > 100) { setActionError("Commission must be between 0 and 100."); return; }
+    if (actionLock.current) return;
+    actionLock.current = true; setSavingCommission(true); setActionError("");
+    try { await APIService.updateCommissionSetting(value); showSuccessToastMessage("Commission updated for new bookings"); await load("settings"); }
+    catch { setActionError("Unable to save commission. Please try again."); }
+    finally { actionLock.current = false; setSavingCommission(false); }
+  };
 
+  const sectionLists = {tickets,reviews,logs,business:businessSummaries,payouts:connectStatuses};
+  const activeList = useAdminList(sectionLists[tab] || [], item=>JSON.stringify(item));
   if (!getAuthToken() || !isAdminRole()) return <Navigate to="/admin/login" replace />;
   const cards = kpis ? [["Customers", kpis.customers], ["Stylists", kpis.stylists], ["Approved stylists", kpis.approvedStylists], ["Appointments", kpis.appointments], ["Completed", kpis.completedAppointments], ["Open tickets", kpis.openSupportTickets], ["Reviews", kpis.reviews]] : [];
-  const connectProblems = connectStatuses.filter((r) => r.connectStatus === "REJECTED").length;
 
   return <AdminPage eyebrow="Admin" title="Admin operations">
-    <div className="mb-5 flex flex-wrap gap-2">{[["overview", "Overview"], ["tickets", `Support (${tickets.length})`], ["reviews", `Reviews (${reviews.length})`], ["logs", "Audit log"], ["business", `Business (${businessSummaries.length})`], ["settings", "Settings"], ["payouts", connectProblems > 0 ? `Payouts (${connectProblems} need attention)` : "Payouts"]].map(([value, label]) => <button key={value} type="button" onClick={() => setTab(value)} className={`rounded-md border px-3 py-2 text-sm font-semibold ${tab === value ? "border-brand bg-brand text-white" : "border-black/10 bg-white text-gray-600"}`}>{label}</button>)}</div>
+    <div className="mb-5">
+      <label htmlFor="operation-section" className="mb-1 block text-sm text-gray-600 md:hidden">Operations section</label>
+      <select id="operation-section" value={tab} onChange={event => setTab(event.target.value)} className="w-full rounded border bg-white p-3 md:hidden">{SECTIONS.map(([value,label]) => <option key={value} value={value}>{label}</option>)}</select>
+      <nav aria-label="Operations sections" className="hidden flex-wrap gap-2 md:flex">{SECTIONS.map(([value,label]) => <button key={value} type="button" aria-current={tab === value ? "page" : undefined} onClick={() => setTab(value)} className={`rounded-md border px-3 py-2 text-sm ${tab === value ? "border-brand text-brand bg-brand/5" : "border-black/10 bg-white text-gray-600"}`}>{label}</button>)}</nav>
+    </div>
+    {ticketDraft && <form onSubmit={saveTicket} className="mb-5 rounded-lg border bg-white p-4">
+      <h2 className="mb-3 font-semibold">Update support ticket</h2>
+      <label htmlFor="ticket-status" className="mb-1 block text-sm">Ticket status</label>
+      <select id="ticket-status" value={ticketDraft.status} disabled={pendingAction} onChange={event => setTicketDraft({...ticketDraft,status:event.target.value})} className="mb-3 w-full rounded border p-2">{["OPEN","IN_PROGRESS","RESOLVED","CLOSED"].map(status=><option key={status}>{status}</option>)}</select>
+      <label htmlFor="ticket-response" className="mb-1 block text-sm">Response to customer</label>
+      <AdminTextarea id="ticket-response" value={ticketDraft.adminResponse} disabled={pendingAction} onChange={event=>setTicketDraft({...ticketDraft,adminResponse:event.target.value})}/>
+      <div className="mt-3 flex gap-3"><button type="submit" disabled={pendingAction} className="rounded bg-brand px-4 py-2 text-sm text-white">{pendingAction ? "Saving ticket…" : "Save ticket"}</button><button type="button" disabled={pendingAction} onClick={()=>setTicketDraft(null)}>Cancel</button></div>
+    </form>}
+    {!loading && !readErrors[tab] && sectionLists[tab] && <AdminListControls key={tab} list={activeList} label="Search this section" />}
     {actionError && <p role="alert">{actionError}</p>}
-    {loading ? <p className="text-sm text-gray-500">Loading operations…</p> : readErrors[tab] ? <div role="alert">{readErrors[tab]} <button type="button" onClick={load}>Retry</button></div> : tab === "overview" ? <div className="grid grid-cols-2 gap-3 md:grid-cols-4">{cards.map(([label, value]) => <AdminStat key={label} label={label} value={value} />)}</div> : tab === "tickets" ? <div className="grid gap-3">{tickets.length === 0 ? <p className="text-sm text-gray-500">No support tickets.</p> : tickets.map((ticket) => <div key={ticket.id} className="rounded-lg border bg-white p-4"><div className="flex items-start justify-between gap-3"><p className="font-semibold">{ticket.subject}</p><span className="text-xs font-bold text-gray-500">{ticket.status}</span></div><p className="mt-2 text-sm text-gray-600">{ticket.message}</p>{ticket.adminResponse && <p className="mt-2 text-sm text-brand">{ticket.adminResponse}</p>}<button type="button" disabled={pendingAction} onClick={() => updateTicket(ticket)} className="mt-3 rounded-md bg-brand px-3 py-2 text-xs font-semibold text-white">Update ticket</button></div>)}</div> : tab === "reviews" ? <div className="grid gap-3">{reviews.length === 0 ? <p className="text-sm text-gray-500">No reviews awaiting moderation.</p> : reviews.map((review) => <div key={review.id} className="rounded-lg border bg-white p-4"><p className="font-semibold">{review.ratingScore}/5 · {review.userName}</p><p className="mt-2 text-sm text-gray-600">{review.message}</p><div className="mt-3 flex gap-2"><button type="button" disabled={pendingAction} onClick={() => moderate(review.id, "APPROVED")} className="rounded-md bg-green-600 px-3 py-2 text-xs font-semibold text-white">Approve</button><button type="button" disabled={pendingAction} onClick={() => moderate(review.id, "REJECTED")} className="rounded-md bg-red-600 px-3 py-2 text-xs font-semibold text-white">Reject</button></div></div>)}</div> : tab === "settings" ? <CommissionSetting value={commission} onChange={setCommission} onSave={saveCommission} saving={savingCommission} /> : tab === "business" ? <BusinessStatsTable rows={businessSummaries} /> : tab === "payouts" ? <ConnectStatusTable rows={connectStatuses} /> : <div className="overflow-x-auto rounded-lg border bg-white"><table className="w-full text-left text-sm"><thead><tr className="border-b text-xs text-gray-500"><th className="p-3">When</th><th className="p-3">Actor</th><th className="p-3">Action</th><th className="p-3">Resource</th></tr></thead><tbody>{logs.map((log) => <tr key={log.id} className="border-b last:border-0"><td className="p-3 text-gray-500">{log.createdAt}</td><td className="p-3">{log.actorRole}</td><td className="p-3">{log.action}</td><td className="p-3">{log.resourceType} {log.resourceId}</td></tr>)}</tbody></table></div>}
+    {loading ? <p className="text-sm text-gray-500">Loading operations…</p> : readErrors[tab] ? <div role="alert">{readErrors[tab]} <button type="button" onClick={() => load(tab)}>Retry</button></div> : tab === "overview" ? <div className="grid grid-cols-2 gap-3 md:grid-cols-4">{cards.map(([label, value]) => <AdminStat key={label} label={label} value={value} />)}</div> : tab === "tickets" ? <div className="grid gap-3">{tickets.length === 0 ? <p className="text-sm text-gray-500">No support tickets.</p> : activeList.visibleItems.map((ticket) => <div key={ticket.id} className="rounded-lg border bg-white p-4"><div className="flex items-start justify-between gap-3"><p className="font-semibold">{ticket.subject}</p><span className="text-xs font-bold text-gray-500">{ticket.status}</span></div><p className="mt-2 text-sm text-gray-600">{ticket.message}</p>{ticket.adminResponse && <p className="mt-2 text-sm text-brand">{ticket.adminResponse}</p>}<button type="button" disabled={pendingAction} onClick={() => {setActionError("");setTicketDraft({ticketId:ticket.id,status:ticket.status,adminResponse:ticket.adminResponse || ""});}} className="mt-3 rounded-md bg-brand px-3 py-2 text-xs font-semibold text-white">Update ticket</button></div>)}</div> : tab === "reviews" ? <div className="grid gap-3">{reviews.length === 0 ? <p className="text-sm text-gray-500">No reviews awaiting moderation.</p> : activeList.visibleItems.map((review) => <div key={review.id} className="rounded-lg border bg-white p-4"><p className="font-semibold">{review.ratingScore}/5 · {review.userName}</p><p className="mt-2 text-sm text-gray-600">{review.message}</p><div className="mt-3 flex gap-2"><button type="button" disabled={pendingAction} onClick={() => moderate(review.id, "APPROVED")} className="rounded-md bg-green-600 px-3 py-2 text-xs font-semibold text-white">Approve</button><button type="button" disabled={pendingAction} onClick={() => moderate(review.id, "REJECTED")} className="rounded-md bg-red-600 px-3 py-2 text-xs font-semibold text-white">Reject</button></div></div>)}</div> : tab === "settings" ? <CommissionSetting value={commission} onChange={setCommission} onSave={saveCommission} saving={savingCommission} /> : tab === "business" ? <BusinessStatsTable rows={activeList.visibleItems} /> : tab === "payouts" ? <ConnectStatusTable rows={activeList.visibleItems} /> : <div className="overflow-x-auto rounded-lg border bg-white"><table className="w-full text-left text-sm"><thead><tr className="border-b text-xs text-gray-500"><th className="p-3">When</th><th className="p-3">Actor</th><th className="p-3">Action</th><th className="p-3">Resource</th></tr></thead><tbody>{activeList.visibleItems.map((log) => <tr key={log.id} className="border-b last:border-0"><td className="p-3 text-gray-500">{log.createdAt}</td><td className="p-3">{log.actorRole}</td><td className="p-3">{log.action}</td><td className="p-3">{log.resourceType} {log.resourceId}</td></tr>)}</tbody></table></div>}
   </AdminPage>;
 };
 
@@ -203,12 +240,13 @@ const CommissionSetting = ({ value, onChange, onSave, saving }) => (
   <div className="rounded-lg border bg-white p-4">
     <p className="font-semibold">Platform commission</p>
     <p className="mt-1 text-sm text-gray-600">
-      Percentage taken from each completed appointment. Applies to new bookings and the stylist payout summary. No restart needed.
+      Commission charged on new bookings. Existing bookings keep their original rate.
     </p>
     <div className="mt-3 flex items-end gap-3 max-w-sm">
       <div className="flex-1">
-        <label className="block mb-1 text-xs text-gray-500">Commission %</label>
+        <label htmlFor="commission-percent" className="block mb-1 text-xs text-gray-500">Commission %</label>
         <AdminInput
+          id="commission-percent"
           type="number"
           min="0"
           max="100"

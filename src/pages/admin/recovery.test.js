@@ -1,0 +1,11 @@
+import React from 'react';
+import { render, screen, fireEvent, cleanup } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import Recovery from './recovery';
+import { APIService } from '../../hooks/remote/apiService';
+vi.mock('../../hooks/remote/apiService', () => ({ APIService: {adminRecoveryCampaigns: vi.fn()} }));
+beforeEach(() => { vi.resetAllMocks(); sessionStorage.setItem('rapidstylers_auth_token','jwt'); sessionStorage.setItem('rapidstylers_admin_role','admin'); });
+afterEach(() => {cleanup();sessionStorage.clear();});
+it('keeps metrics unknown during loading and failure and prevents repeated refresh', async () => { let reject; APIService.adminRecoveryCampaigns.mockReturnValue(new Promise((_,r)=>{reject=r;})); render(<MemoryRouter><Recovery /></MemoryRouter>); expect(screen.queryAllByText('0')).toHaveLength(0); expect(screen.getByRole('button',{name:'Refresh'})).toBeDisabled(); reject(new Error('offline')); await screen.findByRole('alert'); expect(screen.queryAllByText('0')).toHaveLength(0); fireEvent.click(screen.getByRole('button',{name:'Refresh'})); expect(screen.getByRole('button',{name:'Refresh'})).toBeDisabled(); });
+it('shows actual zero metrics only after a successful empty response', async () => { APIService.adminRecoveryCampaigns.mockResolvedValue({data:{data:[]}}); render(<MemoryRouter><Recovery /></MemoryRouter>); await screen.findByText('No abandoned sign-ups yet.'); expect(screen.getAllByText('0')).toHaveLength(6); });
+it('does not turn a malformed service result into zero campaigns', async () => { APIService.adminRecoveryCampaigns.mockResolvedValue({data:{statusCode:'500',message:'Unavailable'}}); render(<MemoryRouter><Recovery /></MemoryRouter>); expect(await screen.findByRole('alert')).toHaveTextContent('Unable to load recovery campaigns.'); expect(screen.queryAllByText('0')).toHaveLength(0); });

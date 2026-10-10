@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useId } from "react";
 import { APIService } from "../hooks/remote/apiService";
 
 /**
@@ -26,6 +26,7 @@ const AddressAutocomplete = ({
   className = "",
   label = "Address:",
 }) => {
+  const inputId = useId();
   const inputRef = useRef(null);
   const onChangeRef = useRef(onChange);
   const debounceRef = useRef(null);
@@ -127,8 +128,9 @@ const AddressAutocomplete = ({
 
   return (
     <div className={`grid w-full ${className} relative`}>
-      <span className="font-medium text-sm pb-1">{label}</span>
+      <label htmlFor={inputId} className="font-medium text-sm pb-1">{label}</label>
       <input
+        id={inputId}
         ref={inputRef}
         type="text"
         defaultValue={value}

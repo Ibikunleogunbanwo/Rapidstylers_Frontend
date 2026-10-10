@@ -222,3 +222,52 @@ describe("the remembered photos", () => {
     await expect(readSignupPhotos()).resolves.toEqual({});
   });
 });
+
+it('does not write or restore password, confirmation, or consent', () => {
+  writeSignupDraft({ formData: { firstname: 'Ada', password: 'secret', confirmPassword: 'secret', agreeToTerms: true } });
+  expect(readSignupDraft().formData).toEqual({ firstname: 'Ada' });
+  sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ formData: { firstname: 'Ada', password: 'secret', agreeToTerms: true } }));
+  expect(readSignupDraft().formData).toEqual({ firstname: 'Ada' });
+});
+
+it('keeps photo database storage separate for each tab and avoids the legacy database', async () => {
+  const opened = [];
+  const deleted = [];
+  const original = globalThis.indexedDB;
+  globalThis.indexedDB = { deleteDatabase: name => deleted.push(name), open: (name) => { opened.push(name); throw new Error('unavailable'); } };
+  sessionStorage.clear();
+  await readSignupPhotos();
+  const first = opened.at(-1);
+  sessionStorage.clear();
+  await readSignupPhotos();
+  const second = opened.at(-1);
+  expect(first).not.toBe('rapidstylers-signup');
+  expect(second).not.toBe(first);
+  expect(deleted).toEqual(['rapidstylers-signup', 'rapidstylers-signup']);
+  globalThis.indexedDB = original;
+});
+
+it('remembers an uncertain account creation without remembering credentials', () => {
+  writeSignupDraft({ formData: { emailAddress: 'ada@example.com', password: 'secret' }, creationUncertain: true });
+  expect(readSignupDraft()).toMatchObject({ creationUncertain: true, formData: { emailAddress: 'ada@example.com' } });
+  expect(readSignupDraft().formData.password).toBeUndefined();
+});
+
+it('reclaims photo ownership after a page returns from the back-forward cache', async () => {
+  const requests = [];
+  const previousLocks = navigator.locks;
+  Object.defineProperty(navigator, 'locks', { configurable: true, value: { request: (name, options, callback) => {
+    requests.push(name);
+    return Promise.resolve(callback({ name }));
+  } } });
+  globalThis.indexedDB = { open: () => { throw new Error('unavailable'); } };
+  sessionStorage.clear();
+  await readSignupPhotos();
+  window.dispatchEvent(new Event('pagehide'));
+  const shown = new Event('pageshow');
+  Object.defineProperty(shown, 'persisted', { value: true });
+  window.dispatchEvent(shown);
+  await readSignupPhotos();
+  expect(requests).toHaveLength(2);
+  Object.defineProperty(navigator, 'locks', { configurable: true, value: previousLocks });
+});
