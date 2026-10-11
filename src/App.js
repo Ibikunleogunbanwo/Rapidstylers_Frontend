@@ -57,6 +57,8 @@ function App() {
   return (
     <div className='bg-[#f5f5f5] min-h-screen'>
       <ToastContainer
+        className="rapidstylers-toasts"
+        limit={2}
         position="top-right"
         autoClose={4000}
         hideProgressBar={false}
@@ -65,7 +67,7 @@ function App() {
         rtl={false}
         draggable
         pauseOnHover={false}
-        theme="colored"
+        theme="light"
       />
       <LocationProvider>
       <BrowserRouter>

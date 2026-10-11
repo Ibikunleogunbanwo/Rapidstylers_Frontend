@@ -51,6 +51,31 @@ body {
   background: #9381FF;
 }
 
+/* Floating notifications retain their margins on narrow screens. */
+.Toastify__toast-container.rapidstylers-toasts {
+  width: min(340px, calc(100vw - 32px));
+  top: max(16px, env(safe-area-inset-top));
+  right: max(16px, env(safe-area-inset-right));
+  left: auto;
+  padding: 0;
+}
+
+.rapidstylers-toasts .Toastify__toast {
+  min-height: 56px;
+  margin-bottom: 10px;
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 6px 24px rgb(0 0 0 / 14%);
+  color: #1f2937;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.rapidstylers-toasts .Toastify__toast-body {
+  overflow-wrap: anywhere;
+}
+
 /* infinite scrolling */
 .scroll-parent {
   width: 100%;
