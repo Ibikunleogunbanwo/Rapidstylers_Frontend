@@ -202,7 +202,7 @@ const LandingPage = () => {
         </div>
 
         {/* Brand loop + quote */}
-        <div className="mt-16 bg-black py-16 px-5 md:px-[50px] text-center grid gap-4 justify-items-center">
+        <div className="mt-10 bg-black pt-6 pb-5 md:pt-8 md:pb-6 px-5 md:px-[50px] text-center grid gap-3 justify-items-center">
           {allowDecorativeMotion ? <video
             autoPlay
             loop
@@ -211,8 +211,8 @@ const LandingPage = () => {
             src={cityLoop}
             aria-label="RapidStylers logo animation"
             poster={photoCalgarySkyline}
-            className="w-full max-w-[420px] rounded-lg"
-          /> : <img src={photoCalgarySkyline} alt="Calgary skyline at dusk" loading="lazy" className="w-full max-w-[420px] rounded-lg" />}
+            className="w-full max-w-[320px] max-h-[160px] object-contain rounded-lg"
+          /> : <img src={photoCalgarySkyline} alt="Calgary skyline at dusk" loading="lazy" className="w-full max-w-[320px] max-h-[160px] object-contain rounded-lg" />}
           <div className="flex justify-center">
             <img src={scissors} alt="" className="h-5 brightness-0 invert opacity-70" />
           </div>
@@ -222,7 +222,7 @@ const LandingPage = () => {
         </div>
 
         {/* benefits for clients */}
-        <div className="px-4 md:px-[50px] py-16 grid grid-cols-1 lg:grid-cols-2 items-center gap-6 bg-black">
+        <div className="px-4 md:px-[50px] pt-5 pb-10 md:pt-6 md:pb-12 grid grid-cols-1 lg:grid-cols-2 items-center gap-6 bg-black">
           <div className="">
             {/* Intrinsic dimensions are declared so the browser reserves the
                 image's space before it loads. Without them this band grew by
