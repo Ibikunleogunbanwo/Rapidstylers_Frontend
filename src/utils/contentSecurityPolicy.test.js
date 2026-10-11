@@ -43,6 +43,7 @@ describe("content security policy", () => {
       "https://challenges.cloudflare.com",
       "https://pagead2.googlesyndication.com",
       "https://accounts.google.com",
+      "https://api-demo.rapidstylers.ca",
     ].forEach((origin) => expect(enforcing).toContain(origin));
   });
 
