@@ -1,4 +1,5 @@
 import logo from "../../../assets/svg-icons/colouredLogo.svg";
+import { Link } from "react-router-dom";
 import { CurrentDateTime } from "../../../utils/utility";
 const UserTopBar = ({toggleSideBar, menuOpen = false, menuButtonRef}) => {
     return (
@@ -11,7 +12,9 @@ const UserTopBar = ({toggleSideBar, menuOpen = false, menuButtonRef}) => {
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18" /></svg>
             <span>Menu</span>
           </button>
-          <img src={logo} alt="" className="h-12"/>
+          <Link to="/" aria-label="RapidStylers home" className="rounded-md focus-visible:outline-2 focus-visible:outline-brand">
+            <img src={logo} alt="" className="h-12"/>
+          </Link>
         </div>
         <div className="text-[13px] text-black/55 hidden md:block">
           {CurrentDateTime()}

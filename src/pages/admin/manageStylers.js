@@ -1,6 +1,6 @@
 import { useAdminList, AdminListControls } from "./adminList";
 import React, { useState, useEffect, useRef } from "react";
-import { Navigate, Link } from "react-router-dom";
+import { Navigate, Link, useSearchParams } from "react-router-dom";
 import { APIService } from "../../hooks/remote/apiService";
 import { cloudinaryAvatar } from "../../utils/cloudinaryImage";
 import { AdminCard, AdminPage, AdminPill } from "./adminShell";
@@ -24,7 +24,9 @@ const FILTERS = ["All", "PENDING", "APPROVED", "REJECTED", "SUSPENDED"];
 
 const ManageStylers = () => {
   document.title = "Stylist Management | RapidStylers";
-  const [tab, setTab] = useState("verification"); // "verification" | "images"
+  const [params, setParams] = useSearchParams();
+  const tab = params.get("section") === "images" ? "images" : "verification";
+  const setTab = value => setParams(value === "images" ? {section:"images"} : {});
   const [stylers, setStylers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");

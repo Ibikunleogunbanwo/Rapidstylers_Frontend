@@ -35,6 +35,12 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const submitting = useRef(false);
+  // Set once this form has driven its own post-sign-in navigation. The token
+  // guard below also navigates, and letting both run fires a second navigation
+  // that can interrupt whatever the user (or a test) does next — it raced in
+  // WebKit. The imperative navigate() already resolves the intended route, so
+  // the guard must stand down for the rest of this component's life.
+  const signedInByThisForm = useRef(false);
   const [fieldErrors, setFieldErrors] = useState({});
   const [errorMsg, setErrorMsg] = useState("");
   // Cloudflare Turnstile token (empty when no site key is configured). Bumped
@@ -81,6 +87,7 @@ const Login = () => {
       // their role dashboard. Customers always get a destination that makes
       // sense; stylers/admins keep their own area.
       const intended = getIntendedRoute();
+      signedInByThisForm.current = true;
       if (role === "CUSTOMER") {
         clearIntendedRoute();
         navigate(intended || routeByRole(role));
@@ -124,7 +131,7 @@ const Login = () => {
   // area for the persisted role, not the public home page — sending them to "/"
   // both loses the dashboard destination and (at sign-in time, once the token
   // is written) races the post-login navigate('/dashboard') below.
-  if (getAuthToken()) {
+  if (getAuthToken() && !signedInByThisForm.current) {
     // A stored intended route (set when the visitor was bounced to /login)
     // wins so a returning session lands where the user was going. Clear it once
     // consumed so it can't re-apply later.

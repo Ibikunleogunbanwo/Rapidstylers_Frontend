@@ -202,7 +202,7 @@ const LandingPage = () => {
         </div>
 
         {/* Brand loop + quote */}
-        <div className="my-16 px-5 md:px-[50px] text-center grid gap-4 justify-items-center">
+        <div className="mt-16 bg-black py-16 px-5 md:px-[50px] text-center grid gap-4 justify-items-center">
           {allowDecorativeMotion ? <video
             autoPlay
             loop
@@ -214,9 +214,9 @@ const LandingPage = () => {
             className="w-full max-w-[420px] rounded-lg"
           /> : <img src={photoCalgarySkyline} alt="Calgary skyline at dusk" loading="lazy" className="w-full max-w-[420px] rounded-lg" />}
           <div className="flex justify-center">
-            <img src={scissors} alt="" className="h-5" />
+            <img src={scissors} alt="" className="h-5 brightness-0 invert opacity-70" />
           </div>
-          <p className="text-[13px] text-black/45">
+          <p className="text-[13px] text-white/75">
             Style is a way to say who you are without having to speak
           </p>
         </div>

@@ -2,7 +2,7 @@ import ServiceDisputes from "./serviceDisputes";
 import UnpaidPayouts from "./unpaidPayouts";
 import { useAdminList, AdminListControls } from "./adminList";
 import { useEffect, useRef, useState } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useSearchParams } from "react-router-dom";
 import { APIService } from "../../hooks/remote/apiService";
 import { AdminPage, AdminInput, AdminPill } from "./adminShell";
 import { getAuthToken, isAdminRole, showSuccessToastMessage } from "../../utils/constant";
@@ -21,7 +21,9 @@ const formatMoney = (value) => {
 };
 
 const Payments = () => {
-  const [tab, setTab] = useState("refunds");
+  const [params, setParams] = useSearchParams();
+  const tab = ["reconciliation", "disputes", "unpaidPayouts"].includes(params.get("section")) ? params.get("section") : "refunds";
+  const setTab = value => setParams(value === "refunds" ? {} : {section:value});
   const [refunds, setRefunds] = useState([]);
   const [refundForm, setRefundForm] = useState({ appointmentId: "", amount: "", reason: "", password: "", recoverStylistShare: false });
   const [submitting, setSubmitting] = useState(false);

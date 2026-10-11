@@ -60,7 +60,8 @@ describe("the customer sidebar (desktop list)", () => {
 
 describe("the customer top bar", () => {
   it("is a hairline bar, not the old dark band", () => {
-    const { container } = render(<UserTopBar />);
+    // UserTopBar renders a router Link, so it needs a router context.
+    const { container } = render(<MemoryRouter><UserTopBar /></MemoryRouter>);
     const bar = container.firstChild;
     expect(bar.className).toMatch(/border-black\/10/);
     expect(bar.className).not.toMatch(/1d1d1d/);

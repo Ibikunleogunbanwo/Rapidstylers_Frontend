@@ -18,11 +18,11 @@ import { useUserLocation } from "../../context/LocationContext";
 import { getAuthToken, getUserRole, setIntendedRoute, showErrorToastMessage } from "../../utils/constant";
 import useDecorativeMotion from "../../hooks/useDecorativeMotion";
 import heroPoster from "../../assets/images/hero-poster.jpg";
-import largeVideo from "../../assets/Videos/large video.mp4";
+import largeVideo from "../../assets/Videos/hero-loop.mp4";
 
 const Hero = ({ height }) => {
   const [services, setServices] = useState([]);
-  const allowHeroMotion = useDecorativeMotion();
+  const allowHeroMotion = useDecorativeMotion(0);
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -37,7 +37,7 @@ const Hero = ({ height }) => {
     accountRole === "STYLER"
       ? "/styler-dashboard"
       : accountRole === "ADMIN"
-      ? "/admin/categories"
+      ? "/admin"
       : "/dashboard";
   const appointmentsPath =
     accountRole === "STYLER" ? "/styler-dashboard/appointments" : "/dashboard";
@@ -129,11 +129,10 @@ const Hero = ({ height }) => {
         <div className="w-full lg:h-full relative">
           {/* Landing */}
           <div className={`relative flex flex-col w-full lg:block lg:h-full ${document.title === "Welcome - RapidStylers" ? "" : "hidden"}`}>
-            {/* A static poster keeps mobile and reduced-motion visits lightweight.
-                Eligible desktops retain the full-bleed background video. */}
+            {/* Reduced-motion visits retain the poster on every screen size. */}
             <div className="relative w-full aspect-video shrink-0 overflow-hidden lg:aspect-auto lg:h-full">
               {allowHeroMotion && document.title === "Welcome - RapidStylers" ? (
-                <video autoPlay loop muted playsInline poster={heroPoster} src={largeVideo} className="h-full w-full object-cover object-center">
+                <video autoPlay loop muted playsInline preload="metadata" poster={heroPoster} src={largeVideo} className="h-full w-full object-cover object-center">
                   Your browser does not support the video tag.
                 </video>
               ) : (

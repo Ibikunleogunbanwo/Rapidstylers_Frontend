@@ -36,7 +36,8 @@ describe("the sidebar advert card", () => {
   test("keeps the booking message and one solid-brand pill CTA", () => {
     renderCard();
 
-    expect(screen.getByText(/top beauty professionals near you/)).toBeInTheDocument();
+    expect(screen.getByText("Book a professional near you")).toBeInTheDocument();
+    expect(screen.queryByText("Advertisement")).not.toBeInTheDocument();
     const cta = screen.getByRole("link", { name: "Book now" });
     expect(cta).toHaveAttribute("href", "/bookAppointment");
     expect(cta.className).toContain("rounded-full bg-brand");

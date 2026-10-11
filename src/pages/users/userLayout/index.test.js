@@ -120,3 +120,17 @@ test("booking discovery excludes promotional distractions", () => {
   expect(screen.queryByTestId("quote")).not.toBeInTheDocument();
   expect(screen.queryByTestId("advert")).not.toBeInTheDocument();
 });
+
+test.each(["/feedback", "/accountSettings", "/notifications", "/support", "/savedStylist"])("%s excludes quote and booking promotions", (path) => {
+  useSelector.mockReturnValue({userId:1}); setAuthToken("customer-test"); setUserRole("CUSTOMER");
+  renderAt(path);
+  expect(screen.queryByTestId("quote")).not.toBeInTheDocument();
+  expect(screen.queryByTestId("advert")).not.toBeInTheDocument();
+});
+
+test("dashboard overview keeps discovery without the quote", () => {
+  useSelector.mockReturnValue({userId:1}); setAuthToken("customer-test"); setUserRole("CUSTOMER");
+  renderAt("/dashboard");
+  expect(screen.getByTestId("advert")).toBeInTheDocument();
+  expect(screen.queryByTestId("quote")).not.toBeInTheDocument();
+});

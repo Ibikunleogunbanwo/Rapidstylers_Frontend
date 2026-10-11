@@ -12,19 +12,19 @@ const Advert = () => {
   return (
     <div className="rounded-lg border border-black/10 bg-white overflow-hidden">
       <p className="px-5 pt-4 text-[11px] uppercase tracking-[0.2em] text-muted font-semibold">
-        Advertisement
+        Find a professional
       </p>
       <div className="px-5 pt-3">
         <img
           src={barbers}
           alt="Barber at work"
-          className="aspect-[4/3] w-full rounded-md border border-black/10 object-cover"
+          className="aspect-[4/3] max-h-40 lg:max-h-none w-full rounded-md border border-black/10 object-cover"
           loading="lazy"
         />
       </div>
       <div className="px-5 pt-4">
         <p className="font-semibold leading-snug text-onSurface">
-          Find your perfect fit: top beauty professionals near you
+          Book a professional near you
         </p>
         <p className="text-sm text-muted mt-1">
           Book from home and enjoy in-home appointments

@@ -12,23 +12,29 @@ import { logoutSession } from "../../utils/sessionLogout";
  * canvas with hairline cards instead of the public pages' editorial bands.
  */
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useState } from "react";
 
 /** The admin section nav. `current` is underlined; the rest stay quiet links. */
-const ADMIN_LINKS = [
-  { to: "/admin/categories", label: "Categories" },
-  { to: "/admin/blog", label: "Blog" },
-  { to: "/admin/stylers", label: "Stylists" },
-  { to: "/admin/operations", label: "Operations" },
-  { to: "/admin/payments", label: "Payments" },
-  { to: "/admin/recovery", label: "Recovery" },
-  { to: "/admin/announcements", label: "Announcements" },
+const ADMIN_GROUPS = [
+  ["Overview", [["/admin", "Dashboard"]]],
+  ["Marketplace", [["/admin/stylers", "Stylists"], ["/admin/stylers?section=images", "Gallery"], ["/admin/operations?section=reviews", "Reviews"]]],
+  ["Catalog & content", [["/admin/categories", "Categories"], ["/admin/blog", "Blog"]]],
+  ["Finance", [["/admin/payments", "Payments"], ["/admin/payments?section=disputes", "Disputes"], ["/admin/payments?section=unpaidPayouts", "Unpaid payouts"]]],
+  ["Marketing", [["/admin/recovery", "Recovery"], ["/admin/announcements", "Announcements"]]],
+  ["Platform", [["/admin/operations", "Operations"], ["/admin/operations?section=tickets", "Support"], ["/admin/operations?section=logs", "Audit log"]]],
 ];
 
-export function AdminNav() {
-  const { pathname } = useLocation();
+export function AdminNav({ onNavigate } = {}) {
+  const { pathname, search } = useLocation();
   return (
-    <nav aria-label="Admin sections" className="mb-6 flex gap-5 overflow-x-auto border-b border-black/10 pb-3 text-sm font-semibold">
-      {ADMIN_LINKS.map(({ to, label }) => <Link key={to} to={to} aria-current={to === pathname ? "page" : undefined} className={`shrink-0 ${to === pathname ? "text-brand underline underline-offset-4" : "text-gray-500 hover:text-gray-800"}`}>{label}</Link>)}
+    <nav id="admin-navigation" aria-label="Admin sections" className="space-y-5 text-sm">
+      {ADMIN_GROUPS.map(([group, links]) => <div key={group}>
+        <p className="mb-2 text-xs font-semibold text-gray-500">{group}</p>
+        <ul className="space-y-1">{links.map(([to, label]) => {
+          const current = to === pathname + search || (!search && to === pathname);
+          return <li key={to}><Link to={to} onClick={onNavigate} aria-current={current ? "page" : undefined} className={`block rounded-md px-3 py-2 font-medium focus-visible:outline-2 focus-visible:outline-brand ${current ? "bg-brand/10 text-brand underline underline-offset-4" : "text-gray-600 hover:bg-gray-100"}`}>{label}</Link></li>;
+        })}</ul>
+      </div>)}
     </nav>
   );
 }
@@ -57,9 +63,17 @@ export function AdminSignOut() {
  * Refresh), and `children` follow the nav.
  */
 export function AdminPage({ eyebrow, title, actions, children }) {
+  const [menuOpen, setMenuOpen] = useState(false);
   return (
-    <div className="min-h-screen bg-[#f5f5f5] px-4 py-6 md:py-8">
-      <div className="mx-auto max-w-5xl">
+    <div className="min-h-screen bg-[#f5f5f5] lg:grid lg:grid-cols-[220px_minmax(0,1fr)]">
+      <aside className="border-b lg:border-b-0 lg:border-r border-black/10 bg-white p-4 lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <Link to="/admin" className="font-semibold text-gray-900">RapidStylers <span className="block text-xs font-normal text-gray-500">Admin console</span></Link>
+          <button type="button" className="rounded-md border px-3 py-2 text-sm lg:hidden" aria-expanded={menuOpen} aria-controls="admin-navigation" onClick={() => setMenuOpen(!menuOpen)}>{menuOpen ? "Close menu" : "Menu"}</button>
+        </div>
+        <div className={menuOpen ? "block" : "hidden lg:block"}><AdminNav onNavigate={() => setMenuOpen(false)} /></div>
+      </aside>
+      <div className="w-full min-w-0 px-4 py-6 md:px-8 md:py-8">
         <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="text-[11px] uppercase tracking-[0.25em] text-gray-400">{eyebrow}</p>
@@ -72,7 +86,6 @@ export function AdminPage({ eyebrow, title, actions, children }) {
             <AdminSignOut />
           </div>
         </div>
-        <AdminNav />
         <main>{children}</main>
       </div>
     </div>

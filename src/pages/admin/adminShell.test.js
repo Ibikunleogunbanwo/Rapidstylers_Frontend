@@ -32,18 +32,25 @@ describe("AdminPage shell", () => {
     expect(screen.getByRole("navigation")).toBeInTheDocument();
   });
 
-  it("offers all seven sections in the nav in one canonical order", () => {
+  it("groups supported marketplace tools in one canonical navigation", () => {
     renderAt(<AdminPage eyebrow="Admin" title="T"><p>b</p></AdminPage>);
     const nav = screen.getByRole("navigation");
     const labels = Array.from(nav.querySelectorAll("a, span")).map((n) => n.textContent);
     expect(labels).toEqual([
+      "Dashboard",
+      "Stylists",
+      "Gallery",
+      "Reviews",
       "Categories",
       "Blog",
-      "Stylists",
-      "Operations",
       "Payments",
+      "Disputes",
+      "Unpaid payouts",
       "Recovery",
       "Announcements",
+      "Operations",
+      "Support",
+      "Audit log",
     ]);
   });
 

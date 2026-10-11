@@ -1,15 +1,15 @@
 import { useEffect, useState } from "react";
 
-/** Avoid creating video sources on mobile or when visitors request less motion. */
-export default function useDecorativeMotion() {
+/** Respect reduced motion; callers can opt into video at smaller widths. */
+export default function useDecorativeMotion(minWidth = 1024) {
   const [allowed, setAllowed] = useState(false);
   useEffect(() => {
     if (!window.matchMedia) return;
-    const media = window.matchMedia("(min-width: 1024px) and (prefers-reduced-motion: no-preference)");
+    const media = window.matchMedia(minWidth ? `(min-width: ${minWidth}px) and (prefers-reduced-motion: no-preference)` : "(prefers-reduced-motion: no-preference)");
     const update = () => setAllowed(media.matches);
     update();
     media.addEventListener("change", update);
     return () => media.removeEventListener("change", update);
-  }, []);
+  }, [minWidth]);
   return allowed;
 }

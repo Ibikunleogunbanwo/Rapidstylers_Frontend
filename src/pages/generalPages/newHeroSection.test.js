@@ -161,13 +161,13 @@ describe("Hero header auth-conditional nav", () => {
     expect(screen.queryByRole("menuitem", { name: "Saved stylists" })).not.toBeInTheDocument();
   });
 
-  test("My Account routes an admin to /admin/categories", () => {
+  test("My Account routes an admin to /admin", () => {
     session = { userId: 10, emailAddress: "admin@example.com", role: "ADMIN" };
     const getPath = renderHero();
 
     openAccountMenu();
     fireEvent.click(screen.getByRole("menuitem", { name: "My Account" }));
-    expect(getPath()).toBe("/admin/categories");
+    expect(getPath()).toBe("/admin");
   });
 
   test("a token-only session (styler/admin, no userSessionData) still shows the account menu", () => {
@@ -246,18 +246,19 @@ describe("Hero media loading", () => {
     window.matchMedia = vi.fn(() => media);
   });
 
-  test.each([[390, false], [1440, true]])("uses a static image at width %i with reduced motion %s", (width, reducedMotion) => {
-    window.matchMedia = vi.fn((query) => ({ ...media, matches: width >= 1024 && !reducedMotion }));
+  test.each([[390, true], [1440, true]])("uses a static image at width %i with reduced motion %s", (width, reducedMotion) => {
+    window.matchMedia = vi.fn((query) => ({ ...media, matches: !reducedMotion }));
     renderHero();
     expect(document.querySelector("video")).toBeNull();
     expect(screen.getByAltText("Beauty tools ready for your appointment")).toHaveAttribute("src");
   });
 
-  test("loads the video only on desktop when motion is allowed", () => {
+  test("loads inline video on mobile when motion is allowed", () => {
     media.matches = true;
     renderHero();
-    expect(document.querySelector("video")).toHaveAttribute("src", expect.stringContaining("large%20video.mp4"));
-    expect(window.matchMedia).toHaveBeenCalledWith("(min-width: 1024px) and (prefers-reduced-motion: no-preference)");
+    expect(document.querySelector("video")).toHaveAttribute("src", expect.stringContaining("hero-loop.mp4"));
+    expect(window.matchMedia).toHaveBeenCalledWith("(prefers-reduced-motion: no-preference)");
+    expect(document.querySelector("video")).toHaveAttribute("playsinline");
   });
 
   test("removes the video source when motion eligibility changes", () => {

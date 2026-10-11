@@ -39,6 +39,7 @@ const BusinessInformation = lazy(() => import('./pages/styler/updateBusinessInfo
 const PersonalInformation = lazy(() => import('./pages/styler/updatePersonalInformation'));
 const Reviews = lazy(() => import('./pages/styler/reviews'));
 const AdminLogin = lazy(() => import('./pages/admin/adminLogin'));
+const AdminDashboard = lazy(() => import('./pages/admin/dashboard'));
 const ManageCategories = lazy(() => import('./pages/admin/manageCategories'));
 const ManageBlog = lazy(() => import('./pages/admin/manageBlog'));
 const ManageStylers = lazy(() => import('./pages/admin/manageStylers'));
@@ -126,6 +127,7 @@ function App() {
           <Route path='reviews' element={<Reviews />} />
         </Route>
         <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/admin/categories" element={<ManageCategories />} />
         <Route path="/admin/blog" element={<ManageBlog />} />
         <Route path="/admin/stylers" element={<ManageStylers />} />

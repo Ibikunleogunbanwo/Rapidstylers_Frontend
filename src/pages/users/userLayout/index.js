@@ -3,7 +3,6 @@ import NotFound from "../../generalPages/notFound";
 import Dashboard from "../pages/dashboard";
 import UserTopBar from "./topBar";
 import UserSideBar from "./sideBar";
-import Humour from "../../../components/rapidStylerHumour";
 import Advert from "../../../components/advert";
 import { useRef, useState } from "react";
 import { useSelector } from "react-redux";
@@ -39,7 +38,7 @@ const UserLayout = () => {
     // prefix, leaving the dashboard routes unreachable (everything fell to
     // NotFound). Resolve the page directly from the current pathname instead.
     const { pathname } = useLocation();
-    const isBookingPage = pathname === "/bookAppointment";
+    const showDiscoveryCard = pathname === "/dashboard";
     const page = (() => {
         switch (pathname) {
             case "/dashboard": return <Dashboard setPageTitle={setPageTitle} />;
@@ -79,12 +78,11 @@ const UserLayout = () => {
                 </div>
                 <div className="p-2 col-span-1 lg:col-span-10">
                     <div className="grid grid-cols-1 lg:grid-cols-10 gap-4">
-                        <div className={isBookingPage ? "col-span-1 lg:col-span-10" : "col-span-1 lg:col-span-7"}>
+                        <div className={showDiscoveryCard ? "col-span-1 lg:col-span-7" : "col-span-1 lg:col-span-10"}>
                             {page}
                         </div>
-                        {!isBookingPage && <div className="col-span-1 lg:col-span-3">
+                        {showDiscoveryCard && <div className="col-span-1 lg:col-span-3">
                             <div className="grid md:grid-cols-2 lg:grid-cols-1 gap-4 p-4 md:p-0">
-                                <Humour />
                                 <Advert />
                             </div>
                         </div>}

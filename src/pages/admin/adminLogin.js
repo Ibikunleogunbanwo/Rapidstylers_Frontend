@@ -19,7 +19,7 @@ const AdminLogin = () => {
   const [captchaReset, setCaptchaReset] = useState(0);
 
   if (getAuthToken() && isAdminRole()) {
-    return <Navigate to="/admin/categories" replace />;
+    return <Navigate to="/admin" replace />;
   }
 
   const handleSubmit = async (e) => {
@@ -38,7 +38,7 @@ const AdminLogin = () => {
         setAdminRole();
         setUserRole("ADMIN");
         showSuccessToastMessage("Welcome, admin");
-        navigate("/admin/categories");
+        navigate("/admin");
       }
     } catch (error) {
       const msg = error?.response?.data?.message || error?.message || "Sign in failed";

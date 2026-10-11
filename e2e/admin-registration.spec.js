@@ -21,7 +21,7 @@ test.beforeEach(async ({context})=>{
  });
 });
 
-async function adminLogin(page){await page.goto('/admin/login');await page.getByLabel('Email address',{exact:true}).fill('admin@example.test');await page.getByLabel('Password',{exact:true}).fill('TestPassword123!');await page.getByRole('button',{name:'Sign In',exact:true}).click();await expect(page).toHaveURL(/\/admin\/categories$/);}
+async function adminLogin(page){await page.goto('/admin/login');await page.getByLabel('Email address',{exact:true}).fill('admin@example.test');await page.getByLabel('Password',{exact:true}).fill('TestPassword123!');await page.getByRole('button',{name:'Sign In',exact:true}).click();await expect(page).toHaveURL(/\/admin$/);await page.goto('/admin/categories');}
 async function selectSection(page,label){const select=page.getByLabel('Operations section',{exact:true});if(await select.isVisible())await select.selectOption({label});else await page.getByRole('navigation',{name:'Operations sections'}).getByRole('button',{name:label,exact:true}).click();}
 
 test('admin fixes: labeled edits, section recovery, ticket drafts, refund review and unavailable metrics',async({page},info)=>{

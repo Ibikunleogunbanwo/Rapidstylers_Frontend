@@ -20,7 +20,7 @@ const renderAdminLogin = () =>
     <MemoryRouter initialEntries={["/admin/login"]}>
       <Routes>
         <Route path="/admin/login" element={<AdminLogin />} />
-        <Route path="/admin/categories" element={<div>CATEGORIES_PAGE</div>} />
+        <Route path="/admin" element={<div>DASHBOARD_PAGE</div>} />
         <Route path="*" element={<LocationProbe />} />
       </Routes>
     </MemoryRouter>
@@ -39,18 +39,18 @@ describe("AdminLogin signed-in redirect guard", () => {
     window.sessionStorage.clear();
   });
 
-  it("redirects an already-signed-in admin to /admin/categories (not home or blank)", () => {
+  it("redirects an already-signed-in admin to the dashboard", () => {
     window.sessionStorage.setItem(SESSION_KEY, "admin-jwt");
     window.sessionStorage.setItem(ADMIN_KEY, "admin");
     renderAdminLogin();
-    expect(screen.getByText("CATEGORIES_PAGE")).toBeInTheDocument();
+    expect(screen.getByText("DASHBOARD_PAGE")).toBeInTheDocument();
     expect(screen.queryByText("Admin Sign In")).not.toBeInTheDocument();
   });
 
   it("stays on the form for a signed-out visitor", () => {
     renderAdminLogin();
     expect(screen.getByText("Admin Sign In")).toBeInTheDocument();
-    expect(screen.queryByText("CATEGORIES_PAGE")).not.toBeInTheDocument();
+    expect(screen.queryByText("DASHBOARD_PAGE")).not.toBeInTheDocument();
   });
 
   it("does NOT auto-redirect a signed-in non-admin (token but no admin role)", () => {
@@ -58,6 +58,6 @@ describe("AdminLogin signed-in redirect guard", () => {
     window.sessionStorage.setItem(SESSION_KEY, "customer-jwt");
     renderAdminLogin();
     expect(screen.getByText("Admin Sign In")).toBeInTheDocument();
-    expect(screen.queryByText("CATEGORIES_PAGE")).not.toBeInTheDocument();
+    expect(screen.queryByText("DASHBOARD_PAGE")).not.toBeInTheDocument();
   });
 });
