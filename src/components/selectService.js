@@ -18,6 +18,7 @@ import BookingCardField from "./bookingCardField";
 import AddressAutocomplete from "./AddressAutocomplete";
 import { prepareBookingAttempt, clearBookingAttempt, isUncertainBookingFailure } from "../utils/bookingAttempt";
 import { isAccountAlreadyExists } from "../utils/signupReply";
+import { demoBooking, LIVE_SITE_URL } from "../utils/demo";
 
 // Google Sign-In client id (public). Empty hides the Google option in the quick-account step.
 const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || "";
@@ -77,7 +78,7 @@ export const bookingConfirmationMessage = (dayLabel, time, zoneLabel) => {
     : "Booking request sent. The stylist will confirm shortly.";
 };
 
-const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerId, subServiceId, stylerLatitude, stylerLongitude, stylerProvince, stylerTimeZone, stylerAddress, stylerName}) => {
+const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerId, subServiceId, stylerLatitude, stylerLongitude, stylerProvince, stylerTimeZone, stylerAddress, stylerName, demoMode = demoBooking()}) => {
   const [bookAppointmentForm, setBookAppointmentForm] = useState(false);
   // Set once a booking lands, so the confirmation and its calendar action stay
   // on screen instead of scrolling away with the toast.
@@ -1200,6 +1201,21 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
                   </div>
                 )}
               </div>
+             {demoMode === "closed" ? (
+              <button
+                className="text-sm bg-brand/40 text-white rounded-md px-6 py-4 cursor-not-allowed"
+                disabled
+              >
+                Booking opens at launch
+              </button>
+             ) : demoMode === "live" ? (
+              <a
+                className="inline-block text-sm bg-brand text-white rounded-md px-6 py-4"
+                href={LIVE_SITE_URL}
+              >
+                Book on rapidstylers.ca
+              </a>
+             ) : (
              <button
                 className="text-sm bg-brand text-white rounded-md px-6 py-4"
                 onClick={handleBookAppointment}
@@ -1207,6 +1223,7 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
               >
                 {isBooking ? "Booking..." : "Book appointment"}
               </button>
+             )}
             </div>
           </div>
         </div>

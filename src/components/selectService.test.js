@@ -772,3 +772,27 @@ describe("Home visit address", () => {
     expect(body).not.toHaveProperty("travelDistanceKm");
   });
 });
+
+describe("SelectService on the demo showroom", () => {
+  const renderDemo = (demoMode) => {
+    render(<SelectService serviceName="Haircut" servicePrice="60" stylerId="s1" subServiceId="ss1" demoMode={demoMode} />);
+    fireEvent.click(screen.getByText("Book service"));
+  };
+
+  test("before launch the form opens but the booking cannot be submitted", () => {
+    renderDemo("closed");
+    expect(screen.getByRole("button", { name: "Booking opens at launch" })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: "Book appointment" })).toBeNull();
+  });
+
+  test("after launch the submit button sends visitors to the live site", () => {
+    renderDemo("live");
+    expect(screen.getByRole("link", { name: "Book on rapidstylers.ca" })).toHaveAttribute("href", "https://rapidstylers.ca");
+    expect(APIService.bookAppointment).not.toHaveBeenCalled();
+  });
+
+  test("the live site keeps its normal booking button", () => {
+    renderDemo(null);
+    expect(screen.getByRole("button", { name: "Book appointment" })).toBeInTheDocument();
+  });
+});

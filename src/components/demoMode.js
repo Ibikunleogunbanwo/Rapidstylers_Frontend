@@ -1,9 +1,7 @@
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 
-/** True on the demo showroom build (demo.rapidstylers.ca), set in its Vercel env. */
-export const IS_DEMO = process.env.REACT_APP_DEMO_MODE === "true";
-export const LIVE_SITE_URL = process.env.REACT_APP_LIVE_SITE_URL || "https://rapidstylers.ca";
+import { IS_DEMO, LIVE_SITE_URL } from "../utils/demo";
 
 /**
  * Pages a demo visitor may browse. Everything else (sign-up, login, booking,
