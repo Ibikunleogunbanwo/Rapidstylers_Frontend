@@ -48,6 +48,16 @@ test("landing keeps media static for reduced motion and fits the viewport", asyn
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
+test("brand logo animation plays on desktop and mobile", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await page.goto("/");
+  const logo = page.getByLabel("RapidStylers logo animation");
+  await logo.scrollIntoViewIfNeeded();
+  await expect(logo).toBeVisible();
+  await expect.poll(() => logo.evaluate(video => video.currentTime)).toBeGreaterThan(0);
+  expect(await logo.evaluate(video => video.muted && video.playsInline && video.videoWidth > 0)).toBe(true);
+});
+
 test("invalid login is accessible and never sends credentials", async ({ page }) => {
   let requests = 0;
   page.on("request", request => { if (request.url().endsWith("/sign_in")) requests++; });

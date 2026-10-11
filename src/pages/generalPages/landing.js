@@ -136,7 +136,7 @@ const BlogSection = () => {
 };
 
 const LandingPage = () => {
-  const allowDecorativeMotion = useDecorativeMotion();
+  const allowDecorativeMotion = useDecorativeMotion(0);
   document.title="Welcome - RapidStylers";
 
   useEffect(() => {
@@ -208,6 +208,12 @@ const LandingPage = () => {
             loop
             muted
             playsInline
+            preload="metadata"
+            onLoadedData={(event) => {
+              const video = event.currentTarget;
+              video.muted = true;
+              video.play().catch(() => {});
+            }}
             src={cityLoop}
             aria-label="RapidStylers logo animation"
             poster={photoCalgarySkyline}
