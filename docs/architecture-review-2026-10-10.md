@@ -1,5 +1,6 @@
 # RapidStylers architecture and release readiness
 
+Current status: see [the architecture gap re-audit](architecture-gap-status-2026-10-10.md). This document records earlier findings; implementations and verification status have changed.
 Assessment date: October 10, 2026. Scope: current frontend checkout, backend source and configuration, frontend tests/build, and signed-out local browser smoke tests. Deployment topology is declared by repository configuration/documentation, not verified against live infrastructure. Backend files were not changed.
 
 ## Current architecture

@@ -1,5 +1,6 @@
 # Backend handoff
 
+Current status: see [the architecture gap re-audit](architecture-gap-status-2026-10-10.md). This document records earlier findings; implementations and verification status have changed.
 Frontend changes are deployed separately from these unresolved backend requirements. Do not mark release gates passed until the evidence below exists. Use a non-production environment and test provider credentials.
 
 ## 1. Booking retry safety — highest priority
