@@ -5,7 +5,7 @@ import { ToastContainer } from 'react-toastify';
 import { LocationProvider } from './context/LocationContext';
 import ScrollToTop from './components/scrollToTop';
 import IdleTimeout from './components/IdleTimeout';
-import DemoBanner from './components/demoBanner';
+import DemoMode from './components/demoMode';
 
 const LandingPage = lazy(() => import('./pages/generalPages/landing'));
 const Login = lazy(() => import('./pages/generalPages/login'));
@@ -72,7 +72,7 @@ function App() {
       />
       <LocationProvider>
       <BrowserRouter>
-      <DemoBanner />
+      <DemoMode />
       <ScrollToTop />
       <IdleTimeout />
       <Suspense
