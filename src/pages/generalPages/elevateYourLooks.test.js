@@ -7,6 +7,8 @@ import { APIService } from "../../hooks/remote/apiService";
 vi.mock("./newHeroSection", () => ({ default: () => <div data-testid="hero" /> }));
 vi.mock("../../components/footer", () => ({ default: () => <div data-testid="footer" /> }));
 vi.mock("../../components/adSlot", () => ({ default: () => null }));
+// Most of these specs cover the curated photos, which only the demo shows.
+vi.mock("../../utils/demo", () => ({ IS_DEMO: true }));
 
 // react-scripts resets mock implementations between tests, so the factory only
 // declares the shape and values are wired in beforeEach (see apiService.test.js).
@@ -401,5 +403,21 @@ describe("ElevateLooks gallery search", () => {
       await screen.findByRole("button", { name: "View Long auburn knotless braids" })
     ).toBeInTheDocument();
     await settle();
+  });
+});
+
+describe("ElevateLooks on the live site", () => {
+  test("shows stylist uploads only, never the curated photos", async () => {
+    APIService.searchGallery.mockResolvedValue({ data: { data: [PHOTO] } });
+    render(<ElevateLooks showCurated={false} />);
+    const imgs = await screen.findAllByRole("img");
+    expect(imgs.some((img) => (img.getAttribute("src") || "").startsWith("/images/gallery/"))).toBe(false);
+    expect(imgs.some((img) => img.getAttribute("src") === PHOTO.src.medium)).toBe(true);
+  });
+
+  test("shows the empty state while no stylist has posted", async () => {
+    APIService.searchGallery.mockResolvedValue({ data: { data: [] } });
+    render(<ElevateLooks showCurated={false} />);
+    expect(await screen.findByText(/work posted yet/)).toBeInTheDocument();
   });
 });

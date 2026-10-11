@@ -10,6 +10,7 @@ import { APIService } from "../../hooks/remote/apiService";
 // strip reads the same source — and the images are plain static files under
 // public/images/gallery/ (see curatedGallery.js).
 import { CURATED_GALLERY as CURATED, searchCuratedPhotos } from "../../utils/curatedGallery";
+import { IS_DEMO } from "../../utils/demo";
 import {
   ALL_WORK,
   // The strip as it renders: the "everything" view first, then the categories.
@@ -20,7 +21,9 @@ import {
 
 const PER_PAGE = 12;
 
-const ElevateLooks = () => {
+// The live site shows real stylist uploads only, so the gallery never presents
+// the team's photos as a professional's work. The demo showroom keeps them.
+const ElevateLooks = ({ showCurated = IS_DEMO }) => {
   document.title = "Elevate your looks | RapidStylers";
   // The strip's first entry is "All work", so the opening grid is a named,
   // highlighted view rather than an unlabelled default that no tab admitted to.
@@ -40,7 +43,8 @@ const ElevateLooks = () => {
   // rather than a category equality test, because a tab can cover more than one
   // category ("Locs & dreadlocks") and the first tab covers all of them, so there
   // is no separate "show everything" flag to keep in step with the selection.
-  const browseCurated = (category) => CURATED.filter((p) => isInTab(p.category, category));
+  const browseCurated = (category) =>
+    showCurated ? CURATED.filter((p) => isInTab(p.category, category)) : [];
 
   // Typing or switching category fires a request per change, and they can come
   // back out of order — without this, a slow "dr" could repaint over "dreadlocks".
@@ -121,7 +125,7 @@ const ElevateLooks = () => {
         // The curated photos are static files, so they cannot fail alongside the
         // API. An API outage used to empty the gallery entirely; showing our own
         // work with a note is both more useful and more truthful than a blank page.
-        const curated = needle ? searchCuratedPhotos(needle) : browseCurated(category);
+        const curated = !showCurated ? [] : needle ? searchCuratedPhotos(needle) : browseCurated(category);
         setImages([...curated, ...uploads]);
         setLoadError(loadError);
         setHasMore(moreWaiting);
