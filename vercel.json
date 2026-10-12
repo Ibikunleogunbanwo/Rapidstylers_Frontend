@@ -51,6 +51,26 @@
       "headers": [
         { "key": "Cache-Control", "value": "no-store, no-cache, max-age=0" }
       ]
+    },
+    {
+      "source": "/:page(search|elevate-your-looks|blog|about|terms-and-conditions|privacy-policy|faqs|contact-support)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store, no-cache, max-age=0" }
+      ]
     }
+  ],
+  "rewrites": [
+    {
+      "source": "/stylistProfile/:id/:name",
+      "has": [{ "type": "header", "key": "user-agent", "value": ".*(?:facebookexternalhit|Facebot|Twitterbot|LinkedInBot|Slackbot|WhatsApp|TelegramBot|Discordbot|SkypeUriPreview|Pinterestbot|redditbot|Embedly|vkShare|Iframely|Mastodon|Bluesky|Viber|Snapchat).*" }],
+      "destination": "/api/link-preview?kind=profile&id=:id&name=:name"
+    },
+    {
+      "source": "/blog/:id",
+      "has": [{ "type": "header", "key": "user-agent", "value": ".*(?:facebookexternalhit|Facebot|Twitterbot|LinkedInBot|Slackbot|WhatsApp|TelegramBot|Discordbot|SkypeUriPreview|Pinterestbot|redditbot|Embedly|vkShare|Iframely|Mastodon|Bluesky|Viber|Snapchat).*" }],
+      "destination": "/api/link-preview?kind=blog&id=:id"
+    },
+    { "source": "/:page(search|elevate-your-looks|blog|about|terms-and-conditions|privacy-policy|faqs|contact-support)", "destination": "/:page/index.html" },
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
   ]
 }

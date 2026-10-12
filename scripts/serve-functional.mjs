@@ -13,8 +13,13 @@ createServer(async (request, response) => {
     const path = decodeURIComponent(new URL(request.url, "http://localhost").pathname);
     let file = resolve(root, `.${path}`);
     if (file !== root && !file.startsWith(root + sep)) { response.writeHead(400); response.end(); return; }
-    try { if (!(await stat(file)).isFile()) file = resolve(root, "index.html"); }
-    catch (_) { file = resolve(root, "index.html"); }
+    // Like Vercel: a real file wins, a folder serves its index.html (the
+    // per-page shells the build writes, e.g. build/about/index.html for
+    // /about), and anything else falls back to the app shell.
+    try {
+      if ((await stat(file)).isDirectory()) file = resolve(file, "index.html");
+      if (!(await stat(file)).isFile()) file = resolve(root, "index.html");
+    } catch (_) { file = resolve(root, "index.html"); }
     for (const { key, value } of headers) response.setHeader(key, value);
     response.setHeader("Content-Type", types[extname(file)] || "application/octet-stream");
     response.setHeader("Cache-Control", "no-store");

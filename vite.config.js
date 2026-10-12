@@ -1,5 +1,8 @@
 import { defineConfig, loadEnv, transformWithOxc } from "vite";
 import react from "@vitejs/plugin-react";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { dirname, resolve } from "node:path";
+import { PRERENDERED_ROUTES, addNoindex, applyHeadTags, pageMeta } from "./src/seo/pageMeta.mjs";
 
 /**
  * Compiles JSX that lives in plain `.js` files — the Create React App
@@ -43,6 +46,44 @@ const transformJsxInJs = () => {
 };
 
 /**
+ * Gives every fixed public page its own link-preview and search metadata in
+ * the HTML the server sends, for crawlers that never run the app (Facebook,
+ * WhatsApp, iMessage, X, LinkedIn, Slack).
+ *
+ * After the build writes `build/index.html`, this writes
+ * `build/<route>/index.html` for each route in PRERENDERED_ROUTES: the same
+ * shell, byte for byte, except for the title, description, canonical, og:* and
+ * twitter:* tags (see src/seo/pageMeta.mjs). Same scripts, same root element,
+ * so the app boots exactly as it does from `/`. Vercel serves the file for
+ * `/about` etc. (vercel.json rewrites make that explicit); so does
+ * scripts/serve-functional.mjs for the e2e suite.
+ *
+ * On the demo build (REACT_APP_DEMO_MODE=true) every shell also carries
+ * `noindex`, so the showroom stays out of search before any script runs.
+ */
+const prerenderPageMeta = ({ demo }) => {
+  let outDir = "build";
+  return {
+    name: "rapidstylers:page-meta",
+    apply: "build",
+    configResolved(config) {
+      outDir = resolve(config.root, config.build.outDir);
+    },
+    transformIndexHtml(html) {
+      return demo ? addNoindex(html) : html;
+    },
+    async writeBundle() {
+      const shell = await readFile(resolve(outDir, "index.html"), "utf8");
+      for (const route of PRERENDERED_ROUTES) {
+        const file = resolve(outDir, `.${route}`, "index.html");
+        await mkdir(dirname(file), { recursive: true });
+        await writeFile(file, applyHeadTags(shell, pageMeta(route, { noindex: demo })));
+      }
+    },
+  };
+};
+
+/**
  * Vite build + test config (migrated from Create React App / react-scripts).
  *
  * Deliberate compatibility choices so nothing else has to change:
@@ -68,7 +109,7 @@ export default defineConfig(({ mode }) => {
   );
 
   return {
-    plugins: [react(), transformJsxInJs()],
+    plugins: [react(), transformJsxInJs(), prerenderPageMeta({ demo: env.REACT_APP_DEMO_MODE === "true" })],
     define: processEnv,
     build: {
       outDir: "build",

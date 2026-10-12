@@ -1,25 +1,41 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { contentNewsletterApi as api } from '../hooks/remote/contentNewsletterApi';
+import { DEFAULT_IMAGE, PAGE_SEO, SITE_DESCRIPTION, SITE_NAME, SITE_ORIGIN } from '../seo/pageMeta.mjs';
+
+export { SITE_ORIGIN };
 
 // Only visitor-facing content can receive published metadata. A draft must
 // never turn a dashboard, login, signup or token-bearing page into an indexable page.
-const PUBLIC_PAGES = new Set(['/', '/search', '/elevate-your-looks', '/blog', '/about', '/terms-and-conditions', '/privacy-policy', '/faqs', '/contact-support']);
-export const SITE_ORIGIN = 'https://www.rapidstylers.ca';
+const PUBLIC_PAGES = new Set(Object.keys(PAGE_SEO));
 
 // Each fixed public page gets its own description until an admin publishes one,
-// so search results stop showing the same sentence for every page.
-export const DEFAULT_DESCRIPTIONS = {
-  '/': 'Find and book trusted beauty professionals near you, from barbers and stylists to nails and lashes.',
-  '/search': 'Search RapidStylers for hairstylists, barbers, nail technicians, eyelash technicians and makeup artists near you in Canada.',
-  '/elevate-your-looks': 'Browse recent work by RapidStylers professionals: hair, nails, lashes, makeup and barbering.',
-  '/blog': 'Beauty tips, trends and advice from the RapidStylers team.',
-  '/about': 'Why RapidStylers exists and how we connect Canadians with trusted beauty professionals.',
-  '/terms-and-conditions': 'The terms that apply when you book or offer services on RapidStylers.',
-  '/privacy-policy': 'How RapidStylers collects, uses and protects your personal information.',
-  '/faqs': 'Answers to common questions about booking, payments and joining RapidStylers as a professional.',
-  '/contact-support': 'Get help from RapidStylers support by email, phone or support ticket.',
-};
+// so search results stop showing the same sentence for every page. The same
+// copy is baked into build/<route>/index.html for crawlers that do not run
+// JavaScript (src/seo/pageMeta.mjs).
+export const DEFAULT_DESCRIPTIONS = Object.fromEntries(Object.entries(PAGE_SEO).map(([path, page]) => [path, page.description]));
+
+// The app can boot from a page-specific shell (build/about/index.html carries
+// the About page's tags). Navigating away must not keep showing them, so on
+// boot the shared tags go back to the site defaults the root shell has, and
+// every page then applies its own on top, exactly as when booting from `/`.
+const SITE_DEFAULTS = [
+  ['name', 'description', SITE_DESCRIPTION],
+  ['property', 'og:title', SITE_NAME],
+  ['property', 'og:description', SITE_DESCRIPTION],
+  ['property', 'og:url', `${SITE_ORIGIN}/`],
+  ['property', 'og:image', DEFAULT_IMAGE],
+  ['name', 'twitter:title', SITE_NAME],
+  ['name', 'twitter:description', SITE_DESCRIPTION],
+  ['name', 'twitter:image', DEFAULT_IMAGE],
+];
+
+function resetSharedTags() {
+  for (const [attribute, name, value] of SITE_DEFAULTS) {
+    document.head.querySelector(`meta[${attribute}="${name}"]`)?.setAttribute('content', value);
+  }
+  document.head.querySelector('link[rel="canonical"]')?.setAttribute('href', `${SITE_ORIGIN}/`);
+}
 
 export function isPublicSeoPath(pathname) {
   return PUBLIC_PAGES.has(pathname) || /^\/(?:blog|stylist|stylistProfile)\/.+/.test(pathname);
@@ -28,6 +44,7 @@ export function isPublicSeoPath(pathname) {
 export default function PublishedSeo() {
   const { pathname } = useLocation();
   const [pages, setPages] = useState(null);
+  useEffect(resetSharedTags, []);
   useEffect(() => {
     let live = true;
     api.get('/site_seo').then(data => {
@@ -71,11 +88,15 @@ export default function PublishedSeo() {
       const url = SITE_ORIGIN + (pathname === '/' ? '/' : pathname.replace(/\/+$/, ''));
       link('canonical', url);
       meta('property', 'og:url', url);
-      const fallback = DEFAULT_DESCRIPTIONS[pathname];
+      const fallback = PAGE_SEO[pathname];
       if (fallback && !seo?.description) {
-        meta('name', 'description', fallback);
-        meta('property', 'og:description', fallback);
-        meta('name', 'twitter:description', fallback);
+        meta('name', 'description', fallback.description);
+        meta('property', 'og:description', fallback.description);
+        meta('name', 'twitter:description', fallback.description);
+      }
+      if (fallback && !seo?.title) {
+        meta('property', 'og:title', fallback.title);
+        meta('name', 'twitter:title', fallback.title);
       }
     }
     if (seo) {

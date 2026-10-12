@@ -11,9 +11,12 @@
       name="description"
       content="Find and book trusted beauty professionals near you, from barbers and stylists to nails and lashes."
     />
-    <!-- Defaults for link previews. The SEO component swaps the canonical and
-         og:url for the page being viewed, and published page SEO overrides the
-         title, description and image where an admin has set them. -->
+    <!-- Defaults for link previews. The build writes a copy of this shell for
+         each fixed public page with that page's own tags (src/seo/pageMeta.mjs),
+         and link-preview bots get profile and blog-post tags from
+         api/link-preview.mjs. In the browser the SEO component swaps the
+         canonical and og:url for the page being viewed, and published page SEO
+         overrides the title, description and image where an admin has set them. -->
     <link rel="canonical" href="https://www.rapidstylers.ca/" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="RapidStylers" />
