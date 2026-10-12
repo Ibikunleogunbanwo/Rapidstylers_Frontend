@@ -9,8 +9,9 @@ import { formatAdminTime } from "./adminFormat";
 /**
  * Admin accounts (owners only): who can sign in to the admin console and with
  * which role. An owner (ADMIN) sees every screen; a manager (MANAGER) does the
- * day-to-day work only. Creating an account or changing a role asks for the
- * owner's own password again, the same step-up the server enforces.
+ * day-to-day work only. Creating an account, changing a role or setting a new
+ * password asks for the owner's own password again, the same step-up the
+ * server enforces.
  */
 export const ROLES = [
   ["ADMIN", "Owner", "Every admin screen, including money, settings and admin accounts."],
@@ -28,6 +29,9 @@ export default function AdminAccounts() {
   const [form, setForm] = useState(BLANK);
   const [stepUp, setStepUp] = useState("");
   const [roles, setRoles] = useState({});
+  // Which account's "new password" field is open, and what has been typed in it.
+  const [passwordFor, setPasswordFor] = useState(null);
+  const [newPassword, setNewPassword] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
   const lock = useRef(false);
@@ -81,6 +85,17 @@ export default function AdminAccounts() {
       .then(done => { if (done) setRoles(previous => ({ ...previous, [account.id]: undefined })); });
   };
 
+  const closePassword = () => { setPasswordFor(null); setNewPassword(""); };
+
+  const changePassword = async (event, account) => {
+    event.preventDefault();
+    const password = newPassword;
+    // The server signs the account out everywhere, so changing your own
+    // password ends this session too.
+    if (await run(stepUpPassword => AdminAPI.changeAccountPassword(account.id, password, stepUpPassword),
+      `New password set for ${account.email}. They are signed out everywhere.`)) closePassword();
+  };
+
   if (!authorized) return <Navigate to="/admin/login" replace />;
 
   return (
@@ -88,7 +103,7 @@ export default function AdminAccounts() {
       <p className="mb-5 text-sm text-gray-600">
         Owners see every admin screen. Managers handle the day-to-day work: stylist verification, gallery and review
         moderation, support tickets, feedback and viewing bookings. A role change signs that person out so their next
-        sign-in uses the new role.
+        sign-in uses the new role. Setting a new password signs that account out everywhere, including you if it is your own.
       </p>
 
       <AdminCard className="mb-5">
@@ -129,7 +144,7 @@ export default function AdminAccounts() {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead className="border-b text-xs text-gray-500">
-                <tr><th className="p-3">Email</th><th className="p-3">Role</th><th className="p-3">Status</th><th className="p-3">Created</th><th className="p-3">Change role</th></tr>
+                <tr><th className="p-3">Email</th><th className="p-3">Role</th><th className="p-3">Status</th><th className="p-3">Created</th><th className="p-3">Change role</th><th className="p-3">Password</th></tr>
               </thead>
               <tbody className="divide-y">
                 {accounts.map(account => {
@@ -147,6 +162,19 @@ export default function AdminAccounts() {
                           </select>
                           <button type="button" aria-label={`Save role for ${account.email}`} disabled={pending || chosen === account.role} onClick={() => changeRole(account)} className="rounded-md border px-3 py-2 text-xs font-semibold disabled:opacity-50">Save</button>
                         </div>
+                      </td>
+                      <td className="p-3">
+                        {passwordFor === account.id ? (
+                          <form onSubmit={event => changePassword(event, account)} className="flex flex-wrap items-center gap-2">
+                            <AdminInput type="password" required minLength={8} autoComplete="new-password" aria-label={`New password for ${account.email}`}
+                              value={newPassword} disabled={pending} onChange={e => setNewPassword(e.target.value)} className="max-w-[12rem]" />
+                            <button type="submit" disabled={pending || newPassword.length < 8} className="rounded-md bg-brand px-3 py-2 text-xs font-semibold text-white disabled:opacity-50">Set password</button>
+                            <button type="button" disabled={pending} onClick={closePassword} className="rounded-md border px-3 py-2 text-xs font-semibold">Cancel</button>
+                          </form>
+                        ) : (
+                          <button type="button" aria-label={`Change password for ${account.email}`} disabled={pending}
+                            onClick={() => { setPasswordFor(account.id); setNewPassword(""); }} className="rounded-md border px-3 py-2 text-xs font-semibold disabled:opacity-50">Change password</button>
+                        )}
                       </td>
                     </tr>
                   );

@@ -59,6 +59,7 @@ export const AdminAPI = {
   accounts: () => get('/admin/accounts'),
   createAccount: (account, stepUpPassword) => postWithStepUp('/admin/accounts', account, stepUpPassword),
   changeAccountRole: (id, role, stepUpPassword) => postWithStepUp(`/admin/accounts/${id}/role`, { role }, stepUpPassword),
+  changeAccountPassword: (id, password, stepUpPassword) => postWithStepUp(`/admin/accounts/${id}/password`, { password }, stepUpPassword),
 };
 
 /** Hands a downloaded file to the browser. */

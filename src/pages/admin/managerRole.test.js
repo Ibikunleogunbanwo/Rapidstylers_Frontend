@@ -25,7 +25,7 @@ vi.mock("../../hooks/remote/apiService", () => ({ APIService: {
 } }));
 vi.mock("../../hooks/remote/adminApi", () => ({ AdminAPI: {
   bookings: vi.fn(), revenue: vi.fn(), bookingDetail: vi.fn(), bookingsExport: vi.fn(), reviews: vi.fn(), feedback: vi.fn(),
-  accounts: vi.fn(), createAccount: vi.fn(), changeAccountRole: vi.fn(),
+  accounts: vi.fn(), createAccount: vi.fn(), changeAccountRole: vi.fn(), changeAccountPassword: vi.fn(),
 }, saveFile: vi.fn() }));
 
 const reply = data => ({ data: { statusCode: "200", data } });
@@ -268,6 +268,25 @@ describe("admin accounts screen", () => {
     fireEvent.change(screen.getByLabelText("Your admin password (to confirm changes)"), { target: { value: "owner-pass" } });
     fireEvent.click(save);
     await waitFor(() => expect(AdminAPI.changeAccountRole).toHaveBeenCalledWith(2, "ADMIN", "owner-pass"));
+  });
+
+  it("sets a new password for an account, confirmed by the owner's password", async () => {
+    AdminAPI.changeAccountPassword.mockResolvedValue({ id: 1, role: "ADMIN" });
+    at("/admin/accounts", <AdminAccounts />);
+    await screen.findByText("owner@x.ca");
+    fireEvent.click(screen.getByRole("button", { name: "Change password for owner@x.ca" }));
+    const field = screen.getByLabelText("New password for owner@x.ca");
+    const set = screen.getByRole("button", { name: "Set password" });
+    fireEvent.change(field, { target: { value: "short" } });
+    expect(set).toBeDisabled();
+    fireEvent.change(field, { target: { value: "N3w-Str0ng-Passw0rd" } });
+    fireEvent.click(set);
+    expect(screen.getByRole("alert")).toHaveTextContent(/password/);
+    expect(AdminAPI.changeAccountPassword).not.toHaveBeenCalled();
+    fireEvent.change(screen.getByLabelText("Your admin password (to confirm changes)"), { target: { value: "owner-pass" } });
+    fireEvent.click(set);
+    await waitFor(() => expect(AdminAPI.changeAccountPassword).toHaveBeenCalledWith(1, "N3w-Str0ng-Passw0rd", "owner-pass"));
+    await waitFor(() => expect(screen.queryByLabelText("New password for owner@x.ca")).not.toBeInTheDocument());
   });
 
   it("shows the server's refusal", async () => {
