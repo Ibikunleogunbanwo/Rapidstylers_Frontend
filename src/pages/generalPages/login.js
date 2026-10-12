@@ -162,10 +162,10 @@ const Login = () => {
           <div className="p-5 md:p-10 mb-6 md:mb-0 w-full">
             <div className="mb-6">
               <Link to="/">
-                <img src={logo} alt="" className="h-10" />
+                <img src={logo} alt="RapidStylers home" className="h-10" />
               </Link>
             </div>
-            <p className="text-[22px] font-normal tracking-[-0.01em] text-onSurface">Welcome back</p>
+            <h1 className="text-[22px] font-normal tracking-[-0.01em] text-onSurface">Welcome back</h1>
             <p className="text-sm text-gray-500 mt-1">Sign in to your account</p>
 
             {GOOGLE_CLIENT_ID && (
@@ -187,6 +187,7 @@ const Login = () => {
                 inputType={"email"}
                 inputError={fieldErrors.emailAddress}
                 inputName={"emailAddress"}
+                autoComplete="email"
                 inputValue={emailAddress}
                 inputOnChange={(e) => setEmailAddress(e.target.value)}
                 placeholder={"you@example.com"}
@@ -196,6 +197,7 @@ const Login = () => {
                 inputType={"password"}
                 inputError={fieldErrors.password}
                 inputName={"password"}
+                autoComplete="current-password"
                 inputValue={password}
                 inputOnChange={(e) => setPassword(e.target.value)}
                 placeholder={"Enter your password"}

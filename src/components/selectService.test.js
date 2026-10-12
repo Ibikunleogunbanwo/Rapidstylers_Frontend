@@ -103,9 +103,9 @@ describe("SelectService booking modal viewport containment", () => {
     expect(overlay.className).toContain("right-0");
     // The overlay must paint above page content, not underneath it.
     expect(overlay.className).toContain("z-50");
-    // It must actually be visible once opened.
-    expect(overlay.className).toContain("block");
-    expect(overlay.className).not.toContain("hidden");
+    // It must actually be visible once opened, and announced as a modal dialog.
+    expect(overlay).not.toHaveAttribute("hidden");
+    expect(screen.getByRole("dialog", { name: "Book Haircut" })).toHaveAttribute("aria-modal", "true");
   });
 
   test("keeps the dialog width and height inside the viewport", () => {
@@ -124,11 +124,24 @@ describe("SelectService booking modal viewport containment", () => {
 
   test("closes by removing the overlay from view", () => {
     renderOpen();
-    expect(document.querySelector("div.fixed").className).toContain("block");
+    expect(document.querySelector("div.fixed")).not.toHaveAttribute("hidden");
 
-    // The close icon sits in the sticky header of the booking dialog.
-    fireEvent.click(document.querySelector("img[alt='']"));
-    expect(document.querySelector("div.fixed").className).toContain("hidden");
+    // The close button sits in the sticky header of the booking dialog.
+    fireEvent.click(screen.getByRole("button", { name: "Close" }));
+    expect(document.querySelector("div.fixed")).toHaveAttribute("hidden");
+  });
+
+  test("closes on Escape", () => {
+    renderOpen();
+    fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });
+    expect(document.querySelector("div.fixed")).toHaveAttribute("hidden");
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  test("shows no arrival times until a date is picked", () => {
+    renderOpen();
+    expect(screen.getByText("Pick a date to see available times.")).toBeInTheDocument();
+    expect(screen.queryByText("4:00 pm")).toBeNull();
   });
 });
 
@@ -154,9 +167,9 @@ describe("Booking intent deep-linking for signed-out visitors", () => {
     renderOpen();
 
     // Pick a day and a time; both are needed before the intent is written.
-    fireEvent.click(screen.getByText("4:00 pm"));
-    expect(setBookingIntent).not.toHaveBeenCalled();
     fireEvent.click(screen.getAllByText(/15/)[0]);
+    expect(setBookingIntent).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByText("4:00 pm"));
     expect(setBookingIntent).toHaveBeenCalledWith(
       expect.objectContaining({
         stylerId: "s1",
@@ -183,7 +196,7 @@ describe("Booking intent deep-linking for signed-out visitors", () => {
     // The restored selection is visible: October selected, 10:30 am and home
     // service both rendered as the active (brand-colored) choice.
     expect(document.querySelector("select").value).toBe("October");
-    const activeTime = [...document.querySelectorAll("div")].find(
+    const activeTime = [...document.querySelectorAll("button")].find(
       (el) => el.className.includes("bg-brand") && el.textContent.trim() === "10:30 am"
     );
     expect(activeTime, "the picked time must be re-highlighted on reopen").toBeTruthy();
@@ -204,7 +217,7 @@ describe("Booking intent deep-linking for signed-out visitors", () => {
 
     // September (the current month) stays selected; nothing was hijacked.
     expect(document.querySelector("select").value).toBe(new Date().toLocaleString("en-US", { month: "long" }));
-    expect([...document.querySelectorAll("div")].some(
+    expect([...document.querySelectorAll("div, button")].some(
       (el) => el.className.includes("bg-brand") && el.textContent.trim() === "10:30 am"
     )).toBe(false);
   });
@@ -229,7 +242,7 @@ describe("Booking intent deep-linking for signed-out visitors", () => {
 
     renderOpen();
 
-    const stalePick = [...document.querySelectorAll("div")].find(
+    const stalePick = [...document.querySelectorAll("div, button")].find(
       (el) => el.className.includes("bg-brand") && el.textContent.trim() === "4:00 am"
     );
     expect(stalePick, "a restored time outside working hours must not stay selected").toBeUndefined();

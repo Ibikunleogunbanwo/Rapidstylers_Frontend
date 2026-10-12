@@ -6,7 +6,7 @@
  * section nav, the nav underlines the current route, and AdminCard is hairline
  * — no shadow, no big radius.
  */
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, cleanup } from "@testing-library/react";
 import { MemoryRouter, useLocation } from "react-router-dom";
 import { AdminPage, AdminNav, AdminCard, AdminInput, AdminTextarea } from "./adminShell";
 
@@ -46,6 +46,7 @@ describe("AdminPage shell", () => {
       "Blog",
       "Website content",
       "Payments",
+      "Bookings",
       "Disputes",
       "Unpaid payouts",
       "Promo codes",
@@ -55,6 +56,7 @@ describe("AdminPage shell", () => {
       "Announcements",
       "Operations",
       "Support",
+      "Feedback",
       "Audit log",
     ]);
   });
@@ -162,4 +164,12 @@ it("marks current navigation accessibly and exposes a main landmark",()=>{
  renderAt(<AdminPage title="Payments"><p>body</p></AdminPage>,"/admin/payments");
  expect(screen.getByRole("link",{name:"Payments"})).toHaveAttribute("aria-current","page");
  expect(screen.getByRole("main")).toBeInTheDocument();
+});
+
+it("names the browser tab after the page",()=>{
+ renderAt(<AdminPage title="Payments"><p>body</p></AdminPage>,"/admin/payments");
+ expect(document.title).toBe("Payments | RapidStylers Admin");
+ cleanup();
+ renderAt(<AdminPage title="Manage Blog" pageTitle="Blog"><p>body</p></AdminPage>,"/admin/blog");
+ expect(document.title).toBe("Blog | RapidStylers Admin");
 });

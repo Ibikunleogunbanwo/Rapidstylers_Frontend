@@ -8,6 +8,22 @@ import { useEffect } from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { CustomerSignupCounter, CustomerSignupRail } from "./customerSignupRail";
+import ProvinceSelect from "../../../components/provinceSelect";
+import {
+  CITY_MAX,
+  NAME_MAX,
+  PHONE_EXAMPLE,
+  cityError,
+  cleanName,
+  formatCanadianPhone,
+  formatPostalCode,
+  nameError,
+  phoneDigits,
+  phoneError,
+  postalCodeError,
+  provinceError,
+  toProvinceName,
+} from "../../../utils/signupValidation";
 
 /** Canadian convention: "123 Main St, Unit 4, Toronto, ON M5V 2T6, Canada" */
 const composeCanadianAddress = (v) =>
@@ -21,15 +37,11 @@ const composeCanadianAddress = (v) =>
     .filter(Boolean)
     .join(", ");
 
-/** Format a 10/11-digit Canadian number as (XXX) XXX-XXXX while typing. */
-const formatCanadianPhone = (value) => {
-  const digits = (value || "").replace(/\D/g, "").replace(/^1(?=\d{10}$)/, "").slice(0, 10);
-  if (digits.length < 4) return digits;
-  if (digits.length < 7) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
-  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+/** A Yup test from one of the shared sign-up rules (which return "" when fine). */
+const rule = (check) => function (value) {
+  const message = check(value);
+  return message ? this.createError({ message }) : true;
 };
-
-const phoneDigits = (value) => (value || "").replace(/\D/g, "").replace(/^1(?=\d{10}$)/, "");
 
 const PersonalDetails = () => {
   useEffect(() => {
@@ -58,26 +70,23 @@ const PersonalDetails = () => {
       agreeToTerms: false,
     },
     validationSchema : Yup.object({
-      firstname : Yup.string().required("Firstname cannot be empty").min(3,"Firstname must be at least 3 letters"),
-      lastname : Yup.string().required("Lastname cannot be empty").min(3,"Lastname must be at least 3 letters"),
+      // The shared sign-up rules, which the backend applies to the same fields.
+      firstname : Yup.string().test("name", rule((v) => nameError(v, "first name"))),
+      lastname : Yup.string().test("name", rule((v) => nameError(v, "last name"))),
       country : Yup.string().required("Kindly select a country"),
       street : Yup.string().required("Street address is required").min(3,"Street address must be at least 3 letters"),
-      city : Yup.string().required("City is required"),
-      province : Yup.string().required("Province is required"),
-      postalCode : Yup.string()
-        .required("Postal code is required")
-        .matches(/^[A-Za-z]\d[A-Za-z][ -]?\d[A-Za-z]\d$/, "Enter a valid Canadian postal code (e.g. T2P 1B5)"),
+      city : Yup.string().test("city", rule((v) => cityError(v))),
+      province : Yup.string().test("province", rule((v) => provinceError(v))),
+      postalCode : Yup.string().test("postal", rule((v) => postalCodeError(v))),
       agreeToTerms : Yup.boolean().oneOf([true], "You must agree to the Terms and Conditions"),
-      phoneNumber : Yup.string()
-        .required("Phone number is required")
-        .test("ca-phone", "Enter a valid Canadian phone number, e.g. (587) 555-1234", (val) => {
-          if (!val) return false;
-          const digits = phoneDigits(val);
-          return digits.length === 10;
-        })
+      phoneNumber : Yup.string().test("ca-phone", rule((v) => phoneError(v)))
     }),
     onSubmit: (values) => {
-      const {firstname, lastname, country, phoneNumber} = values;
+      const {country, phoneNumber} = values;
+      // Names and city go out trimmed, the postal code as "T2P 1B5".
+      const firstname = cleanName(values.firstname);
+      const lastname = cleanName(values.lastname);
+      values = { ...values, city: values.city.trim(), postalCode: formatPostalCode(values.postalCode) };
       // Persist the single-line address in Canadian convention — the backend
       // stores address + state (province) + country for user accounts.
       const address = composeCanadianAddress(values);
@@ -106,25 +115,31 @@ const PersonalDetails = () => {
       <div className="col-span-1 lg:col-span-4">
         <div className="grid content-between h-full">
           <div className="p-5 md:p-10 mb-6 md:mb-0 w-full">
-            <img src={logo} alt="" className="h-10 mb-8" />
+            <Link to="/" aria-label="RapidStylers home" className="inline-block mb-8"><img src={logo} alt="" className="h-10" /></Link>
             <CustomerSignupCounter />
-            <p className="mt-2 text-[22px] font-normal tracking-[-0.01em] text-onSurface">Personal details</p>
+            <h1 className="mt-2 text-[22px] font-normal tracking-[-0.01em] text-onSurface">Personal details</h1>
             <p className="text-black/60 text-sm mt-1">
               Please provide details about yourself.
             </p>
             <form onSubmit={personalData.handleSubmit} className="mt-6 grid gap-4">
               <InputWithLabel labelName={"First name"}
                               inputType={"text"}
-                              placeholder={"e.g John"}
+                              placeholder={"e.g. Jordan"}
                               inputName={"firstname"}
+                              autoComplete="given-name"
+                              maxLength={NAME_MAX}
+                              required
                               inputOnBlur={personalData.handleBlur}
                               inputOnChange={personalData.handleChange}
                               inputValue={personalData.values.firstname}
                               inputError={personalData.touched.firstname && personalData.errors.firstname ? personalData.errors.firstname : null} />
               <InputWithLabel labelName={"Last name"}
                               inputType={"text"}
-                              placeholder={"e.g Doe"}
+                              placeholder={"e.g. Lee"}
                               inputName={"lastname"}
+                              autoComplete="family-name"
+                              maxLength={NAME_MAX}
+                              required
                               inputOnBlur={personalData.handleBlur}
                               inputOnChange={personalData.handleChange}
                               inputValue={personalData.values.lastname}
@@ -153,8 +168,8 @@ const PersonalDetails = () => {
                   if (isSelection) {
                     personalData.setFieldValue("unit", data.unit || "");
                     personalData.setFieldValue("city", data.city || "");
-                    personalData.setFieldValue("province", data.province || "");
-                    personalData.setFieldValue("postalCode", (data.postalCode || "").toUpperCase());
+                    personalData.setFieldValue("province", toProvinceName(data.province));
+                    personalData.setFieldValue("postalCode", formatPostalCode(data.postalCode));
                     personalData.setFieldValue("country", data.country || "Canada");
                     ["street", "city", "province", "postalCode", "country"].forEach((f) =>
                       personalData.setFieldTouched(f, true, false)
@@ -165,8 +180,10 @@ const PersonalDetails = () => {
 
               <InputWithLabel labelName={"Street address"}
                               inputType={"text"}
-                              placeholder={"e.g 123 Main Street"}
+                              placeholder={"e.g. 123 Main Street"}
                               inputName={"street"}
+                              autoComplete="address-line1"
+                              required
                               inputOnBlur={personalData.handleBlur}
                               inputOnChange={personalData.handleChange}
                               inputValue={personalData.values.street}
@@ -175,41 +192,48 @@ const PersonalDetails = () => {
                               inputType={"text"}
                               placeholder={"Optional"}
                               inputName={"unit"}
+                              autoComplete="address-line2"
                               inputOnBlur={personalData.handleBlur}
                               inputOnChange={personalData.handleChange}
                               inputValue={personalData.values.unit}
                               inputError={personalData.touched.unit && personalData.errors.unit ? personalData.errors.unit : null} />
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <InputWithLabel labelName={"City"}
                                 inputType={"text"}
-                                placeholder={"e.g Toronto"}
+                                placeholder={"e.g. Toronto"}
                                 inputName={"city"}
+                                autoComplete="address-level2"
+                                maxLength={CITY_MAX}
+                                required
                                 inputOnBlur={personalData.handleBlur}
                                 inputOnChange={personalData.handleChange}
                                 inputValue={personalData.values.city}
                                 inputError={personalData.touched.city && personalData.errors.city ? personalData.errors.city : null} />
-                <InputWithLabel labelName={"Province"}
-                                inputType={"text"}
-                                placeholder={"e.g Ontario"}
-                                inputName={"province"}
-                                inputOnBlur={personalData.handleBlur}
-                                inputOnChange={personalData.handleChange}
-                                inputValue={personalData.values.province}
-                                inputError={personalData.touched.province && personalData.errors.province ? personalData.errors.province : null} />
+                <ProvinceSelect value={personalData.values.province}
+                                onChange={personalData.handleChange}
+                                onBlur={personalData.handleBlur}
+                                required
+                                error={personalData.touched.province && personalData.errors.province ? personalData.errors.province : ""} />
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <InputWithLabel labelName={"Postal code"}
                                 inputType={"text"}
-                                placeholder={"e.g M5V 2T6"}
+                                placeholder={"e.g. M5V 2T6"}
                                 inputName={"postalCode"}
-                                inputOnBlur={personalData.handleBlur}
+                                autoComplete="postal-code"
+                                maxLength={7}
+                                required
+                                inputOnBlur={(e) => { personalData.setFieldValue("postalCode", formatPostalCode(e.target.value)); personalData.handleBlur(e); }}
                                 inputOnChange={personalData.handleChange}
                                 inputValue={personalData.values.postalCode}
                                 inputError={personalData.touched.postalCode && personalData.errors.postalCode ? personalData.errors.postalCode : null} />
-                <InputWithLabel labelName={"Phone Number"}
+                <InputWithLabel labelName={"Phone number"}
                                 inputType={"tel"}
-                                placeholder={"(587) 555-1234"}
+                                placeholder={PHONE_EXAMPLE}
                                 inputName={"phoneNumber"}
+                                autoComplete="tel-national"
+                                inputMode="tel"
+                                required
                                 inputOnBlur={personalData.handleBlur}
                                 inputOnChange={(e) => personalData.setFieldValue("phoneNumber", formatCanadianPhone(e.target.value))}
                                 inputValue={personalData.values.phoneNumber}
@@ -227,6 +251,10 @@ const PersonalDetails = () => {
                   I agree to the{' '}
                   <Link to="/terms-and-conditions" target="_blank" className="text-brand font-semibold hover:underline">
                     Terms and Conditions
+                  </Link>
+                  {' '}and have read the{' '}
+                  <Link to="/privacy-policy" target="_blank" className="text-brand font-semibold hover:underline">
+                    Privacy Policy
                   </Link>
                 </span>
               </label>

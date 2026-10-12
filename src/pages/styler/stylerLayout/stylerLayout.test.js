@@ -53,10 +53,11 @@ describe("the stylist sidebar", () => {
       "Payouts",
       "Reviews",
       "My profile",
+      "Support",
     ]) {
       expect(nav.querySelectorAll(`a[href="${label === "Overview" ? "/styler-dashboard" : "/styler-dashboard/" + ({"My work":"my-work","My profile":"profile"}[label] || label.toLowerCase())}"]`).length).toBe(1);
     }
-    expect(nav.querySelectorAll("a").length).toBe(9);
+    expect(nav.querySelectorAll("a").length).toBe(10);
   });
 
   it("marks the active section with a quiet brand pill, never the solid slab", () => {
@@ -140,4 +141,51 @@ test("overview retains business and review summaries", () => {
   renderLayout("/styler-dashboard");
   expect(screen.getByText("summary")).toBeInTheDocument();
   expect(screen.getByText("reviews")).toBeInTheDocument();
+});
+
+test.each([
+  ["/styler-dashboard/update-business-information", "Business information"],
+  ["/styler-dashboard/update-cover-photo", "Update photos"],
+  ["/styler-dashboard/update-personal-information", "Personal information"],
+  ["/styler-dashboard/change-password", "Change password"],
+])("profile sub-page %s is titled %s and keeps My profile highlighted", (path, title) => {
+  renderLayout(path);
+  expect(screen.getByRole("heading", { level: 1, name: title })).toBeInTheDocument();
+  expect(document.title).toBe(`${title} | RapidStylers`);
+  const profile = screen.getByRole("link", { name: "My profile" });
+  expect(profile.className).toMatch(/bg-brand\/10/);
+  expect(profile).toHaveAttribute("aria-current", "true");
+  expect(screen.getByRole("link", { name: "Overview" })).not.toHaveAttribute("aria-current");
+});
+
+test.each([
+  ["/styler-dashboard", "Overview | RapidStylers"],
+  ["/styler-dashboard/appointments", "Appointments | RapidStylers"],
+  ["/styler-dashboard/services", "Services | RapidStylers"],
+  ["/styler-dashboard/profile", "My profile | RapidStylers"],
+])("sets the tab title for %s", (path, title) => {
+  document.title = "Reviews | RapidStylers";
+  renderLayout(path);
+  expect(document.title).toBe(title);
+});
+
+test("Escape closes the mobile menu even when focus is outside it", () => {
+  renderLayout();
+  const toggle = screen.getByRole("button", { name: "Open dashboard navigation" });
+  fireEvent.click(toggle);
+  expect(toggle).toHaveAttribute("aria-expanded", "true");
+  fireEvent.keyDown(document.body, { key: "Escape" });
+  expect(toggle).toHaveAttribute("aria-expanded", "false");
+  expect(toggle).toHaveFocus();
+});
+
+test("the logo has alt text", () => {
+  render(<MemoryRouter><StylerTopBar /></MemoryRouter>);
+  expect(screen.getByAltText("RapidStylers")).toBeInTheDocument();
+});
+
+test("the support page brings its own heading, so the shell adds none", () => {
+  renderLayout("/styler-dashboard/support");
+  expect(screen.queryByRole("heading", { level: 1 })).not.toBeInTheDocument();
+  expect(screen.getByRole("link", { name: "Support" })).toHaveAttribute("aria-current", "page");
 });

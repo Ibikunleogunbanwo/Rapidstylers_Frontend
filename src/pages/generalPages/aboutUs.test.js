@@ -3,9 +3,9 @@ import { MemoryRouter } from "react-router-dom";
 import AboutUs from "./aboutUs";
 import { GALLERY_CATEGORIES } from "../../utils/galleryCategories";
 
-// The hero is shared app chrome (redux, formik, the sign-in modals); the footer
+// The header is shared app chrome (redux, formik, the sign-up dialog); the footer
 // is on every page. Neither is what this test is about.
-vi.mock("./heroSection", () => ({ default: () => <div data-testid="hero" /> }));
+vi.mock("../../components/publicHeader", () => ({ default: () => <div data-testid="header" /> }));
 vi.mock("../../components/footer", () => ({ default: () => <div data-testid="footer" /> }));
 
 const renderPage = () =>

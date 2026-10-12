@@ -2,6 +2,24 @@ import { useEffect, useState } from "react";
 import Back from "../../../components/goBack";
 import { APIService } from "../../../hooks/remote/apiService";
 import { getAuthToken, showErrorToastMessage } from "../../../utils/constant";
+import { announceUnreadNotifications } from "../userLayout/unreadNotifications";
+
+/**
+ * "2026-10-11 21:12:25" (the server's wall-clock stamp) as "Oct 11, 9:12 PM",
+ * with the year only when it is not this year. The stamp carries no zone, so
+ * its clock reading is shown as-is rather than shifted. Anything unexpected
+ * is returned unchanged.
+ */
+export const formatNotificationTime = (value, now = new Date()) => {
+  const match = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/.exec(String(value || ""));
+  if (!match) return value || "";
+  const [, year, month, day, hour, minute] = match.map(Number);
+  const date = new Date(year, month - 1, day, hour, minute);
+  if (Number.isNaN(date.getTime())) return value;
+  const datePart = date.toLocaleDateString("en-US", { month: "short", day: "numeric", ...(year !== now.getFullYear() ? { year: "numeric" } : {}) });
+  const timePart = date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+  return `${datePart}, ${timePart}`;
+};
 
 const Notifications = ({ setPageTitle }) => {
   const [items, setItems] = useState([]);
@@ -90,6 +108,10 @@ const Notifications = ({ setPageTitle }) => {
   };
 
   const unread = items.filter((item) => !item.read).length;
+  // Keep the sidebar badge in step with what this page shows.
+  useEffect(() => {
+    if (!loading && !loadError) announceUnreadNotifications(unread);
+  }, [unread, loading, loadError]);
 
   return (
     <div className="rounded-xl border border-gray-100 bg-white shadow-sm overflow-hidden">
@@ -124,9 +146,9 @@ const Notifications = ({ setPageTitle }) => {
                   <div><p className="text-sm font-bold text-gray-900">{item.title}</p><p className="mt-1 text-sm leading-5 text-gray-600">{item.message}</p></div>
                   {!item.read && <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-brand" aria-label="Unread" />}
                 </div>
-                <p className="mt-2 text-[11px] text-gray-400">{item.createdAt}</p>
+                <p className="mt-2 text-[11px] text-gray-400"><time dateTime={String(item.createdAt || "").replace(" ", "T")}>{formatNotificationTime(item.createdAt)}</time></p>
               </button>
-              <button type="button" onClick={() => deleteOne(item)} disabled={clearing || deleting.has(item.id)} aria-label="Delete this notification" title="Delete" className="absolute right-2 top-2 rounded-full px-2 py-1 text-lg leading-none text-gray-400 hover:bg-gray-100 hover:text-red-600 disabled:opacity-50">&times;</button>
+              <button type="button" onClick={() => deleteOne(item)} disabled={clearing || deleting.has(item.id)} aria-label="Delete this notification" title="Delete this notification" className="absolute right-2 top-2 rounded-full px-2 py-1 text-lg leading-none text-gray-400 hover:bg-gray-100 hover:text-red-600 disabled:opacity-50">&times;</button>
               </div>
             ))}
           </div>

@@ -29,7 +29,8 @@ export const GALLERY_TABS = [
   { label: "Wigs", categories: ["Wigs"] },
   { label: "High-top fade", categories: ["High-top fade"] },
   { label: "Hair dye", categories: ["Hair dye"] },
-  { label: "Nail tech", categories: ["Nail tech"] },
+  // Labelled with the service catalogue's name; the backend category stays "Nail tech".
+  { label: "Nail Technician", categories: ["Nail tech"] },
   { label: "Makeup", categories: ["Makeup"] },
   { label: "Eyelash extensions", categories: ["Eyelash extensions"] },
   { label: "Natural hair", categories: ["Natural hair"] },

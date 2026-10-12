@@ -1,6 +1,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import logo from "../../../assets/svg-icons/colouredLogo.svg";
-import OtpInputs from "../../../components/otpInputs";
+import OtpInputs, { filledCode } from "../../../components/otpInputs";
+import { CodeHelp } from "./codeHelp";
 import { useFormik } from "formik";
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
@@ -78,6 +79,14 @@ const userEmailAddress = location.state?.emailAddress || sessionStorage.getItem(
   const handleOTPDigitChange = (index, event) => {
     setOtpError(null);
     const raw = event.target.value.replace(/\D/g, "");
+    // A whole code arriving at once (the phone's one-time-code autofill).
+    const whole = filledCode(raw);
+    if (whole) {
+      setDigits(whole);
+      verifyUserEmail.setFieldValue("otpCode", whole.join(""));
+      otpRefs.current[digits.length - 1]?.focus();
+      return;
+    }
     const next = [...digits];
     if (raw) {
       next[index] = raw.slice(-1);
@@ -238,7 +247,7 @@ const userEmailAddress = location.state?.emailAddress || sessionStorage.getItem(
           <div className="p-5 md:p-10 mb-6 md:mb-0 w-full">
             <img src={logo} alt="" className="h-10 mb-8" />
             <CustomerSignupCounter />
-            <p className="mt-2 text-[22px] font-normal tracking-[-0.01em] text-onSurface">Verify your email address</p>
+            <h1 className="mt-2 text-[22px] font-normal tracking-[-0.01em] text-onSurface">Verify your email address</h1>
             <p className="text-black/60 text-sm mt-1">
               A verification code was sent to your email address ({userEmailAddress}).
               Please provide the code and click on verify.
@@ -293,6 +302,7 @@ const userEmailAddress = location.state?.emailAddress || sessionStorage.getItem(
                   onKeyDown={(event) => handleOTPDigitKeyDown(index, event)}
                   onPaste={(event) => handleOTPPaste(index, event)}
                   inputRef={(el) => (otpRefs.current[index] = el)}
+                  autoFill={index === 0}
                 />
               ))}
             </div>
@@ -307,8 +317,9 @@ const userEmailAddress = location.state?.emailAddress || sessionStorage.getItem(
             <div className="mt-6">
               <form onSubmit={verifyUserEmail.handleSubmit}>
                 <input name="otpCode" type="text" id="userInput" hidden  value={verifyUserEmail.values.otpCode} onChange={verifyUserEmail.handleChange} onBlur={verifyUserEmail.handleBlur} />
-                <Button variant={"primary"} type={"submit"} text={"Verify"} />
+                <Button variant={"primary"} type={"submit"} text={"Verify"} disabled={!otpComplete} />
               </form>
+              <CodeHelp />
             </div>
           </div>
           <div className="bg-stylerDoodle h-32 w-full lg:hidden"></div>

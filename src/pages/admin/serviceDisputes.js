@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { APIService } from "../../hooks/remote/apiService";
-import { useAdminList, AdminListControls } from "./adminList";
+import { useAdminList, AdminListControls, AdminNoMatches } from "./adminList";
 
 // Columns of the dispute queue, in display order. Every value is a string the
 // backend returns (or null), so a row is validated against this list before it
@@ -131,6 +131,8 @@ export default function ServiceDisputes({ active, onRefund, refundPending }) {
           <AdminListControls list={list} label="Search disputes" />
           {rows.length === 0 ? (
             <p>No service disputes.</p>
+          ) : list.filteredCount === 0 ? (
+            <AdminNoMatches list={list} noun="disputes" />
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">

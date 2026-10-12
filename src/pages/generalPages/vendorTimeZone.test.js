@@ -3,6 +3,9 @@ import { MemoryRouter } from "react-router-dom";
 import SearchResults from "./searchResults";
 import { APIService } from "../../hooks/remote/apiService";
 import { vendorTimeZoneForProvince, vendorTimeZone, vendorTimeZoneLabel, vendorTimeZoneLabelStrict, DEFAULT_VENDOR_ZONE } from "../../utils/vendorTimeZone";
+// The shared site header needs the app's store; these tests are about the page body.
+vi.mock("../../components/publicHeader", () => ({ default: () => null }));
+
 
 // Pin the "browser" to Toronto so the visitor clock is guaranteed one hour
 // ahead of any Alberta vendor. Node re-reads TZ per Date call, so tests below

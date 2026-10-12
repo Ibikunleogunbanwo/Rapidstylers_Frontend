@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import Back from "../../../components/goBack";
 import ServiceCard from "../../../components/serviceCard";
 import { APIService } from "../../../hooks/remote/apiService";
@@ -13,7 +14,7 @@ const SavedStylist = ({ setPageTitle }) => {
   const [removingId, setRemovingId] = useState(null);
 
   useEffect(() => {
-    setPageTitle("Saved Stylists");
+    setPageTitle("Saved professionals");
     document.title = "Saved professionals | RapidStylers";
   }, [setPageTitle]);
 
@@ -81,9 +82,17 @@ const SavedStylist = ({ setPageTitle }) => {
               You have not saved any professionals yet. Tap the bookmark on any
               professional to keep them here for later.
             </p>
+            <Link
+              to="/bookAppointment"
+              className="mt-5 inline-block rounded-full bg-brand px-6 py-2.5 text-[13px] font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+            >
+              Find professionals
+            </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+          // Up to three across (two on tablets), so a short list does not
+          // blow each card up to half the page (BUG-006).
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {stylists.map((styler, index) => (
               <div key={styler.stylerId} className="relative">
                 <ServiceCard

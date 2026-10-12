@@ -1,4 +1,4 @@
-import { useAdminList, AdminListControls } from "./adminList";
+import { useAdminList, AdminListControls, AdminNoMatches } from "./adminList";
 import React, { useState, useEffect, useRef } from "react";
 import { Navigate, Link } from "react-router-dom";
 import { APIService } from "../../hooks/remote/apiService";
@@ -9,8 +9,23 @@ import {
   showSuccessToastMessage,
 } from "../../utils/constant";
 
+const nameOf = (item) => item.serviceTypeName || item.serviceName || item.name || "";
+
+/**
+ * The backend's category-name rule (contract 11): trimmed, 2-50 characters,
+ * and no other category with the same name ignoring case. Returns the trimmed
+ * name, or throws the message to show.
+ */
+export const categoryName = (value, services, exceptId) => {
+  const name = String(value || "").trim();
+  if (name.length < 2 || name.length > 50) throw new Error("Category name must be 2 to 50 characters.");
+  if (services.some((item) => item.id !== exceptId && nameOf(item).trim().toLowerCase() === name.toLowerCase())) {
+    throw new Error("A category with this name already exists");
+  }
+  return name;
+};
+
 const ManageCategories = () => {
-  document.title = "Manage Categories | RapidStylers";
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
@@ -44,13 +59,15 @@ const ManageCategories = () => {
 
   const handleCreate = async (e) => {
     e.preventDefault();
-    if (writeLock.current || !newName.trim()) return;
-    writeLock.current = true;
+    if (writeLock.current) return;
     setActionError("");
+    let serviceName;
+    try { serviceName = categoryName(newName, services); } catch (error) { setActionError(error.message); return; }
+    writeLock.current = true;
     setSubmitting(true);
     try {
       await APIService.adminCreateService({
-        serviceName: newName.trim(),
+        serviceName,
         description: newDescription.trim(),
       });
       showSuccessToastMessage("Category created");
@@ -66,14 +83,16 @@ const ManageCategories = () => {
   };
 
   const handleUpdate = async (item) => {
-    if (writeLock.current || !editName.trim()) return;
+    if (writeLock.current) return;
+    setActionError("");
+    let serviceName;
+    try { serviceName = categoryName(editName, services, item.id); } catch (error) { setActionError(error.message); return; }
     writeLock.current = true;
     setSubmitting(true);
-    setActionError("");
     try {
       await APIService.adminUpdateService({
         id: item.id,
-        serviceName: editName.trim(),
+        serviceName,
         description: editDescription.trim(),
       });
       showSuccessToastMessage("Category updated");
@@ -110,7 +129,7 @@ const ManageCategories = () => {
   const displayName = (item) => item.serviceTypeName || item.serviceName || item.name || "(unnamed)";
 
   return (
-    <AdminPage eyebrow="Admin" title="Manage Categories">
+    <AdminPage eyebrow="Admin" title="Manage Categories" pageTitle="Categories">
       {/* Create */}
       {actionError && <p role="alert" className="mb-4 text-sm text-red-700">{actionError}</p>}
       <form onSubmit={handleCreate}>
@@ -121,6 +140,8 @@ const ManageCategories = () => {
               <AdminInput
                 type="text"
                 required
+                minLength={2}
+                maxLength={50}
                 disabled={submitting}
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
@@ -156,7 +177,7 @@ const ManageCategories = () => {
           ) : loadError ? (
             <div role="alert">{loadError} <button type="button" onClick={loadServices}>Retry</button></div>
           ) : list.filteredCount === 0 ? (
-            <p className="text-sm text-gray-500">{services.length ? "No categories match your search." : "No categories yet. Add your first one above."}</p>
+            services.length ? <AdminNoMatches list={list} noun="categories" /> : <p className="text-sm text-gray-500">No categories yet. Add your first one above.</p>
           ) : (
             <ul className="divide-y divide-gray-100">
               {list.visibleItems.map((item) => (
@@ -167,6 +188,7 @@ const ManageCategories = () => {
                         <AdminInput
                           variant="inline"
                           type="text"
+                          maxLength={50}
                           disabled={submitting}
                           value={editName}
                           onChange={(e) => setEditName(e.target.value)}
@@ -231,8 +253,8 @@ const ManageCategories = () => {
       </AdminCard>
 
       <p className="mt-6 text-center">
-        <Link to="/" className="text-sm text-gray-500 hover:text-gray-800 font-semibold">
-          ← Home
+        <Link to="/admin" className="text-sm text-gray-500 hover:text-gray-800 font-semibold">
+          ← Admin dashboard
         </Link>
       </p>
     </AdminPage>

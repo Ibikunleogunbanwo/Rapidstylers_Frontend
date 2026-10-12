@@ -85,6 +85,7 @@ describe("SavedStylist panel", () => {
 
     expect(await screen.findByText("Nothing saved yet")).toBeInTheDocument();
     expect(screen.getByText(/Tap the bookmark on any professional/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Find professionals" })).toHaveAttribute("href", "/bookAppointment");
   });
 
   test("signed-out visitors get the sign-in prompt, not a request", async () => {

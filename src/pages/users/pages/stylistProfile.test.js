@@ -40,6 +40,9 @@ vi.mock("../../../hooks/remote/apiService", () => ({
 }));
 
 import { useSingleStylerProfile } from "../userLayout/functionalEffects";
+// The shared site header needs the app's store; these tests are about the page body.
+vi.mock("../../../components/publicHeader", () => ({ default: () => null }));
+
 
 const portfolio = (n) =>
   Array.from({ length: n }, (_, i) => ({ imageUrl: `https://img.example/${i}.jpg`, name: `img-${i + 1}` }));

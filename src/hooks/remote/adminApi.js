@@ -1,0 +1,57 @@
+import { ApiClient } from './apiClient';
+import { responseData } from './marketplaceApi';
+
+/**
+ * Admin reads and writes added after the original APIService class: gallery
+ * moderation, the review lists, bookings and revenue, refund context, the saved
+ * reconciliation report, announcement history and customer feedback. Every call
+ * resolves to the response's `data` and rejects with the backend's message, so
+ * pages can show `error.message` (or requestError(error)) as is.
+ */
+const get = (path, params) => ApiClient.get(path, { params }).then(responseData);
+const post = (path, body) => ApiClient.post(path, body).then(responseData);
+
+/** A CSV download: the body is the file, unless the backend answered with a JSON error. */
+const download = async (path, params, fallbackName) => {
+  const response = await ApiClient.get(path, { params, responseType: 'blob' });
+  const blob = response.data;
+  if (blob && /json/i.test(blob.type || '')) {
+    const body = JSON.parse(await blob.text());
+    throw new Error(body?.message || 'The export could not be created.');
+  }
+  const match = /filename="?([^";]+)"?/i.exec(response.headers?.['content-disposition'] || '');
+  return { blob, filename: match ? match[1] : fallbackName };
+};
+
+export const AdminAPI = {
+  identificationImage: stylerId => get('/admin/identification_image', { stylerId }),
+  galleryModeration: params => get('/admin/gallery_moderation', params),
+  galleryImageHistory: portfolioId => get('/admin/gallery_image_history', { portfolioId }),
+  approveGalleryImage: (portfolioId, note) => post('/admin/approve_gallery_image', { portfolioId, note: note || null }),
+  rejectGalleryImage: (portfolioId, note) => post('/admin/reject_gallery_image', { portfolioId, note }),
+  reviews: params => get('/admin/reviews', params),
+  reviewQueue: () => get('/admin/review_moderation_queue'),
+  moderateReview: (reviewId, action) => post('/admin/update_review_moderation', { reviewId, action }),
+  bookings: params => get('/admin/bookings', params),
+  bookingDetail: appointmentId => get('/admin/booking_detail', { appointmentId }),
+  bookingsExport: params => download('/admin/bookings_export', params, 'rapidstylers-bookings.csv'),
+  revenue: params => get('/admin/revenue', params),
+  refundContext: appointmentId => get('/admin/refund_context', { appointmentId }),
+  reconciliationLatest: () => get('/admin/payment_reconciliation_latest'),
+  announcements: () => get('/admin/announcements'),
+  announcementAudienceCount: () => get('/admin/announcement_audience_count'),
+  auditLogs: params => get('/admin/audit_logs', params),
+  feedback: () => get('/list_feedback'),
+};
+
+/** Hands a downloaded file to the browser. */
+export const saveFile = ({ blob, filename }) => {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 0);
+};

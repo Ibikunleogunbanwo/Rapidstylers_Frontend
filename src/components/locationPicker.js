@@ -1,22 +1,13 @@
 import { useState } from "react";
-import Modal from "./modals";
+import { AccessibleModal as Modal } from "./accessibleDialog";
 import HeroSelect from "./heroSelect";
 import Input from "./input";
 import { useUserLocation } from "../context/LocationContext";
 import { cityProvinceOf } from "../utils/canadaCities";
+import { PROVINCE_NAMES, toProvinceName } from "../utils/signupValidation";
 
-const PROVINCES = [
-  "Alberta",
-  "British Columbia",
-  "Manitoba",
-  "New Brunswick",
-  "Newfoundland and Labrador",
-  "Nova Scotia",
-  "Ontario",
-  "Prince Edward Island",
-  "Quebec",
-  "Saskatchewan",
-];
+// All 13 provinces and territories, the same list every form on the site uses.
+const PROVINCES = PROVINCE_NAMES;
 
 const provinceOptions = PROVINCES.map((p) => ({ value: p, label: p }));
 
@@ -26,8 +17,11 @@ const provinceOptions = PROVINCES.map((p) => ({ value: p, label: p }));
  */
 const LocationPicker = ({ onClose }) => {
   const { location, updateLocation } = useUserLocation();
-  const [province, setProvince] = useState(location?.province || "");
-  const [city, setCity] = useState(location?.city || "");
+  // A location outside Canada never pre-fills the form: "Alberta" beside
+  // "Karachi" was a pair that belonged to no real place.
+  const knownProvince = toProvinceName(location?.province);
+  const [province, setProvince] = useState(knownProvince);
+  const [city, setCity] = useState(knownProvince ? location?.city || "" : "");
 
   // When the typed city is a known Canadian city that belongs to a different
   // province (e.g. Calgary with Saskatchewan selected), tell the user and let

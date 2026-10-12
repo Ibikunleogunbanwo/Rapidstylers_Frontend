@@ -7,41 +7,33 @@ import Button from "../../../components/button";
 import { useStylerSignup } from "../../../context/StylerSignupContext";
 import { readStoredSignupEmail, storeSignupEmail } from "./signupFlow";
 import { APIService } from "../../../hooks/remote/apiService";
+import {
+  NAME_MAX,
+  PHONE_EXAMPLE,
+  cleanName,
+  formatCanadianPhone,
+  nameError,
+  phoneDigits,
+  phoneError,
+} from "../../../utils/signupValidation";
 
 /* ── Zod schema ─────────────────────────────────────────────────────── */
-const formatCanadianPhone = (value) => {
-  const digits = (value || "").replace(/\D/g, "").replace(/^1(?=\d{10}$)/, "").slice(0, 10);
-  if (digits.length < 4) return digits;
-  if (digits.length < 7) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
-  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+// The name and phone rules are the shared sign-up rules, which are also the
+// backend's, so a value accepted here is not refused at the last step.
+const fieldRule = (check) => (val, ctx) => {
+  const message = check(val);
+  if (message) ctx.addIssue({ code: "custom", message });
 };
 
-const phoneDigits = (value) => (value || "").replace(/\D/g, "").replace(/^1(?=\d{10}$)/, "");
-
 const personalSchema = z.object({
-  firstname: z
-    .string()
-    .trim()
-    .min(1, "First name is required")
-    .min(3, "First name must be at least 3 characters"),
-  lastname: z
-    .string()
-    .trim()
-    .min(1, "Last name is required")
-    .min(3, "Last name must be at least 3 characters"),
+  firstname: z.string().transform(cleanName).superRefine(fieldRule((v) => nameError(v, "first name"))),
+  lastname: z.string().transform(cleanName).superRefine(fieldRule((v) => nameError(v, "last name"))),
   emailAddress: z
     .string()
     .trim()
     .min(1, "Email is required")
     .email("Enter a valid email address"),
-  phoneNumber: z
-    .string()
-    .trim()
-    .min(1, "Phone number is required")
-    .refine(
-      (val) => phoneDigits(val).length === 10,
-      "Enter a valid Canadian phone number, e.g. (587) 555-1234"
-    ),
+  phoneNumber: z.string().trim().superRefine(fieldRule((v) => phoneError(v))),
 });
 
 /* ── Convert Zod errors → Formik format ─────────────────────────────── */
@@ -110,8 +102,11 @@ const StylerPersonalDetails = () => {
               <InputWithLabel
                 labelName="First name"
                 inputType="text"
-                placeholder="e.g John"
+                placeholder="e.g. Jordan"
                 inputName="firstname"
+                autoComplete="given-name"
+                maxLength={NAME_MAX}
+                required
                 inputValue={values.firstname}
                 inputOnChange={handleChange}
                 inputOnBlur={handleBlur}
@@ -120,8 +115,11 @@ const StylerPersonalDetails = () => {
               <InputWithLabel
                 labelName="Last name"
                 inputType="text"
-                placeholder="e.g Wick"
+                placeholder="e.g. Lee"
                 inputName="lastname"
+                autoComplete="family-name"
+                maxLength={NAME_MAX}
+                required
                 inputValue={values.lastname}
                 inputOnChange={handleChange}
                 inputOnBlur={handleBlur}
@@ -131,8 +129,10 @@ const StylerPersonalDetails = () => {
             <InputWithLabel
               labelName="Email address"
               inputType="email"
-              placeholder="babayaga@gmail.com"
+              placeholder="you@example.com"
               inputName="emailAddress"
+              autoComplete="email"
+              required
               inputValue={values.emailAddress}
               inputOnChange={handleChange}
               inputOnBlur={handleBlur}
@@ -141,8 +141,11 @@ const StylerPersonalDetails = () => {
             <InputWithLabel
               labelName="Phone number"
               inputType="tel"
-              placeholder="e.g. 5875551234"
+              placeholder={`e.g. ${PHONE_EXAMPLE}`}
               inputName="phoneNumber"
+              autoComplete="tel-national"
+              inputMode="tel"
+              required
               inputValue={values.phoneNumber}
               inputOnChange={(event) => handleChange({ target: { name: "phoneNumber", value: formatCanadianPhone(event.target.value) } })}
               inputOnBlur={handleBlur}

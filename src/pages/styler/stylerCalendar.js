@@ -151,28 +151,34 @@ const StylerCalendar = () => {
               Your appointments at a glance. Click a day for details.
             </p>
           </div>
-          <div className="flex items-center gap-2 flex-wrap justify-end sm:justify-start">
+          {/* One row that fits a 360px phone: no wrapping "‹ Prev", Today always visible. */}
+          <div className="flex w-full items-center justify-between gap-1.5 sm:w-auto sm:justify-start sm:gap-2">
             <button
+              type="button"
+              aria-label="Previous month"
               onClick={() => shiftMonth(-1)}
-              className="px-3 py-1.5 rounded-md border border-gray-200 text-sm font-semibold text-gray-600 hover:border-brand hover:text-brand"
+              className="whitespace-nowrap px-2.5 sm:px-3 py-1.5 rounded-md border border-gray-200 text-sm font-semibold text-gray-600 hover:border-brand hover:text-brand"
             >
-              ‹ Prev
+              ‹<span className="hidden sm:inline"> Prev</span>
             </button>
-            <span className="text-sm font-bold text-gray-800 min-w-[120px] sm:min-w-[170px] text-center">
+            <span aria-live="polite" className="flex-1 sm:flex-none whitespace-nowrap text-sm font-bold text-gray-800 sm:min-w-[170px] text-center">
               {MONTHS[cursor.month]} {cursor.year}
             </span>
             <button
+              type="button"
+              aria-label="Next month"
               onClick={() => shiftMonth(1)}
-              className="px-3 py-1.5 rounded-md border border-gray-200 text-sm font-semibold text-gray-600 hover:border-brand hover:text-brand"
+              className="whitespace-nowrap px-2.5 sm:px-3 py-1.5 rounded-md border border-gray-200 text-sm font-semibold text-gray-600 hover:border-brand hover:text-brand"
             >
-              Next ›
+              <span className="hidden sm:inline">Next </span>›
             </button>
             <button
+              type="button"
               onClick={() => {
                 setCursor({ year: calendarToday.year, month: calendarToday.month });
                 setSelectedDay(null);
               }}
-              className="px-3 py-1.5 rounded-md border border-gray-200 text-sm font-semibold text-gray-600 hover:border-brand hover:text-brand"
+              className="whitespace-nowrap px-2.5 sm:px-3 py-1.5 rounded-md border border-gray-200 text-sm font-semibold text-gray-600 hover:border-brand hover:text-brand"
             >
               Today
             </button>
@@ -186,25 +192,28 @@ const StylerCalendar = () => {
         ) : loadError ? (<div role="alert" className="p-4 text-sm text-red-700">{loadError} <button type="button" onClick={loadAppointments}>Retry</button></div>) : (
           <>
             {/* Weekday header */}
-            <div className="grid grid-cols-7 border-b border-gray-100 pb-2 mb-2">
+            {/* minmax(0,1fr) columns: a long service chip can no longer widen a
+                column and push Saturday off a phone screen. */}
+            <div className="grid grid-cols-[repeat(7,minmax(0,1fr))] border-b border-gray-100 pb-2 mb-2">
               {WEEKDAYS.map((w) => (
-                <div key={w} className="text-center text-xs font-semibold text-gray-400 uppercase">
+                <div key={w} className="text-center text-[10px] sm:text-xs font-semibold text-gray-400 uppercase">
                   {w}
                 </div>
               ))}
             </div>
             {/* Day grid */}
-            <div className="grid grid-cols-7 gap-1.5">
+            <div className="grid grid-cols-[repeat(7,minmax(0,1fr))] gap-0.5 sm:gap-1.5">
               {cells.map((cell, idx) =>
                 cell.blank ? (
-                  <div key={`b${idx}`} className="min-h-[92px] rounded-lg bg-gray-50/60" />
+                  <div key={`b${idx}`} className="min-h-[56px] sm:min-h-[92px] rounded-lg bg-gray-50/60" />
                 ) : (
                   <button
+                    type="button"
                     key={cell.key}
                     aria-label={cell.key}
                     aria-current={cell.key === todayKey ? "date" : undefined}
                     onClick={() => setSelectedDay(selectedDay === cell.key ? null : cell.key)}
-                    className={`min-h-[92px] rounded-lg border p-1.5 text-left align-top transition-colors ${
+                    className={`min-w-0 min-h-[56px] sm:min-h-[92px] overflow-hidden rounded-md sm:rounded-lg border p-1 sm:p-1.5 text-left align-top transition-colors ${
                       selectedDay === cell.key
                         ? "border-brand bg-brand/5 ring-1 ring-brand"
                         : cell.key === todayKey
@@ -226,7 +235,15 @@ const StylerCalendar = () => {
                         </span>
                       )}
                     </div>
-                    <div className="mt-1 grid gap-1">
+                    {/* Phones: one dot per appointment; the day panel below has the details. */}
+                    {cell.items.length > 0 && (
+                      <div className="mt-1 flex flex-wrap gap-0.5 sm:hidden" aria-hidden="true">
+                        {cell.items.slice(0, 4).map((a) => (
+                          <span key={a.appointmentId} className={`h-1.5 w-1.5 rounded-full border ${(STATUS_META[a.statusCode] || STATUS_META["1"]).chip}`} />
+                        ))}
+                      </div>
+                    )}
+                    <div className="mt-1 hidden sm:grid gap-1">
                       {cell.items.slice(0, 3).map((a) => {
                         const meta = STATUS_META[a.statusCode] || STATUS_META["1"];
                         return (

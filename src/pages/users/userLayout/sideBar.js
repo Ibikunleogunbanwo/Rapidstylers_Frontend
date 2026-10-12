@@ -12,17 +12,35 @@ import close from "../../../assets/svg-icons/closeBlack.svg";
  * "/dashboard" and "signOut", titles no page sets, so it could never
  * highlight — the array keys it off "Sign Out" like every other item, which
  * keeps the visible behavior identical and drops the dead comparisons.
+ *
+ * Sign Out is a button that runs the layout's logout (onSignOut), not a link
+ * to /signOut: a GET URL lets any page that links or embeds it sign people out.
  */
 const NAV_ITEMS = [
   { to: "/dashboard", title: "Dashboard", label: "Dashboard" },
   { to: "/bookAppointment", title: "Book Appointment", label: "Book an Appointment" },
   { to: "/accountSettings", title: "Account Settings", label: "Account Settings" },
   { to: "/notifications", title: "Notifications", label: "Notifications" },
-  { to: "/savedStylist", title: "Saved Stylists", label: "Saved Stylists" },
+  { to: "/savedStylist", title: "Saved professionals", label: "Saved professionals" },
   { to: "/feedback", title: "Feedback", label: "Feedback" },
 ];
 
-const UserSideBar = ({ sideBarVisibility, sideBarTitle, closeSideBar }) => {
+// The unread count rides on the Notifications item, read out with the label.
+const NavLabel = ({ to, label, unread }) => (
+    to === "/notifications" && unread > 0 ? (
+        <span className="flex items-center justify-between gap-2">
+            {label}
+            <span className="min-w-[20px] rounded-full bg-brand px-1.5 py-0.5 text-center text-[11px] font-semibold leading-none text-white">
+                <span aria-hidden="true">{unread > 99 ? "99+" : unread}</span>
+                <span className="sr-only">, {unread} unread</span>
+            </span>
+        </span>
+    ) : label
+);
+
+const SIGN_OUT_CLASS = "w-full text-left rounded-full text-black/60 hover:text-onSurface hover:bg-black/[0.04] transition-colors focus-visible:outline-2 focus-visible:outline-brand";
+
+const UserSideBar = ({ sideBarVisibility, sideBarTitle, closeSideBar, onSignOut, unreadNotifications = 0 }) => {
     return (
         <div>
             {/* Desktop */}
@@ -39,15 +57,16 @@ const UserSideBar = ({ sideBarVisibility, sideBarTitle, closeSideBar }) => {
                                     : "text-black/60 hover:text-onSurface hover:bg-black/[0.04] cursor-pointer"
                             }`}
                         >
-                            {label}
+                            <NavLabel to={to} label={label} unread={unreadNotifications} />
                         </Link>
                     ))}
-                    <Link
-                        to="/signOut"
-                        className="py-2.5 px-4 rounded-full cursor-pointer text-black/60 hover:text-onSurface hover:bg-black/[0.04] transition-colors"
+                    <button
+                        type="button"
+                        onClick={onSignOut}
+                        className={`py-2.5 px-4 cursor-pointer ${SIGN_OUT_CLASS}`}
                     >
                         Sign Out
-                    </Link>
+                    </button>
                 </nav>
             </div>
 
@@ -70,18 +89,17 @@ const UserSideBar = ({ sideBarVisibility, sideBarTitle, closeSideBar }) => {
                                             : "text-black/60 hover:text-onSurface hover:bg-black/[0.04]"
                                     }`}
                                 >
-                                    {label}
+                                    <NavLabel to={to} label={label} unread={unreadNotifications} />
                                 </Link>
                             </div>
                         ))}
-                        <div onClick={closeSideBar}>
-                            <Link
-                                to="/signOut"
-                                className="block py-2.5 px-4 rounded-full text-black/60 hover:text-onSurface hover:bg-black/[0.04] transition-colors"
-                            >
-                                Sign Out
-                            </Link>
-                        </div>
+                        <button
+                            type="button"
+                            onClick={() => { closeSideBar(); onSignOut?.(); }}
+                            className={`block py-2.5 px-4 ${SIGN_OUT_CLASS}`}
+                        >
+                            Sign Out
+                        </button>
                     </nav>
                 </div>
             </div>

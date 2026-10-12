@@ -4,7 +4,6 @@ import Input from "../../../components/input";
 import Button from "../../../components/button";
 import { useFormik } from "formik";
 import * as Yup from "yup";
-import SelectInput from "../../../components/selectInput";
 import { useDispatch, useSelector } from "react-redux";
 import Spinner from "../../../components/spinner";
 import Back from "../../../components/goBack";
@@ -12,6 +11,8 @@ import { addUserFeedBack } from "../../../hooks/local/userReducer";
 import { showSuccessToastMessage } from "../../../utils/constant";
 
 const MESSAGE_LIMIT = 1000;
+
+const Required = () => <span aria-hidden="true" className="ml-0.5 text-red-600">*</span>;
 
 /** What the reader gets after sending — the three beats of the real process. */
 const WHAT_HAPPENS_NEXT = [
@@ -28,7 +29,6 @@ const Feedback = ({ setPageTitle }) => {
   const dispatch = useDispatch();
   const [submitError, setSubmitError] = useState("");
   const [sent, setSent] = useState(false);
-  // SelectInput adds its own disabled "Select a ..." option, so no blank entry here.
   const feedbackType = [{ value: "Improvement suggestion", label: "Improvement suggestion" },
                         { value: "Report a bug", label: "Report a bug" }]
   // Editing again after a send means a new message, so the thank-you note goes away.
@@ -46,7 +46,7 @@ const Feedback = ({ setPageTitle }) => {
       message: "",
     },
     validationSchema: Yup.object({
-      emailAddress: Yup.string().email("Enter a valid email address").required("Email Address is required"),
+      emailAddress: Yup.string().email("Enter a valid email address").required("Email address is required"),
       feedbackType: Yup.string().required("Feedback type is required"),
       message: Yup.string().required("Feedback content is required"),
     }),
@@ -94,9 +94,10 @@ const Feedback = ({ setPageTitle }) => {
             Something not working, or an idea that would make booking easier? Tell us
             here. Bug reports and suggestions both go straight to the team.
           </p>
-          <form onSubmit={submitUserFeedback.handleSubmit} className="mt-5 grid gap-4">
+          <form onSubmit={submitUserFeedback.handleSubmit} noValidate className="mt-5 grid gap-4">
+            <p className="text-xs text-gray-500">Fields marked <Required /><span className="sr-only">with an asterisk</span> are required.</p>
             <div className="grid gap-3">
-              <Input label={"Email"}
+              <Input label={<>Email<Required /></>}
                      type={"email"}
                      name={"emailAddress"}
                      onBlur={submitUserFeedback.handleBlur}
@@ -105,23 +106,32 @@ const Feedback = ({ setPageTitle }) => {
                      onError={submitUserFeedback.errors.emailAddress && submitUserFeedback.touched.emailAddress ? submitUserFeedback.errors.emailAddress : null}
               />
               <div className="grid gap-1">
-                <SelectInput labelName={"Feedback type"}
-                             labelSuffix=""
-                             selectOptions={feedbackType}
-                             valueKey={'value'}
-                             labelKey={'label'}
-                             selectName={"feedbackType"}
-                             selectBlur={submitUserFeedback.handleBlur}
-                             onChange={clearSent((event) => submitUserFeedback.setFieldValue('feedbackType', event.target.value))}
-                             selectValue={submitUserFeedback.values.feedbackType}
-                             selectError={submitUserFeedback.touched.feedbackType && submitUserFeedback.errors.feedbackType ? submitUserFeedback.errors.feedbackType : null} />
+                <label htmlFor="feedback-type" className="text-sm font-medium">Feedback type<Required /></label>
+                <select
+                  id="feedback-type"
+                  name="feedbackType"
+                  required
+                  value={submitUserFeedback.values.feedbackType}
+                  onBlur={submitUserFeedback.handleBlur}
+                  onChange={clearSent((event) => submitUserFeedback.setFieldValue('feedbackType', event.target.value))}
+                  aria-invalid={Boolean(submitUserFeedback.touched.feedbackType && submitUserFeedback.errors.feedbackType)}
+                  aria-describedby="feedback-type-error"
+                  className="w-full py-[13px] px-3 text-sm rounded-md border border-[#c4c4c440] bg-[#c4c4c410] active:outline-0 focus:outline-brand"
+                >
+                  <option value="" disabled>Select a feedback type</option>
+                  {feedbackType.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                </select>
+                <span id="feedback-type-error" className="text-xs text-red-500">
+                  {submitUserFeedback.touched.feedbackType && submitUserFeedback.errors.feedbackType ? submitUserFeedback.errors.feedbackType : null}
+                </span>
               </div>
             </div>
             <div className="grid gap-1">
-              <label htmlFor="feedback-message" className="font-medium text-sm">Your feedback</label>
+              <label htmlFor="feedback-message" className="font-medium text-sm">Your feedback<Required /></label>
               <textarea
                 name="message"
                 id="feedback-message"
+                required
                 onBlur={submitUserFeedback.handleBlur}
                 onChange={clearSent(submitUserFeedback.handleChange)}
                 value={submitUserFeedback.values.message}

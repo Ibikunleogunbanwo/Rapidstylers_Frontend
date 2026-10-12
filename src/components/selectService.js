@@ -1,5 +1,5 @@
 import BookingPromo from "./bookingPromo";
-import close from "../assets/svg-icons/closeBlack.svg";
+import AccessibleDialog, { DialogCloseButton } from "./accessibleDialog";
 import React, { useEffect, useState, useRef } from "react";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements } from "@stripe/react-stripe-js";
@@ -743,18 +743,21 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
 
       </div>
       {/* book appointment form */}
-      <div
-        className={`fixed z-50 w-full h-[100vh] top-0 bottom-0 left-0 right-0 ${
-          bookAppointmentForm ? "block" : "hidden"
-        }`}
+      {/* Kept mounted while closed so the picked slot survives closing it. */}
+      <AccessibleDialog
+        open={bookAppointmentForm}
+        onClose={closeBookingForm}
+        keepMounted
+        label={placedBooking ? "Booking sent" : `Book ${serviceName}`}
+        overlayClassName="fixed z-50 top-0 bottom-0 left-0 right-0 bg-black/50 px-4 flex justify-center items-center"
+        className="bg-white relative w-full md:w-[40%] lg:w-[35%] rounded-md border max-h-[60%] md:max-h-[80%] overflow-y-scroll"
       >
-        <div className="bg-black/50 h-full w-full px-4 flex justify-center items-center">
-          <div className="bg-white relative w-full md:w-[40%] lg:w-[35%] rounded-md border max-h-[60%] md:max-h-[80%] overflow-y-scroll">
-            <div className="border-b sticky top-0 bg-white flex justify-between p-6">
+            <div className="border-b sticky top-0 bg-white flex justify-between items-center px-6 py-4 z-10">
               {placedBooking ? (
                 <p className="text-md font-semibold">Booking sent</p>
               ) : (
                 <select
+                  aria-label="Month"
                   className="active:outline-0 focus:outline-0 text-md font-semibold bg-white"
                   onChange={handleMonthChange}
                   value={selectedMonth}
@@ -769,12 +772,7 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
                   ))}
                 </select>
               )}
-              <img
-                src={close}
-                alt=""
-                className="h-6"
-                onClick={closeBookingForm}
-              />
+              <DialogCloseButton onClick={closeBookingForm} iconClassName="h-6 w-6" />
             </div>
             {/* The moment after a booking lands: what was booked, and the one
                 thing worth doing next. The pickers are hidden rather than
@@ -926,31 +924,35 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
                   {stylistZoneLabel ? ` (${stylistZoneLabel})` : ""}
                 </p>
               )}
-              <div className="grid grid-cols-3 lg:grid-cols-4 gap-2">
-                {timeArray.map((time, index) => {
-                  const timeOpen = isTimeAvailable(time);
-                  const blocked = isTimeBlocked(dateKeyFor(selectedDay), time);
-                  const selectable = timeOpen && !blocked;
-                  return (
-                    <div
-                      key={index}
-                      className={`border text-sm text-center py-4 rounded-md ${
-                        selectedTime === time
-                          ? "bg-brand text-white cursor-default"
-                          : selectable
-                          ? "bg-white cursor-pointer"
-                          : blocked
-                          ? "bg-red-50 text-red-300 cursor-not-allowed"
-                          : "bg-gray-50 text-gray-300 cursor-not-allowed"
-                      }`}
-                      onClick={() => selectable && setSelectedTime(time)}
-                      title={blocked ? "Already booked" : timeOpen ? "" : "Outside the stylist's working hours"}
-                    >
-                      {time}
-                    </div>
-                  );
-                })}
-              </div>
+              {/* Times only appear once a date is picked, and only the ones that
+                  can actually be booked that day: a full grid of 9 am to 8 pm
+                  before a date is chosen looked bookable and mostly was not. */}
+              {!selectedDay ? (
+                <p className="text-sm text-gray-500" role="status">Pick a date to see available times.</p>
+              ) : (() => {
+                const dayKey = dateKeyFor(selectedDay);
+                const openTimes = timeArray.filter((time) => isTimeAvailable(time) && !isTimeBlocked(dayKey, time));
+                if (openTimes.length === 0) {
+                  return <p className="text-sm text-gray-500" role="status">No times are free on this date. Try another day.</p>;
+                }
+                return (
+                  <div className="grid grid-cols-3 lg:grid-cols-4 gap-2" role="group" aria-label="Available arrival times">
+                    {openTimes.map((time) => (
+                      <button
+                        type="button"
+                        key={time}
+                        aria-pressed={selectedTime === time}
+                        className={`border text-sm text-center py-4 rounded-md ${
+                          selectedTime === time ? "bg-brand text-white cursor-default" : "bg-white cursor-pointer"
+                        }`}
+                        onClick={() => setSelectedTime(time)}
+                      >
+                        {time}
+                      </button>
+                    ))}
+                  </div>
+                );
+              })()}
               <p className="mt-2 hidden">Selected Time: {selectedTime}</p>
             </div>
             <div className="px-6">
@@ -1241,9 +1243,7 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
               </button>
              )}
             </div>
-          </div>
-        </div>
-      </div>
+      </AccessibleDialog>
     </div>
   );
 };

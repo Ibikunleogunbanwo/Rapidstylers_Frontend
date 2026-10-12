@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import PublicHeader from "../../components/publicHeader";
 import Footer from "../../components/footer";
 import { Section, PageHeading, BackHome } from "../../components/pageSections";
 import { SUPPORT_EMAIL } from "../../utils/constant";
@@ -11,6 +12,7 @@ const PrivacyPolicy = () => {
 
   return (
     <div className="min-h-screen bg-white">
+      <PublicHeader spacer />
       <Section pad="pt-10 md:pt-14 pb-6">
         <BackHome />
         <PageHeading

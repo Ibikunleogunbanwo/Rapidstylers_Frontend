@@ -4,10 +4,14 @@ import Notifications from './notifications';
 import Loyalty from './loyalty';
 import Support from './support';
 vi.mock('../../../components/goBack', () => ({ default: () => null }));
-vi.mock('../../../utils/constant', () => ({ getAuthToken: () => 'token', showSuccessToastMessage: vi.fn(), showErrorToastMessage: vi.fn() }));
+vi.mock('../../../utils/constant', () => ({ getAuthToken: () => 'token', getUserRole: () => 'CUSTOMER', showSuccessToastMessage: vi.fn(), showErrorToastMessage: vi.fn() }));
+vi.mock('../../../hooks/remote/apiClient', () => ({ ApiClient: { get: vi.fn(), post: vi.fn() } }));
+vi.mock('../userLayout/unreadNotifications', () => ({ announceUnreadNotifications: vi.fn() }));
 vi.mock('../../../hooks/remote/apiService', () => ({ APIService: { getNotificationPreferences: vi.fn(), updateNotificationPreferences: vi.fn(), listNotifications: vi.fn(), markNotificationRead: vi.fn(), deleteNotification: vi.fn(), deleteAllNotifications: vi.fn(), getLoyaltyAccount: vi.fn(), listSupportTickets: vi.fn() } }));
 import { APIService } from '../../../hooks/remote/apiService';
-beforeEach(() => vi.resetAllMocks());
+import { ApiClient } from '../../../hooks/remote/apiClient';
+import { formatNotificationTime } from './notifications';
+beforeEach(() => { vi.resetAllMocks(); ApiClient.get.mockResolvedValue({data:{data:[]}}); });
 test('failed preferences cannot overwrite existing preferences, and retry loads authoritative values', async () => {
  APIService.getNotificationPreferences.mockRejectedValueOnce(new Error('offline')).mockResolvedValueOnce({data:{data:{availability:false,price:false,verification:true}}});
  render(<NotificationSettings setPageTitle={vi.fn()} />);
@@ -70,4 +74,47 @@ test.each([[NotificationSettings,'getNotificationPreferences'],[Notifications,'l
  APIService[method].mockResolvedValue({data:{}});
  render(<Panel setPageTitle={vi.fn()}/>);
  expect(await screen.findByRole('alert')).toHaveTextContent(/Unable to load/);
+});
+
+test('notification times read as "Oct 11, 9:12 PM", with the year only when it differs (QA C-08)', () => {
+ const now = new Date(2026, 9, 12);
+ expect(formatNotificationTime('2026-10-11 21:12:25', now)).toBe('Oct 11, 9:12 PM');
+ expect(formatNotificationTime('2025-01-02 08:05:00', now)).toBe('Jan 2, 2025, 8:05 AM');
+ expect(formatNotificationTime('not a date', now)).toBe('not a date');
+});
+test('support fields show visible labels, counters, and an optional appointment line (QA C-11)', async () => {
+ APIService.listSupportTickets.mockResolvedValue({data:{data:[]}});
+ APIService.createSupportTicket = vi.fn().mockResolvedValue({});
+ ApiClient.get.mockResolvedValue({data:{data:[{appointmentId:'A7',appointmentDate:'2026-10-20',stylerData:{businessName:'Keripe Salon'},subServiceData:{name:'Braids'}}]}});
+ render(<Support setPageTitle={vi.fn()} />);
+ fireEvent.change(screen.getByLabelText(/^Subject/),{target:{value:'Refund'}});
+ expect(screen.getByText('6/120')).toBeInTheDocument();
+ const picker = await screen.findByLabelText(/Related appointment/);
+ fireEvent.change(picker,{target:{value:'A7'}});
+ fireEvent.change(screen.getByLabelText(/^Describe the issue/),{target:{value:'Charged twice'}});
+ fireEvent.click(screen.getByRole('button',{name:'Submit ticket'}));
+ await waitFor(()=>expect(APIService.createSupportTicket).toHaveBeenCalledWith({subject:'Refund',message:'Appointment A7 (Keripe Salon · Braids · 2026-10-20)\n\nCharged twice'}));
+});
+test('loyalty explains points, offers a copy button, and reports a refused code once, inline (QA C-10)', async () => {
+ APIService.getLoyaltyAccount.mockResolvedValue({data:{data:{points:20,referralCode:'RS-ABC'}}});
+ ApiClient.post.mockRejectedValue({response:{data:{message:'Invalid referral code'}}});
+ Object.assign(navigator, { clipboard: { writeText: vi.fn().mockResolvedValue() } });
+ render(<Loyalty setPageTitle={vi.fn()} />);
+ expect(await screen.findByText(/10 points for each appointment/)).toBeInTheDocument();
+ fireEvent.click(screen.getByRole('button',{name:'Copy code'}));
+ expect(navigator.clipboard.writeText).toHaveBeenCalledWith('RS-ABC');
+ expect(await screen.findByRole('button',{name:'Copied'})).toBeInTheDocument();
+ fireEvent.change(screen.getByRole('textbox',{name:'Apply a referral code'}),{target:{value:'abc'}});
+ fireEvent.click(screen.getByRole('button',{name:'Apply'}));
+ expect(await screen.findByRole('alert')).toHaveTextContent('Invalid referral code');
+ expect(APIService.applyReferral).toBeUndefined();
+});
+test('notification settings confirm each save inline and explain booking emails (QA C-09)', async () => {
+ APIService.getNotificationPreferences.mockResolvedValue({data:{data:{availability:true,price:true,verification:true}}});
+ APIService.updateNotificationPreferences.mockResolvedValue({});
+ render(<NotificationSettings setPageTitle={vi.fn()} />);
+ const [first] = await screen.findAllByRole('checkbox');
+ expect(screen.getByText(/always sent/)).toBeInTheDocument();
+ fireEvent.click(first);
+ expect(await screen.findByText(/^Saved\./)).toBeInTheDocument();
 });

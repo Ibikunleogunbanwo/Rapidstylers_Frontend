@@ -66,7 +66,7 @@ const fillEverythingButAddress = async () => {
   await userEvent.click(await screen.findByRole("radio", { name: /barber/i }));
   await userEvent.type(field("businessName"), "Ada Studio");
   await userEvent.type(field("city"), "Calgary");
-  await userEvent.type(field("province"), "Alberta");
+  await userEvent.selectOptions(document.querySelector('select[name="province"]'), "Alberta");
   await userEvent.type(field("postalCode"), "T2P 1J9");
 };
 
@@ -127,4 +127,18 @@ it('offers retry when service options are unavailable without losing typed field
   await userEvent.click(await screen.findByRole('button', { name: 'Retry loading services' }));
   expect(await screen.findByRole('radio', { name: /barber/i })).toBeInTheDocument();
   expect(field('businessName')).toHaveValue('Ada Studio');
+});
+
+it('refuses a city with digits, a non-Canadian postal code and no province', async () => {
+  updateData.mockClear();
+  renderStep();
+  await userEvent.click(await screen.findByRole('radio', { name: /barber/i }));
+  await userEvent.type(field('businessName'), 'Ada Studio');
+  await userEvent.type(field('city'), 'Calgary1');
+  await userEvent.type(field('postalCode'), '90210');
+  await userEvent.click(screen.getByRole('button', { name: 'Continue' }));
+  expect(await screen.findByText(/City can only contain letters/)).toBeInTheDocument();
+  expect(screen.getByText(/valid Canadian postal code/)).toBeInTheDocument();
+  expect(screen.getByText('Select a province or territory')).toBeInTheDocument();
+  expect(updateData).not.toHaveBeenCalled();
 });

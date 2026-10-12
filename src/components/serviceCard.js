@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import bookmark from "../assets/svg-icons/bookmark.svg";
 import { cloudinaryCard } from "../utils/cloudinaryImage";
 import { fallbackPhotoFor } from "../utils/curatedGallery";
 
@@ -95,16 +94,21 @@ const ServiceCard = ({ coverImg, name, rating, reviews, status, openState = null
           <button
             type="button"
             aria-label={isSaved ? "Remove saved professional" : "Save professional"}
-            title={isSaved ? "Remove saved professional" : "Save professional"}
+            aria-pressed={isSaved}
+            title={isSaved ? "Saved. Click to remove" : "Save professional"}
             disabled={saveLoading}
             onClick={(event) => {
               event.preventDefault();
               event.stopPropagation();
               onToggleSaved(stylerId);
             }}
-            className={`absolute left-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-white/95 backdrop-blur transition hover:bg-white disabled:opacity-50 ${isSaved ? "ring-2 ring-black/20" : ""}`}
+            className={`absolute left-3 top-3 flex h-9 w-9 items-center justify-center rounded-full backdrop-blur transition disabled:opacity-50 ${isSaved ? "bg-brand text-white hover:bg-brand/90" : "bg-white/95 text-onSurface/70 hover:bg-white"}`}
           >
-            <img src={bookmark} alt="" className={`h-5 ${isSaved ? "opacity-100" : "opacity-45"}`} />
+            {/* Filled when saved, an outline when not: the state is visible on
+                the card itself, not only in the toast. */}
+            <svg viewBox="0 0 24 24" aria-hidden="true" data-saved={isSaved ? "true" : "false"} className="h-5 w-5" fill={isSaved ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round">
+              <path d="M6 3.75h12a.75.75 0 0 1 .75.75v16.19a.5.5 0 0 1-.79.41L12 16.9l-5.96 4.2a.5.5 0 0 1-.79-.41V4.5A.75.75 0 0 1 6 3.75Z" />
+            </svg>
           </button>
         )}
       </div>

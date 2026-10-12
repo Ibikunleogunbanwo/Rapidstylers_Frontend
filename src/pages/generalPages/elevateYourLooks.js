@@ -1,4 +1,4 @@
-import Hero from "./newHeroSection";
+import PublicHeader from "../../components/publicHeader";
 import Footer from "../../components/footer";
 import AdSlot from "../../components/adSlot";
 import React, { useState, useEffect, useRef } from "react";
@@ -24,7 +24,9 @@ const PER_PAGE = 12;
 // The live site shows real stylist uploads only, so the gallery never presents
 // the team's photos as a professional's work. The demo showroom keeps them.
 const ElevateLooks = ({ showCurated = IS_DEMO }) => {
-  document.title = "Elevate your looks | RapidStylers";
+  useEffect(() => {
+    document.title = "Gallery | RapidStylers";
+  }, []);
   // The strip's first entry is "All work", so the opening grid is a named,
   // highlighted view rather than an unlabelled default that no tab admitted to.
   const [activeCategory, setActiveCategory] = useState(CATEGORIES[0]);
@@ -187,7 +189,20 @@ const ElevateLooks = ({ showCurated = IS_DEMO }) => {
 
   return (
     <div className="grid gap-12">
-      <Hero height="60vh" />
+      {/* Its own heading: this page used to reuse the home page hero. */}
+      <div>
+        <PublicHeader spacer />
+        <header className="mx-auto w-full max-w-[1240px] px-5 pt-12 md:px-[50px] lg:px-[100px]">
+          <p className="text-[11px] uppercase tracking-[0.25em] text-muted">Gallery</p>
+          <h1 className="mt-5 text-[clamp(2rem,4vw,2.75rem)] font-normal leading-[1.08] tracking-[-0.02em] text-onSurface">
+            Work by RapidStylers professionals
+          </h1>
+          <p className="mt-5 max-w-[680px] text-[14px] leading-[1.6] text-black/60">
+            Browse hair, nails, lashes, makeup and barbering from professionals on
+            RapidStylers. Pick a category, or search for a style.
+          </p>
+        </header>
+      </div>
 
       {/* Ad unit (renders nothing until REACT_APP_ADSENSE_CLIENT is configured) */}
       <div className="mx-auto w-full max-w-[1240px] px-5 md:px-[50px] lg:px-[100px]">
@@ -232,6 +247,7 @@ const ElevateLooks = ({ showCurated = IS_DEMO }) => {
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 placeholder="Search the gallery…"
+                aria-label="Search the gallery"
                 className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-10 pr-9 text-sm text-gray-700 shadow-sm outline-none transition-colors placeholder:text-gray-400 focus:border-brand focus:ring-2 focus:ring-brand/20"
               />
               {searchInput && (

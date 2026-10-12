@@ -6,8 +6,12 @@ import UserLayout from "./index";
 
 // Stub the chrome (top bar, sidebar, cards) and every page module so the test
 // can assert which page the shell resolves per URL.
-vi.mock("./topBar", () => ({ default: () => <div data-testid="topbar" /> }));
+vi.mock("./topBar", () => ({ default: ({ onSignOut }) => <div data-testid="topbar"><button type="button" onClick={onSignOut}>Sign out</button></div> }));
 vi.mock("./sideBar", () => ({ default: () => <div data-testid="sidebar" /> }));
+vi.mock("./unreadNotifications", () => ({ useUnreadNotifications: () => 0 }));
+vi.mock("../pages/stylist", () => ({ StylistList: () => <div data-testid="page-stylistList" /> }));
+const dispatch = vi.fn();
+vi.mock("../../../hooks/local/userReducer", () => ({ userLogOut: () => ({ type: "user/LogOut" }) }));
 vi.mock("../../../components/rapidStylerHumour", () => ({ default: () => <div data-testid="quote" /> }));
 vi.mock("../../../components/advert", () => ({ default: () => <div data-testid="advert" /> }));
 vi.mock("../../generalPages/notFound", () => ({ default: () => <div data-testid="page-notfound" /> }));
@@ -27,6 +31,7 @@ vi.mock("../pages/searchStylers", () => ({ default: () => <div data-testid="page
 
 vi.mock("react-redux", () => ({
   useSelector: vi.fn(),
+  useDispatch: () => dispatch,
 }));
 
 const renderAt = (path) =>
@@ -37,6 +42,7 @@ const renderAt = (path) =>
         <Route path="/styler-dashboard" element={<div data-testid="page-styler" />} />
         <Route path="/admin/categories" element={<div data-testid="page-admin" />} />
         <Route path="/login" element={<div data-testid="page-login" />} />
+        <Route path="/" element={<div data-testid="page-home" />} />
       </Routes>
     </MemoryRouter>
   );
@@ -133,4 +139,28 @@ test("dashboard overview keeps discovery without the quote", () => {
   renderAt("/dashboard");
   expect(screen.getByTestId("advert")).toBeInTheDocument();
   expect(screen.queryByTestId("quote")).not.toBeInTheDocument();
+});
+
+test("a signed-in customer's service list stays inside the dashboard shell (QA C-02)", () => {
+  useSelector.mockReturnValue({userId:1}); setAuthToken("customer-test"); setUserRole("CUSTOMER");
+  renderAt("/stylist/MQ==/QmFyYmVy");
+  expect(screen.getByTestId("page-stylistList")).toBeInTheDocument();
+  expect(screen.getByTestId("sidebar")).toBeInTheDocument();
+});
+
+test("Sign out runs the logout action and lands on the home page, not /login (QA C-15)", async () => {
+  useSelector.mockReturnValue({userId:1}); setAuthToken("customer-test"); setUserRole("CUSTOMER");
+  dispatch.mockClear();
+  renderAt("/accountSettings");
+  screen.getByRole("button", { name: "Sign out" }).click();
+  expect(dispatch).toHaveBeenCalledWith({ type: "user/LogOut" });
+  expect(await screen.findByTestId("page-home")).toBeInTheDocument();
+  expect(sessionStorage.getItem("rapidstylers_intended_route")).toBeNull();
+});
+
+test("an old /signOut link, once signed out, goes home without remembering /signOut", () => {
+  useSelector.mockReturnValue(null); sessionStorage.clear();
+  renderAt("/signOut");
+  expect(screen.getByTestId("page-home")).toBeInTheDocument();
+  expect(sessionStorage.getItem("rapidstylers_intended_route")).toBeNull();
 });

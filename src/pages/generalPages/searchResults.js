@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import PublicHeader from "../../components/publicHeader";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import ServiceCard from "../../components/serviceCard";
 import AdSlot from "../../components/adSlot";
@@ -8,9 +9,26 @@ import { APIService } from "../../hooks/remote/apiService";
 import { useSavedStylists } from "../../hooks/useSavedStylists";
 import { vendorOpenState } from "../../utils/vendorOpenState";
 
+// The service catalogue's own spelling is the one the whole site uses.
 const displayServiceName = (value) => {
   const label = String(value || "").trim();
-  return /^b?hairstylist$/i.test(label) ? "Hair Stylist" : label;
+  return /^b?hair ?stylist$/i.test(label) ? "Hairstylist" : label;
+};
+
+/**
+ * The URL parameters each filter pill stands for. Removing a pill removes all
+ * of them, so the chips, the URL and the results always agree: the city pill
+ * is the whole location (so its coordinates go too), the radius pill is the
+ * circle around those coordinates, and the service pill carries both its id
+ * and its name.
+ */
+export const PILL_PARAMS = {
+  serviceTypeName: ["serviceTypeId", "serviceTypeName"],
+  city: ["city", "lat", "lng", "radius"],
+  radius: ["radius", "lat", "lng"],
+  name: ["name"],
+  province: ["province"],
+  openNow: ["openNow"],
 };
 
 // Results are paginated client-side (after filtering/enrichment) so the total
@@ -238,7 +256,7 @@ const SearchResults = () => {
   // Remove a filter pill
   const removeFilter = (key) => {
     const params = new URLSearchParams(searchParams);
-    params.delete(key);
+    (PILL_PARAMS[key] || [key]).forEach((param) => params.delete(param));
     params.delete("page"); // a changed filter restarts at page 1
     navigate(`/search?${params.toString()}`);
   };
@@ -256,9 +274,12 @@ const SearchResults = () => {
 
   // Active filter pills
   const pills = [];
-  if (serviceTypeName) pills.push({ label: serviceTypeName, key: "serviceTypeName" });
+  if (serviceTypeName || serviceTypeId) {
+    const label = serviceTypeName || categories.find((c) => c.value === serviceTypeId)?.label || "Service";
+    pills.push({ label, key: "serviceTypeName" });
+  }
   if (city) pills.push({ label: city, key: "city" });
-  if (radius && lat) pills.push({ label: `Within ${radius} km`, key: "radius" });
+  if (lat && lng) pills.push({ label: `Within ${radius} km`, key: "radius" });
   if (name) pills.push({ label: `"${name}"`, key: "name" });
   if (province) pills.push({ label: province, key: "province" });
   if (openNow) pills.push({ label: "Open now", key: "openNow" });
@@ -292,6 +313,7 @@ const SearchResults = () => {
 
   return (
     <div className="min-h-screen bg-white text-onSurface">
+      <PublicHeader spacer />
       <Section pad="pt-10 md:pt-14 pb-12">
         <BackHome />
         <PageHeading
@@ -305,6 +327,7 @@ const SearchResults = () => {
           {/* Service type dropdown */}
           <div className="relative">
             <select
+              aria-label="Service"
               value={activeServiceId}
               onChange={handleServiceFilter}
               className="appearance-none rounded-full border border-black/10 bg-white py-2.5 pl-5 pr-10 text-[13px] font-semibold text-onSurface outline-none transition-colors hover:border-black/30 focus:border-brand cursor-pointer"
@@ -347,8 +370,10 @@ const SearchResults = () => {
             >
               {pill.label}
               <button
+                type="button"
                 onClick={() => removeFilter(pill.key)}
-                className="flex h-4 w-4 items-center justify-center rounded-full bg-black/10 text-black/60 transition-colors hover:bg-black/20"
+                aria-label={`Remove ${pill.label} filter`}
+                className="flex h-6 w-6 items-center justify-center rounded-full bg-black/10 text-black/60 transition-colors hover:bg-black/20"
                 title={`Remove ${pill.label} filter`}
               >
                 ✕

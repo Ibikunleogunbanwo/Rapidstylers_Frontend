@@ -55,7 +55,7 @@ const Dashboard = ({ setPageTitle }) => {
       <Spinner loading={reduxLoading} />
       <div className="flex items-start justify-between gap-4 border-b border-black/10 px-5 py-5 sm:px-6">
         <div>
-          <p className="text-[11px] uppercase tracking-[0.25em] text-muted">Discover professionals</p>
+          <p className="text-[11px] uppercase tracking-[0.25em] text-muted">My bookings</p>
           <h1 className="mt-2 text-[clamp(1.25rem,2.5vw,1.75rem)] font-normal leading-[1.1] tracking-[-0.02em] text-onSurface">
             Your bookings
           </h1>
@@ -73,12 +73,12 @@ const Dashboard = ({ setPageTitle }) => {
             <div>
               <p className="text-sm font-semibold text-amber-900">Complete your profile</p>
               <p className="text-xs text-amber-800 mt-0.5">
-                Add your {[missingName && "name", missingPhone && "phone", missingAddress && "address"].filter(Boolean).join(", ") || "name, phone and address"} so stylists can reach you about bookings.
+                Add your {[missingName && "name", missingPhone && "phone", missingAddress && "address"].filter(Boolean).join(", ") || "name, phone and address"} so professionals can reach you about bookings.
               </p>
             </div>
           </div>
           <Link
-            to="/updatePersonal"
+            to="/updatePersonalInformation"
             className="shrink-0 rounded-lg bg-amber-600 px-4 py-2 text-center text-sm font-semibold text-white transition hover:bg-amber-700"
           >
             Complete profile

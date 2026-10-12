@@ -92,7 +92,7 @@ test("loads the RapidStylers home route instead of the CRA starter screen", asyn
   // copy: this guards against the CRA starter screen, and should not fail every
   // time a heading is reworded.
   expect(
-    await screen.findByPlaceholderText(/Search for beauty professionals/i)
+    await screen.findByRole("searchbox", { name: /Search professionals by name/i })
   ).toBeInTheDocument();
   // The page sets its own title once its lazy chunk has loaded. The DOM node the
   // assertion above waits for is committed before the route's effects run, so the

@@ -10,6 +10,7 @@ import Button from "../../../components/button";
 import { useDispatch, useSelector } from "react-redux";
 import Spinner from "../../../components/spinner";
 import { changeUserPassword } from "../../../hooks/local/userReducer";
+import { isGoogleAccount } from "./customerProfileRules";
 
 const ChangePassword = ({setPageTitle}) => {
   useEffect((() => {
@@ -19,6 +20,8 @@ const ChangePassword = ({setPageTitle}) => {
 
   const dispatch = useDispatch();
   const userSessionData = useSelector((state)=>state.user.userSessionData);
+  const userDetails = useSelector((state)=>state.user.userDetailsData)?.userData;
+  const googleAccount = isGoogleAccount(userSessionData, userDetails);
   const updateUserPassword = useFormik({
     initialValues: {
       oldPassword: "",
@@ -61,11 +64,21 @@ const ChangePassword = ({setPageTitle}) => {
               Change password
             </h1>
             <p className="mt-1.5 text-[13px] text-black/55">
-              Enter your current password, then choose the new one.
+              {googleAccount ? "Your account uses Google sign-in." : "Enter your current password, then choose the new one."}
             </p>
           </div>
         </div>
       </div>
+      {googleAccount ? (
+        // Opened directly (old link or bookmark) by a Google account: there is
+        // no password to change, and the server would refuse one anyway.
+        <div className="p-5 sm:p-6">
+          <p role="status" className="rounded-lg border border-black/10 bg-black/[0.02] px-4 py-3 text-sm text-black/70">
+            You sign in with Google, so your account has no RapidStylers password to change.
+            Keep using Continue with Google to sign in.
+          </p>
+        </div>
+      ) : (
       <form onSubmit={updateUserPassword.handleSubmit} className="p-5 sm:p-6">
         <PasswordInput labelName={"Old Password"}
                         inputValue={updateUserPassword.values.oldPassword}
@@ -95,6 +108,7 @@ const ChangePassword = ({setPageTitle}) => {
           <Button type={"submit"} text={"Update Password"} variant="primary"/>
         </div>
       </form>
+      )}
     </div>
   );
 };

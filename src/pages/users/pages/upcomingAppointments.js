@@ -111,7 +111,7 @@ const Appointments = ({appointmentDate, arrivalTime, serviceProvider, serviceTyp
                   {isHomeService ? "Home service:" : "Where to go:"}
                 </span>
                 {isHomeService ? (
-                  <span className="text-[15px]">Your stylist travels to you</span>
+                  <span className="text-[15px]">Your professional travels to you</span>
                 ) : businessAddress ? (
                   <span className="flex flex-wrap items-center gap-2">
                     <span className="text-[15px]">{businessAddress}</span>

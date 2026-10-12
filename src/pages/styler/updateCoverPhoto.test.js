@@ -40,3 +40,17 @@ it("surfaces an upload authorization failure without saving", async () => {
   expect(await screen.findByRole("alert")).toHaveTextContent(/Photo uploads are temporarily unavailable/);
   expect(APIService.updateStylerPhotos).not.toHaveBeenCalled();
 });
+it("shows a placeholder instead of an empty box when a saved photo fails to load", async () => {
+  render(<MemoryRouter><UpdateCoverPhoto /></MemoryRouter>);
+  const img = await screen.findByAltText("Profile photo preview");
+  fireEvent.error(img);
+  expect(await screen.findByText("Photo could not be loaded")).toBeInTheDocument();
+  expect(screen.queryByAltText("Profile photo preview")).not.toBeInTheDocument();
+});
+it("uses styled pickers that still expose the native file input", async () => {
+  render(<MemoryRouter><UpdateCoverPhoto /></MemoryRouter>);
+  const input = await screen.findByLabelText("Choose cover photo");
+  expect(input).toHaveClass("sr-only");
+  fireEvent.change(input, { target: { files: [file()] } });
+  expect(await screen.findByText("Selected: photo.png")).toBeInTheDocument();
+});

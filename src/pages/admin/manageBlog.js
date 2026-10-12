@@ -1,4 +1,4 @@
-import { useAdminList, AdminListControls } from "./adminList";
+import { useAdminList, AdminListControls, AdminNoMatches } from "./adminList";
 import React, { useState, useEffect, useRef } from "react";
 import { Navigate, Link } from "react-router-dom";
 import { APIService } from "../../hooks/remote/apiService";
@@ -11,9 +11,48 @@ import {
 
 const EMPTY_FORM = { title: "", category: "", author: "", imageUrl: "", content: "" };
 
+/**
+ * The same rules the backend enforces (contract 11): a title and content, an
+ * https:// image URL when one is given, and a trimmed category. Returns the
+ * body to send, or throws the message to show.
+ */
+export const articleBody = form => {
+  const body = {
+    title: form.title.trim(),
+    category: form.category.trim(),
+    author: form.author.trim(),
+    imageUrl: form.imageUrl.trim(),
+    content: form.content.trim(),
+  };
+  if (!body.title) throw new Error("Add a title.");
+  if (!body.content) throw new Error("Add the article content.");
+  if (body.imageUrl) {
+    let valid = false;
+    try { valid = /^https:\/\//i.test(body.imageUrl) && Boolean(new URL(body.imageUrl).hostname); } catch { valid = false; }
+    if (!valid) throw new Error("The image URL must be a full https:// link.");
+  }
+  return body;
+};
+
+const categoryName = item => item.serviceTypeName || item.serviceName || item.name || "";
+
+/** The category picker: the admin Categories list, plus the article's current value if it is no longer listed. */
+function CategorySelect({ value, onChange, categories, disabled, label }) {
+  const names = categories.map(categoryName).filter(Boolean);
+  const options = value && !names.some(name => name.toLowerCase() === value.toLowerCase()) ? [value, ...names] : names;
+  return (
+    <label className="flex flex-col gap-1 text-sm text-gray-700">{label}
+      <select value={value} disabled={disabled} onChange={e => onChange(e.target.value)} className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand/40 disabled:opacity-60">
+        <option value="">No category</option>
+        {options.map(name => <option key={name} value={name}>{name}</option>)}
+      </select>
+    </label>
+  );
+}
+
 const ManageBlog = () => {
-  document.title = "Manage Blog | RapidStylers";
   const [posts, setPosts] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -35,6 +74,9 @@ const ManageBlog = () => {
 
   useEffect(() => {
     loadPosts();
+    APIService.getStylerType()
+      .then((res) => setCategories(Array.isArray(res?.data?.data) ? res.data.data : []))
+      .catch(() => setCategories([]));
   }, []);
 
   const list = useAdminList(posts, item => [item.title, item.category, item.author].filter(Boolean).join(" "));
@@ -45,13 +87,15 @@ const ManageBlog = () => {
 
   const handleCreate = async (e) => {
     e.preventDefault();
-    if (writeLock.current || !form.title.trim()) return;
+    if (writeLock.current) return;
     setCreateError("");
+    let body;
+    try { body = articleBody(form); } catch (error) { setCreateError(error.message); return; }
     writeLock.current = true;
     setActionError("");
     setSubmitting(true);
     try {
-      await APIService.adminCreateBlog(form);
+      await APIService.adminCreateBlog(body);
       showSuccessToastMessage("Article created");
       setForm(EMPTY_FORM);
       loadPosts();
@@ -64,14 +108,16 @@ const ManageBlog = () => {
   };
 
   const handleUpdate = async (item) => {
-    if (writeLock.current || !editForm.title.trim()) return;
+    if (writeLock.current) return;
+    setActionError("");
+    let body;
+    try { body = articleBody(editForm); } catch (error) { setActionError(error.message); return; }
     writeLock.current = true;
     setSubmitting(true);
-    setActionError("");
     try {
       await APIService.adminUpdateBlog({
         id: item.id,
-        ...editForm,
+        ...body,
       });
       showSuccessToastMessage("Article updated");
       setEditItem(null);
@@ -115,7 +161,7 @@ const ManageBlog = () => {
   };
 
   return (
-    <AdminPage eyebrow="Admin" title="Manage Blog">
+    <AdminPage eyebrow="Admin" title="Manage Blog" pageTitle="Blog">
       {/* Create */}
       {actionError && <p role="alert" className="mb-4 text-sm text-red-700">{actionError}</p>}
       <form onSubmit={handleCreate}>
@@ -132,15 +178,7 @@ const ManageBlog = () => {
                 placeholder="Article title"
               />
             </label>
-            <label className="flex flex-col gap-1 text-sm text-gray-700">Category
-              <AdminInput
-                type="text"
-                disabled={submitting}
-                value={form.category}
-                onChange={(e) => setForm({ ...form, category: e.target.value })}
-                placeholder="Category (e.g. Braiding)"
-              />
-            </label>
+            <CategorySelect label="Category" categories={categories} disabled={submitting} value={form.category} onChange={(category) => setForm({ ...form, category })} />
             <label className="flex flex-col gap-1 text-sm text-gray-700">Author
               <AdminInput
                 type="text"
@@ -152,15 +190,19 @@ const ManageBlog = () => {
             </label>
             <label className="flex flex-col gap-1 text-sm text-gray-700 md:col-span-2">Image URL
               <AdminInput
-                type="text"
+                type="url"
+                inputMode="url"
+                pattern="https://.+"
+                title="A full https:// link"
                 disabled={submitting}
                 value={form.imageUrl}
                 onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
-                placeholder="Image URL"
+                placeholder="https://res.cloudinary.com/…"
               />
             </label>
             <label className="flex flex-col gap-1 text-sm text-gray-700 md:col-span-2">Article content
               <AdminTextarea
+                required
                 disabled={submitting}
                 value={form.content}
                 onChange={(e) => setForm({ ...form, content: e.target.value })}
@@ -194,7 +236,7 @@ const ManageBlog = () => {
           ) : loadError ? (
             <div role="alert">{loadError} <button type="button" onClick={loadPosts}>Retry</button></div>
           ) : list.filteredCount === 0 ? (
-            <p className="text-sm text-gray-500">{posts.length ? "No articles match your search." : "No articles yet. Write your first one above."}</p>
+            posts.length ? <AdminNoMatches list={list} noun="articles" /> : <p className="text-sm text-gray-500">No articles yet. Write your first one above.</p>
           ) : (
             <ul className="divide-y divide-gray-100">
               {list.visibleItems.map((item) => (
@@ -211,15 +253,7 @@ const ManageBlog = () => {
                         />
                       </label>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                        <label className="flex flex-col gap-1 text-sm text-gray-700">Edit category
-                          <AdminInput
-                            type="text"
-                            disabled={submitting}
-                            value={editForm.category}
-                            onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
-                            placeholder="Category"
-                          />
-                        </label>
+                        <CategorySelect label="Edit category" categories={categories} disabled={submitting} value={editForm.category} onChange={(category) => setEditForm({ ...editForm, category })} />
                         <label className="flex flex-col gap-1 text-sm text-gray-700">Edit author
                           <AdminInput
                             type="text"
@@ -232,7 +266,8 @@ const ManageBlog = () => {
                       </div>
                       <label className="flex flex-col gap-1 text-sm text-gray-700">Edit image URL
                         <AdminInput
-                          type="text"
+                          type="url"
+                          inputMode="url"
                           disabled={submitting}
                           value={editForm.imageUrl}
                           onChange={(e) => setEditForm({ ...editForm, imageUrl: e.target.value })}
@@ -306,8 +341,8 @@ const ManageBlog = () => {
       </AdminCard>
 
       <p className="mt-6 text-center">
-        <Link to="/" className="text-sm text-gray-500 hover:text-gray-800 font-semibold">
-          ← Home
+        <Link to="/admin" className="text-sm text-gray-500 hover:text-gray-800 font-semibold">
+          ← Admin dashboard
         </Link>
       </p>
     </AdminPage>

@@ -82,6 +82,17 @@ describe("ServiceCard in the page design language", () => {
     ).toBeInTheDocument();
   });
 
+  test("the bookmark is filled and pressed once saved, an outline before (QA C-07)", () => {
+    renderCard({ isSaved: false, onToggleSaved: vi.fn() });
+    const button = screen.getByRole("button", { name: "Save professional" });
+    expect(button).toHaveAttribute("aria-pressed", "false");
+    expect(button.querySelector("svg")).toHaveAttribute("fill", "none");
+    renderCard({ isSaved: true, onToggleSaved: vi.fn() });
+    const saved = screen.getByRole("button", { name: "Remove saved professional" });
+    expect(saved).toHaveAttribute("aria-pressed", "true");
+    expect(saved.querySelector("svg")).toHaveAttribute("fill", "currentColor");
+  });
+
   test("distance renders with units as quiet text", () => {
     renderCard({ distance: 12 });
 

@@ -4,11 +4,11 @@ import logo from "../../../assets/svg-icons/colouredLogo.svg";
 import InputWithLabel from "../../../components/inputWithLabel";
 import PasswordInput from "../../../components/passwordInput";
 import PasswordRequirements from "../../../components/passwordRequirements";
-import OtpInputs from "../../../components/otpInputs";
+import OtpInputs, { filledCode } from "../../../components/otpInputs";
 import Button from "../../../components/button";
 import { APIService } from "../../../hooks/remote/apiService";
 import { passwordProblem } from "../../../utils/passwordRule";
-import { SUPPORT_EMAIL, SUPPORT_PHONE, showSuccessToastMessage } from "../../../utils/constant";
+import { showSuccessToastMessage } from "../../../utils/constant";
 
 /**
  * Setting a new password when the old one is forgotten.
@@ -24,12 +24,10 @@ import { SUPPORT_EMAIL, SUPPORT_PHONE, showSuccessToastMessage } from "../../../
  * rule: the reset endpoint refuses unless a verified code for that address is on
  * record, so a visitor cannot reach the last step by typing its URL.
  *
- * The professional note is deliberate. Codes are issued against customer
- * accounts, and a professional who reaches this page would otherwise wait for an
- * email that is never sent, because the request endpoint answers identically
+ * The same three endpoints serve customer and professional accounts, so there
+ * is one reset page for everyone. The request endpoint answers identically
  * whether or not an address has an account (so nobody can use it to discover
- * which addresses do). Saying so up front, with the way to get help, is the
- * honest version of that.
+ * which addresses do), which is why the code step says "if ... has an account".
  */
 
 const STEPS = ["Your email", "Enter the code", "New password"];
@@ -174,6 +172,14 @@ const ResetPassword = () => {
   };
 
   const changeDigit = (index, value) => {
+    // A whole code arriving at once (the phone's one-time-code autofill).
+    const whole = filledCode(value);
+    if (whole) {
+      setError("");
+      setCode(whole);
+      codeRefs.current[5]?.focus();
+      return;
+    }
     const digit = (value || "").replace(/\D/g, "").slice(-1);
     setError("");
     const next = [...code];
@@ -243,9 +249,9 @@ const ResetPassword = () => {
             <p className="text-[11px] uppercase tracking-[0.25em] text-muted">
               Step {Math.min(step + 1, STEPS.length)} of {STEPS.length}
             </p>
-            <p className="mt-2 text-[22px] font-normal tracking-[-0.01em] text-onSurface">
+            <h1 className="mt-2 text-[22px] font-normal tracking-[-0.01em] text-onSurface">
               {done ? "Password changed" : STEPS[step]}
-            </p>
+            </h1>
 
             {done ? (
               <>
@@ -259,8 +265,8 @@ const ResetPassword = () => {
             ) : step === 0 ? (
               <>
                 <p className="mt-1 text-sm text-black/60">
-                  Enter the email address on your account and we will send a one-time code. You
-                  will use it to choose a new password.
+                  Enter the email address on your account, customer or professional, and we will
+                  send a one-time code. You will use it to choose a new password.
                 </p>
                 <form onSubmit={requestCode} className="mt-6 grid gap-4">
                   <InputWithLabel
@@ -268,6 +274,8 @@ const ResetPassword = () => {
                     inputType="email"
                     placeholder="you@example.com"
                     inputName="emailAddress"
+                    autoComplete="email"
+                    required
                     inputValue={emailAddress}
                     inputOnChange={(event) => {
                       setError("");
@@ -287,28 +295,6 @@ const ResetPassword = () => {
                   />
                 </form>
 
-                {/* This covers customer accounts only. A professional who reached
-                    this page would wait for mail that is never sent, because the
-                    request endpoint refuses to reveal whether an address has an
-                    account, so the flow cannot detect them and say so itself. */}
-                <div className="mt-8 border-t border-black/10 pt-5">
-                  <p className="text-[11px] uppercase tracking-[0.25em] text-muted">For professionals</p>
-                  <p className="mt-3 text-[13px] leading-[1.6] text-black/55">
-                    At the moment this covers customer accounts. If you signed up as a
-                    professional and need your password changed, contact us at{" "}
-                    <a href={`mailto:${SUPPORT_EMAIL}`} className="text-brand font-semibold hover:underline">
-                      {SUPPORT_EMAIL}
-                    </a>{" "}
-                    or{" "}
-                    <a
-                      href={`tel:${SUPPORT_PHONE.replace(/[^\d+]/g, "")}`}
-                      className="text-brand font-semibold hover:underline"
-                    >
-                      {SUPPORT_PHONE}
-                    </a>{" "}
-                    and we will reset it for you.
-                  </p>
-                </div>
               </>
             ) : step === 1 ? (
               <>
@@ -351,6 +337,7 @@ const ResetPassword = () => {
                         onChange={(event) => changeDigit(index, event.target.value)}
                         onPaste={pasteCode}
                         inputRef={(element) => (codeRefs.current[index] = element)}
+                        autoFill={index === 0}
                       />
                     ))}
                   </div>
@@ -376,9 +363,10 @@ const ResetPassword = () => {
                       text={busy ? "Checking..." : "Continue"}
                       variant="primary"
                       type="submit"
-                      disabled={busy}
+                      disabled={busy || code.join("").length !== 6}
                     />
                   </div>
+                  <p className="mt-4 text-xs leading-[1.6] text-black/55">No code? Check spam, or request a new one.</p>
                 </form>
               </>
             ) : (
@@ -392,6 +380,7 @@ const ResetPassword = () => {
                     inputType="password"
                     placeholder="Enter a strong password"
                     inputName="password"
+                    autoComplete="new-password"
                     inputValue={password}
                     inputOnChange={(event) => {
                       setError("");
@@ -403,6 +392,7 @@ const ResetPassword = () => {
                     inputType="password"
                     placeholder="Re-enter your new password"
                     inputName="confirmPassword"
+                    autoComplete="new-password"
                     inputValue={confirmPassword}
                     inputOnChange={(event) => {
                       setError("");

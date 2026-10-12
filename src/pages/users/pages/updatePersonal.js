@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import Back from "../../../components/goBack";
-import Input from "../../../components/input";
 import AddressAutocomplete from "../../../components/AddressAutocomplete";
 import { useFormik } from "formik";
 import * as Yup from "yup";
@@ -8,6 +7,7 @@ import Button from "../../../components/button";
 import { useDispatch, useSelector } from "react-redux";
 import Spinner from "../../../components/spinner";
 import { getUserDetails, updateUserDetails } from "../../../hooks/local/userReducer";
+import { CITY_PATTERN, PERSON_NAME_PATTERN, POSTAL_CODE_PATTERN, PROVINCES, normalizePhone, phoneProblem, provinceName } from "./customerProfileRules";
 
 /**
  * Best-effort parse of a stored Canadian address line like
@@ -113,6 +113,45 @@ const UpdateInformation = ({ setPageTitle }) => {
   );
 };
 
+// A labelled field with the attributes the shared Input lacks (required
+// marker, autocomplete, hint). Kept here so the form owns its own markup.
+const Field = ({ form, name, label, required = false, hint, children, ...inputProps }) => {
+  const error = form.touched[name] && form.errors[name] ? form.errors[name] : null;
+  const id = `personal-${name}`;
+  const describedBy = [hint ? `${id}-hint` : null, error ? `${id}-error` : null].filter(Boolean).join(" ") || undefined;
+  const control = {
+    id,
+    name,
+    value: form.values[name],
+    onChange: form.handleChange,
+    onBlur: form.handleBlur,
+    required,
+    "aria-invalid": Boolean(error),
+    "aria-describedby": describedBy,
+    className: "w-full p-3 text-sm rounded-md border border-[#c4c4c440] bg-[#c4c4c410] placeholder:text-xs placeholder:font-extralight active:outline-0 focus:outline-brand disabled:text-black/50",
+    ...inputProps,
+  };
+  return (
+    <div>
+      <div className="grid gap-1">
+        <label htmlFor={id} className="font-medium text-sm">
+          {label}
+          {required && <span aria-hidden="true" className="ml-0.5 text-red-600">*</span>}
+        </label>
+        {children ? children(control) : <input type="text" {...control} />}
+        {hint && <span id={`${id}-hint`} className="text-xs text-black/50">{hint}</span>}
+      </div>
+      <span id={`${id}-error`} className="text-xs text-red-500">{error}</span>
+    </div>
+  );
+};
+
+// Names are optional (Google sign-up creates accounts without them) but must
+// be real names when given: letters in any script, spaces, ' - and periods.
+const nameRule = (label) => Yup.string().trim()
+  .max(50, `${label} must be 50 characters or fewer`)
+  .test("person-name", `${label} can contain letters, spaces, apostrophes, hyphens and periods`, (value) => !value || PERSON_NAME_PATTERN.test(value));
+
 // Rendered only once user details are present, so formik's initialValues are
 // computed with real data (mounting the form later would freeze empty values).
 const UpdatePersonalForm = ({ userDetails }) => {
@@ -127,130 +166,97 @@ const UpdatePersonalForm = ({ userDetails }) => {
       street: parsed.street || userDetails.address || "",
       unit: parsed.unit || "",
       city: parsed.city || "",
-      province: parsed.province || userDetails.state || "",
+      province: provinceName(parsed.province) || provinceName(userDetails.state),
       postalCode: parsed.postalCode || "",
-      country: parsed.country || userDetails.country || "Canada",
+      country: "Canada",
     },
     validationSchema: Yup.object({
-      firstname: Yup.string().matches(/^[A-Za-z]+$/, 'Firstname can only contain letters'),
-      lastname: Yup.string()
-        .matches(/^[A-Za-z]+$/, 'Lastname can only contain letters'),
+      firstname: nameRule("First name"),
+      lastname: nameRule("Last name"),
       phoneNumber: Yup.string()
-        .matches(/^[\d+]+$/, 'Phone number can only contain digits'),
-      street: Yup.string().required('Street address is required'),
-      city: Yup.string().required('City is required'),
-      province: Yup.string().required('Province is required'),
-      postalCode: Yup.string()
-        .matches(/^[A-Za-z]\d[A-Za-z][ -]?\d[A-Za-z]\d$/, 'Enter a valid Canadian postal code (e.g. T2P 1B5)')
+        .test("phone", (params) => phoneProblem(params.value) || "Enter a valid phone number", (value) => phoneProblem(value) === null),
+      street: Yup.string().trim().required('Street address is required'),
+      city: Yup.string().trim()
+        .required('City is required')
+        .test("city", "Enter a city name using letters (for example Calgary)", (value) => !value || CITY_PATTERN.test(value)),
+      province: Yup.string()
+        .required('Province or territory is required')
+        .oneOf(PROVINCES.map((p) => p.name), 'Choose a province or territory'),
+      postalCode: Yup.string().trim()
+        .matches(POSTAL_CODE_PATTERN, 'Enter a valid Canadian postal code (e.g. T2P 1B5)')
         .required('Postal code is required'),
-      country: Yup.string().required('Country is required'),
     }),
     onSubmit: async (values) => {
-        const {emailAddress, phoneNumber, firstname,lastname,country} = values;
+        const trimmed = Object.fromEntries(Object.entries(values).map(([key, value]) => [key, typeof value === "string" ? value.trim() : value]));
+        const { emailAddress, firstname, lastname } = trimmed;
+        const postalCode = trimmed.postalCode.toUpperCase().replace(/^([A-Z]\d[A-Z])[ -]?(\d[A-Z]\d)$/, "$1 $2");
         // Persist the single-line address in Canadian convention — the backend
         // stores address + state (province) + country for user accounts.
-        const address = composeCanadianAddress(values);
-        let updateUserData = {emailAddress, phoneNumber,firstname,lastname,country,address,state: values.province};
+        const address = composeCanadianAddress({ ...trimmed, postalCode, country: "Canada" });
+        let updateUserData = {emailAddress, phoneNumber: normalizePhone(trimmed.phoneNumber), firstname, lastname, country: "Canada", address, state: trimmed.province};
         const { payload } = await(dispatch(updateUserDetails(updateUserData)));
         if(payload?.statusCode === "200") {
           dispatch(getUserDetails());
         }
     },
   });
+  const form = updatePersonalInformation;
   return (
-    <form onSubmit={updatePersonalInformation.handleSubmit}>
+    <form onSubmit={form.handleSubmit} noValidate>
+      <p className="px-4 pt-4 text-xs text-black/55">Fields marked <span aria-hidden="true" className="text-red-600">*</span><span className="sr-only">with an asterisk</span> are required.</p>
       <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Input label={"Firstname:"}
-          type={"text"}
-          name={"firstname"}
-          onBlur={updatePersonalInformation.handleBlur}
-          value={updatePersonalInformation.values.firstname}
-          onChange={updatePersonalInformation.handleChange}
-          onError={updatePersonalInformation.errors.firstname && updatePersonalInformation.touched.firstname ? updatePersonalInformation.errors.firstname : null} />
-        <Input label={"Lastname:"}
-          type={"text"}
-          name={"lastname"}
-          onBlur={updatePersonalInformation.handleBlur}
-          value={updatePersonalInformation.values.lastname}
-          onChange={updatePersonalInformation.handleChange}
-          onError={updatePersonalInformation.errors.lastname && updatePersonalInformation.touched.lastname ? updatePersonalInformation.errors.lastname : null} />
-        <Input label={"Phone number:"}
-          type={"tel"}
-          name={"phoneNumber"}
-          onBlur={updatePersonalInformation.handleBlur}
-          value={updatePersonalInformation.values.phoneNumber}
-          onChange={updatePersonalInformation.handleChange}
-          onError={updatePersonalInformation.errors.phoneNumber && updatePersonalInformation.touched.phoneNumber ? updatePersonalInformation.errors.phoneNumber : null} />
+        <Field form={form} name="emailAddress" label="Email" type="email" autoComplete="email" disabled
+          hint="Your sign-in email. Contact support to change it." />
+        <Field form={form} name="phoneNumber" label="Phone number" type="tel" autoComplete="tel-national" inputMode="tel"
+          placeholder="403 555 0123" hint="10 digits, Canadian number" />
+        <Field form={form} name="firstname" label="First name" autoComplete="given-name" maxLength={50} />
+        <Field form={form} name="lastname" label="Last name" autoComplete="family-name" maxLength={50} />
 
         {/* Google Places search — auto-computes every Canadian field below */}
         <div className="col-span-1 md:col-span-2">
           <AddressAutocomplete
             label="Find your address:"
-            value={updatePersonalInformation.values.street}
+            value={form.values.street}
             placeholder={"Start typing your address…"}
             onChange={(data) => {
               // Free-text edits carry only the raw line — update the street without
               // wiping the computed Canadian fields. A real Places selection carries
               // parsed components, so it recomputes everything.
               const isSelection = !!(data.city || data.province || data.postalCode);
-              updatePersonalInformation.setFieldValue("street", data.streetAddress || data.formattedAddress || "");
+              form.setFieldValue("street", data.streetAddress || data.formattedAddress || "");
               if (isSelection) {
-                updatePersonalInformation.setFieldValue("unit", data.unit || "");
-                updatePersonalInformation.setFieldValue("city", data.city || "");
-                updatePersonalInformation.setFieldValue("province", data.province || "");
-                updatePersonalInformation.setFieldValue("postalCode", (data.postalCode || "").toUpperCase());
-                updatePersonalInformation.setFieldValue("country", data.country || "Canada");
-                ["street", "city", "province", "postalCode", "country"].forEach((f) =>
-                  updatePersonalInformation.setFieldTouched(f, true, false)
+                form.setFieldValue("unit", data.unit || "");
+                form.setFieldValue("city", data.city || "");
+                form.setFieldValue("province", provinceName(data.province));
+                form.setFieldValue("postalCode", (data.postalCode || "").toUpperCase());
+                ["street", "city", "province", "postalCode"].forEach((f) =>
+                  form.setFieldTouched(f, true, false)
                 );
               }
             }}
           />
         </div>
 
-        <Input label={"Street address:"}
-          type={"text"}
-          name={"street"}
-          onBlur={updatePersonalInformation.handleBlur}
-          value={updatePersonalInformation.values.street}
-          onChange={updatePersonalInformation.handleChange}
-          onError={updatePersonalInformation.errors.street && updatePersonalInformation.touched.street ? updatePersonalInformation.errors.street : null} />
-        <Input label={"Unit / Apt / Suite:"}
-          type={"text"}
-          name={"unit"}
-          placeholder={"Optional"}
-          onBlur={updatePersonalInformation.handleBlur}
-          value={updatePersonalInformation.values.unit}
-          onChange={updatePersonalInformation.handleChange}
-          onError={updatePersonalInformation.errors.unit && updatePersonalInformation.touched.unit ? updatePersonalInformation.errors.unit : null} />
-        <Input label={"City:"}
-          type={"text"}
-          name={"city"}
-          onBlur={updatePersonalInformation.handleBlur}
-          value={updatePersonalInformation.values.city}
-          onChange={updatePersonalInformation.handleChange}
-          onError={updatePersonalInformation.errors.city && updatePersonalInformation.touched.city ? updatePersonalInformation.errors.city : null} />
-        <Input label={"Province:"}
-          type={"text"}
-          name={"province"}
-          onBlur={updatePersonalInformation.handleBlur}
-          value={updatePersonalInformation.values.province}
-          onChange={updatePersonalInformation.handleChange}
-          onError={updatePersonalInformation.errors.province && updatePersonalInformation.touched.province ? updatePersonalInformation.errors.province : null} />
-        <Input label={"Postal code:"}
-          type={"text"}
-          name={"postalCode"}
-          onBlur={updatePersonalInformation.handleBlur}
-          value={updatePersonalInformation.values.postalCode}
-          onChange={updatePersonalInformation.handleChange}
-          onError={updatePersonalInformation.errors.postalCode && updatePersonalInformation.touched.postalCode ? updatePersonalInformation.errors.postalCode : null} />
-        <Input label={"Country:"}
-          type={"text"}
-          name={"country"}
-          onBlur={updatePersonalInformation.handleBlur}
-          value={updatePersonalInformation.values.country}
-          onChange={updatePersonalInformation.handleChange}
-          onError={updatePersonalInformation.errors.country && updatePersonalInformation.touched.country ? updatePersonalInformation.errors.country : null} />
+        <Field form={form} name="street" label="Street address" required autoComplete="address-line1" />
+        <Field form={form} name="unit" label="Unit / Apt / Suite" placeholder="Optional" autoComplete="address-line2" />
+        <Field form={form} name="city" label="City" required autoComplete="address-level2" maxLength={60} />
+        <Field form={form} name="province" label="Province or territory" required>
+          {(control) => (
+            <select {...control} autoComplete="address-level1">
+              <option value="" disabled>Choose a province or territory</option>
+              {PROVINCES.map((p) => <option key={p.code} value={p.name}>{p.name}</option>)}
+            </select>
+          )}
+        </Field>
+        <Field form={form} name="postalCode" label="Postal code" required autoComplete="postal-code" placeholder="T2P 1B5" maxLength={7} />
+        {/* RapidStylers serves Canada only, so the country is fixed. */}
+        <Field form={form} name="country" label="Country">
+          {(control) => (
+            <select {...control} disabled autoComplete="country-name">
+              <option value="Canada">Canada</option>
+            </select>
+          )}
+        </Field>
         <div>
           <Button variant="primary" text={"Update Information"} type={"submit"} /></div>
       </div>

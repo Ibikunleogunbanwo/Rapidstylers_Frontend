@@ -7,6 +7,7 @@ import { LocationProvider } from './context/LocationContext';
 import ScrollToTop from './components/scrollToTop';
 import IdleTimeout from './components/IdleTimeout';
 import DemoMode from './components/demoMode';
+import CustomerRoleRedirect from './components/customerRoleRedirect';
 
 const SiteContent = lazy(() => import('./pages/admin/siteContent'));
 const NewsletterAdmin = lazy(() => import('./pages/admin/newsletter'));
@@ -48,6 +49,8 @@ const UpdateCoverPhoto = lazy(() => import('./pages/styler/updateCoverPhoto'));
 const BusinessInformation = lazy(() => import('./pages/styler/updateBusinessInformation'));
 const PersonalInformation = lazy(() => import('./pages/styler/updatePersonalInformation'));
 const Reviews = lazy(() => import('./pages/styler/reviews'));
+const StylerChangePassword = lazy(() => import('./pages/styler/stylerChangePassword'));
+const StylerSupport = lazy(() => import('./pages/styler/stylerSupport'));
 const AdminLogin = lazy(() => import('./pages/admin/adminLogin'));
 const AdminDashboard = lazy(() => import('./pages/admin/dashboard'));
 const ManageCategories = lazy(() => import('./pages/admin/manageCategories'));
@@ -57,7 +60,7 @@ const AdminOperations = lazy(() => import('./pages/admin/operations'));
 const AdminPayments = lazy(() => import('./pages/admin/payments'));
 const AdminRecovery = lazy(() => import('./pages/admin/recovery'));
 const AdminAnnouncements = lazy(() => import('./pages/admin/announcements'));
-const PublicStylist = lazy(() => import('./pages/users/pages/stylist'));
+const PublicStylist = lazy(() => import('./pages/users/pages/stylistRoute'));
 const PublicStylistProfile = lazy(() => import('./pages/users/pages/stylistProfile'));
 const NotFound = lazy(() => import('./pages/generalPages/notFound'));
 const TermsAndConditions = lazy(() => import('./pages/generalPages/termsAndConditions'));
@@ -99,11 +102,14 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/newsletter/confirm" element={<NewsletterConfirm />} />
         <Route path="/newsletter/unsubscribe" element={<NewsletterUnsubscribe />} />
+        {/* Admin areas: a signed-in customer is sent to their dashboard. */}
+        <Route element={<CustomerRoleRedirect area="admin" />}>
         <Route path="/admin/content" element={<SiteContent />} />
         <Route path="/admin/newsletter" element={<NewsletterAdmin />} />
         <Route path="/admin/service-areas" element={<ServiceAreas />} />
         <Route path="/admin/promotions" element={<Promotions />} />
         <Route path="/admin/signup-funnel" element={<SignupFunnel />} />
+        </Route>
         <Route path="/login" element={<Login />} />
         {/* The page the sign-in screen's "Forgot password?" link has always
             pointed at in its copy, and which the FAQ describes in detail. */}
@@ -130,7 +136,7 @@ function App() {
           <Route path='photos' element={<ImagesStep />}/>
           <Route path='secure-account' element={<CreatePassword />}/>
         </Route>
-        <Route path='/styler-dashboard' element={<StylerLayout />} >
+        <Route path='/styler-dashboard' element={<CustomerRoleRedirect area="professionals"><StylerLayout /></CustomerRoleRedirect>} >
           <Route index element={<StylerDashboard />} />
           <Route path='appointments' element={<StylerAppointments />} />
           <Route path='appointment-locations' element={<StylistLocationSettings />} />
@@ -144,8 +150,11 @@ function App() {
           <Route path='update-business-information' element={<BusinessInformation />} />
           <Route path='update-personal-information' element={<PersonalInformation />} />
           <Route path='reviews' element={<Reviews />} />
+          <Route path='change-password' element={<StylerChangePassword />} />
+          <Route path='support' element={<StylerSupport />} />
         </Route>
         <Route path="/admin/login" element={<AdminLogin />} />
+        <Route element={<CustomerRoleRedirect area="admin" />}>
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/admin/categories" element={<ManageCategories />} />
         <Route path="/admin/blog" element={<ManageBlog />} />
@@ -154,6 +163,7 @@ function App() {
         <Route path="/admin/payments" element={<AdminPayments />} />
         <Route path="/admin/recovery" element={<AdminRecovery />} />
         <Route path="/admin/announcements" element={<AdminAnnouncements />} />
+        </Route>
         {/* Customer area. Only known account workflows mount the authenticated shell. */}
         <Route path="/dashboard/*" element={<UserLayout />} />
         <Route path="/bookAppointment" element={<UserLayout />} />

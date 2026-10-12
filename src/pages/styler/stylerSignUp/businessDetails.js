@@ -7,8 +7,22 @@ import AddressAutocomplete from "../../../components/AddressAutocomplete";
 import Button from "../../../components/button";
 import { APIService } from "../../../hooks/remote/apiService";
 import { useStylerSignup } from "../../../context/StylerSignupContext";
+import ProvinceSelect from "../../../components/provinceSelect";
+import {
+  CITY_MAX,
+  cityError,
+  formatPostalCode,
+  postalCodeError,
+  provinceError,
+  toProvinceName,
+} from "../../../utils/signupValidation";
 
 /* ── Zod schema ─────────────────────────────────────────────────────── */
+const fieldRule = (check) => (val, ctx) => {
+  const message = check(val);
+  if (message) ctx.addIssue({ code: "custom", message });
+};
+
 const businessSchema = z.object({
   serviceTypeId: z.string().min(1, "Select a service type"),
   businessName: z
@@ -17,9 +31,10 @@ const businessSchema = z.object({
     .min(1, "Business name is required")
     .min(3, "Business name must be at least 3 characters"),
   address: z.string().trim().min(1, "Business address is required"),
-  city: z.string().trim().min(1, "City is required"),
-  province: z.string().trim().min(1, "Province is required"),
-  postalCode: z.string().trim().min(1, "Postal code is required"),
+  // The shared sign-up rules, which the backend applies to the same fields.
+  city: z.string().superRefine(fieldRule(cityError)),
+  province: z.string().superRefine(fieldRule(provinceError)),
+  postalCode: z.string().superRefine(fieldRule(postalCodeError)),
 });
 
 function toFormikErrors(zodError) {
@@ -62,7 +77,7 @@ const BusinessDetails = () => {
     address: formData.address || "",
     businessAddress: formData.businessAddress || "",
     city: formData.city || "",
-    province: formData.businessProvince || formData.province || "",
+    province: toProvinceName(formData.businessProvince || formData.province),
     postalCode: formData.postalCode || "",
     streetAddress: formData.streetAddress || "",
     unit: formData.unit || "",
@@ -95,10 +110,10 @@ const BusinessDetails = () => {
       address: addressData.formattedAddress || prev.address || "",
       businessAddress: addressData.formattedAddress || prev.businessAddress || "",
       city: addressData.city || prev.city || "",
-      province: addressData.province || prev.province || "",
-      businessProvince: addressData.province || prev.businessProvince || "",
-      state: addressData.province || prev.state || "",
-      postalCode: addressData.postalCode || prev.postalCode || "",
+      province: toProvinceName(addressData.province) || prev.province || "",
+      businessProvince: toProvinceName(addressData.province) || prev.businessProvince || "",
+      state: toProvinceName(addressData.province) || prev.state || "",
+      postalCode: formatPostalCode(addressData.postalCode) || prev.postalCode || "",
       streetAddress: addressData.streetAddress || prev.streetAddress || "",
       unit: addressData.unit || prev.unit || "",
       latitude: addressData.latitude ?? prev.latitude ?? null,
@@ -111,6 +126,8 @@ const BusinessDetails = () => {
     const selected = serviceTypes.find((s) => s.id === values.serviceTypeId);
     updateData({
       ...values,
+      city: values.city.trim(),
+      postalCode: formatPostalCode(values.postalCode),
       serviceTypeName: selected?.name || values.serviceTypeName,
       businessProvince: values.province,
       businessAddress: values.address,
@@ -174,8 +191,10 @@ const BusinessDetails = () => {
             <InputWithLabel
               labelName="Business name"
               inputType="text"
-              placeholder="The continental"
+              placeholder="e.g. Glow Studio"
               inputName="businessName"
+              autoComplete="organization"
+              required
               inputValue={values.businessName}
               inputOnChange={handleChange}
               inputOnBlur={handleBlur}
@@ -203,32 +222,40 @@ const BusinessDetails = () => {
 
             {/* Always visible so a free-typed address can be completed
                 manually when Places suggestions are unavailable. */}
-            <div className="grid grid-cols-3 gap-3 mt-1">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-1">
               <InputWithLabel
                 labelName="City"
                 inputType="text"
                 inputName="city"
+                autoComplete="address-level2"
+                maxLength={CITY_MAX}
+                required
                 inputValue={values.city}
                 inputOnChange={handleChange}
                 inputOnBlur={handleBlur}
                 inputError={(touched.city || Boolean(values.city)) && errors.city ? errors.city : ""}
               />
-              <InputWithLabel
-                labelName="Province"
-                inputType="text"
-                inputName="province"
-                inputValue={values.province}
-                inputOnChange={handleChange}
-                inputOnBlur={handleBlur}
-                inputError={(touched.province || Boolean(values.province)) && errors.province ? errors.province : ""}
+              <ProvinceSelect
+                value={values.province}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                required
+                error={touched.province && errors.province ? errors.province : ""}
               />
               <InputWithLabel
                 labelName="Postal code"
                 inputType="text"
                 inputName="postalCode"
+                placeholder="e.g. T2P 1B5"
+                autoComplete="postal-code"
+                maxLength={7}
+                required
                 inputValue={values.postalCode}
                 inputOnChange={handleChange}
-                inputOnBlur={handleBlur}
+                inputOnBlur={(event) => {
+                  setFieldValue("postalCode", formatPostalCode(event.target.value));
+                  handleBlur(event);
+                }}
                 inputError={(touched.postalCode || Boolean(values.postalCode)) && errors.postalCode ? errors.postalCode : ""}
               />
             </div>

@@ -119,7 +119,7 @@ const SecureAccount = () => {
           <div className="p-5 md:p-10 mb-6 md:mb-0 w-full">
             <img src={logo} alt="" className="h-10 mb-8" />
             <CustomerSignupCounter />
-            <p className="mt-2 text-[22px] font-normal tracking-[-0.01em] text-onSurface">Secure your account</p>
+            <h1 className="mt-2 text-[22px] font-normal tracking-[-0.01em] text-onSurface">Secure your account</h1>
             <p className="text-black/60 text-sm mt-1">
               Choose the password you will sign in with. The list below is what we ask of it,
               and it turns black as your password meets each line.
@@ -128,6 +128,7 @@ const SecureAccount = () => {
               <PasswordInput labelName={"Password"}
                 inputType={"password"}
                 inputName={"password"}
+                autoComplete="new-password"
                 inputOnBlur={createAccountForm.handleBlur}
                 inputOnChange={(event) => { setSubmitError(null); createAccountForm.handleChange(event); }}
                 inputValue={createAccountForm.values.password}
@@ -135,6 +136,7 @@ const SecureAccount = () => {
               <PasswordInput labelName={"Confirm Password"}
                 inputType={"password"}
                 inputName={"confirmPassword"}
+                autoComplete="new-password"
                 inputOnBlur={createAccountForm.handleBlur}
                 inputOnChange={(event) => { setSubmitError(null); createAccountForm.handleChange(event); }}
                 inputValue={createAccountForm.values.confirmPassword}

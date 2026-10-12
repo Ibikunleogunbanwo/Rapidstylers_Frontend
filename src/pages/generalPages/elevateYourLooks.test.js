@@ -4,7 +4,7 @@ import { APIService } from "../../hooks/remote/apiService";
 
 // The gallery page is what we're testing — stub the heavy chrome (Hero pulls in
 // redux/router/formik/video assets) and the ad slot, keeping the test focused.
-vi.mock("./newHeroSection", () => ({ default: () => <div data-testid="hero" /> }));
+vi.mock("../../components/publicHeader", () => ({ default: () => <div data-testid="hero" /> }));
 vi.mock("../../components/footer", () => ({ default: () => <div data-testid="footer" /> }));
 vi.mock("../../components/adSlot", () => ({ default: () => null }));
 // Most of these specs cover the curated photos, which only the demo shows.
@@ -419,5 +419,16 @@ describe("ElevateLooks on the live site", () => {
     APIService.searchGallery.mockResolvedValue({ data: { data: [] } });
     render(<ElevateLooks showCurated={false} />);
     expect(await screen.findByText(/work posted yet/)).toBeInTheDocument();
+  });
+});
+
+describe("ElevateLooks heading", () => {
+  test("has its own single page heading instead of the home page hero", () => {
+    APIService.searchGallery.mockResolvedValue({ data: { data: [] } });
+    render(<ElevateLooks />);
+    const headings = screen.getAllByRole("heading", { level: 1 });
+    expect(headings).toHaveLength(1);
+    expect(headings[0]).toHaveTextContent("Work by RapidStylers professionals");
+    expect(document.title).toBe("Gallery | RapidStylers");
   });
 });

@@ -1,4 +1,4 @@
-import { useAdminList, AdminListControls } from "./adminList";
+import { useAdminList, AdminListControls, AdminNoMatches } from "./adminList";
 import React, { useEffect, useRef, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { APIService } from "../../hooks/remote/apiService";
@@ -15,7 +15,6 @@ import { getAuthToken, isAdminRole } from "../../utils/constant";
 const STAGE_TONES = { 0: "neutral", 1: "neutral", 2: "attention", 3: "attention", 4: "negative" };
 
 const Recovery = () => {
-  document.title = "Recovery Campaigns | RapidStylers";
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
@@ -89,6 +88,7 @@ const Recovery = () => {
         ) : (
           <div className="rounded-lg border bg-white p-4">
             <AdminListControls list={campaignList} label="Search campaigns" />
+            {campaignList.filteredCount === 0 && <AdminNoMatches list={campaignList} noun="campaigns" />}
             <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>

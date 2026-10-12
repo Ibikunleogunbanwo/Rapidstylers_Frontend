@@ -48,7 +48,7 @@ const renderPage = () =>
     </MemoryRouter>
   );
 
-const boxes = () => document.querySelectorAll('input[maxlength="1"]');
+const boxes = () => document.querySelectorAll('input[id^="digit"]');
 
 const askForCode = async (email = "ada@example.com") => {
   fireEvent.change(document.querySelector('input[name="emailAddress"]'), {
@@ -126,9 +126,9 @@ describe("resetting a forgotten password", () => {
     renderPage();
     await askForCode();
     enterCode("123");
+    // Continue stays disabled until all six digits are in.
+    expect(screen.getByRole("button", { name: /continue/i })).toBeDisabled();
     fireEvent.click(screen.getByRole("button", { name: /continue/i }));
-
-    expect(await screen.findByRole("alert")).toHaveTextContent(/all 6 digits/i);
     expect(APIService.verifyOtpCode).not.toHaveBeenCalled();
   });
 
@@ -218,19 +218,14 @@ describe("resetting a forgotten password", () => {
     expect(navigate).toHaveBeenCalledWith("/login");
   });
 
-  it("says plainly that professionals are not covered yet, and how to get help", () => {
+  it("serves professionals too: no contact-support note, and the email field autofills", () => {
     renderPage();
 
-    expect(screen.getByText(/for professionals/i)).toBeInTheDocument();
-    // The real contact details, not placeholders: a professional sent here needs a
-    // way to actually reach someone.
-    expect(screen.getByRole("link", { name: SUPPORT_EMAIL })).toHaveAttribute(
-      "href",
-      `mailto:${SUPPORT_EMAIL}`
-    );
-    expect(screen.getByRole("link", { name: SUPPORT_PHONE })).toHaveAttribute(
-      "href",
-      `tel:${SUPPORT_PHONE.replace(/[^\d+]/g, "")}`
-    );
+    expect(screen.queryByText(/for professionals/i)).toBeNull();
+    expect(screen.queryByRole("link", { name: SUPPORT_EMAIL })).toBeNull();
+    expect(screen.queryByRole("link", { name: SUPPORT_PHONE })).toBeNull();
+    expect(screen.getByText(/customer or professional/i)).toBeInTheDocument();
+    expect(document.querySelector('input[name="emailAddress"]')).toHaveAttribute("autocomplete", "email");
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Your email");
   });
 });

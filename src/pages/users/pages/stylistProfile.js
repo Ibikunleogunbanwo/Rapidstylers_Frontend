@@ -17,6 +17,7 @@ import { vendorOpenState } from "../../../utils/vendorOpenState";
 import { Section, Eyebrow, Statement, BackHome } from "../../../components/pageSections";
 import SectionPager from "../../../components/sectionPager";
 import Footer from "../../../components/footer";
+import PublicHeader from "../../../components/publicHeader";
 
 const WEEKDAY_LABELS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
@@ -89,7 +90,7 @@ const PortfolioLightbox = ({ images, index, onClose, onPrev, onNext }) => {
       >
         <img
           src={image.imageUrl}
-          alt={image.name}
+          alt={image.name || "Portfolio photo"}
           className="max-h-[78vh] max-w-full rounded-md object-contain"
         />
         <figcaption className="mt-4 text-center text-sm text-white/80">
@@ -344,6 +345,7 @@ const StylistProfile = ({ setPageTitle }) => {
 
   return (
     <div className="min-h-screen bg-white text-onSurface">
+      <PublicHeader spacer />
       <Spinner loading={reduxLoading} />
 
       {/* Profile header: avatar, category, name, rating, address, save */}
@@ -354,7 +356,7 @@ const StylistProfile = ({ setPageTitle }) => {
             {avatarUrl ? (
               <img
                 src={cloudinaryAvatar(avatarUrl)}
-                alt={displayName}
+                alt={displayName ? `${displayName} profile photo` : "Profile photo"}
                 className="h-20 w-20 rounded-full object-cover"
               />
             ) : heroFallback ? (
@@ -511,7 +513,7 @@ const StylistProfile = ({ setPageTitle }) => {
                 >
                   <img
                     src={cloudinarySquare(val.imageUrl)}
-                    alt={val.name}
+                    alt={val.name || "Portfolio photo"}
                     className="aspect-square w-full rounded-md object-cover transition-transform duration-300 hover:scale-105"
                   />
                 </button>

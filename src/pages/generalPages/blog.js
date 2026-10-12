@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import PublicHeader from "../../components/publicHeader";
 import { Link } from "react-router-dom";
 import Footer from "../../components/footer";
 import { Section, PageHeading, BackHome } from "../../components/pageSections";
@@ -69,6 +70,7 @@ const Blog = () => {
 
   return (
     <div className="min-h-screen bg-white">
+      <PublicHeader spacer />
       <Section pad="pt-10 md:pt-14 pb-2">
         <BackHome />
         <PageHeading
@@ -88,7 +90,7 @@ const Blog = () => {
               <div className="aspect-[4/5] overflow-hidden bg-neutral">
                 <img
                   src={cloudinaryBlog(post.img)}
-                  alt=""
+                  alt={post.title || ""}
                   className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500"
                   loading="lazy"
                 />

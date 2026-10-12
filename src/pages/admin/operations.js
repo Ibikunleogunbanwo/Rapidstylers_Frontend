@@ -1,20 +1,27 @@
-import { useAdminList, AdminListControls } from "./adminList";
+import { useAdminList, AdminListControls, AdminNoMatches } from "./adminList";
 import { useEffect, useRef, useState } from "react";
 import { Navigate, useSearchParams } from "react-router-dom";
 import { APIService } from "../../hooks/remote/apiService";
 import { AdminPage, AdminInput, AdminTextarea, AdminPill, AdminStat } from "./adminShell";
 import { getAuthToken, isAdminRole, showErrorToastMessage, showSuccessToastMessage } from "../../utils/constant";
+import AdminReviews from "./adminReviews";
+import AdminFeedback from "./adminFeedback";
+import { adminDay, formatAdminTime } from "./adminFormat";
 
-const SECTIONS = [["overview", "Overview"], ["tickets", "Support"], ["reviews", "Reviews"], ["logs", "Audit log"], ["business", "Business"], ["settings", "Settings"], ["payouts", "Payouts"]];
+const SECTIONS = [["overview", "Overview"], ["tickets", "Support"], ["reviews", "Reviews"], ["feedback", "Feedback"], ["logs", "Audit log"], ["business", "Business"], ["settings", "Settings"], ["payouts", "Payouts"]];
+/** Sections that load and page themselves rather than through `load` below. */
+const SELF_LOADING = ["reviews", "feedback"];
+export const COMMISSION_MAX = 50;
 const Operations = () => {
   const [params, setParams] = useSearchParams();
   const tab = SECTIONS.some(([key]) => key === params.get("section")) ? params.get("section") : "overview";
   const setTab = value => { activeList.setSearch(""); setActionError(""); setTicketDraft(null); setParams({section:value}); };
   const [kpis, setKpis] = useState(null);
   const [tickets, setTickets] = useState([]);
-  const [reviews, setReviews] = useState([]);
   const [logs, setLogs] = useState([]);
+  const [logFilters, setLogFilters] = useState({ action: "", actor: "", day: "" });
   const [commission, setCommission] = useState("");
+  const [savedCommission, setSavedCommission] = useState("");
   const [savingCommission, setSavingCommission] = useState(false);
   const [connectStatuses, setConnectStatuses] = useState([]);
   const [businessSummaries, setBusinessSummaries] = useState([]);
@@ -35,9 +42,8 @@ const Operations = () => {
     const requests = {
       overview: [() => APIService.adminKpis(), setKpis],
       tickets: [() => APIService.adminSupportTickets(), setTickets],
-      reviews: [() => APIService.adminReviewQueue(), setReviews],
       logs: [() => APIService.adminAuditLogs(), setLogs],
-      settings: [() => APIService.getCommissionSetting(), data => setCommission(String(data.commissionPercent ?? ""))],
+      settings: [() => APIService.getCommissionSetting(), data => { setCommission(String(data.commissionPercent ?? "")); setSavedCommission(String(data.commissionPercent ?? "")); }],
       payouts: [() => APIService.adminStylerConnectStatuses(), setConnectStatuses],
       business: [() => APIService.adminStylerBusinessSummaries(), setBusinessSummaries],
     };
@@ -54,17 +60,8 @@ const Operations = () => {
       setLoadingSections(previous => ({...previous, [section]:false}));
     }
   };
-  useEffect(() => { if (getAuthToken() && isAdminRole() && !completed.current.has(tab)) load(tab); }, [tab]);
-  const loading = loadingSections[tab] || !completed.current.has(tab);
-
-  const moderate = async (reviewId, action) => {
-    if (actionLock.current) return;
-    actionLock.current = true;
-    setPendingAction(true); setActionError("");
-    try { await APIService.adminUpdateReviewModeration({ reviewId, action }); showSuccessToastMessage(action === "APPROVED" ? "Review approved" : "Review rejected"); await load("reviews"); }
-    catch (error) { setActionError("Unable to update review. Please try again."); }
-    finally { actionLock.current = false; setPendingAction(false); }
-  };
+  useEffect(() => { if (getAuthToken() && isAdminRole() && !SELF_LOADING.includes(tab) && !completed.current.has(tab)) load(tab); }, [tab]);
+  const loading = !SELF_LOADING.includes(tab) && (loadingSections[tab] || !completed.current.has(tab));
   const saveTicket = async event => {
     event.preventDefault();
     if (actionLock.current || !ticketDraft) return;
@@ -80,20 +77,27 @@ const Operations = () => {
   };
   const saveCommission = async () => {
     const value = Number(commission);
-    if (!commission.trim() || !Number.isFinite(value) || value < 0 || value > 100) { setActionError("Commission must be between 0 and 100."); return; }
+    if (!commission.trim() || !Number.isFinite(value) || value < 0 || value > COMMISSION_MAX) { setActionError(`Commission must be between 0 and ${COMMISSION_MAX}.`); return; }
     if (actionLock.current) return;
+    if (savedCommission !== "" && Number(savedCommission) === value) return;
+    if (!window.confirm(`Change commission from ${savedCommission === "" ? "the current rate" : `${Number(savedCommission)}%`} to ${value}%?`)) return;
     actionLock.current = true; setSavingCommission(true); setActionError("");
     try { await APIService.updateCommissionSetting(value); showSuccessToastMessage("Commission updated for new bookings"); await load("settings"); }
     catch { setActionError("Unable to save commission. Please try again."); }
     finally { actionLock.current = false; setSavingCommission(false); }
   };
 
-  const sectionLists = {tickets,reviews,logs,business:businessSummaries,payouts:connectStatuses};
+  const logActions = [...new Set(logs.map(log => log.action).filter(Boolean))].sort();
+  const filteredLogs = logs.filter(log => (!logFilters.action || log.action === logFilters.action)
+    && (!logFilters.actor || [log.actorEmail, log.actorRole, log.actorId].filter(Boolean).join(" ").toLowerCase().includes(logFilters.actor.trim().toLowerCase()))
+    && (!logFilters.day || adminDay(log.createdAt) === logFilters.day));
+  const sectionLists = {tickets,logs:filteredLogs,business:businessSummaries,payouts:connectStatuses};
   const activeList = useAdminList(sectionLists[tab] || [], item=>JSON.stringify(item));
   if (!getAuthToken() || !isAdminRole()) return <Navigate to="/admin/login" replace />;
+  const sectionLabel = SECTIONS.find(([key]) => key === tab)?.[1];
   const cards = kpis ? [["Customers", kpis.customers], ["Stylists", kpis.stylists], ["Approved stylists", kpis.approvedStylists], ["Appointments", kpis.appointments], ["Completed", kpis.completedAppointments], ["Open tickets", kpis.openSupportTickets], ["Reviews", kpis.reviews]] : [];
 
-  return <AdminPage eyebrow="Admin" title="Admin operations">
+  return <AdminPage eyebrow="Admin operations" title={tab === "overview" ? "Admin operations" : sectionLabel} pageTitle={tab === "overview" ? "Operations" : sectionLabel}>
     <div className="mb-5">
       <label htmlFor="operation-section" className="mb-1 block text-sm text-gray-600 md:hidden">Operations section</label>
       <select id="operation-section" value={tab} onChange={event => setTab(event.target.value)} className="w-full rounded border bg-white p-3 md:hidden">{SECTIONS.map(([value,label]) => <option key={value} value={value}>{label}</option>)}</select>
@@ -109,7 +113,7 @@ const Operations = () => {
     </form>}
     {!loading && !readErrors[tab] && sectionLists[tab] && <AdminListControls key={tab} list={activeList} label="Search this section" />}
     {actionError && <p role="alert">{actionError}</p>}
-    {loading ? <p className="text-sm text-gray-500">Loading operations…</p> : readErrors[tab] ? <div role="alert">{readErrors[tab]} <button type="button" onClick={() => load(tab)}>Retry</button></div> : tab === "overview" ? <div className="grid grid-cols-2 gap-3 md:grid-cols-4">{cards.map(([label, value]) => <AdminStat key={label} label={label} value={value} />)}</div> : tab === "tickets" ? <div className="grid gap-3">{tickets.length === 0 ? <p className="text-sm text-gray-500">No support tickets.</p> : activeList.visibleItems.map((ticket) => <div key={ticket.id} className="rounded-lg border bg-white p-4"><div className="flex items-start justify-between gap-3"><p className="font-semibold">{ticket.subject}</p><span className="text-xs font-bold text-gray-500">{ticket.status}</span></div><p className="mt-2 text-sm text-gray-600">{ticket.message}</p>{ticket.adminResponse && <p className="mt-2 text-sm text-brand">{ticket.adminResponse}</p>}<button type="button" disabled={pendingAction} onClick={() => {setActionError("");setTicketDraft({ticketId:ticket.id,status:ticket.status,adminResponse:ticket.adminResponse || ""});}} className="mt-3 rounded-md bg-brand px-3 py-2 text-xs font-semibold text-white">Update ticket</button></div>)}</div> : tab === "reviews" ? <div className="grid gap-3">{reviews.length === 0 ? <p className="text-sm text-gray-500">No reviews awaiting moderation.</p> : activeList.visibleItems.map((review) => <div key={review.id} className="rounded-lg border bg-white p-4"><p className="font-semibold">{review.ratingScore}/5 · {review.userName}</p><p className="mt-2 text-sm text-gray-600">{review.message}</p><div className="mt-3 flex gap-2"><button type="button" disabled={pendingAction} onClick={() => moderate(review.id, "APPROVED")} className="rounded-md bg-green-600 px-3 py-2 text-xs font-semibold text-white">Approve</button><button type="button" disabled={pendingAction} onClick={() => moderate(review.id, "REJECTED")} className="rounded-md bg-red-600 px-3 py-2 text-xs font-semibold text-white">Reject</button></div></div>)}</div> : tab === "settings" ? <CommissionSetting value={commission} onChange={setCommission} onSave={saveCommission} saving={savingCommission} /> : tab === "business" ? <BusinessStatsTable rows={activeList.visibleItems} /> : tab === "payouts" ? <ConnectStatusTable rows={activeList.visibleItems} /> : <div className="overflow-x-auto rounded-lg border bg-white"><table className="w-full text-left text-sm"><thead><tr className="border-b text-xs text-gray-500"><th className="p-3">When</th><th className="p-3">Actor</th><th className="p-3">Action</th><th className="p-3">Resource</th></tr></thead><tbody>{activeList.visibleItems.map((log) => <tr key={log.id} className="border-b last:border-0"><td className="p-3 text-gray-500">{log.createdAt}</td><td className="p-3">{log.actorRole}</td><td className="p-3">{log.action}</td><td className="p-3">{log.resourceType} {log.resourceId}</td></tr>)}</tbody></table></div>}
+    {loading ? <p className="text-sm text-gray-500">Loading operations…</p> : readErrors[tab] ? <div role="alert">{readErrors[tab]} <button type="button" onClick={() => load(tab)}>Retry</button></div> : tab === "overview" ? <div className="grid grid-cols-2 gap-3 md:grid-cols-4">{cards.map(([label, value]) => <AdminStat key={label} label={label} value={value} />)}</div> : tab === "tickets" ? <div className="grid gap-3">{tickets.length === 0 ? <p className="text-sm text-gray-500">No support tickets.</p> : activeList.filteredCount === 0 ? <AdminNoMatches list={activeList} noun="tickets" /> : activeList.visibleItems.map((ticket) => <div key={ticket.id} className="rounded-lg border bg-white p-4"><div className="flex items-start justify-between gap-3"><p className="min-w-0 break-words font-semibold">{ticket.subject}</p><span className="text-xs font-bold text-gray-500">{ticket.status}</span></div><p className="mt-1 break-words text-xs text-gray-500">#{ticket.ticketId ?? ticket.id} · {ticket.senderName || "Unknown sender"}{ticket.senderEmail ? ` <${ticket.senderEmail}>` : ""}{ticket.senderRole ? ` · ${ticket.senderRole === "STYLIST" ? "Stylist" : "Customer"}` : ""} · {formatAdminTime(ticket.createdAt)}</p><p className="mt-2 break-words text-sm text-gray-600">{ticket.message}</p>{ticket.adminResponse && <p className="mt-2 text-sm text-brand">{ticket.adminResponse}</p>}<button type="button" disabled={pendingAction} onClick={() => {setActionError("");setTicketDraft({ticketId:ticket.id,status:ticket.status,adminResponse:ticket.adminResponse || ""});}} className="mt-3 rounded-md bg-brand px-3 py-2 text-xs font-semibold text-white">Update ticket</button></div>)}</div> : tab === "reviews" ? <AdminReviews /> : tab === "feedback" ? <AdminFeedback /> : tab === "settings" ? <CommissionSetting value={commission} saved={savedCommission} onChange={setCommission} onSave={saveCommission} saving={savingCommission} /> : ["business", "payouts"].includes(tab) && activeList.search.trim() && activeList.filteredCount === 0 ? <AdminNoMatches list={activeList} noun="stylists" /> : tab === "business" ? <BusinessStatsTable rows={activeList.visibleItems} /> : tab === "payouts" ? <ConnectStatusTable rows={activeList.visibleItems} /> : <AuditLogTable rows={activeList.visibleItems} actions={logActions} filters={logFilters} onFilters={value => { setLogFilters(value); activeList.setPage(1); }} total={logs.length} />}
   </AdminPage>;
 };
 
@@ -236,12 +240,37 @@ const BusinessStatsTable = ({ rows }) => {
   );
 };
 
-const CommissionSetting = ({ value, onChange, onSave, saving }) => (
+/** The latest audit entries with filters by action, actor and day (in the business time zone). */
+const AuditLogTable = ({ rows, actions, filters, onFilters, total }) => (
+  <div className="grid gap-3">
+    <div className="grid gap-3 rounded-lg border bg-white p-3 sm:grid-cols-3">
+      <label className="grid gap-1 text-xs text-gray-500">Action
+        <select value={filters.action} onChange={e => onFilters({ ...filters, action: e.target.value })} className="rounded border bg-white p-2 text-sm text-gray-900">
+          <option value="">All actions</option>
+          {actions.map(action => <option key={action} value={action}>{action}</option>)}
+        </select>
+      </label>
+      <label className="grid gap-1 text-xs text-gray-500">Actor (email or role)
+        <AdminInput type="search" value={filters.actor} onChange={e => onFilters({ ...filters, actor: e.target.value })} />
+      </label>
+      <label className="grid gap-1 text-xs text-gray-500">Day
+        <AdminInput type="date" value={filters.day} onChange={e => onFilters({ ...filters, day: e.target.value })} />
+      </label>
+    </div>
+    <p className="text-xs text-gray-500">Showing the latest {total} entries. Times are Mountain Time.</p>
+    {rows.length === 0 ? <p className="text-sm text-gray-500">No audit entries match these filters.</p> : (
+      <div className="overflow-x-auto rounded-lg border bg-white"><table className="w-full text-left text-sm"><thead><tr className="border-b text-xs text-gray-500"><th className="p-3">When</th><th className="p-3">Actor</th><th className="p-3">Action</th><th className="p-3">Resource</th></tr></thead><tbody>{rows.map((log) => <tr key={log.id} className="border-b align-top last:border-0"><td className="whitespace-nowrap p-3 text-gray-500">{formatAdminTime(log.createdAt)}</td><td className="p-3">{log.actorEmail || log.actorRole}{log.actorEmail && log.actorRole ? <span className="block text-xs text-gray-400">{log.actorRole}</span> : null}</td><td className="p-3">{log.action}</td><td className="p-3">{log.resourceType} {log.resourceId}</td></tr>)}</tbody></table></div>
+    )}
+  </div>
+);
+
+const CommissionSetting = ({ value, saved, onChange, onSave, saving }) => (
   <div className="rounded-lg border bg-white p-4">
     <p className="font-semibold">Platform commission</p>
     <p className="mt-1 text-sm text-gray-600">
-      Commission charged on new bookings. Existing bookings keep their original rate.
+      Commission charged on new bookings, from 0 to {COMMISSION_MAX}%. Existing bookings keep their original rate. Changes are recorded in the audit log.
     </p>
+    {saved !== "" && <p className="mt-1 text-sm text-gray-600">Current rate: {Number(saved)}%</p>}
     <div className="mt-3 flex items-end gap-3 max-w-sm">
       <div className="flex-1">
         <label htmlFor="commission-percent" className="block mb-1 text-xs text-gray-500">Commission %</label>
@@ -249,7 +278,7 @@ const CommissionSetting = ({ value, onChange, onSave, saving }) => (
           id="commission-percent"
           type="number"
           min="0"
-          max="100"
+          max={COMMISSION_MAX}
           step="0.5"
           value={value}
           onChange={(e) => onChange(e.target.value)}
@@ -258,7 +287,7 @@ const CommissionSetting = ({ value, onChange, onSave, saving }) => (
       <button
         type="button"
         onClick={onSave}
-        disabled={saving}
+        disabled={saving || (saved !== "" && value.trim() !== "" && Number(value) === Number(saved))}
         className="rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white"
       >
         {saving ? "Saving..." : "Save"}

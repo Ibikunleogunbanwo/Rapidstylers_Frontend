@@ -6,6 +6,9 @@ import {
   SUPPORT_PHONE,
   SUPPORT_PHONE_TEL,
 } from "../../utils/constant";
+// The shared site header needs the app's store; these tests are about the page body.
+vi.mock("../../components/publicHeader", () => ({ default: () => null }));
+
 
 /**
  * The support page is where a stuck customer looks for a human. Every contact

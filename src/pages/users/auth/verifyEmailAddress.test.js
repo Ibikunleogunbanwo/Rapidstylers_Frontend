@@ -11,6 +11,7 @@ vi.mock("react-router-dom", () => {
   return {
     useLocation: () => location,
     useNavigate: () => navigate,
+    Link: ({ to, children, ...rest }) => <a href={to} {...rest}>{children}</a>,
     __testNavigate: navigate,
     __testLocation: location,
   };
@@ -49,7 +50,7 @@ vi.mock("../../../components/button", () => ({
 }));
 vi.mock("../../../components/spinner", () => ({ default: () => null }));
 
-const otpInputs = () => screen.getAllByRole("textbox").filter((el) => el.maxLength === 1);
+const otpInputs = () => screen.getAllByRole("textbox").filter((el) => /^digit\d$/.test(el.id));
 
 const typeDigit = (index, digit) => {
   const inputs = otpInputs();
@@ -335,5 +336,16 @@ describe("VerifyUserEmailAddress OTP inputs", () => {
     // The class is removed once the animation finishes.
     fireEvent.animationEnd(grid);
     expect(grid).not.toHaveClass("animate-shake");
+  });
+});
+
+describe("VerifyUserEmailAddress code help", () => {
+  test("offers autofill, keeps Verify disabled until six digits and points existing accounts to sign in", () => {
+    render(<VerifyUserEmailAddress />);
+    expect(otpInputs()[0]).toHaveAttribute("autocomplete", "one-time-code");
+    expect(screen.getByRole("button", { name: "Verify" })).toBeDisabled();
+    expect(screen.getByText(/No code\? Check spam/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "sign in instead" })).toHaveAttribute("href", "/login");
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Verify your email address");
   });
 });

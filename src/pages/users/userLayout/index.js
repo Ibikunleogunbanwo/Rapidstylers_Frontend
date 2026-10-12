@@ -1,12 +1,13 @@
-import { useLocation, Navigate } from "react-router-dom";
+import { useLocation, Navigate, useNavigate } from "react-router-dom";
 import NotFound from "../../generalPages/notFound";
 import Dashboard from "../pages/dashboard";
 import UserTopBar from "./topBar";
 import UserSideBar from "./sideBar";
 import Advert from "../../../components/advert";
 import { useRef, useState } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import LogOut from "../auth/logout";
+import { userLogOut } from "../../../hooks/local/userReducer";
 import { setIntendedRoute, getAuthToken, getUserRole } from "../../../utils/constant";
 import BookAppointment from "../pages/bookAnAppointment";
 import UpdateInformation from "../pages/updatePersonal";
@@ -19,6 +20,8 @@ import AccountSettings from "../pages/accountsettings";
 import Notifications from "../pages/notifications";
 import Support from "../pages/support";
 import Loyalty from "../pages/loyalty";
+import { StylistList } from "../pages/stylist";
+import { useUnreadNotifications } from "./unreadNotifications";
 
 const UserLayout = () => {
     const userSession = useSelector((state)=>state.user.userSessionData);
@@ -26,6 +29,18 @@ const UserLayout = () => {
     const [pageTitle, setPageTitle] = useState("");
     const [stylerSearchName, setStylerSearchName] = useState("");
     const menuButtonRef = useRef(null);
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
+    // Set in the same render as the logout, so the guard below sends the
+    // person home instead of to /login with this page remembered.
+    const [signedOut, setSignedOut] = useState(false);
+    // Sign out is a button running the logout action (never a GET link
+    // another site could point at). /signOut still works for old links.
+    const signOut = () => {
+        setSignedOut(true);
+        dispatch(userLogOut());
+        navigate("/", { replace: true });
+    };
     const toggleSideBar = () => {
         setSideBarVisibility(!sideBarVisibility);
     }
@@ -38,6 +53,7 @@ const UserLayout = () => {
     // prefix, leaving the dashboard routes unreachable (everything fell to
     // NotFound). Resolve the page directly from the current pathname instead.
     const { pathname } = useLocation();
+    const unreadNotifications = useUnreadNotifications(pathname);
     const showDiscoveryCard = pathname === "/dashboard";
     const page = (() => {
         switch (pathname) {
@@ -54,7 +70,11 @@ const UserLayout = () => {
             case "/feedback": return <Feedback setPageTitle={setPageTitle} />;
             case "/searchAStyler": return <SearchStyler setPageTitle={setPageTitle} stylerSearchName={stylerSearchName} />;
             case "/signOut": return <LogOut />;
-            default: return <NotFound />;
+            default:
+                // A service's professional list (/stylist/:id/:name), kept inside
+                // the dashboard for a signed-in customer (see pages/stylistRoute).
+                if (pathname.startsWith("/stylist/")) return <StylistList setPageTitle={setPageTitle} />;
+                return <NotFound />;
         }
     })();
     // Signed-out visitors on a customer route are sent to /login (remembering
@@ -62,6 +82,9 @@ const UserLayout = () => {
     // the public home page.
     const token = getAuthToken();
     const role = getUserRole();
+    if (signedOut || (!token && pathname === "/signOut")) {
+        return <Navigate to="/" replace />;
+    }
     if (token && role !== "CUSTOMER") {
         return <Navigate to={role === "STYLER" ? "/styler-dashboard" : role === "ADMIN" ? "/admin/categories" : "/login"} replace />;
     }
@@ -71,10 +94,10 @@ const UserLayout = () => {
     }
     return (
         <div>
-            <UserTopBar toggleSideBar={toggleSideBar} menuOpen={sideBarVisibility} menuButtonRef={menuButtonRef} />
+            <UserTopBar toggleSideBar={toggleSideBar} menuOpen={sideBarVisibility} menuButtonRef={menuButtonRef} account={userSession} onSignOut={signOut} />
             <div className="grid grid-cols-1 lg:grid-cols-12 pt-[70px]">
                 <div className="px-4 col-span-1 lg:col-span-2">
-                    <UserSideBar sideBarVisibility={sideBarVisibility} sideBarTitle={pageTitle} closeSideBar={closeSideBar} />
+                    <UserSideBar sideBarVisibility={sideBarVisibility} sideBarTitle={pageTitle} closeSideBar={closeSideBar} onSignOut={signOut} unreadNotifications={unreadNotifications} />
                 </div>
                 <div className="p-2 col-span-1 lg:col-span-10">
                     <div className="grid grid-cols-1 lg:grid-cols-10 gap-4">

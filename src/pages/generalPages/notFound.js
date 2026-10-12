@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Section, Eyebrow } from "../../components/pageSections";
 import {
@@ -8,8 +8,34 @@ import {
   SUPPORT_PHONE_TEL,
 } from "../../utils/constant";
 
+/**
+ * Tells search engines not to index this page. A mistyped or retired URL
+ * answers with the app shell (status 200), so without this a crawler would file
+ * every bad link as a real page. The previous robots value comes back on leave.
+ */
+export const useNoIndex = () => {
+  useEffect(() => {
+    let element = document.head.querySelector('meta[name="robots"]');
+    const existed = Boolean(element);
+    const previous = element?.getAttribute("content");
+    if (!element) {
+      element = document.createElement("meta");
+      element.setAttribute("name", "robots");
+      document.head.appendChild(element);
+    }
+    element.setAttribute("content", "noindex, nofollow");
+    return () => {
+      if (!existed) element.remove();
+      else if (previous != null) element.setAttribute("content", previous);
+    };
+  }, []);
+};
+
 const NotFound = () => {
-  document.title = "Page Not Found | RapidStylers";
+  useEffect(() => {
+    document.title = "Page Not Found | RapidStylers";
+  }, []);
+  useNoIndex();
   return (
     <div className="min-h-screen bg-white">
       <Section pad="pt-[18vh] pb-24" className="text-center">

@@ -158,3 +158,13 @@ describe("Login signed-in redirect guard", () => {
  expect(screen.getByRole("button", {name: "Sign In"})).toBeEnabled();
  });
  });
+
+describe("Login form accessibility", () => {
+  it("has a page heading and lets password managers fill the fields", () => {
+    window.sessionStorage.clear();
+    renderLogin();
+    expect(screen.getByRole("heading", { level: 1, name: "Welcome back" })).toBeInTheDocument();
+    expect(document.querySelector('input[name="emailAddress"]')).toHaveAttribute("autocomplete", "email");
+    expect(document.querySelector('input[name="password"]')).toHaveAttribute("autocomplete", "current-password");
+  });
+});

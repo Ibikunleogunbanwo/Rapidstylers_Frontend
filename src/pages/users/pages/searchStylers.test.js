@@ -4,11 +4,6 @@ import SearchStyler from "./searchStylers";
 
 vi.mock("../../../components/goBack", () => ({ default: () => <nav aria-label="Back" /> }));
 vi.mock("../../../components/spinner", () => ({ default: () => null }));
-vi.mock("../../../components/locationPicker", () => ({
-  default: ({ onClose }) => (
-    <button type="button" aria-label="Close location picker" onClick={onClose}>picker</button>
-  ),
-}));
 vi.mock("../../../components/serviceCard", () => ({
   default: ({ name }) => <div data-testid="stylist-card">{name}</div>,
 }));
@@ -17,9 +12,6 @@ vi.mock("../../../hooks/useSavedStylists", () => ({
 }));
 vi.mock("../../../hooks/local/userReducer", () => ({
   searchStyler: (word) => ({ type: "SEARCH", payload: word }),
-}));
-vi.mock("../../../context/LocationContext", () => ({
-  useUserLocation: () => ({ location: { city: "Calgary", province: "Alberta" } }),
 }));
 
 let dispatchPayload;
@@ -66,7 +58,7 @@ describe("SearchStyler panel", () => {
     fireEvent.click(screen.getByRole("button", { name: "Search" }));
 
     expect(await screen.findByTestId("stylist-card")).toBeInTheDocument();
-    expect(screen.getByText(/found near/)).toBeInTheDocument();
+    expect(screen.getByText(/found for/)).toHaveTextContent("1 professional found for “Ada” across Canada");
   });
 
   test("no results shows the hairline empty state naming the search", async () => {
@@ -78,24 +70,19 @@ describe("SearchStyler panel", () => {
 
     expect(await screen.findByText("No results")).toBeInTheDocument();
     expect(screen.getByText(/with the name/)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Change location" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Browse by service" })).toHaveAttribute("href", "/bookAppointment");
   });
 
-  test("results outside the chosen province collapse to the area empty state", async () => {
+  test("a name search is not limited by the current location (QA C-03)", async () => {
+    // The location context is not even consulted: a Toronto professional is
+    // found by name whatever area the customer has chosen.
     dispatchPayload = { data: [{ stylerId: "S1", businessName: "Toronto Pro", province: "Ontario" }] };
     renderPanel();
 
     fireEvent.click(screen.getByRole("button", { name: "Search" }));
-    expect(await screen.findByText("Nothing in this area")).toBeInTheDocument();
-    expect(screen.queryByTestId("stylist-card")).not.toBeInTheDocument();
-  });
-
-  test("opens the location picker from the empty state", async () => {
-    dispatchPayload = { data: [] };
-    renderPanel();
-
-    fireEvent.click(await screen.findByRole("button", { name: "Change location" }));
-    expect(screen.getByRole("button", { name: "Close location picker" })).toBeInTheDocument();
+    expect(await screen.findByTestId("stylist-card")).toHaveTextContent("Toronto Pro");
+    expect(screen.queryByText("Nothing in this area")).not.toBeInTheDocument();
+    expect(screen.queryByText(/Searching near/)).not.toBeInTheDocument();
   });
 
   test("the safety strip stays on the panel", () => {

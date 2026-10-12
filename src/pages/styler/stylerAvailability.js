@@ -14,6 +14,10 @@ const DAYS = [
 ];
 
 const REASONS = ["Vacation", "Sick day", "Personal", "Holiday", "Training", "Other"];
+// Sensible ceilings for the home-visit inputs: the backend caps the maximum
+// travel distance at 500 km, and a flat travel fee above $500 is a typo.
+const MAX_INCLUDED_KM = 500;
+const MAX_TRAVEL_FEE = 500;
 
 const StylerAvailability = () => {
   document.title = "Availability | RapidStylers";
@@ -33,11 +37,13 @@ const StylerAvailability = () => {
   const [exceptionDate, setExceptionDate] = useState("");
   const [exceptionReason, setExceptionReason] = useState("Vacation");
   const [exceptionLoading, setExceptionLoading] = useState(false);
+  const [exceptionError, setExceptionError] = useState("");
   // Home-visit travel settings
   const [includedTravelKm, setIncludedTravelKm] = useState("15");
   const [baseTravelFee, setBaseTravelFee] = useState("0.00");
   const [locationOptions, setLocationOptions] = useState({});
   const [travelSaving, setTravelSaving] = useState(false);
+  const [travelErrors, setTravelErrors] = useState({});
 
   const loadAvailability = async () => {
     setLoadError("");
@@ -85,6 +91,11 @@ const StylerAvailability = () => {
     );
   }
 
+  // Today's date for the date picker minimum, in the browser's own calendar
+  // (toISOString would give tomorrow's UTC date on a Canadian evening).
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+
   const updateSlot = (index, patch) => {
     setSlots((prev) => prev.map((s, i) => (i === index ? { ...s, ...patch } : s)));
   };
@@ -113,10 +124,21 @@ const StylerAvailability = () => {
 
   const addException = async () => {
     if (!loaded || loading || loadError || exceptionLoading) return;
+    // Shown inline next to the field: a toast alone was easy to miss and read as
+    // the button doing nothing.
     if (!exceptionDate) {
-      showErrorToastMessage("Please select a date");
+      setExceptionError("Please select a date");
       return;
     }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(exceptionDate) || Number.isNaN(new Date(exceptionDate + "T00:00:00").getTime())) {
+      setExceptionError("Enter a valid date");
+      return;
+    }
+    if (exceptionDate < today) {
+      setExceptionError("Choose today or a later date");
+      return;
+    }
+    setExceptionError("");
     setExceptionLoading(true);
     try {
       const res = await APIService.addAvailabilityException({ blockedDate: exceptionDate, reason: exceptionReason });
@@ -148,14 +170,17 @@ const StylerAvailability = () => {
     if (!loaded || loading || loadError || travelSaving) return;
     const km = Number(includedTravelKm);
     const fee = Number(baseTravelFee);
-    if (!Number.isFinite(km) || km < 0) {
-      showErrorToastMessage("Included travel distance must be 0 or more");
-      return;
+    const errors = {};
+    if (String(includedTravelKm).trim() === "" || !Number.isFinite(km) || km < 0 || km > MAX_INCLUDED_KM) {
+      errors.km = `Enter a distance from 0 to ${MAX_INCLUDED_KM} km`;
     }
-    if (!Number.isFinite(fee) || fee < 0) {
-      showErrorToastMessage("Home visit fee must be 0 or more");
-      return;
+    if (String(baseTravelFee).trim() === "" || !Number.isFinite(fee) || fee < 0 || fee > MAX_TRAVEL_FEE) {
+      errors.fee = `Enter a fee from $0 to $${MAX_TRAVEL_FEE}`;
+    } else if (!/^\d+(\.\d{1,2})?$/.test(String(baseTravelFee).trim())) {
+      errors.fee = "Use dollars and cents, e.g. 12.99";
     }
+    setTravelErrors(errors);
+    if (Object.keys(errors).length) return;
     setTravelSaving(true);
     try {
       const res = await APIService.updateStylerTravelSettings(km, baseTravelFee, locationOptions);
@@ -169,8 +194,6 @@ const StylerAvailability = () => {
 
   const enabledCount = slots.filter((s) => s.enabled).length;
 
-  // Today's date for the date picker minimum
-  const today = new Date().toISOString().split("T")[0];
 
   return (
     <div className="grid gap-6">
@@ -184,7 +207,7 @@ const StylerAvailability = () => {
         </div>
 
         {loading ? (
-          <p className="text-sm text-gray-500 py-10 text-center">Loading availability…</p>
+          <p role="status" className="text-sm text-gray-500 py-10 text-center">Loading availability…</p>
         ) : loadError ? (<div role="alert" className="p-4 text-sm text-red-700">{loadError} <button type="button" onClick={loadAvailability}>Retry</button></div>) : (
           <div className="grid gap-3">
             {slots.map((slot, index) => (
@@ -197,11 +220,13 @@ const StylerAvailability = () => {
                 <div className="flex items-center gap-3 min-w-[150px]">
                   <button
                     type="button"
+                    role="switch"
+                    aria-checked={slot.enabled}
                     onClick={() => updateSlot(index, { enabled: !slot.enabled })}
                     className={`relative h-6 w-11 rounded-full transition-colors ${
                       slot.enabled ? "bg-brand" : "bg-gray-300"
                     }`}
-                    aria-label={`Toggle ${slot.label}`}
+                    aria-label={`Work on ${slot.label}`}
                   >
                     <span
                       className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${
@@ -217,6 +242,7 @@ const StylerAvailability = () => {
                   <div className="flex items-center gap-2">
                     <input
                       type="time"
+                      aria-label={`${slot.label} start time`}
                       value={slot.startTime}
                       onChange={(e) => updateSlot(index, { startTime: e.target.value })}
                       className="rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:border-brand focus:outline-none"
@@ -224,6 +250,7 @@ const StylerAvailability = () => {
                     <span className="text-sm text-gray-400">to</span>
                     <input
                       type="time"
+                      aria-label={`${slot.label} end time`}
                       value={slot.endTime}
                       onChange={(e) => updateSlot(index, { endTime: e.target.value })}
                       className="rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:border-brand focus:outline-none"
@@ -243,7 +270,9 @@ const StylerAvailability = () => {
             <span>{saveError}</span>
           </div>
         )}
-        <div className="mt-6 flex items-center justify-between gap-3 border-t border-gray-100 pt-5">
+        {/* Not while loading: the card then shows the loading line alone, not a
+            contradictory "unavailable" and a Save button next to it. */}
+        {!loading && <div className="mt-6 flex items-center justify-between gap-3 border-t border-gray-100 pt-5">
           <p className="text-sm text-gray-500">
             {!loaded || loadError ? "Working hours unavailable." : enabledCount === 0
               ? "No working hours set. Customers cannot book a time."
@@ -256,7 +285,7 @@ const StylerAvailability = () => {
           >
             {saving ? "Saving…" : "Save hours"}
           </button>
-        </div>
+        </div>}
       </div>
 
       {/* Home visits — flat travel fee */}
@@ -269,26 +298,38 @@ const StylerAvailability = () => {
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="block text-xs font-semibold text-gray-500 mb-1">Included free distance (km)</label>
+            <label htmlFor="included-travel-km" className="block text-xs font-semibold text-gray-500 mb-1">Included free distance (km)</label>
             <input
+              id="included-travel-km"
               type="number"
               min="0"
+              max={MAX_INCLUDED_KM}
               step="0.1"
+              inputMode="decimal"
+              aria-invalid={Boolean(travelErrors.km)}
+              aria-describedby={travelErrors.km ? "included-travel-km-error" : undefined}
               value={includedTravelKm}
               onChange={(e) => setIncludedTravelKm(e.target.value)}
               className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:border-brand focus:outline-none"
             />
+            {travelErrors.km && <p id="included-travel-km-error" role="alert" className="mt-1 text-xs text-red-700">{travelErrors.km}</p>}
           </div>
           <div>
-            <label className="block text-xs font-semibold text-gray-500 mb-1">Home visit fee ($, flat)</label>
+            <label htmlFor="home-visit-fee" className="block text-xs font-semibold text-gray-500 mb-1">Home visit fee ($, flat)</label>
             <input
+              id="home-visit-fee"
               type="number"
               min="0"
-              step="0.5"
+              max={MAX_TRAVEL_FEE}
+              step="0.01"
+              inputMode="decimal"
+              aria-invalid={Boolean(travelErrors.fee)}
+              aria-describedby={travelErrors.fee ? "home-visit-fee-error" : undefined}
               value={baseTravelFee}
               onChange={(e) => setBaseTravelFee(e.target.value)}
               className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:border-brand focus:outline-none"
             />
+            {travelErrors.fee && <p id="home-visit-fee-error" role="alert" className="mt-1 text-xs text-red-700">{travelErrors.fee}</p>}
           </div>
         </div>
         <div className="mt-5 flex justify-end">
@@ -314,18 +355,26 @@ const StylerAvailability = () => {
         {/* Add exception form */}
         <div className="flex flex-wrap items-end gap-3 mb-5">
           <div className="flex-1 min-w-[180px]">
-            <label className="block text-xs font-semibold text-gray-500 mb-1">Date</label>
+            <label htmlFor="exception-date" className="block text-xs font-semibold text-gray-500 mb-1">Date</label>
             <input
+              id="exception-date"
               type="date"
               min={today}
+              required
+              aria-invalid={Boolean(exceptionError)}
+              aria-describedby={exceptionError ? "exception-date-error" : undefined}
               value={exceptionDate}
-              onChange={(e) => setExceptionDate(e.target.value)}
+              onChange={(e) => {
+                setExceptionDate(e.target.value);
+                setExceptionError("");
+              }}
               className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:border-brand focus:outline-none"
             />
           </div>
           <div className="min-w-[140px]">
-            <label className="block text-xs font-semibold text-gray-500 mb-1">Reason</label>
+            <label htmlFor="exception-reason" className="block text-xs font-semibold text-gray-500 mb-1">Reason</label>
             <select
+              id="exception-reason"
               value={exceptionReason}
               onChange={(e) => setExceptionReason(e.target.value)}
               className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:border-brand focus:outline-none"
@@ -343,6 +392,7 @@ const StylerAvailability = () => {
             {exceptionLoading ? "Adding…" : "Block date"}
           </button>
         </div>
+        {exceptionError && <p id="exception-date-error" role="alert" className="-mt-3 mb-5 text-xs text-red-700">{exceptionError}</p>}
 
         {/* Exception list */}
         {!loaded || loading || loadError ? (<p className="text-sm text-gray-500">Exceptions unavailable until settings load.</p>) : exceptions.length === 0 ? (
@@ -365,6 +415,8 @@ const StylerAvailability = () => {
                   )}
                 </div>
                 <button
+                  type="button"
+                  aria-label={`Remove ${ex.blockedDate}`}
                   onClick={() => removeException(ex.id)}
                   disabled={!!removingId}
                   className="text-xs font-semibold text-red-500 hover:text-red-700 transition-colors px-2 py-1 rounded hover:bg-red-50"

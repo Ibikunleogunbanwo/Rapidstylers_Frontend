@@ -27,7 +27,7 @@ const CATEGORIES = [
 const MAX_IMAGES = 30;
 
 const MyWork = () => {
-  document.title = "My Work | RapidStylers";
+  document.title = "My work | RapidStylers";
   const [portfolio, setPortfolio] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");

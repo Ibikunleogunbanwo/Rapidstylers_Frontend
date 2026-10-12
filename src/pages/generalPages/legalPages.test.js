@@ -2,6 +2,9 @@ import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import Terms from "./termsAndConditions";
 import Privacy from "./privacyPolicy";
+// The shared site header needs the app's store; these tests are about the page body.
+vi.mock("../../components/publicHeader", () => ({ default: () => null }));
+
 
 // The footer pulls in redux for the session-aware links; stub it, this file is
 // about the page shells.

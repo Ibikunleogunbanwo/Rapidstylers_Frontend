@@ -1,8 +1,9 @@
-const HeroSelect = ({selectOptions, valueKey, labelKey, selectValue, selectBlur, selectName, onChange}) => {
+// The select names itself (selectName, or ariaLabel when given): it has no visible label.
+const HeroSelect = ({selectOptions, valueKey, labelKey, selectValue, selectBlur, selectName, onChange, ariaLabel}) => {
     return (
         <div className="grid w-full md:w-2/3 text-black rounded-md border px-3 sm:px-5">
             <select
-                type="text"
+                aria-label={ariaLabel || selectName}
                 value={selectValue}
                 onBlur={selectBlur}
                 name={selectName}

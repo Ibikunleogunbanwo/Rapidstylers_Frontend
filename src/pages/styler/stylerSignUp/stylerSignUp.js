@@ -1,5 +1,6 @@
 import logo from "../../../assets/svg-icons/colouredLogo.svg";
-import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { useEffect } from "react";
+import { Link, Navigate, Outlet, useLocation } from "react-router-dom";
 import { StylerSignupProvider, useStylerSignup } from "../../../context/StylerSignupContext";
 import { STEPS, awaitsStoredPhotos, readStoredSignupEmail, signupRedirect, stepIndexFrom } from "./signupFlow";
 
@@ -57,6 +58,15 @@ export const StylerSignUpFlow = () => {
         startedBefore: Boolean(readStoredSignupEmail()),
       });
 
+  const step = STEPS[current];
+  const notice = location.state?.signupNotice;
+
+  // The tab names the step, so a professional with several tabs open (or a
+  // screen reader announcing the page) knows where they are.
+  useEffect(() => {
+    if (!redirect && step) document.title = `${step.label} | Join as a professional | RapidStylers`;
+  }, [redirect, step]);
+
   if (redirect) {
     // `replace`, so the skipped-ahead URL does not sit in history for the back
     // button to return to. The note travels as location state, which is what keeps
@@ -65,8 +75,6 @@ export const StylerSignUpFlow = () => {
     return <Navigate to={redirect.to} replace state={{ signupNotice: redirect.notice }} />;
   }
 
-  const step = STEPS[current];
-  const notice = location.state?.signupNotice;
 
   return (
     <div className="min-h-screen grid grid-cols-1 lg:grid-cols-12 bg-white">
@@ -114,16 +122,18 @@ export const StylerSignUpFlow = () => {
       <div className="col-span-1 lg:col-span-4">
         <div className="grid content-between h-full">
           <div className="p-5 md:p-10 mb-6 md:mb-0 w-full lg:max-h-screen lg:overflow-y-auto">
-            <img src={logo} alt="RapidStylers" className="h-10 mb-8" />
+            <Link to="/" aria-label="RapidStylers home" className="inline-block mb-8">
+              <img src={logo} alt="RapidStylers" className="h-10" />
+            </Link>
 
             {/* The counter is the mobile answer to the rail, and repeats the
                 rail's own numbering rather than inventing its own. */}
             <p className="text-[11px] uppercase tracking-[0.25em] text-muted">
               Step {current + 1} of {STEPS.length}
             </p>
-            <p className="mt-2 text-[22px] font-normal tracking-[-0.01em] text-onSurface">
+            <h1 className="mt-2 text-[22px] font-normal tracking-[-0.01em] text-onSurface">
               {step.label}
-            </p>
+            </h1>
             {step.lead && <p className="mt-1 text-sm text-black/60">{step.lead}</p>}
 
             {notice && (
@@ -149,6 +159,17 @@ export const StylerSignUpFlow = () => {
                 <Outlet />
               )}
             </div>
+
+            <p className="mt-8 text-sm text-black/60">
+              Already have an account?{" "}
+              <Link to="/login" className="font-semibold text-brand hover:underline">Sign in</Link>
+            </p>
+            <p className="mt-3 text-xs text-black/50">
+              Read our{" "}
+              <Link to="/terms-and-conditions" target="_blank" className="underline hover:text-brand">Terms and Conditions</Link>
+              {" "}and{" "}
+              <Link to="/privacy-policy" target="_blank" className="underline hover:text-brand">Privacy Policy</Link>.
+            </p>
           </div>
           <div className="bg-stylerDoodle h-32 w-full lg:hidden"></div>
         </div>

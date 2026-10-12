@@ -1,6 +1,9 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import Faqs from "./faqs";
+// The shared site header needs the app's store; these tests are about the page body.
+vi.mock("../../components/publicHeader", () => ({ default: () => null }));
+
 
 // The page renders a Home <Link>, which requires a Router context.
 const renderFaqs = () =>

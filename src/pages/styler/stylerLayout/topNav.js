@@ -27,7 +27,7 @@ const StylerTopBar = ({toggleSideBar, menuOpen = false, menuButtonRef}) => {
             </svg>
             <span>Menu</span>
           </button>
-          <img src={logo} alt="" className="h-12"/>
+          <img src={logo} alt="RapidStylers" className="h-12"/>
         </div>
         <div className="flex items-center gap-4">
           <div className="text-[13px] hidden md:block text-black/55">

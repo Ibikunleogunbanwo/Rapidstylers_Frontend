@@ -18,14 +18,28 @@
 // page and the page's own message ("Enter all 6 digits of the code") could not be
 // shown. Every caller checks the length itself and explains it in the site's
 // voice, which is the behaviour we want in place of a native tooltip.
-const OtpInputs = ({ id, value, onChange, onKeyDown, onPaste, inputRef }) => {
+//
+// The first box carries autocomplete="one-time-code", so a phone can offer the
+// code from the email or SMS in one tap. That fill arrives as all six digits in
+// the first box, which is why the first box alone accepts six characters: every
+// caller spreads a full code across the row.
+export const OTP_AUTOFILL = "one-time-code";
+
+/** The six digits when a box received a whole code at once (autofill), else null. */
+export const filledCode = (value) => {
+    const digits = String(value || "").replace(/\D/g, "");
+    return digits.length === 6 ? digits.split("") : null;
+};
+
+const OtpInputs = ({ id, value, onChange, onKeyDown, onPaste, inputRef, autoFill = false }) => {
     return (
         <input
             type="text"
             inputMode="numeric"
             name={id}
             id={id}
-            maxLength="1"
+            maxLength={autoFill ? 6 : 1}
+            autoComplete={autoFill ? OTP_AUTOFILL : "off"}
             value={value || ""}
             onChange={onChange}
             onKeyDown={onKeyDown}

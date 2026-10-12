@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import Back from "../../components/goBack";
 import Spinner from "../../components/spinner";
 import { APIService } from "../../hooks/remote/apiService";
 import { humanizeConnectReason, showErrorToastMessage } from "../../utils/constant";
@@ -92,8 +91,8 @@ const StylerPayouts = () => {
 
   return (
     <div className="bg-white rounded-lg border">
-      <div className="flex gap-1 items-center border-b border-black/10 p-4 text-[11px] uppercase tracking-[0.25em] text-muted bg-white rounded-t-lg">
-        <Back />
+      {/* Payouts is a top-level section, so no back chevron: it looked like a link and did nothing. */}
+      <div className="border-b border-black/10 p-4 text-[11px] uppercase tracking-[0.25em] text-muted bg-white rounded-t-lg">
         <span>Payouts</span>
       </div>
 
@@ -115,7 +114,7 @@ const StylerPayouts = () => {
           </div>
         ) : payouts.status === "REJECTED" ? (
           <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800 mb-6">
-            <div className="flex items-start justify-between gap-4">
+            <div className="flex flex-col items-start gap-3 sm:flex-row sm:justify-between sm:gap-4">
               <div>
                 <p className="font-semibold flex items-center gap-2">
                   <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 text-red-600" aria-hidden="true"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" /></svg>
@@ -125,7 +124,7 @@ const StylerPayouts = () => {
                   Stripe could not verify your payout account: <span className="font-medium">{humanizeConnectReason(payouts.disabledReason)}</span>.
                 </p>
                 <p className="mt-1 text-red-700/70">
-                  Reconnect below to re-enter your details. No new account is created, and your earnings stay safe until it's sorted.
+                  Select Reconnect to re-enter your details. No new account is created, and your earnings stay safe until it's sorted.
                 </p>
               </div>
               <button

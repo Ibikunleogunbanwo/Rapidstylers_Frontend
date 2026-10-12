@@ -1,6 +1,33 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import { APIService } from "../hooks/remote/apiService";
 import { SAVED_LOCATION_KEY } from "../utils/constant";
+import { toProvinceName } from "../utils/signupValidation";
+
+/** Where searches start when the visitor's own location is unknown or outside Canada. */
+export const DEFAULT_LOCATION = Object.freeze({
+  latitude: 53.5461,
+  longitude: -113.4857,
+  city: "Edmonton",
+  province: "Alberta",
+  country: "Canada",
+  source: "default",
+});
+
+/**
+ * The marketplace only lists Canadian professionals, so a detected location
+ * outside Canada (a visitor abroad, a VPN) would search an empty map: "Karachi,
+ * Sindh" found nobody. Such a location is replaced by the Canadian default, and
+ * a Canadian one has its province written the way the rest of the site writes
+ * it, so the city and province shown always belong together.
+ */
+export function canadianLocationOrDefault(found) {
+  if (!found) return { ...DEFAULT_LOCATION };
+  const country = String(found.country || "").trim();
+  const inCanada = !country || /^(canada|ca)$/i.test(country);
+  const province = toProvinceName(found.province);
+  if (!inCanada || (found.province && !province)) return { ...DEFAULT_LOCATION };
+  return { ...found, province: province || found.province || "", country: "Canada" };
+}
 
 const LocationContext = createContext(null);
 
@@ -56,7 +83,7 @@ export function LocationProvider({ children }) {
             .then((res) => {
               const data = res.data?.data;
               if (data && data.city) {
-                setLocation({ ...data, latitude, longitude, source: "gps" });
+                setLocation(canadianLocationOrDefault({ ...data, latitude, longitude, source: "gps" }));
                 setLoading(false);
               } else {
                 // Reverse geocoding returned no city (Google key unconfigured,
@@ -87,24 +114,17 @@ export function LocationProvider({ children }) {
         .then((res) => {
           const data = res.data?.data;
           if (data && data.latitude) {
-            setLocation({
+            setLocation(canadianLocationOrDefault({
               ...data,
               ...(chosenCoords
                 ? { latitude: chosenCoords.latitude, longitude: chosenCoords.longitude, source: "gps+ip" }
                 : { source: "ip" }),
-            });
+            }));
           }
         })
         .catch(() => {
           // Default to Edmonton if everything fails
-          setLocation({
-            latitude: 53.5461,
-            longitude: -113.4857,
-            city: "Edmonton",
-            province: "Alberta",
-            country: "Canada",
-            source: "default",
-          });
+          setLocation({ ...DEFAULT_LOCATION });
         })
         .finally(() => setLoading(false));
     }

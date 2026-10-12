@@ -1,4 +1,4 @@
-import Hero from "./heroSection";
+import PublicHeader from "../../components/publicHeader";
 import Footer from "../../components/footer";
 import { Link } from "react-router-dom";
 import { curatedById } from "../../utils/curatedGallery";
@@ -32,7 +32,7 @@ const SERVICE_NOTES = {
   Wigs: "Installs, revamps and wig construction",
   "High-top fade": "Fades, tapers and sharp edges",
   "Hair dye": "Colour, highlights and roots",
-  "Nail tech": "Gel, acrylic, chrome and nail art",
+  "Nail Technician": "Gel, acrylic, chrome and nail art",
   Makeup: "Soft glam, bridal and event looks",
   "Eyelash extensions": "Classic, hybrid, volume sets and fills",
   "Natural hair": "Silk press, twist outs and deep conditioning",
@@ -59,9 +59,27 @@ const AboutUs = () => {
   document.title = "About us | RapidStylers";
   return (
     <div className="bg-white text-onSurface">
-      {/* The hero is bottom anchored, so it needs a floor as well as a share of the
-          viewport. On a short screen 62vh alone would leave the statement clipped. */}
-      <Hero height="clamp(560px, 62vh, 800px)" />
+      <PublicHeader />
+      {/* Left-aligned and type-only, against a flat near-black: the statement
+          carries the section. Bottom anchored under the fixed header, with a floor
+          as well as a share of the viewport so a short screen does not clip it. */}
+      <section className="flex items-end bg-[#0A0A0A]" style={{ minHeight: "clamp(560px, 62vh, 800px)" }}>
+        <div className="w-full px-5 md:px-[50px] lg:px-[100px] pt-[120px] pb-10 md:pb-14">
+          <div className="mx-auto max-w-[1240px]">
+            <p className="text-[11px] uppercase tracking-[0.25em] text-white/45">About RapidStylers</p>
+            <h1 className="mt-5 max-w-[880px] text-[clamp(2rem,4.6vw,3.6rem)] font-normal leading-[1.06] tracking-[-0.02em] text-white">
+              Say goodbye to the{" "}
+              <span className="text-white/40">salon struggle.</span>
+            </h1>
+            <p className="mt-6 max-w-[520px] text-[13px] leading-[1.55] text-white/60">
+              Search by service or by professional, read reviews from real
+              clients, look through their work, then book a time that suits
+              you. The professional accepts, and the appointment happens on
+              your schedule, not during salon hours.
+            </p>
+          </div>
+        </div>
+      </section>
 
       {/* Who we are: statement and narrow body columns, beside our own work. */}
       <section className="mx-auto max-w-[1240px] px-5 py-20 md:px-[50px] md:py-28 lg:px-[100px]">

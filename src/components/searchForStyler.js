@@ -67,7 +67,8 @@ const SearchForStyler = () => {
         <div className="bg-white p-3 sm:p-4 md:p-3 rounded-lg w-full grid md:flex items-center gap-2.5 sm:gap-3 md:gap-2 shadow-lg">
           <HeroInput
             inputType={"search"}
-            placeholder={"Search for beauty professionals..."}
+            placeholder={"Search by name"}
+            ariaLabel={"Search professionals by name"}
             inputValue={query}
             inputOnChange={(e) => setQuery(e.target.value)}
             inputName={"query"}
@@ -77,6 +78,7 @@ const SearchForStyler = () => {
             valueKey={"value"}
             labelKey={"label"}
             selectName={"Select service"}
+            ariaLabel={"Service"}
             selectValue={serviceId}
             onChange={(e) => setServiceId(e.target.value)}
           />
@@ -85,6 +87,7 @@ const SearchForStyler = () => {
             valueKey={"value"}
             labelKey={"label"}
             selectName={"Radius"}
+            ariaLabel={"Distance"}
             selectValue={radius}
             onChange={(e) => setRadius(e.target.value)}
           />

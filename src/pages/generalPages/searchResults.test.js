@@ -1,7 +1,10 @@
 import { render, screen, fireEvent, act } from "@testing-library/react";
-import { MemoryRouter, Link } from "react-router-dom";
+import { MemoryRouter, Link, useLocation } from "react-router-dom";
 import SearchResults from "./searchResults";
 import { APIService } from "../../hooks/remote/apiService";
+// The shared site header needs the app's store; these tests are about the page body.
+vi.mock("../../components/publicHeader", () => ({ default: () => null }));
+
 
 // Stub the heavy chrome — ServiceCard pulls in router/nav/ratings machinery and
 // the ad slot renders nothing until AdSense is configured.
@@ -344,3 +347,51 @@ describe("SearchResults open-now filter", () => {
    expect(screen.getByText(/Current Edmonton/)).toBeInTheDocument();
    expect(screen.queryByText(/Stale Calgary/)).not.toBeInTheDocument();
  });
+
+describe("SearchResults filter pills match the URL", () => {
+  let lastSearch = "";
+  function UrlProbe() {
+    lastSearch = useLocation().search;
+    return null;
+  }
+  const renderWithProbe = (path) =>
+    render(
+      <MemoryRouter initialEntries={[path]}>
+        <SearchResults />
+        <UrlProbe />
+      </MemoryRouter>
+    );
+
+  beforeEach(() => {
+    window.scrollTo = vi.fn();
+    APIService.getStylerType.mockResolvedValue({ data: { data: [] } });
+    APIService.searchNearby.mockImplementation(nearbyMock(stylists(1)));
+    APIService.searchByCity.mockResolvedValue({ data: { data: [] } });
+  });
+
+  test("removing the city pill drops the coordinates and radius with it", async () => {
+    renderWithProbe("/search?lat=24.8&lng=67&radius=25&city=Karachi");
+    await screen.findByText("Karachi");
+    fireEvent.click(screen.getByRole("button", { name: "Remove Karachi filter" }));
+    const params = new URLSearchParams(lastSearch);
+    expect(["city", "lat", "lng", "radius"].some((key) => params.has(key))).toBe(false);
+    expect(screen.queryByText("Within 25 km")).toBeNull();
+  });
+
+  test("removing the radius pill hides it and drops the circle", async () => {
+    renderWithProbe("/search?lat=53.5&lng=-113.5&radius=25");
+    await screen.findByText("Within 25 km");
+    fireEvent.click(screen.getByRole("button", { name: "Remove Within 25 km filter" }));
+    expect(screen.queryByText("Within 25 km")).toBeNull();
+    const params = new URLSearchParams(lastSearch);
+    expect(params.has("lat") || params.has("lng") || params.has("radius")).toBe(false);
+  });
+
+  test("removing the service pill drops the service id too, and uses the catalogue name", async () => {
+    APIService.stylersBaseOnCategory = vi.fn().mockResolvedValue({ data: { data: [] } });
+    renderWithProbe("/search?serviceTypeId=1&serviceTypeName=Hair%20Stylist");
+    fireEvent.click(await screen.findByRole("button", { name: "Remove Hairstylist filter" }));
+    const params = new URLSearchParams(lastSearch);
+    expect(params.has("serviceTypeId") || params.has("serviceTypeName")).toBe(false);
+  });
+});

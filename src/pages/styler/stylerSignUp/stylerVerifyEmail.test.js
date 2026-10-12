@@ -46,7 +46,7 @@ const renderStep = () =>
 
 /** Types a six-digit code into the six boxes, the way a visitor would. */
 const enterCode = (code) => {
-  const boxes = document.querySelectorAll('input[maxlength="1"]');
+  const boxes = document.querySelectorAll('input[id^="digit"]');
   code.split("").forEach((digit, i) => fireEvent.change(boxes[i], { target: { value: digit } }));
 };
 
@@ -71,7 +71,7 @@ describe("styler signup email verification", () => {
     expect(screen.getByText("ada@example.com")).toBeInTheDocument();
     expect(screen.getByText(/was sent to/i)).toBeInTheDocument();
     // Six boxes, one digit each: the code is six digits.
-    expect(document.querySelectorAll('input[maxlength="1"]')).toHaveLength(6);
+    expect(document.querySelectorAll('input[id^="digit"]')).toHaveLength(6);
   });
 
   it("still reads as a sentence when the address is unknown", () => {
@@ -137,7 +137,7 @@ describe("styler signup email verification", () => {
     fireEvent.click(screen.getByRole("button", { name: /verify/i }));
 
     await waitFor(() => expect(APIService.stylerVerifyOtp).toHaveBeenCalled());
-    expect(document.querySelectorAll('input[maxlength="1"]')[0].value).toBe("");
+    expect(document.querySelectorAll('input[id^="digit"]')[0].value).toBe("");
   });
 
   it("lets a professional clear the boxes instead of pressing backspace six times", () => {
@@ -145,12 +145,12 @@ describe("styler signup email verification", () => {
 
     renderStep();
     enterCode("123456");
-    expect(document.querySelectorAll('input[maxlength="1"]')[0].value).toBe("1");
+    expect(document.querySelectorAll('input[id^="digit"]')[0].value).toBe("1");
 
     fireEvent.click(screen.getByRole("button", { name: "Clear code" }));
 
     expect(
-      [...document.querySelectorAll('input[maxlength="1"]')].every((box) => box.value === "")
+      [...document.querySelectorAll('input[id^="digit"]')].every((box) => box.value === "")
     ).toBe(true);
   });
 
@@ -175,7 +175,7 @@ describe("styler signup email verification", () => {
         emailAddress: "ada@example.com",
       }));
       expect(
-        [...document.querySelectorAll('input[maxlength="1"]')].every((box) => box.value === "")
+        [...document.querySelectorAll('input[id^="digit"]')].every((box) => box.value === "")
       ).toBe(true);
     } finally {
       vi.useRealTimers();
@@ -225,6 +225,23 @@ it('reports a rejected resend without clearing the existing code', async () => {
     fireEvent.click(screen.getByRole('button', { name: 'Resend code' }));
     await act(async () => {});
     expect(screen.getByRole('alert')).toHaveTextContent('Please wait before resending');
-    expect(document.querySelector('input[maxlength="1"]').value).toBe('1');
+    expect(document.querySelector('input[id^="digit"]').value).toBe('1');
   } finally { vi.useRealTimers(); }
+});
+
+describe("styler code step help", () => {
+  it("keeps Verify disabled until six digits, accepts an autofilled code and shows the spam hint", () => {
+    formData.emailAddress = "ada@example.com";
+    renderStep();
+    const verify = screen.getByRole("button", { name: "Verify" });
+    expect(verify).toBeDisabled();
+    const first = document.querySelector('input[id="digit1"]');
+    expect(first).toHaveAttribute("autocomplete", "one-time-code");
+    fireEvent.change(first, { target: { value: "123456" } });
+    expect([...document.querySelectorAll('input[id^="digit"]')].map((box) => box.value).join("")).toBe("123456");
+    expect(verify).not.toBeDisabled();
+    expect(screen.getByText(/No code\? Check spam/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "sign in instead" })).toHaveAttribute("href", "/login");
+    delete formData.emailAddress;
+  });
 });

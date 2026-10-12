@@ -20,3 +20,12 @@ test.each(['rejected','fulfilled'])('feedback awaits %s dispatch and preserves o
  expect(screen.getByPlaceholderText('Start typing...')).toHaveValue('The calendar failed');
  }else await waitFor(()=>expect(screen.getByPlaceholderText('Start typing...')).toHaveValue(''));
 });
+test('feedback type reads "Select a feedback type" and required fields are marked (QA C-13)', () => {
+ dispatch=vi.fn();
+ render(<MemoryRouter><Feedback setPageTitle={vi.fn()}/></MemoryRouter>);
+ expect(screen.getByRole('option',{name:'Select a feedback type'})).toBeInTheDocument();
+ expect(screen.queryByText(/Select a Feedback type/)).not.toBeInTheDocument();
+ expect(screen.getByLabelText(/^Feedback type/)).toBeRequired();
+ expect(screen.getByLabelText(/^Your feedback/)).toBeRequired();
+ expect(screen.getByText(/are required/)).toBeInTheDocument();
+});

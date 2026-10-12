@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, Navigate, Outlet, useLocation, useNavigate } from "react-router-dom";
 import StylerTopBar from "./topNav";
 import BusinessSummary from "../stylerComponents/businessSummary";
@@ -19,7 +19,29 @@ const NAV_ITEMS = [
   { to: "/styler-dashboard/payouts", label: "Payouts" },
   { to: "/styler-dashboard/reviews", label: "Reviews" },
   { to: "/styler-dashboard/profile", label: "My profile", group: "Account" },
+  { to: "/styler-dashboard/support", label: "Support" },
 ];
+
+// Pages reached from My profile rather than the sidebar: their own heading,
+// with My profile kept highlighted as the section they belong to.
+const PROFILE_PAGES = {
+  "/styler-dashboard/appointment-locations": "Appointment locations",
+  "/styler-dashboard/update-cover-photo": "Update photos",
+  "/styler-dashboard/update-business-information": "Business information",
+  "/styler-dashboard/update-personal-information": "Personal information",
+  "/styler-dashboard/change-password": "Change password",
+};
+// Pages that print their own H1, so the shell does not add a second one.
+const OWN_HEADING = new Set(["/styler-dashboard/support"]);
+
+/** The sidebar item a path belongs to and the heading/tab title it shows. */
+export const stylerPageFor = (pathname) => {
+  const path = pathname.length > 1 ? pathname.replace(/\/+$/, "") : pathname;
+  if (PROFILE_PAGES[path]) return { section: "/styler-dashboard/profile", title: PROFILE_PAGES[path] };
+  const item = NAV_ITEMS.find((nav) => nav.to === path)
+    || [...NAV_ITEMS].reverse().find((nav) => nav.to !== "/styler-dashboard" && path.startsWith(nav.to + "/"));
+  return item ? { section: item.to, title: item.label } : { section: null, title: "My profile" };
+};
 
 const StylerLayout = () => {
   const location = useLocation();
@@ -30,14 +52,30 @@ const StylerLayout = () => {
     if (menuOpen) menuButtonRef.current?.focus();
     setMenuOpen(false);
   };
+  const page = stylerPageFor(location.pathname);
+  // One tab title per page, set here so a title left behind by the previous
+  // page (Overview used to read "Reviews | RapidStylers") cannot stick.
+  useEffect(() => {
+    document.title = `${page.title} | RapidStylers`;
+  }, [page.title]);
+  // Escape closes the mobile menu wherever focus is, not only inside the nav.
+  useEffect(() => {
+    if (!menuOpen) return undefined;
+    const onKeyDown = (event) => {
+      if (event.key !== "Escape") return;
+      setMenuOpen(false);
+      menuButtonRef.current?.focus();
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [menuOpen]);
   // Role gate: the whole /styler-dashboard area is styler-only. Without this a
   // logged-out visitor or a customer can open the shell and its sidebar.
   if (!getAuthToken() || getUserRole() !== "STYLER") {
     setIntendedRoute(location.pathname + location.search);
     return <Navigate to="/login" replace />;
   }
-  const overview = location.pathname === "/styler-dashboard";
-  const currentPage = [...NAV_ITEMS].reverse().find(item => location.pathname === item.to || location.pathname.startsWith(item.to + "/"));
+  const overview = page.section === "/styler-dashboard";
   const signOut = () => {
     logoutSession();
     navigate("/login", { replace: true });
@@ -53,12 +91,7 @@ const StylerLayout = () => {
       </div>
       <div className="mx-auto max-w-[1440px] grid grid-cols-1 lg:grid-cols-[200px_minmax(0,1fr)]">
         <div className={`px-4 relative ${menuOpen ? "block" : "hidden"} lg:block`}>
-          <nav id="styler-dashboard-navigation" aria-label="Stylist dashboard" onKeyDown={event => {
-            if (event.key === "Escape") {
-              closeMenu();
-              menuButtonRef.current?.focus();
-            }
-          }} className="grid gap-1 py-4 lg:pt-8 lg:pb-14 px-4 lg:px-0 text-[13px] font-medium lg:sticky lg:top-[70px] bg-white lg:bg-transparent">
+          <nav id="styler-dashboard-navigation" aria-label="Stylist dashboard" className="grid gap-1 py-4 lg:pt-8 lg:pb-14 px-4 lg:px-0 text-[13px] font-medium lg:sticky lg:top-[70px] bg-white lg:bg-transparent">
             {NAV_ITEMS.map(({ to, label, group }) => (
               <div key={to}>
               {group && <p className="px-4 pt-5 pb-2 text-xs text-black/45">{group}</p>}
@@ -66,10 +99,10 @@ const StylerLayout = () => {
                 key={to}
                 to={to}
                 onClick={closeMenu}
-                aria-current={location.pathname === to ? "page" : undefined}
+                aria-current={location.pathname === to ? "page" : page.section === to ? "true" : undefined}
                 className={`block py-2.5 px-4 rounded-full transition-colors ${
-                  location.pathname === to
-                    ? "bg-brand/10 text-brand font-semibold cursor-default"
+                  page.section === to
+                    ? `bg-brand/10 text-brand font-semibold ${location.pathname === to ? "cursor-default" : "cursor-pointer"}`
                     : "text-black/60 hover:text-onSurface hover:bg-black/[0.04] cursor-pointer"
                 }`}
               >
@@ -86,7 +119,7 @@ const StylerLayout = () => {
           </nav>
         </div>
         <main className="min-w-0 px-4 py-6 md:px-8 md:py-8">
-          <h1 className="mb-6 text-2xl font-semibold text-onSurface">{currentPage?.label || "My profile"}</h1>
+          {!OWN_HEADING.has(page.section) && <h1 className="mb-6 text-2xl font-semibold text-onSurface">{page.title}</h1>}
           <div className={overview ? "grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_300px]" : "w-full"}>
             <div className="min-w-0"><Outlet /></div>
             {overview && <aside aria-label="Business overview" className="grid gap-4">

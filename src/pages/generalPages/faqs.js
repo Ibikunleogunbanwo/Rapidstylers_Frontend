@@ -1,4 +1,5 @@
 import { usePublishedContent } from "../../hooks/remote/usePublishedContent";
+import PublicHeader from "../../components/publicHeader";
 import { useEffect, useState } from "react";
 import Footer from "../../components/footer";
 import { Section, Eyebrow, PageHeading, BackHome, HairlineList } from "../../components/pageSections";
@@ -147,6 +148,7 @@ const Faqs = () => {
 
   return (
     <div className="min-h-screen bg-white">
+      <PublicHeader spacer />
       <Section pad="pt-10 md:pt-14 pb-4">
         <BackHome />
         <PageHeading
@@ -163,7 +165,14 @@ const Faqs = () => {
       </Section>
 
       {sections.map(({ category, items }, sectionIndex) => (
-        <Section key={category} muted={sectionIndex % 2 === 1} id={hashFor(category)}>
+        // The intro already closes with its own margin, so the first section
+        // starts close under it rather than a full section's rhythm below.
+        <Section
+          key={category}
+          muted={sectionIndex % 2 === 1}
+          id={hashFor(category)}
+          pad={sectionIndex === 0 ? "pt-4 md:pt-6 pb-20 md:pb-28" : undefined}
+        >
           <Eyebrow className="scroll-mt-8">{category}</Eyebrow>
           <div className="mt-8 max-w-[860px]">
             {items.map((faq) => {

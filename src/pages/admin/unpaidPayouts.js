@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { APIService } from "../../hooks/remote/apiService";
-import { useAdminList, AdminListControls } from "./adminList";
+import { useAdminList, AdminListControls, AdminNoMatches } from "./adminList";
 import { AdminPill } from "./adminShell";
 
 // Columns of the unpaid-payout queue, in display order. Every value is a string
@@ -142,6 +142,8 @@ export default function UnpaidPayouts({ active, refundPending }) {
           <AdminListControls list={list} label="Search unpaid payouts" />
           {rows.length === 0 ? (
             <p>No unpaid payouts.</p>
+          ) : list.filteredCount === 0 ? (
+            <AdminNoMatches list={list} noun="unpaid payouts" />
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">

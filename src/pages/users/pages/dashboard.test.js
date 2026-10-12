@@ -45,7 +45,7 @@ const renderDash = (userDetails) =>
 describe("Customer dashboard panel", () => {
   it("carries the eyebrow + display heading register like the other panels", () => {
     renderDash({ firstname: "Ada", lastname: "Lovelace", phoneNumber: "1", address: "x" });
-    const eyebrow = screen.getByText("Discover professionals");
+    const eyebrow = screen.getByText("My bookings");
     expect(eyebrow.className).toContain("text-[11px]");
     expect(eyebrow.className).toContain("uppercase");
     expect(eyebrow.className).toContain("tracking-[0.25em]");
@@ -198,7 +198,7 @@ describe("Appointment card states where the booking happens", () => {
     const card = cardOf(home);
 
     expect(card.getByText("Home service:")).toBeTruthy();
-    expect(card.getByText("Your stylist travels to you")).toBeTruthy();
+    expect(card.getByText("Your professional travels to you")).toBeTruthy();
     expect(card.queryByText("700 2 St SW, Calgary, Alberta")).toBeNull();
     expect(card.queryByRole("link", { name: "Get directions" })).toBeNull();
   });
@@ -219,4 +219,9 @@ it('wires the completed booking dispute window into appointment history',()=>{
  useAllUserAppointments.mockReturnValueOnce([{appointmentId:'completed-1',statusCode:'0',status:'COMPLETED',disputeWindowEndsAt:'2030-01-01T12:00:00',stylerData:{businessName:'Salon'},subServiceData:{name:'Cut'}}]);
  renderDash({firstname:'Ada',lastname:'L',phoneNumber:'1',address:'x'});
  expect(screen.getByRole('button',{name:'It happened'})).toBeVisible();expect(screen.getByRole('button',{name:'Report a problem'})).toBeVisible();
+});
+
+test("Complete profile opens the real Update personal information route (QA C-01)", () => {
+  renderDash({ firstname: "Ada", lastname: "", phoneNumber: "", address: "" });
+  expect(screen.getByRole("link", { name: "Complete profile" })).toHaveAttribute("href", "/updatePersonalInformation");
 });

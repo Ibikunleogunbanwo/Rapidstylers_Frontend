@@ -19,7 +19,6 @@ export default function AdminDashboard() {
   const [state, setState] = useState({});
   useEffect(() => {
     if (!authorized) return;
-    document.title = "Admin dashboard | RapidStylers";
     let cancelled = false;
     setState({});
     READS.forEach(async ([key, read]) => {

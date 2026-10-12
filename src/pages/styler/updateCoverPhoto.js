@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import Back from "../../components/goBack";
 import Button from "../../components/button";
 import { APIService } from "../../hooks/remote/apiService";
 import { uploadToCloudinary } from "../../utils/cloudinaryUpload";
 import { showSuccessToastMessage } from "../../utils/constant";
+import ProfileBackLink from "./stylerComponents/profileBackLink";
 
 /**
  * The professional replacing their own profile and/or cover photo.
@@ -22,6 +22,9 @@ const UpdateCoverPhoto = () => {
   const [coverFile, setCoverFile] = useState(null);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
+  // Slots whose saved image failed to load: they show the placeholder instead
+  // of an empty grey box.
+  const [broken, setBroken] = useState({});
   // Object URLs for the just-chosen files, revoked before the next set so the
   // page does not hold the image data after it is no longer shown.
   const previews = useRef({ profile: "", cover: "" });
@@ -52,6 +55,7 @@ const UpdateCoverPhoto = () => {
     if (previews.current[slot]) URL.revokeObjectURL(previews.current[slot]);
     previews.current[slot] = file ? URL.createObjectURL(file) : "";
     setFile(file);
+    setBroken((current) => ({ ...current, [slot]: false }));
     setSaveError("");
   };
 
@@ -70,6 +74,7 @@ const UpdateCoverPhoto = () => {
       const response = await APIService.updateStylerPhotos(payload);
       if (response.data?.statusCode === "200") {
         setProfile(response.data.data || profile);
+        setBroken({});
         setProfileFile(null);
         setCoverFile(null);
         Object.values(previews.current).forEach((url) => url && URL.revokeObjectURL(url));
@@ -97,7 +102,7 @@ const UpdateCoverPhoto = () => {
   return (
     <div className="rounded-lg border border-black/10">
       <div className="flex items-center gap-3 border-b border-black/10 p-4 text-[11px] uppercase tracking-[0.25em] text-muted">
-        <Back />
+        <ProfileBackLink />
         <span>Update photos</span>
       </div>
       <div className="p-4">
@@ -117,26 +122,31 @@ const UpdateCoverPhoto = () => {
                 <div key={item.slot}>
                   <p className="text-sm font-medium">{item.label}</p>
                   <div className="mt-2 overflow-hidden rounded-lg border border-black/10 bg-black/[0.03]">
-                    {(previews.current[item.slot] || item.current) ? (
+                    {(previews.current[item.slot] || item.current) && !broken[item.slot] ? (
                       <img
                         src={previews.current[item.slot] || item.current}
                         alt={`${item.label} preview`}
+                        onError={() => setBroken((current) => ({ ...current, [item.slot]: true }))}
                         className={`w-full object-cover ${item.slot === "cover" ? "h-32" : "h-48"}`}
                       />
                     ) : (
                       <div className={`flex items-center justify-center text-xs text-black/40 ${item.slot === "cover" ? "h-32" : "h-48"}`}>
-                        No photo yet
+                        {item.current && broken[item.slot] ? "Photo could not be loaded" : "No photo yet"}
                       </div>
                     )}
                   </div>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    aria-label={`Choose ${item.label.toLowerCase()}`}
-                    onChange={item.onChoose}
-                    className="mt-2 block text-sm text-black/60"
-                  />
-                  {item.file && <p className="mt-1 text-xs text-black/50">Selected: {item.file.name}</p>}
+                  {/* Styled like the My work picker: the native control stays in the
+                      page for keyboards and screen readers, visually hidden. */}
+                  <label className="mt-2 block cursor-pointer rounded-md border border-dashed border-brand/50 bg-[#c4c4c410] p-3 text-sm text-black/70 focus-within:outline focus-within:outline-2 focus-within:outline-brand">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      aria-label={`Choose ${item.label.toLowerCase()}`}
+                      onChange={item.onChoose}
+                      className="sr-only"
+                    />
+                    <span className="block truncate">{item.file ? `Selected: ${item.file.name}` : `Choose ${item.label.toLowerCase()}…`}</span>
+                  </label>
                 </div>
               ))}
             </div>

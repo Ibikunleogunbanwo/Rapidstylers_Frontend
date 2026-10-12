@@ -1,17 +1,27 @@
 import { useEffect, useState } from "react";
-import Back from "../../components/goBack";
 import Button from "../../components/button";
-import InputWithLabel from "../../components/inputWithLabel";
 import AddressAutocomplete from "../../components/AddressAutocomplete";
 import { Formik, Form } from "formik";
 import { z } from "zod";
 import { APIService } from "../../hooks/remote/apiService";
 import { showSuccessToastMessage } from "../../utils/constant";
+import ProfileBackLink from "./stylerComponents/profileBackLink";
+import { StylerField, StylerSelect } from "./stylerComponents/stylerField";
+import {
+  CANADIAN_TIME_ZONES,
+  CITY_MESSAGE,
+  CITY_PATTERN,
+  POSTAL_CODE_MESSAGE,
+  POSTAL_CODE_PATTERN,
+  PROVINCES,
+  provinceName,
+} from "./stylerComponents/profileRules";
 
 // The limits the backend enforces on StylerBusinessInfoData, so the form cannot
 // accept a value the server then refuses. Kept as one place so the fields and
 // the schema cannot drift apart.
-const LIMITS = { businessName: 100, description: 1000, streetAddress: 200, unit: 50, city: 100, province: 100, postalCode: 20, country: 100 };
+const LIMITS = { businessName: 100, description: 1000, streetAddress: 200, unit: 50, city: 60 };
+const PROVINCE_NAMES = PROVINCES.map((province) => province.name);
 
 const schema = z.object({
   serviceTypeId: z.string().min(1, "Select a service type"),
@@ -31,10 +41,15 @@ const schema = z.object({
     .min(1, "Street address is required")
     .max(LIMITS.streetAddress, `Keep the street address under ${LIMITS.streetAddress} characters`),
   unit: z.string().trim().max(LIMITS.unit, `Keep the unit under ${LIMITS.unit} characters`).optional(),
-  city: z.string().trim().min(1, "City is required").max(LIMITS.city, `Keep the city under ${LIMITS.city} characters`),
-  province: z.string().trim().min(1, "Province is required").max(LIMITS.province, `Keep the province under ${LIMITS.province} characters`),
-  postalCode: z.string().trim().max(LIMITS.postalCode, `Keep the postal code under ${LIMITS.postalCode} characters`).optional(),
-  country: z.string().trim().max(LIMITS.country, `Keep the country under ${LIMITS.country} characters`).optional(),
+  city: z.string().trim().min(1, "City is required").regex(CITY_PATTERN, CITY_MESSAGE),
+  province: z.string().refine((value) => PROVINCE_NAMES.includes(value), "Select a province or territory"),
+  // Optional, as before, but a value must be a real Canadian postal code.
+  postalCode: z
+    .string()
+    .trim()
+    .refine((value) => value === "" || POSTAL_CODE_PATTERN.test(value), POSTAL_CODE_MESSAGE)
+    .optional(),
+  country: z.literal("Canada", { error: "RapidStylers is available in Canada only" }),
   timeZone: z.string().trim().max(64, "Time zone is not valid").optional(),
 });
 
@@ -79,7 +94,7 @@ const UpdateBusinessInformation = () => {
   return (
     <div className="rounded-lg border border-black/10">
       <div className="flex items-center gap-3 border-b border-black/10 p-4 text-[11px] uppercase tracking-[0.25em] text-muted">
-        <Back />
+        <ProfileBackLink />
         <span>Business information</span>
       </div>
       <div className="p-4">
@@ -131,9 +146,10 @@ const BusinessInfoForm = ({ profile, onSaved }) => {
     streetAddress: profile.streetAddress || "",
     unit: profile.unit || "",
     city: profile.city || "",
-    province: profile.province || "",
+    // Stored rows may hold a code ("AB"); the dropdown speaks full names.
+    province: provinceName(profile.province),
     postalCode: profile.postalCode || "",
-    country: profile.country || "Canada",
+    country: "Canada",
     timeZone: profile.timeZone || "",
   };
 
@@ -150,9 +166,8 @@ const BusinessInfoForm = ({ profile, onSaved }) => {
       setFieldValue("streetAddress", data.streetAddress || "");
       setFieldValue("unit", data.unit || "");
       setFieldValue("city", data.city || "");
-      setFieldValue("province", data.province || "");
+      setFieldValue("province", provinceName(data.province));
       setFieldValue("postalCode", data.postalCode || "");
-      setFieldValue("country", data.country || "Canada");
     } else {
       setFieldValue("streetAddress", data.streetAddress || data.formattedAddress || "");
     }
@@ -170,9 +185,9 @@ const BusinessInfoForm = ({ profile, onSaved }) => {
         streetAddress: values.streetAddress.trim(),
         unit: values.unit ? values.unit.trim() : "",
         city: values.city.trim(),
-        province: values.province.trim(),
-        postalCode: values.postalCode ? values.postalCode.trim() : "",
-        country: values.country ? values.country.trim() : "",
+        province: values.province,
+        postalCode: values.postalCode ? values.postalCode.trim().toUpperCase() : "",
+        country: "Canada",
         // Blank keeps whatever zone the address implies; a value makes it the
         // professional's own choice, which then stays theirs.
         timeZone: values.timeZone ? values.timeZone.trim() : "",
@@ -183,8 +198,8 @@ const BusinessInfoForm = ({ profile, onSaved }) => {
       } else {
         setSaveError(response.data?.message || "Could not save your business details.");
       }
-    } catch {
-      setSaveError("Could not save your business details. Please try again.");
+    } catch (error) {
+      setSaveError(error?.response?.data?.message || "Could not save your business details. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -193,7 +208,7 @@ const BusinessInfoForm = ({ profile, onSaved }) => {
   return (
     <Formik initialValues={initialValues} validate={validate} onSubmit={handleSubmit} enableReinitialize>
       {({ values, errors, touched, handleChange, handleBlur, setFieldValue, isSubmitting }) => (
-        <Form>
+        <Form noValidate>
           <div className="grid gap-5">
             <div>
               <span className="font-medium text-sm block">Service type</span>
@@ -233,19 +248,21 @@ const BusinessInfoForm = ({ profile, onSaved }) => {
               {touched.serviceTypeId && errors.serviceTypeId && <p className="mt-2 text-xs text-red-500">{errors.serviceTypeId}</p>}
             </div>
 
-            <InputWithLabel
-              labelName="Business name"
-              inputType="text"
+            <StylerField
+              label="Business name"
               placeholder="The continental"
-              inputName="businessName"
-              inputValue={values.businessName}
-              inputOnChange={handleChange}
-              inputOnBlur={handleBlur}
-              inputError={(touched.businessName || Boolean(values.businessName)) && errors.businessName ? errors.businessName : ""}
+              name="businessName"
+              autoComplete="organization"
+              required
+              maxLength={LIMITS.businessName}
+              value={values.businessName}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              error={(touched.businessName || Boolean(values.businessName)) && errors.businessName ? errors.businessName : ""}
             />
 
             <label className="grid gap-1 text-sm">
-              <span className="font-medium">Description</span>
+              <span className="font-medium">Description:</span>
               <textarea
                 name="description"
                 rows={4}
@@ -260,91 +277,107 @@ const BusinessInfoForm = ({ profile, onSaved }) => {
               {touched.description && errors.description && <span className="text-xs text-red-500">{errors.description}</span>}
             </label>
 
-            <div>
-              <span className="font-medium text-sm block">Business address</span>
+            {/* One address flow: search to fill the fields, then check or edit them. */}
+            <fieldset className="grid gap-3">
+              <legend className="font-medium text-sm pb-1">Business address</legend>
+              <p className="-mt-1 text-xs leading-[1.5] text-black/55">
+                Clients travel here when they book a visit, so this address is on your public profile. Search for it to
+                fill the fields below, or type them in.
+              </p>
               <AddressAutocomplete
+                label="Search for your address"
                 placeholder="Start typing your business address…"
                 value={values.businessAddress}
                 onChange={handleAddressChange(setFieldValue)}
               />
-              <p className="mt-1.5 text-xs leading-[1.5] text-black/55">
-                Clients travel here when they book a visit, so this address is on your public profile.
-              </p>
-              {touched.streetAddress && errors.streetAddress && <p className="mt-1 text-xs text-red-500">{errors.streetAddress}</p>}
-            </div>
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                <StylerField
+                  label="Street address"
+                  name="streetAddress"
+                  autoComplete="address-line1"
+                  required
+                  maxLength={LIMITS.streetAddress}
+                  value={values.streetAddress}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  error={(touched.streetAddress || Boolean(values.streetAddress)) && errors.streetAddress ? errors.streetAddress : ""}
+                />
+                <StylerField
+                  label="Unit / Apt / Suite"
+                  placeholder="Optional"
+                  name="unit"
+                  autoComplete="address-line2"
+                  maxLength={LIMITS.unit}
+                  value={values.unit}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  error={(touched.unit || Boolean(values.unit)) && errors.unit ? errors.unit : ""}
+                />
+                <StylerField
+                  label="City"
+                  name="city"
+                  autoComplete="address-level2"
+                  required
+                  maxLength={LIMITS.city}
+                  value={values.city}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  error={(touched.city || Boolean(values.city)) && errors.city ? errors.city : ""}
+                />
+                <StylerSelect
+                  label="Province"
+                  name="province"
+                  autoComplete="address-level1"
+                  required
+                  placeholder="Select a province or territory"
+                  options={PROVINCES.map((province) => ({ value: province.name, label: province.name }))}
+                  value={values.province}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  error={touched.province && errors.province ? errors.province : ""}
+                />
+                <StylerField
+                  label="Postal code"
+                  name="postalCode"
+                  placeholder="e.g. T2P 1B5"
+                  autoComplete="postal-code"
+                  maxLength={7}
+                  value={values.postalCode}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  error={(touched.postalCode || Boolean(values.postalCode)) && errors.postalCode ? errors.postalCode : ""}
+                />
+                <StylerSelect
+                  label="Country"
+                  name="country"
+                  autoComplete="country-name"
+                  options={[{ value: "Canada", label: "Canada" }]}
+                  hint="RapidStylers is available in Canada only."
+                  value={values.country}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  error={errors.country || ""}
+                />
+              </div>
+            </fieldset>
 
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-              <InputWithLabel
-                labelName="Street address"
-                inputType="text"
-                inputName="streetAddress"
-                inputValue={values.streetAddress}
-                inputOnChange={handleChange}
-                inputOnBlur={handleBlur}
-                inputError={(touched.streetAddress || Boolean(values.streetAddress)) && errors.streetAddress ? errors.streetAddress : ""}
-              />
-              <InputWithLabel
-                labelName="Unit / Apt / Suite"
-                inputType="text"
-                placeholder="Optional"
-                inputName="unit"
-                inputValue={values.unit}
-                inputOnChange={handleChange}
-                inputOnBlur={handleBlur}
-                inputError={(touched.unit || Boolean(values.unit)) && errors.unit ? errors.unit : ""}
-              />
-              <InputWithLabel
-                labelName="City"
-                inputType="text"
-                inputName="city"
-                inputValue={values.city}
-                inputOnChange={handleChange}
-                inputOnBlur={handleBlur}
-                inputError={(touched.city || Boolean(values.city)) && errors.city ? errors.city : ""}
-              />
-              <InputWithLabel
-                labelName="Province"
-                inputType="text"
-                inputName="province"
-                inputValue={values.province}
-                inputOnChange={handleChange}
-                inputOnBlur={handleBlur}
-                inputError={(touched.province || Boolean(values.province)) && errors.province ? errors.province : ""}
-              />
-              <InputWithLabel
-                labelName="Postal code"
-                inputType="text"
-                inputName="postalCode"
-                inputValue={values.postalCode}
-                inputOnChange={handleChange}
-                inputOnBlur={handleBlur}
-                inputError={(touched.postalCode || Boolean(values.postalCode)) && errors.postalCode ? errors.postalCode : ""}
-              />
-              <InputWithLabel
-                labelName="Country"
-                inputType="text"
-                inputName="country"
-                inputValue={values.country}
-                inputOnChange={handleChange}
-                inputOnBlur={handleBlur}
-                inputError={(touched.country || Boolean(values.country)) && errors.country ? errors.country : ""}
-              />
-            </div>
-
-            <InputWithLabel
-              labelName="Time zone (optional)"
-              inputType="text"
-              placeholder="e.g. America/Edmonton"
-              inputName="timeZone"
-              inputValue={values.timeZone}
-              inputOnChange={handleChange}
-              inputOnBlur={handleBlur}
-              inputError={(touched.timeZone || Boolean(values.timeZone)) && errors.timeZone ? errors.timeZone : ""}
+            <StylerSelect
+              label="Time zone (optional)"
+              name="timeZone"
+              placeholder="Follow my address"
+              options={[
+                ...CANADIAN_TIME_ZONES.map((zone) => ({ value: zone.id, label: zone.label })),
+                // Keep a saved zone outside the list selectable rather than silently dropping it.
+                ...(values.timeZone && !CANADIAN_TIME_ZONES.some((zone) => zone.id === values.timeZone)
+                  ? [{ value: values.timeZone, label: values.timeZone }]
+                  : []),
+              ]}
+              hint="Leave it on “Follow my address” to use the time zone that goes with your address. Choose one only if you work in a different zone."
+              value={values.timeZone}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              error={(touched.timeZone || Boolean(values.timeZone)) && errors.timeZone ? errors.timeZone : ""}
             />
-            <p className="-mt-3 text-xs text-black/50">
-              Leave blank to keep the time zone that goes with your address. Set one only if you work in a different
-              zone.
-            </p>
 
             {saveError && <p role="alert" className="text-sm text-red-600">{saveError}</p>}
 

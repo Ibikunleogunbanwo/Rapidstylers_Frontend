@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
+import PublicHeader from "../../components/publicHeader";
 import { Link, useParams } from "react-router-dom";
 import Footer from "../../components/footer";
 import AdSlot from "../../components/adSlot";
 import { Section, PageHeading, BackHome } from "../../components/pageSections";
-import { APIService } from "../../hooks/remote/apiService";
+import { fetchBlogPost, isServerAnswer } from "../../hooks/remote/publicContentApi";
+import { useNoIndex } from "./notFound";
 import { cloudinaryBlog } from "../../utils/cloudinaryImage";
 
 // Fallback used only when the backend is unreachable — mirrors the seeded posts.
@@ -50,6 +52,30 @@ const FALLBACK_POSTS = [
   },
 ];
 
+const ArticleNotFound = () => {
+  useNoIndex();
+  return (
+    <div className="min-h-screen bg-white">
+      <PublicHeader spacer />
+      <Section pad="pt-24 pb-24" className="text-center">
+        <p className="text-[11px] uppercase tracking-[0.25em] text-muted">404</p>
+        <h1 className="mt-4 text-[clamp(1.75rem,3vw,2.5rem)] font-normal leading-[1.1] tracking-[-0.02em] text-onSurface">
+          Article not found
+        </h1>
+        <p className="mt-4 text-[13px] leading-[1.55] text-black/55">
+          This article may have been removed.
+        </p>
+        <Link
+          to="/blog"
+          className="mt-8 inline-flex items-center rounded-full bg-[#1A1A1A] px-7 py-3.5 text-[13px] font-semibold text-white transition-opacity hover:opacity-85"
+        >
+          Back to the blog
+        </Link>
+      </Section>
+    </div>
+  );
+};
+
 const BlogPost = () => {
   const { id } = useParams();
   const [post, setPost] = useState(null);
@@ -59,7 +85,9 @@ const BlogPost = () => {
     let mounted = true;
     setPost(null);
     setNotFound(false);
-    APIService.singleBlog(id)
+    // Fetched without the shared error toast: an unknown id shows the page's
+    // own "Article not found", not the server's raw message on top of it.
+    fetchBlogPost(id)
       .then((res) => {
         if (!mounted) return;
         if (res.data?.data && res.data.data.id) {
@@ -68,8 +96,14 @@ const BlogPost = () => {
           setNotFound(true);
         }
       })
-      .catch(() => {
+      .catch((error) => {
         if (!mounted) return;
+        // The server answered: the article does not exist. Only an unreachable
+        // server falls back to the bundled copies.
+        if (isServerAnswer(error)) {
+          setNotFound(true);
+          return;
+        }
         const fallback = FALLBACK_POSTS.find((p) => String(p.id) === String(id));
         if (fallback) setPost(fallback);
         else setNotFound(true);
@@ -79,28 +113,24 @@ const BlogPost = () => {
     };
   }, [id]);
 
-  document.title = post ? `${post.title} | RapidStylers` : "Blog | RapidStylers";
+  useEffect(() => {
+    document.title = notFound
+      ? "Article not found | RapidStylers"
+      : post
+      ? `${post.title} | RapidStylers`
+      : "Blog | RapidStylers";
+    // Each article describes itself in search results and link previews.
+    const summary = post ? String(post.content || "").replace(/\s+/g, " ").trim().slice(0, 155) : "";
+    const tags = summary
+      ? [document.head.querySelector('meta[name="description"]'), document.head.querySelector('meta[property="og:description"]')].filter(Boolean)
+      : [];
+    const previous = tags.map((tag) => tag.getAttribute("content"));
+    tags.forEach((tag) => tag.setAttribute("content", summary));
+    return () => tags.forEach((tag, i) => tag.setAttribute("content", previous[i] || ""));
+  }, [post, notFound]);
 
   if (notFound) {
-    return (
-      <div className="min-h-screen bg-white">
-        <Section pad="pt-24 pb-24" className="text-center">
-          <p className="text-[11px] uppercase tracking-[0.25em] text-muted">404</p>
-          <h1 className="mt-4 text-[clamp(1.75rem,3vw,2.5rem)] font-normal leading-[1.1] tracking-[-0.02em] text-onSurface">
-            Article not found
-          </h1>
-          <p className="mt-4 text-[13px] leading-[1.55] text-black/55">
-            This article may have been removed.
-          </p>
-          <Link
-            to="/blog"
-            className="mt-8 inline-flex items-center rounded-full bg-[#1A1A1A] px-7 py-3.5 text-[13px] font-semibold text-white transition-opacity hover:opacity-85"
-          >
-            Back to the blog
-          </Link>
-        </Section>
-      </div>
-    );
+    return <ArticleNotFound />;
   }
 
   if (!post) {
@@ -111,6 +141,7 @@ const BlogPost = () => {
 
   return (
     <div className="min-h-screen bg-white">
+      <PublicHeader spacer />
       <Section pad="pt-10 md:pt-14 pb-6">
         <BackHome label="All articles" to="/blog" />
         <PageHeading
@@ -121,7 +152,7 @@ const BlogPost = () => {
         {post.imageUrl && (
           <img
             src={cloudinaryBlog(post.imageUrl)}
-            alt=""
+            alt={post.title || ""}
             className="aspect-[16/9] w-full object-cover"
             loading="lazy"
           />

@@ -143,6 +143,8 @@ const CreatePassword = () => {
               inputType="password"
               placeholder="Enter a strong password"
               inputName="password"
+              autoComplete="new-password"
+              required
               inputValue={values.password}
               inputOnChange={handleChange}
               inputOnBlur={handleBlur}
@@ -153,6 +155,8 @@ const CreatePassword = () => {
               inputType="password"
               placeholder="Re-enter your password"
               inputName="confirmPassword"
+              autoComplete="new-password"
+              required
               inputValue={values.confirmPassword}
               inputOnChange={handleChange}
               inputOnBlur={handleBlur}

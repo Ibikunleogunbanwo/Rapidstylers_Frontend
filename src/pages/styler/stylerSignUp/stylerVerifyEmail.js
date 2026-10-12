@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Button from "../../../components/button";
-import OtpInputs from "../../../components/otpInputs";
+import OtpInputs, { filledCode } from "../../../components/otpInputs";
+import { CodeHelp } from "../../users/auth/codeHelp";
 import { useStylerSignup } from "../../../context/StylerSignupContext";
 import { readStoredSignupEmail, storeSignupEmail } from "./signupFlow";
 import { APIService } from "../../../hooks/remote/apiService";
@@ -67,6 +68,17 @@ const StylerVerifyEmail = () => {
   };
 
   const handleChange = (index, value) => {
+    // A whole code arriving at once (the phone's one-time-code autofill).
+    const whole = filledCode(value);
+    if (whole) {
+      setError("");
+      setOtp(whole);
+      inputRefs.current[5]?.focus();
+      return;
+    }
+    // The first box accepts a full code, so typing into it when it already
+    // holds a digit keeps the newest digit.
+    value = (value || "").slice(-1);
     // Only allow digits
     if (value && !/^\d$/.test(value)) return;
     setError("");
@@ -236,6 +248,7 @@ const StylerVerifyEmail = () => {
               onKeyDown={(e) => handleKeyDown(i, e)}
               onPaste={handlePaste}
               inputRef={(el) => (inputRefs.current[i] = el)}
+              autoFill={i === 0}
             />
           ))}
         </div>
@@ -256,9 +269,10 @@ const StylerVerifyEmail = () => {
             text={verifying ? "Verifying..." : "Verify"}
             variant="primary"
             type="submit"
-            disabled={verifying || resending}
+            disabled={verifying || resending || otp.join("").length !== 6}
           />
         </div>
+        <CodeHelp />
       </form>
     </div>
   );

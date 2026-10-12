@@ -12,16 +12,16 @@ import { logoutSession } from "../../utils/sessionLogout";
  * canvas with hairline cards instead of the public pages' editorial bands.
  */
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 /** The admin section nav. `current` is underlined; the rest stay quiet links. */
 const ADMIN_GROUPS = [
   ["Overview", [["/admin", "Dashboard"]]],
   ["Marketplace", [["/admin/stylers", "Stylists"], ["/admin/stylers?section=images", "Gallery"], ["/admin/operations?section=reviews", "Reviews"]]],
   ["Catalog & content", [["/admin/service-areas", "Service areas"], ["/admin/categories", "Categories"], ["/admin/blog", "Blog"], ["/admin/content", "Website content"]]],
-  ["Finance", [["/admin/payments", "Payments"], ["/admin/payments?section=disputes", "Disputes"], ["/admin/payments?section=unpaidPayouts", "Unpaid payouts"]]],
+  ["Finance", [["/admin/payments", "Payments"], ["/admin/payments?section=bookings", "Bookings"], ["/admin/payments?section=disputes", "Disputes"], ["/admin/payments?section=unpaidPayouts", "Unpaid payouts"]]],
   ["Marketing", [["/admin/promotions", "Promo codes"], ["/admin/newsletter", "Newsletter"], ["/admin/signup-funnel", "Signup funnel"], ["/admin/recovery", "Recovery"], ["/admin/announcements", "Announcements"]]],
-  ["Platform", [["/admin/operations", "Operations"], ["/admin/operations?section=tickets", "Support"], ["/admin/operations?section=logs", "Audit log"]]],
+  ["Platform", [["/admin/operations", "Operations"], ["/admin/operations?section=tickets", "Support"], ["/admin/operations?section=feedback", "Feedback"], ["/admin/operations?section=logs", "Audit log"]]],
 ];
 
 export function AdminNav({ onNavigate } = {}) {
@@ -60,10 +60,14 @@ export function AdminSignOut() {
  * The page shell: grey canvas, 1240px-ish column, display-register heading
  * with a tracked eyebrow, sign-out on the right, then the section nav.
  * `actions` (optional) renders extra buttons beside the sign-out (recovery's
- * Refresh), and `children` follow the nav.
+ * Refresh), and `children` follow the nav. The browser tab reads
+ * "`pageTitle` | RapidStylers Admin" (pageTitle defaults to the heading), so
+ * every admin tab is named for its page rather than the bare site name.
  */
-export function AdminPage({ eyebrow, title, actions, children }) {
+export function AdminPage({ eyebrow, title, pageTitle, actions, children }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const tabTitle = `${pageTitle || title} | RapidStylers Admin`;
+  useEffect(() => { document.title = tabTitle; }, [tabTitle]);
   return (
     <div className="min-h-screen bg-[#f5f5f5] lg:grid lg:grid-cols-[220px_minmax(0,1fr)]">
       <aside className="border-b lg:border-b-0 lg:border-r border-black/10 bg-white p-4 lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto">

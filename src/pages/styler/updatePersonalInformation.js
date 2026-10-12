@@ -1,43 +1,36 @@
 import { useEffect, useState } from "react";
-import Back from "../../components/goBack";
 import Button from "../../components/button";
-import InputWithLabel from "../../components/inputWithLabel";
 import { Formik, Form } from "formik";
 import { z } from "zod";
 import { APIService } from "../../hooks/remote/apiService";
 import { showSuccessToastMessage } from "../../utils/constant";
+import ProfileBackLink from "./stylerComponents/profileBackLink";
+import { StylerField } from "./stylerComponents/stylerField";
+import {
+  PERSON_NAME_MESSAGE,
+  PERSON_NAME_PATTERN,
+  canadianPhone,
+  formatCanadianPhone,
+  phoneProblem,
+} from "./stylerComponents/profileRules";
 
-// Canadian phone helpers, shared with the sign-up step so a number the
-// professional typed at sign-up and one they retype here read the same way.
-const phoneDigits = (value) => (value || "").replace(/\D/g, "").replace(/^1(?=\d{10}$)/, "").slice(0, 10);
-const formatCanadianPhone = (value) => {
-  const digits = phoneDigits(value);
-  if (digits.length < 4) return digits;
-  if (digits.length < 7) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
-  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
-};
-
-// The rules the backend enforces (PERSON_NAME_REGEX, PHONE_NUMBER_VALIDATION_REGEX),
-// so the form cannot accept a value the server then refuses.
-const NAME_PATTERN = /^[A-Za-z][A-Za-z\s'-]*$/;
+// The shared name and phone rules (contracts.md), so the form cannot accept a
+// value the server then refuses, and extra phone digits show as an error
+// instead of being cut off.
+const nameField = (label) =>
+  z
+    .string()
+    .trim()
+    .min(1, `${label} is required`)
+    .max(50, `${label} must be 50 characters or fewer`)
+    .regex(PERSON_NAME_PATTERN, PERSON_NAME_MESSAGE);
 const schema = z.object({
-  firstname: z
-    .string()
-    .trim()
-    .min(1, "First name is required")
-    .min(3, "First name must be at least 3 characters")
-    .regex(NAME_PATTERN, "Use letters, spaces, hyphens or apostrophes"),
-  lastname: z
-    .string()
-    .trim()
-    .min(1, "Last name is required")
-    .min(3, "Last name must be at least 3 characters")
-    .regex(NAME_PATTERN, "Use letters, spaces, hyphens or apostrophes"),
-  phoneNumber: z
-    .string()
-    .trim()
-    .min(1, "Phone number is required")
-    .refine((value) => phoneDigits(value).length === 10, "Enter a valid Canadian phone number, e.g. (587) 555-1234"),
+  firstname: nameField("First name"),
+  lastname: nameField("Last name"),
+  phoneNumber: z.string().superRefine((value, ctx) => {
+    const problem = phoneProblem(value);
+    if (problem) ctx.addIssue({ code: "custom", message: problem });
+  }),
 });
 
 function toFormikErrors(zodError) {
@@ -81,7 +74,7 @@ const UpdatePersonalInformation = () => {
   return (
     <div className="rounded-lg border border-black/10">
       <div className="flex items-center gap-3 border-b border-black/10 p-4 text-[11px] uppercase tracking-[0.25em] text-muted">
-        <Back />
+        <ProfileBackLink />
         <span>Personal information</span>
       </div>
       <div className="p-4">
@@ -127,7 +120,7 @@ const PersonalInfoForm = ({ profile, onSaved }) => {
       const response = await APIService.updateStylerPersonalInfo({
         firstname: values.firstname.trim(),
         lastname: values.lastname.trim(),
-        phoneNumber: phoneDigits(values.phoneNumber),
+        phoneNumber: canadianPhone(values.phoneNumber),
       });
       if (response.data?.statusCode === "200") {
         onSaved(response.data.data || profile);
@@ -135,8 +128,8 @@ const PersonalInfoForm = ({ profile, onSaved }) => {
       } else {
         setSaveError(response.data?.message || "Could not save your details.");
       }
-    } catch {
-      setSaveError("Could not save your details. Please try again.");
+    } catch (error) {
+      setSaveError(error?.response?.data?.message || "Could not save your details. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -145,8 +138,9 @@ const PersonalInfoForm = ({ profile, onSaved }) => {
   return (
     <Formik initialValues={initialValues} validate={validate} onSubmit={handleSubmit} enableReinitialize>
       {({ values, errors, touched, handleChange, handleBlur, isSubmitting }) => (
-        <Form>
+        <Form noValidate>
           <div className="grid gap-4">
+            <p className="text-xs text-black/55"><span aria-hidden="true" className="text-red-600">*</span> Required field</p>
             <div className="grid gap-1 text-sm">
               <label htmlFor="styler-email" className="font-medium">Email address:</label>
               <input
@@ -163,37 +157,44 @@ const PersonalInfoForm = ({ profile, onSaved }) => {
             </div>
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <InputWithLabel
-                labelName="First name"
-                inputType="text"
-                placeholder="e.g John"
-                inputName="firstname"
-                inputValue={values.firstname}
-                inputOnChange={handleChange}
-                inputOnBlur={handleBlur}
-                inputError={(touched.firstname || Boolean(values.firstname)) && errors.firstname ? errors.firstname : ""}
+              <StylerField
+                label="First name"
+                placeholder="e.g. John"
+                name="firstname"
+                autoComplete="given-name"
+                required
+                maxLength={50}
+                value={values.firstname}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                error={(touched.firstname || Boolean(values.firstname)) && errors.firstname ? errors.firstname : ""}
               />
-              <InputWithLabel
-                labelName="Last name"
-                inputType="text"
-                placeholder="e.g Wick"
-                inputName="lastname"
-                inputValue={values.lastname}
-                inputOnChange={handleChange}
-                inputOnBlur={handleBlur}
-                inputError={(touched.lastname || Boolean(values.lastname)) && errors.lastname ? errors.lastname : ""}
+              <StylerField
+                label="Last name"
+                placeholder="e.g. Wick"
+                name="lastname"
+                autoComplete="family-name"
+                required
+                maxLength={50}
+                value={values.lastname}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                error={(touched.lastname || Boolean(values.lastname)) && errors.lastname ? errors.lastname : ""}
               />
             </div>
 
-            <InputWithLabel
-              labelName="Phone number"
-              inputType="tel"
+            <StylerField
+              label="Phone number"
+              type="tel"
               placeholder="e.g. (587) 555-1234"
-              inputName="phoneNumber"
-              inputValue={values.phoneNumber}
-              inputOnChange={(event) => handleChange({ target: { name: "phoneNumber", value: formatCanadianPhone(event.target.value) } })}
-              inputOnBlur={handleBlur}
-              inputError={(touched.phoneNumber || Boolean(values.phoneNumber)) && errors.phoneNumber ? errors.phoneNumber : ""}
+              name="phoneNumber"
+              autoComplete="tel"
+              inputMode="tel"
+              required
+              value={values.phoneNumber}
+              onChange={(event) => handleChange({ target: { name: "phoneNumber", value: formatCanadianPhone(event.target.value) } })}
+              onBlur={handleBlur}
+              error={(touched.phoneNumber || Boolean(values.phoneNumber)) && errors.phoneNumber ? errors.phoneNumber : ""}
             />
 
             {saveError && <p role="alert" className="text-sm text-red-600">{saveError}</p>}

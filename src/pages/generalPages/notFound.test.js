@@ -47,3 +47,13 @@ describe("404 page contact block", () => {
     expect(text).not.toMatch(/123 style street/i);
   });
 });
+
+describe("404 page indexing", () => {
+  test("asks search engines not to index it, and cleans up on leave", () => {
+    const view = renderPage();
+    expect(document.head.querySelector('meta[name="robots"]').getAttribute("content")).toBe("noindex, nofollow");
+    expect(document.title).toBe("Page Not Found | RapidStylers");
+    view.unmount();
+    expect(document.head.querySelector('meta[name="robots"]')).toBeNull();
+  });
+});

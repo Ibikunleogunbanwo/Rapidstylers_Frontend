@@ -27,7 +27,7 @@ describe("the customer sidebar (desktop list)", () => {
       "Book an Appointment",
       "Account Settings",
       "Notifications",
-      "Saved Stylists",
+      "Saved professionals",
       "Feedback",
     ]) {
       // Desktop list + hidden mobile list both render into the DOM.
@@ -78,4 +78,32 @@ test("customer navigation has an accessible menu and close control", () => {
  fireEvent.click(menu); expect(toggle).toHaveBeenCalledOnce();
  fireEvent.click(screen.getByRole("button", { name: "Close navigation" }));
  expect(close).toHaveBeenCalledOnce();
+});
+
+test("Sign Out is a button running the logout action, never a GET link to /signOut (QA C-15)", () => {
+ const onSignOut = vi.fn(), close = vi.fn();
+ const { container } = render(<MemoryRouter><UserSideBar sideBarVisibility={true} sideBarTitle="" closeSideBar={close} onSignOut={onSignOut} /></MemoryRouter>);
+ expect(container.querySelector('a[href="/signOut"]')).toBeNull();
+ const [desktop, mobile] = screen.getAllByRole("button", { name: "Sign Out" });
+ fireEvent.click(desktop);
+ expect(onSignOut).toHaveBeenCalledTimes(1);
+ fireEvent.click(mobile);
+ expect(onSignOut).toHaveBeenCalledTimes(2);
+ expect(close).toHaveBeenCalledOnce();
+});
+
+test("the Notifications item shows the unread count (QA C-08)", () => {
+ render(<MemoryRouter><UserSideBar sideBarVisibility={false} sideBarTitle="" closeSideBar={() => {}} unreadNotifications={3} /></MemoryRouter>);
+ const links = screen.getAllByRole("link", { name: /Notifications, 3 unread/ });
+ expect(links).toHaveLength(2);
+ expect(links[0]).toHaveTextContent("3");
+});
+
+test("the customer header shows who is signed in and a Sign out button (QA C-16)", () => {
+ const onSignOut = vi.fn();
+ render(<MemoryRouter><UserTopBar toggleSideBar={() => {}} account={{ firstname: "José", lastname: "O'Brien" }} onSignOut={onSignOut} /></MemoryRouter>);
+ expect(screen.getByText("José O'Brien")).toBeInTheDocument();
+ expect(screen.getByText("JO")).toBeInTheDocument();
+ fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
+ expect(onSignOut).toHaveBeenCalledOnce();
 });

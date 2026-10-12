@@ -25,44 +25,47 @@ const Stylist = ({ setPageTitle }) => {
   if (loadState.loading || loadState.error) return <RemoteLoadStatus state={loadState} />;
 
   return (
-    <div className="bg-white border rounded-lg">
+    <div className="bg-white border border-black/10 rounded-lg">
       <Spinner loading={reduxLoading} />
-      <div className="flex gap-1 items-center border-b p-4 text-[15px] font-bold bg-[#1d1d1d08] rounded-t-lg">
+      <div className="flex gap-2 items-center border-b border-black/10 px-4 py-4 sm:px-5">
         <Back />
-        <span>{stylerTypeName}s.</span>
+        <div>
+          <h1 className="text-lg font-semibold text-onSurface">{stylerTypeName}</h1>
+          <p className="mt-0.5 text-sm text-black/55">Choose a professional to see their services and available times.</p>
+        </div>
       </div>
-      <div className="p-4">
-        <p className="text-black/50 mb-4 text-sm font-medium">Suggested <span className="lowercase">{stylerTypeName}</span> based on your location:</p>
-
+      <div className="p-4 sm:p-5">
         {
           stylerList.length > 0
-            ? (              stylerList.map((val, key) => {
-                return (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4" key={key}>
-                    <ServiceCard
-                      gridPosition={key}
-                        coverImg={val.profileImageUrl}
-                        name={val.businessName}
-                        serviceTypeName={val.serviceTypeName || ""}
-                        status={val.visibilityStatus}
-                        distance={val.distanceKm}
-                        rating={val.averageRating}
-                        reviews={val.reviewCount}
-                        openState={vendorOpenState(val)}
-                        stylerId={val.stylerId}
-                        businessName={val.businessName}
-                        isSaved={savedIds.has(String(val.stylerId))}
-                        onToggleSaved={toggleSaved}
-                        saveLoading={savedLoading}
-                        payoutReady={val.payoutReady}
-                      />
-                  </div>
-                )
-              })
+            ? (
+              // One grid for the whole list: wrapping each card in its own grid
+              // left a single huge column on desktop.
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                {stylerList.map((val, key) => (
+                  <ServiceCard
+                    key={val.stylerId || key}
+                    gridPosition={key}
+                    coverImg={val.profileImageUrl}
+                    name={val.businessName}
+                    serviceTypeName={val.serviceTypeName || ""}
+                    status={val.visibilityStatus}
+                    distance={val.distanceKm}
+                    rating={val.averageRating}
+                    reviews={val.reviewCount}
+                    openState={vendorOpenState(val)}
+                    stylerId={val.stylerId}
+                    businessName={val.businessName}
+                    isSaved={savedIds.has(String(val.stylerId))}
+                    onToggleSaved={toggleSaved}
+                    saveLoading={savedLoading}
+                    payoutReady={val.payoutReady}
+                  />
+                ))}
+              </div>
             )
             :
             (
-              <div>
+              <div className="text-sm text-black/60">
                 No professionals available in this category yet.
               </div>
             )
@@ -73,4 +76,5 @@ const Stylist = ({ setPageTitle }) => {
   );
 };
 
+export const StylistList = Stylist;
 export default Stylist;

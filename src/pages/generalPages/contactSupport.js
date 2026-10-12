@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import PublicHeader from "../../components/publicHeader";
 import Footer from "../../components/footer";
 import { Section, Eyebrow, PageHeading, BackHome } from "../../components/pageSections";
 import {
@@ -72,6 +73,7 @@ const ContactSupport = () => {
 
   return (
     <div className="min-h-screen bg-white">
+      <PublicHeader spacer />
       <Section pad="pt-10 md:pt-14">
         <BackHome />
         <PageHeading

@@ -5,6 +5,22 @@ import { contentNewsletterApi as api } from '../hooks/remote/contentNewsletterAp
 // Only visitor-facing content can receive published metadata. A draft must
 // never turn a dashboard, login, signup or token-bearing page into an indexable page.
 const PUBLIC_PAGES = new Set(['/', '/search', '/elevate-your-looks', '/blog', '/about', '/terms-and-conditions', '/privacy-policy', '/faqs', '/contact-support']);
+export const SITE_ORIGIN = 'https://www.rapidstylers.ca';
+
+// Each fixed public page gets its own description until an admin publishes one,
+// so search results stop showing the same sentence for every page.
+export const DEFAULT_DESCRIPTIONS = {
+  '/': 'Find and book trusted beauty professionals near you, from barbers and stylists to nails and lashes.',
+  '/search': 'Search RapidStylers for hairstylists, barbers, nail technicians, eyelash technicians and makeup artists near you in Canada.',
+  '/elevate-your-looks': 'Browse recent work by RapidStylers professionals: hair, nails, lashes, makeup and barbering.',
+  '/blog': 'Beauty tips, trends and advice from the RapidStylers team.',
+  '/about': 'Why RapidStylers exists and how we connect Canadians with trusted beauty professionals.',
+  '/terms-and-conditions': 'The terms that apply when you book or offer services on RapidStylers.',
+  '/privacy-policy': 'How RapidStylers collects, uses and protects your personal information.',
+  '/faqs': 'Answers to common questions about booking, payments and joining RapidStylers as a professional.',
+  '/contact-support': 'Get help from RapidStylers support by email, phone or support ticket.',
+};
+
 export function isPublicSeoPath(pathname) {
   return PUBLIC_PAGES.has(pathname) || /^\/(?:blog|stylist|stylistProfile)\/.+/.test(pathname);
 }
@@ -42,13 +58,37 @@ export default function PublishedSeo() {
         else element.removeAttribute('content');
       });
     }
+    function link(rel, href) {
+      const element = document.head.querySelector(`link[rel="${rel}"]`);
+      if (!element) return;
+      const oldHref = element.getAttribute('href');
+      element.setAttribute('href', href);
+      changes.push(() => element.setAttribute('href', oldHref));
+    }
     if (!publicPage) meta('name', 'robots', 'noindex, nofollow');
+    if (publicPage) {
+      // Search engines and link previews should point at this page, not the home page.
+      const url = SITE_ORIGIN + (pathname === '/' ? '/' : pathname.replace(/\/+$/, ''));
+      link('canonical', url);
+      meta('property', 'og:url', url);
+      const fallback = DEFAULT_DESCRIPTIONS[pathname];
+      if (fallback && !seo?.description) {
+        meta('name', 'description', fallback);
+        meta('property', 'og:description', fallback);
+        meta('name', 'twitter:description', fallback);
+      }
+    }
     if (seo) {
       if (typeof seo.title === 'string' && seo.title.trim()) document.title = seo.title;
       meta('name', 'description', seo.description);
       meta('property', 'og:title', seo.title);
       meta('property', 'og:description', seo.description);
-      if (/^https:\/\//.test(seo.ogImageUrl || '')) meta('property', 'og:image', seo.ogImageUrl);
+      meta('name', 'twitter:title', seo.title);
+      meta('name', 'twitter:description', seo.description);
+      if (/^https:\/\//.test(seo.ogImageUrl || '')) {
+        meta('property', 'og:image', seo.ogImageUrl);
+        meta('name', 'twitter:image', seo.ogImageUrl);
+      }
       meta('name', 'robots', seo.noindex ? 'noindex, nofollow' : 'index, follow');
     }
     return () => {
