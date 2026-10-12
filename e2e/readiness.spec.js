@@ -43,7 +43,7 @@ test("landing keeps media static for reduced motion and fits the viewport", asyn
   await expect(page.locator("video[src]")).toHaveCount(0);
   await expect(page.getByRole("img", { name: "Beauty tools ready for your appointment" })).toBeVisible();
   expect(videoRequests).toEqual([]);
-  await page.screenshot({ path: test.info().outputPath("landing.png"), fullPage: true });
+  await page.screenshot({ path: test.info().outputPath("landing.png"), fullPage: true, scale: "css" });
   expect(response.headers()["content-security-policy"]).toContain("frame-ancestors 'none'");
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
@@ -52,9 +52,11 @@ test("brand logo animation plays on desktop and mobile", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.goto("/");
   const logo = page.getByLabel("RapidStylers logo animation");
+  // Real pointer input releases history restoration before seeking the logo.
+  await page.getByRole("heading", { level: 1 }).click();
   await logo.scrollIntoViewIfNeeded();
   await expect(logo).toBeVisible();
-  await expect.poll(() => logo.evaluate(video => video.currentTime)).toBeGreaterThan(0);
+  await expect.poll(() => logo.evaluate(video => ({ playing: video.currentTime > 0, paused: video.paused, readyState: video.readyState, error: video.error?.message || null })), { timeout: 10000 }).toMatchObject({ playing: true, error: null });
   // `playsInline` is checked as an attribute, not as `video.playsInline`: the
   // property is only exposed on WebKit/Chromium, so reading it in Firefox gives
   // `undefined` and `undefined && …` is `undefined` — an assertion that can

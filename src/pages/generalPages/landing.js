@@ -1,3 +1,4 @@
+import DecorativeVideo from "../../components/decorativeVideo";
 import { usePublishedContent } from "../../hooks/remote/usePublishedContent";
 import useFunnelVisit from "../../hooks/useFunnelVisit";
 import PublicServiceAreas from "../../components/publicServiceAreas";
@@ -211,17 +212,12 @@ const LandingPage = () => {
 
         {/* Brand loop + quote */}
         <div className="mt-10 bg-black pt-6 pb-5 md:pt-8 md:pb-6 px-5 md:px-[50px] text-center grid gap-3 justify-items-center">
-          {allowDecorativeMotion ? <video
+          {allowDecorativeMotion ? <DecorativeVideo
             autoPlay
             loop
             muted
             playsInline
             preload="metadata"
-            onLoadedData={(event) => {
-              const video = event.currentTarget;
-              video.muted = true;
-              video.play().catch(() => {});
-            }}
             src={cityLoop}
             aria-label="RapidStylers logo animation"
             poster={photoCalgarySkyline}
