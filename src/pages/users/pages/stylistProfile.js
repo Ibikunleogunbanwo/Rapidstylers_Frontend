@@ -409,6 +409,7 @@ const StylistProfile = ({ setPageTitle }) => {
           </p>
         )}
 
+        <p className="mt-5 text-sm text-black/65">Appointment location: {info.offersSalonVisits !== false && "At the stylist’s location"}{info.offersSalonVisits !== false && info.offersHomeVisits !== false && " or "}{info.offersHomeVisits !== false && "at your home"}{info.offersSalonVisits === false && info.offersHomeVisits === false && "Currently unavailable"}. {info.offersHomeVisits !== false && info.maxTravelKm != null && `Home visits up to ${info.maxTravelKm} km from the stylist.`}</p>
         <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-black/55">
           <span>{info.businessAddress}</span>
           {info.latitude != null && (
@@ -466,6 +467,8 @@ const StylistProfile = ({ setPageTitle }) => {
                     stylerTimeZone={info.timeZone}
                     stylerAddress={info}
                     stylerName={displayName}
+                    offersSalonVisits={info.offersSalonVisits ?? true}
+                    offersHomeVisits={info.offersHomeVisits ?? true}
                   />
                 </div>
               ))

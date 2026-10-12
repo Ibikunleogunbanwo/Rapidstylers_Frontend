@@ -271,7 +271,7 @@ describe("Hero media loading", () => {
   test("does not download a hidden landing video on other pages", () => {
     document.title = "Elevate your looks | RapidStylers";
     media.matches = true;
-    renderHero();
+    renderHero("/elevate-your-looks");
     expect(document.querySelector("video")).toBeNull();
   });
 });

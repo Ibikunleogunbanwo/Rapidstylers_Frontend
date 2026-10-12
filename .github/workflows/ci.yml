@@ -61,8 +61,12 @@ jobs:
           BUILD_VERIFY_REQUIRE_PRESENT: '1'
         run: node scripts/verify-build-chunks.js
 
-      - name: Install functional test browser
-        run: npx playwright install --with-deps chromium
+      # All three engines, because the suite is the evidence for the
+      # browserCompatibility release gate and that gate is about Safari and
+      # Firefox, not just Chromium. Firefox is installed too: it is skipped only
+      # where PLAYWRIGHT_SKIP_FIREFOX is set, which is not set here.
+      - name: Install functional test browsers
+        run: npx playwright install --with-deps chromium firefox webkit
 
       - name: Browser functional tests
         run: npm run test:e2e

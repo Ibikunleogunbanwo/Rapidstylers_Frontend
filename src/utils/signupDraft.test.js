@@ -186,6 +186,28 @@ describe("the remembered photos", () => {
     expect(fake.rows.size).toBe(1);
   });
 
+  it("stores bytes rather than the file, because WebKit cannot store a Blob", async () => {
+    // Measured in WebKit 27.2, the Safari engine, at a desktop and an iPhone
+    // viewport: putting a Blob or File into IndexedDB aborts the transaction with
+    // "Error preparing Blob/File data to be stored in object store", so a Safari
+    // professional's photos were lost on every reload while Chromium kept them.
+    // Bytes are storable on every engine the flow claims to support.
+    const fake = installFakeIndexedDb();
+    await saveSignupPhotos({ profileImageFile: photoFile("me.png") });
+
+    const stored = fake.rows.get("profileImageFile");
+    expect(stored).not.toBeInstanceOf(Blob);
+    expect(ArrayBuffer.isView(stored.bytes)).toBe(true);
+    expect(stored.bytes.byteLength).toBeGreaterThan(0);
+    expect(stored.name).toBe("me.png");
+    expect(stored.type).toBe("image/png");
+
+    const restored = await readSignupPhotos();
+    expect(restored.profileImageFile).toBeInstanceOf(File);
+    expect(restored.profileImageFile.name).toBe("me.png");
+    expect(restored.profileImageFile.type).toBe("image/png");
+  });
+
   it("wraps a bare Blob rather than dropping the bytes", async () => {
     const fake = installFakeIndexedDb();
     fake.rows.set("identificationImageFile", new Blob(["bytes"], { type: "image/jpeg" }));
@@ -235,16 +257,21 @@ it('keeps photo database storage separate for each tab and avoids the legacy dat
   const deleted = [];
   const original = globalThis.indexedDB;
   globalThis.indexedDB = { deleteDatabase: name => deleted.push(name), open: (name) => { opened.push(name); throw new Error('unavailable'); } };
+  // Two tabs are two documents, so each gets its own module state the way a
+  // second tab gets its own page: a fresh import, its own session storage.
+  const freshTab = async () => { vi.resetModules(); return import('./signupDraft'); };
+
   sessionStorage.clear();
-  await readSignupPhotos();
+  await (await freshTab()).readSignupPhotos();
   const first = opened.at(-1);
   sessionStorage.clear();
-  await readSignupPhotos();
+  await (await freshTab()).readSignupPhotos();
   const second = opened.at(-1);
   expect(first).not.toBe('rapidstylers-signup');
   expect(second).not.toBe(first);
   expect(deleted).toEqual(['rapidstylers-signup', 'rapidstylers-signup']);
   globalThis.indexedDB = original;
+  vi.resetModules();
 });
 
 it('remembers an uncertain account creation without remembering credentials', () => {
@@ -253,21 +280,100 @@ it('remembers an uncertain account creation without remembering credentials', ()
   expect(readSignupDraft().formData.password).toBeUndefined();
 });
 
-it('reclaims photo ownership after a page returns from the back-forward cache', async () => {
+it('claims one photo namespace however many storage calls and page events follow', async () => {
+  // Measured in Chromium and WebKit, with the lock held for the document's
+  // lifetime the way the flow holds it: a second `ifAvailable` claim for a name
+  // this document already holds is refused, and refused again on every later
+  // attempt, for as long as the document lives. Claiming per storage call is
+  // therefore refused every time after the first and mints a fresh name, so the
+  // read and the write land in different databases and the professional is sent
+  // back to the photos step they had just completed. One claim, once.
   const requests = [];
+  const held = new Set();
   const previousLocks = navigator.locks;
   Object.defineProperty(navigator, 'locks', { configurable: true, value: { request: (name, options, callback) => {
     requests.push(name);
+    if (held.has(name)) return Promise.resolve(callback(null));
+    held.add(name);
     return Promise.resolve(callback({ name }));
   } } });
-  globalThis.indexedDB = { open: () => { throw new Error('unavailable'); } };
-  sessionStorage.clear();
-  await readSignupPhotos();
-  window.dispatchEvent(new Event('pagehide'));
-  const shown = new Event('pageshow');
-  Object.defineProperty(shown, 'persisted', { value: true });
-  window.dispatchEvent(shown);
-  await readSignupPhotos();
-  expect(requests).toHaveLength(2);
-  Object.defineProperty(navigator, 'locks', { configurable: true, value: previousLocks });
+
+  try {
+    const fake = installFakeIndexedDb();
+    sessionStorage.clear();
+    vi.resetModules();
+    const draft = await import('./signupDraft');
+
+    await draft.saveSignupPhotos({ profileImageFile: photoFile('me.png') });
+    await draft.readSignupPhotos();
+    await draft.saveSignupPhotos({
+      profileImageFile: photoFile('me.png'),
+      identificationImageFile: photoFile('id.png'),
+    });
+    expect(requests).toHaveLength(1);
+
+    // Coming back from the back-forward cache is this same document, so it keeps
+    // the namespace it was granted instead of asking again and being refused.
+    window.dispatchEvent(new Event('pagehide'));
+    const shown = new Event('pageshow');
+    Object.defineProperty(shown, 'persisted', { value: true });
+    window.dispatchEvent(shown);
+    await draft.readSignupPhotos();
+    expect(requests).toHaveLength(1);
+
+    const restored = await draft.readSignupPhotos();
+    expect(restored.profileImageFile.name).toBe('me.png');
+    expect(restored.identificationImageFile.name).toBe('id.png');
+    fake.remove();
+  } finally {
+    if (previousLocks === undefined) delete navigator.locks;
+    else Object.defineProperty(navigator, 'locks', { configurable: true, value: previousLocks });
+    vi.resetModules();
+  }
+});
+
+it('finds the photos of the previous document in this tab after a reload', async () => {
+  // Measured in Chromium and WebKit across a real navigation: the previous
+  // document's lock is released at pagehide, so the name it stored is granted to
+  // the document that replaces it. Offering that name back rather than minting a
+  // new one is what keeps a professional who refreshed from losing the photos
+  // they had picked.
+  const requests = [];
+  const held = new Set();
+  const previousLocks = navigator.locks;
+  const originalIndexedDb = globalThis.indexedDB;
+  Object.defineProperty(navigator, 'locks', { configurable: true, value: { request: (name, options, callback) => {
+    requests.push(name);
+    if (held.has(name)) return Promise.resolve(callback(null));
+    held.add(name);
+    window.addEventListener('pagehide', () => held.delete(name), { once: true });
+    return Promise.resolve(callback({ name }));
+  } } });
+
+  try {
+    installFakeIndexedDb();
+    sessionStorage.clear();
+    vi.resetModules();
+    const before = await import('./signupDraft');
+    await before.saveSignupPhotos({ profileImageFile: photoFile('me.png') });
+    const storedName = sessionStorage.getItem('stylerSignupPhotoTab');
+    expect(requests).toHaveLength(1);
+
+    // The reload: this document leaves, a new one takes its place in the tab.
+    window.dispatchEvent(new Event('pagehide'));
+    vi.resetModules();
+    const after = await import('./signupDraft');
+    const restored = await after.readSignupPhotos();
+
+    expect(requests).toHaveLength(2);
+    expect(sessionStorage.getItem('stylerSignupPhotoTab')).toBe(storedName);
+    expect(restored.profileImageFile.name).toBe('me.png');
+  } finally {
+    if (previousLocks === undefined) delete navigator.locks;
+    else Object.defineProperty(navigator, 'locks', { configurable: true, value: previousLocks });
+    if (originalIndexedDb === undefined) delete globalThis.indexedDB;
+    else globalThis.indexedDB = originalIndexedDb;
+    sessionStorage.clear();
+    vi.resetModules();
+  }
 });

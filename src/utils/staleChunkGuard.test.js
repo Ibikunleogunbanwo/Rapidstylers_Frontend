@@ -105,6 +105,49 @@ describe("createChunkReloadGuard", () => {
     expect(reload).toHaveBeenCalledTimes(1);
   });
 
+  it("does not reload when the document is already unloading", () => {
+    const reload = vi.fn();
+    const guard = createChunkReloadGuard({ reload });
+    guard.markUnloading();
+
+    const evt = { payload: new TypeError("Importing a module script failed."), preventDefault: vi.fn() };
+    expect(guard.handlePreloadError(evt)).toBe(false);
+    expect(reload).not.toHaveBeenCalled();
+    // The event is left to propagate: the document is going away anyway, and
+    // swallowing it would hide a real failure if our unload detection were wrong.
+    expect(evt.preventDefault).not.toHaveBeenCalled();
+
+    guard.handleError({ message: chunkErrorMessages[0], preventDefault: vi.fn() });
+    expect(reload).not.toHaveBeenCalled();
+    // Ignoring an unload-cancelled failure must not spend the one reload.
+    expect(guard.attempted).toBe(false);
+  });
+
+  it("ignores every failure once unloading, for the rest of that document's life", () => {
+    const reload = vi.fn();
+    const guard = createChunkReloadGuard({ reload });
+
+    guard.markUnloading();
+    // The document does not come back from beforeunload, so no later failure in
+    // it is worth a reload — and none of them may spend the reload budget.
+    for (const msg of [...chunkErrorMessages, ...chunkErrorMessages]) {
+      guard.handleError({ message: msg, preventDefault: vi.fn() });
+      guard.handlePreloadError({ payload: new TypeError(msg), preventDefault: vi.fn() });
+    }
+
+    expect(reload).not.toHaveBeenCalled();
+    expect(guard.attempted).toBe(false);
+  });
+
+  it("still reloads for a stale chunk when the document is live", () => {
+    const reload = vi.fn();
+    const guard = createChunkReloadGuard({ reload });
+
+    // A genuine stale-deploy chunk failure in a document that never unloaded.
+    expect(guard.handleError({ message: chunkErrorMessages[0], preventDefault: vi.fn() })).toBe(true);
+    expect(reload).toHaveBeenCalledTimes(1);
+  });
+
   it("claim() pre-spends the guard without reloading", () => {
     const reload = vi.fn();
     const guard = createChunkReloadGuard({ reload });

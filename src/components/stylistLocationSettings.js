@@ -1,0 +1,23 @@
+import { useEffect, useRef, useState } from 'react';
+import { MarketplaceAPI, requestError } from '../hooks/remote/marketplaceApi';
+import { Field, inputClass, buttonClass } from './admin/marketplaceControls';
+export function locationSettingsBody(form){
+  if(!form.offersSalonVisits&&!form.offersHomeVisits)throw new Error('Offer at least one appointment location.');
+  const included=Number(form.includedTravelKm),fee=Number(form.baseTravelFee),max=form.maxTravelKm===''?null:Number(form.maxTravelKm);
+  if(String(form.includedTravelKm).trim()===''||String(form.baseTravelFee).trim()===''||!Number.isFinite(included)||included<0||!Number.isFinite(fee)||fee<0)throw new Error('Enter a non-negative included distance and home-visit fee.');
+  if(max!==null&&(!Number.isFinite(max)||max<1||max>500))throw new Error('Maximum travel distance must be from 1 to 500 km, or blank for no limit.');
+  return {offersSalonVisits:form.offersSalonVisits,offersHomeVisits:form.offersHomeVisits,maxTravelKm:max,includedTravelKm:included,baseTravelFee:fee.toFixed(2)};
+}
+const validSettings = data => {
+  if(typeof data?.offersHomeVisits!=='boolean'||typeof data?.offersSalonVisits!=='boolean'||data.includedTravelKm==null||data.baseTravelFee==null)throw new Error('Appointment settings could not be loaded.');
+  return {...data,maxTravelKm:data.maxTravelKm??'',includedTravelKm:String(data.includedTravelKm),baseTravelFee:String(data.baseTravelFee)};
+};
+export default function StylistLocationSettings({onSaved}){
+  const [form,setForm]=useState(null),[error,setError]=useState(''),[result,setResult]=useState(''),[busy,setBusy]=useState(false),[loading,setLoading]=useState(true);
+  const generation=useRef(0),pending=useRef(false);
+  const load=async()=>{const id=++generation.current;setLoading(true);setError('');try{const d=validSettings(await MarketplaceAPI.travelSettings());if(id===generation.current)setForm(d);}catch(e){if(id===generation.current){setForm(null);setError(requestError(e));}}finally{if(id===generation.current)setLoading(false);}};
+  useEffect(()=>{load();return()=>{generation.current++;};},[]);
+  const save=async e=>{e.preventDefault();if(pending.current)return;setError('');setResult('');let body;try{body=locationSettingsBody(form);}catch(e){setError(e.message);return;}pending.current=true;setBusy(true);try{const data=validSettings(await MarketplaceAPI.saveTravelSettings(body));setForm(data);setResult('Appointment locations saved.');onSaved?.(data);}catch(e){setError(requestError(e));}finally{pending.current=false;setBusy(false);}};
+  const set=(key,value)=>setForm(f=>({...f,[key]:value}));
+  return <section className="rounded-lg border bg-white p-4"><h2 className="text-xl font-semibold">Appointment locations</h2><p className="my-3 text-gray-700">Choose where customers can book you. Your business address is used for visits to your location.</p>{loading&&<p role="status">Loading appointment settings…</p>}{form&&<form onSubmit={save} className="grid gap-4 max-w-2xl"><fieldset disabled={busy} className="grid gap-3"><legend className="font-semibold mb-2">Locations offered</legend><label><input type="checkbox" checked={form.offersSalonVisits} onChange={e=>set('offersSalonVisits',e.target.checked)}/> At my salon or studio</label><label><input type="checkbox" checked={form.offersHomeVisits} onChange={e=>set('offersHomeVisits',e.target.checked)}/> At the customer's home</label></fieldset><p className="text-sm">Travel settings apply to home visits. Existing fees are preserved when you change location options.</p><Field label="Included travel distance (km)"><input disabled={busy} required type="number" min="0" step="0.1" className={inputClass} value={form.includedTravelKm} onChange={e=>set('includedTravelKm',e.target.value)}/></Field><Field label="Home-visit fee (CAD)"><input disabled={busy} required type="number" min="0" step="0.01" className={inputClass} value={form.baseTravelFee} onChange={e=>set('baseTravelFee',e.target.value)}/></Field><Field label="Maximum travel distance (km, optional)"><input disabled={busy} type="number" min="1" max="500" step="0.1" className={inputClass} value={form.maxTravelKm} onChange={e=>set('maxTravelKm',e.target.value)}/></Field><p className="text-sm">Leave maximum distance blank for no travel limit. Distance and fees are checked by the server when customers book.</p><div><button disabled={busy} className={buttonClass}>{busy?'Saving…':'Save appointment locations'}</button></div></form>}{error&&<p role="alert" className="text-red-700 mt-3">{error} {!form&&<button onClick={load} className="underline">Retry settings</button>}</p>}{result&&<p role="status" className="text-green-700 mt-3">{result}</p>}</section>;
+}

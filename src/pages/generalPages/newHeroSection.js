@@ -2,7 +2,7 @@
 import logo from "../../assets/svg-icons/logo.svg";
 import React, { useState, useEffect } from "react";
 import info from "../../assets/svg-icons/info.svg";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import Button from "../../components/button";
 import InputWithLabel from "../../components/inputWithLabel";
 import Modal from "../../components/modals";
@@ -20,7 +20,8 @@ import useDecorativeMotion from "../../hooks/useDecorativeMotion";
 import heroPoster from "../../assets/images/hero-poster.jpg";
 import largeVideo from "../../assets/Videos/hero-loop.mp4";
 
-const Hero = ({ height }) => {
+const Hero = ({ height, homepage }) => {
+  const isLanding = useLocation().pathname === "/";
   const [services, setServices] = useState([]);
   const allowHeroMotion = useDecorativeMotion(0);
   const dispatch = useDispatch();
@@ -128,10 +129,10 @@ const Hero = ({ height }) => {
       <div className="w-full lg:h-full overflow-hidden">
         <div className="w-full lg:h-full relative">
           {/* Landing */}
-          <div className={`relative flex flex-col w-full lg:block lg:h-full ${document.title === "Welcome - RapidStylers" ? "" : "hidden"}`}>
+          <div className={`relative flex flex-col w-full lg:block lg:h-full ${isLanding ? "" : "hidden"}`}>
             {/* Reduced-motion visits retain the poster on every screen size. */}
             <div className="relative w-full aspect-video shrink-0 overflow-hidden lg:aspect-auto lg:h-full">
-              {allowHeroMotion && document.title === "Welcome - RapidStylers" ? (
+              {homepage?.heroImageUrl && /^https:\/\//.test(homepage.heroImageUrl) ? <img src={homepage.heroImageUrl} alt="" className="h-full w-full object-cover" /> : allowHeroMotion && isLanding ? (
                 <video autoPlay loop muted playsInline preload="metadata" poster={heroPoster} src={largeVideo} className="h-full w-full object-cover object-center">
                   Your browser does not support the video tag.
                 </video>
@@ -148,11 +149,12 @@ const Hero = ({ height }) => {
                   What you can book today
                 </p>
                 <h1 className="mt-4 text-[clamp(1.9rem,4.5vw,2.75rem)] font-normal leading-[1.08] tracking-[-0.02em] text-white text-center lg:text-start">
-                  Beauty services that <span className="text-brand">come to you</span>
+                  {homepage?.heroTitle || <>Beauty services <span className="text-brand">at home or at a stylist’s location</span></>}
                 </h1>
                 <p className="mt-4 text-white/70 text-sm sm:text-base text-center lg:text-start max-w-md mx-auto lg:mx-0 leading-relaxed">
-                  Top-rated local professionals come to your door. Compare profiles, pick a time, and skip the salon trip.
+                  {homepage?.heroSubtitle || "Compare local professionals, choose a time, and book a home visit or an appointment at the stylist’s salon or studio."}
                 </p>
+                {homepage?.ctaText && /^(\/(?!\/)|https:\/\/)/.test(homepage.ctaLink || "") && <a href={homepage.ctaLink} className="mt-5 inline-block rounded-full bg-brand px-5 py-3 text-white">{homepage.ctaText}</a>}
                 {services.length > 0 && (
                   <div className="mt-6 flex flex-wrap justify-center lg:justify-start gap-2 sm:gap-2.5">
                     {services.map((service) => (

@@ -36,6 +36,7 @@ const StylerAvailability = () => {
   // Home-visit travel settings
   const [includedTravelKm, setIncludedTravelKm] = useState("15");
   const [baseTravelFee, setBaseTravelFee] = useState("0.00");
+  const [locationOptions, setLocationOptions] = useState({});
   const [travelSaving, setTravelSaving] = useState(false);
 
   const loadAvailability = async () => {
@@ -59,6 +60,9 @@ const StylerAvailability = () => {
       );
       setExceptions(exceptionsRes.data?.data || []);
       const travel = travelRes.data?.data || {};
+      setLocationOptions(Object.fromEntries(["offersSalonVisits", "offersHomeVisits", "maxTravelKm"]
+        .filter(key => Object.prototype.hasOwnProperty.call(travel, key))
+        .map(key => [key, travel[key]])));
       setIncludedTravelKm(String(travel.includedTravelKm ?? 15));
       setBaseTravelFee(travel.baseTravelFee ?? "0.00");
     } catch (error) {
@@ -154,7 +158,7 @@ const StylerAvailability = () => {
     }
     setTravelSaving(true);
     try {
-      const res = await APIService.updateStylerTravelSettings(km, baseTravelFee);
+      const res = await APIService.updateStylerTravelSettings(km, baseTravelFee, locationOptions);
       showSuccessToastMessage(res.data?.message || "Home visit settings updated");
     } catch (error) {
       showErrorToastMessage(error?.response?.data?.message || error?.message || "Failed to save home visit settings");
@@ -260,7 +264,7 @@ const StylerAvailability = () => {
         <div className="mb-5">
           <p className="text-[15px] font-medium text-onSurface">Home Visits</p>
           <p className="text-sm text-gray-400">
-            Set a flat home-visit fee and your included free radius. Customers within the radius pay no travel fee; beyond it they pay the flat fee once. You stay free to accept or decline any booking based on how far it is.
+            Set a flat home-visit fee and your included free radius. Customers within the radius pay no travel fee; beyond it they pay the flat fee once. Your appointment locations and maximum travel distance are managed in Profile.
           </p>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">

@@ -143,22 +143,22 @@ const StylerCalendar = () => {
 
   return (
     <div className="grid gap-6">
-      <div className="bg-white rounded-lg border border-black/10 p-6">
-        <div className="flex items-center justify-between flex-wrap gap-3 mb-5">
+      <div className="min-w-0 bg-white rounded-lg border border-black/10 p-4 sm:p-6">
+        <div className="min-w-0 flex items-center justify-between flex-wrap gap-3 mb-5">
           <div>
             <p className="text-[15px] font-medium text-onSurface">Calendar</p>
             <p className="text-sm text-gray-400">
               Your appointments at a glance. Click a day for details.
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap justify-end sm:justify-start">
             <button
               onClick={() => shiftMonth(-1)}
               className="px-3 py-1.5 rounded-md border border-gray-200 text-sm font-semibold text-gray-600 hover:border-brand hover:text-brand"
             >
               ‹ Prev
             </button>
-            <span className="text-sm font-bold text-gray-800 min-w-[170px] text-center">
+            <span className="text-sm font-bold text-gray-800 min-w-[120px] sm:min-w-[170px] text-center">
               {MONTHS[cursor.month]} {cursor.year}
             </span>
             <button
@@ -255,7 +255,7 @@ const StylerCalendar = () => {
 
       {/* Day details panel */}
       {selectedDay && (
-        <div className="bg-white rounded-lg border border-black/10 p-6">
+        <div className="min-w-0 bg-white rounded-lg border border-black/10 p-4 sm:p-6">
           <div className="flex items-center justify-between mb-4">
             <p className="font-bold text-gray-900">
               {new Date(selectedDay + "T00:00:00").toLocaleDateString(undefined, {

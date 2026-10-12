@@ -12,6 +12,7 @@ import ReviewCard from './stylerComponents/reviewsSummary';
 import { APIService } from '../../hooks/remote/apiService';
 vi.mock('../../hooks/remote/apiService', () => ({ APIService: {
  stylerAvailability: vi.fn(), stylerAvailabilityExceptions: vi.fn(), stylerTravelSettings: vi.fn(),
+ updateStylerTravelSettings: vi.fn(),
  listSubServices: vi.fn(), stylerAppointments: vi.fn(), getOwnPortfolio: vi.fn(), getOwnStylerReviews: vi.fn(), getStylerPayouts: vi.fn(), getStylerBusinessSummary: vi.fn(), createSubService: vi.fn(),
 }}));
 beforeEach(() => { vi.resetAllMocks(); sessionStorage.setItem('rapidstylers_auth_token', 'jwt'); });
@@ -72,4 +73,18 @@ it('uses the professional calendar day at a UTC month boundary', async () => {
  expect(await screen.findByText('October 2026')).toBeInTheDocument();
  expect(screen.getByRole('button',{name:'2026-10-31'})).toHaveAttribute('aria-current','date');
  vi.useRealTimers();
+});
+it.each([
+ [{offersSalonVisits:false,offersHomeVisits:true,maxTravelKm:30}, {offersSalonVisits:false,offersHomeVisits:true,maxTravelKm:30}],
+ [{offersSalonVisits:true,offersHomeVisits:false,maxTravelKm:null}, {offersSalonVisits:true,offersHomeVisits:false,maxTravelKm:null}],
+ [{}, {}],
+])('home-visit fee saves preserve loaded location options %s',async (options,expected)=>{
+ APIService.stylerAvailability.mockResolvedValue({data:{data:[]}});
+ APIService.stylerAvailabilityExceptions.mockResolvedValue({data:{data:[]}});
+ APIService.stylerTravelSettings.mockResolvedValue({data:{data:{includedTravelKm:8,baseTravelFee:'12.00',...options}}});
+ APIService.updateStylerTravelSettings.mockResolvedValue({data:{statusCode:'200',message:'Saved'}});
+ mount(Availability);
+ await waitFor(()=>expect(screen.getByRole('button',{name:'Save home visit settings'})).toBeEnabled());
+ fireEvent.click(screen.getByRole('button',{name:'Save home visit settings'}));
+ await waitFor(()=>expect(APIService.updateStylerTravelSettings).toHaveBeenCalledWith(8,'12.00',expected));
 });

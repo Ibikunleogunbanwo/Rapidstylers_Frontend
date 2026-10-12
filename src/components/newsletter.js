@@ -1,0 +1,16 @@
+import { useEffect, useRef, useState } from 'react';
+import { contentNewsletterApi as api, requestMessage } from '../hooks/remote/contentNewsletterApi';
+export function NewsletterSubscribe({ dark = false }) {
+  const [email, setEmail] = useState(''); const [consent, setConsent] = useState(false);
+  const [busy,setBusy] = useState(false); const [error,setError] = useState(''); const [done,setDone] = useState(false); const pending = useRef(false);
+  async function submit(e) { e.preventDefault(); if(pending.current)return; setError(''); if(!consent){setError('Please agree to receive the newsletter.');return;} pending.current=true;setBusy(true);
+    try { await api.post('/newsletter_subscribe',{email:email.trim(),consent:true});setDone(true); } catch(e){setError(requestMessage(e));} finally{pending.current=false;setBusy(false);}}
+  return <section className={`grid gap-3 ${dark ? "text-white" : "text-gray-900"}`} aria-label="Newsletter"><h2 className="text-xl">News from RapidStylers</h2><p>Get service updates and offers by email. Unsubscribe anytime.</p>{done?<p role="status">Check your inbox for a confirmation link. You are subscribed only after you confirm.</p>:<form onSubmit={submit} className="grid gap-3"><label>Email address<input className="block w-full border rounded p-2 bg-white text-gray-900" type="email" required maxLength={254} value={email} onChange={e=>setEmail(e.target.value)}/></label><label className="flex gap-2 items-start"><input type="checkbox" checked={consent} onChange={e=>setConsent(e.target.checked)}/>Yes, send me RapidStylers news, offers and tips by email. I can unsubscribe at any time.</label><button className="rounded border px-4 py-2 justify-self-start" disabled={busy}>{busy?'Submitting…':'Subscribe'}</button></form>}{error&&<p role="alert">{error}</p>}</section>;
+}
+export function NewsletterPreference() {
+ const [data,setData]=useState(null);const [error,setError]=useState('');const [busy,setBusy]=useState(false);const [message,setMessage]=useState('');const pending=useRef(false);
+ async function load(){setError('');try{const d=await api.get('/my_newsletter');if(typeof d?.subscribed!=='boolean')throw new Error('Newsletter preference is unavailable.');setData(d);}catch(e){setError(requestMessage(e));}}
+ useEffect(()=>{load();},[]);
+ async function update(e){if(pending.current)return;const subscribed=e.target.checked;pending.current=true;setBusy(true);setError('');setMessage('');try{const d=await api.post('/update_my_newsletter',{subscribed});if(typeof d?.subscribed!=='boolean')throw new Error('Refresh to check whether your preference was saved.');setData(d);setMessage('Newsletter preference saved.');}catch(e){setError(requestMessage(e));}finally{pending.current=false;setBusy(false);}}
+ return <section className="border rounded p-4 grid gap-2"><h2 className="text-lg">Newsletter</h2>{data?<label className="flex gap-2"><input type="checkbox" checked={data.subscribed} disabled={busy} onChange={update}/>{data.consentText||'Receive RapidStylers news and offers by email. Unsubscribe anytime.'}</label>:!error?<p>Loading preference…</p>:null}{error&&<><p role="alert">{error}</p><button type="button" onClick={load}>Retry</button></>}{message&&<p role="status">{message}</p>}</section>;
+}

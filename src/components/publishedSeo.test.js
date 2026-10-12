@@ -1,0 +1,10 @@
+import { render,waitFor,cleanup } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import { vi,it,expect,afterEach,beforeEach } from 'vitest';
+import PublishedSeo from './publishedSeo';
+import { contentNewsletterApi as api } from '../hooks/remote/contentNewsletterApi';
+vi.mock('../hooks/remote/contentNewsletterApi',()=>({contentNewsletterApi:{get:vi.fn(),post:vi.fn()},requestMessage:e=>e.message}));
+beforeEach(()=>{vi.clearAllMocks();document.title='Default';api.get.mockResolvedValue({'/':{title:'Public title',description:'Published description',noindex:false},'/admin/content':{title:'Unsafe title',noindex:false},'/newsletter/confirm':{title:'Unsafe token title',noindex:false}});});
+afterEach(()=>{cleanup();document.querySelectorAll('meta[name="robots"],meta[name="description"],meta[property^="og:"]').forEach(m=>m.remove());});
+it('applies published SEO on public pages and cleans up',async()=>{const view=render(<MemoryRouter><PublishedSeo/></MemoryRouter>);await waitFor(()=>expect(document.title).toBe('Public title'));expect(document.querySelector('meta[name="robots"]')).toHaveAttribute('content','index, follow');view.unmount();expect(document.title).toBe('Default');expect(document.querySelector('meta[name="description"]')).toBeNull();});
+it.each(['/admin/content','/newsletter/confirm','/accountSettings','/styler-dashboard','/login','/styler-signup'])('never lets content index protected route %s',async path=>{render(<MemoryRouter initialEntries={[path]}><PublishedSeo/></MemoryRouter>);await waitFor(()=>expect(api.get).toHaveBeenCalled());expect(document.title).toBe('Default');expect(document.querySelector('meta[name="robots"]')).toHaveAttribute('content','noindex, nofollow');});

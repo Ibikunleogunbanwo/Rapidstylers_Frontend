@@ -1,5 +1,5 @@
 import { setAuthToken, setUserRole } from "./utils/constant";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { act } from "react-dom/test-utils";
 import App from "./App";
 import { Provider } from "react-redux";
@@ -94,8 +94,10 @@ test("loads the RapidStylers home route instead of the CRA starter screen", asyn
   expect(
     await screen.findByPlaceholderText(/Search for beauty professionals/i)
   ).toBeInTheDocument();
-  // The page sets its own title once its lazy chunk has loaded.
-  expect(document.title).toBe("Welcome - RapidStylers");
+  // The page sets its own title once its lazy chunk has loaded. The DOM node the
+  // assertion above waits for is committed before the route's effects run, so the
+  // title is a task behind it and is waited for on its own terms.
+  await waitFor(() => expect(document.title).toBe("Welcome - RapidStylers"));
   expect(screen.queryByText(/learn react/i)).not.toBeInTheDocument();
 });
 

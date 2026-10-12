@@ -26,6 +26,15 @@ root.render(
 // manifest check and the runtime chunk-error handler so they can't double-fire.
 const staleShellGuard = createChunkReloadGuard();
 
+// A real document navigation aborts every in-flight dynamic import, and those
+// rejections are worded exactly like a stale-deploy chunk failure. Reloading
+// then would navigate back to the CURRENT url and cancel the navigation that
+// was actually in flight (WebKit surfaces it as "Navigation to /x is
+// interrupted by another navigation to /y"). Both unload events are recorded:
+// pagehide is the reliable modern one, beforeunload covers older WebKit.
+window.addEventListener("beforeunload", () => staleShellGuard.markUnloading());
+window.addEventListener("pagehide", () => staleShellGuard.markUnloading());
+
 // 1. Boot-time manifest check: fetch the LIVE // index.html (served no-store)
 // and compare the canonical main-bundle URL it references to the one this page
 // is running. A mismatch means we booted from a stale shell, so hard-reload to

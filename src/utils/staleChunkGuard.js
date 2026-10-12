@@ -17,6 +17,12 @@
  * decide whether to reload, and guard against double/host loops). index.js
  * wires it to the real window/fetch. Keeping it here means the "exactly one
  * reload" and "no infinite loop" guarantees can be unit-tested in isolation.
+ *
+ * A chunk failure is only self-healed when it happens in a LIVE document. When
+ * the document itself is navigating away the browser cancels in-flight imports
+ * and those rejections look identical to a stale deploy; reloading would
+ * cancel the real navigation. index.js calls markUnloading() from
+ * beforeunload/pagehide so this module can tell the two apart.
  */
 
 const CHUNK_ERROR_PATTERNS = [
@@ -50,21 +56,38 @@ export function isChunkError(message = "") {
  * @returns {{
  *   get attempted(): boolean,
  *   claim(): boolean,
+ *   markUnloading(): void,
  *   handleError(event): boolean,
  *   handlePreloadError(event): boolean,
  * }}
  *   - claim(): marks the guard as spent WITHOUT reloading (used by the
  *     boot-time manifest check before it calls reload).
+ *   - markUnloading(): tells the guard the document is going away, so a chunk
+ *     request the browser cancelled mid-teardown is not mistaken for a stale
+ *     deploy and answered with a reload that hijacks the real navigation.
  *   - handleError(event): for a chunk error, reloads on the FIRST call and
  *     reports false thereafter.
  */
 export function createChunkReloadGuard({ reload } = {}) {
   const reloadFn = typeof reload === "function" ? reload : () => window.location.reload();
   let attempted = false;
+  // Set from beforeunload/pagehide. A real document navigation (a link with a
+  // full page load, a form submit, a redirect, or a test's page.goto) aborts
+  // every in-flight dynamic import; the browser rejects those with the very
+  // same "Importing a module script failed" wording a stale deploy produces.
+  // Reloading then is both useless — the document is already going away — and
+  // harmful: the reload navigates back to the CURRENT url and cancels the
+  // navigation the user (or a test) actually asked for. Observed in WebKit as
+  // "Navigation to /x is interrupted by another navigation to /y".
+  let unloading = false;
 
   return {
     get attempted() {
       return attempted;
+    },
+
+    markUnloading() {
+      unloading = true;
     },
 
     /**
@@ -85,6 +108,7 @@ export function createChunkReloadGuard({ reload } = {}) {
     handleError(event) {
       const msg = event?.message || "";
       if (!isChunkError(msg)) return false;
+      if (unloading) return false; // teardown cancellation, not a stale chunk
       if (attempted) return true; // already reloaded; swallow repeats silently
       attempted = true;
       event?.preventDefault?.();
@@ -99,6 +123,7 @@ export function createChunkReloadGuard({ reload } = {}) {
      * the same one-reload-per-session rule applies.
      */
     handlePreloadError(event) {
+      if (unloading) return false; // teardown cancellation, not a stale chunk
       if (attempted) return true; // already reloaded; swallow repeats silently
       attempted = true;
       event?.preventDefault?.();

@@ -1,4 +1,4 @@
-import { claimPhotoNamespace } from "./signupPhotoOwnership";
+import { claimPhotoNamespaceOnce } from "./signupPhotoOwnership";
 /**
  * What professional signup remembers across a reload.
  *
@@ -115,35 +115,59 @@ export const clearSignupDraft = () => {
 const LEGACY_DB_NAME = "rapidstylers-signup";
 const PHOTO_TAB_KEY = "stylerSignupPhotoTab";
 let memoryPhotoTab = "";
+
+/**
+ * The name this document was granted, held as a promise so overlapping storage
+ * calls share one claim instead of racing each other for it.
+ */
 let ownedPhotoNamespace;
-let ownedPhotoStorageId;
-window.addEventListener("pagehide", () => {
-  ownedPhotoNamespace = undefined;
-  ownedPhotoStorageId = undefined;
-});
-window.addEventListener("pageshow", (event) => {
-  if (event.persisted) photoDbName();
-});
-const photoDbName = async () => {
+
+const claimOwnedNamespace = async () => {
+  let preferred = null;
   try {
-    let tab = sessionStorage.getItem(PHOTO_TAB_KEY);
-    if (!tab) {
-      tab = crypto.randomUUID();
-      sessionStorage.setItem(PHOTO_TAB_KEY, tab);
-    }
-    if (!ownedPhotoNamespace || ownedPhotoStorageId !== tab) {
-      ownedPhotoNamespace = claimPhotoNamespace(tab);
-      ownedPhotoStorageId = tab;
-    }
-    const owned = await ownedPhotoNamespace;
-    sessionStorage.setItem(PHOTO_TAB_KEY, owned);
-    ownedPhotoStorageId = owned;
-    return `${LEGACY_DB_NAME}-${owned}`;
+    preferred = sessionStorage.getItem(PHOTO_TAB_KEY);
   } catch {
-    // Storage-blocked tabs retain photos only for this document's lifetime.
-    memoryPhotoTab ||= crypto.randomUUID();
-    return `${LEGACY_DB_NAME}-${memoryPhotoTab}`;
+    // Storage blocked: nothing to inherit, so this document picks its own.
   }
+
+  const owned = await claimPhotoNamespaceOnce({ preferred });
+
+  // Null means a different live document is holding this tab's stored name. A
+  // duplicated tab arrives with a copy of sessionStorage and must not be handed
+  // the photos of the tab it was copied from, so this one takes a name of its
+  // own and leaves the stored name to the tab that holds it.
+  const namespace = owned || crypto.randomUUID();
+
+  try {
+    sessionStorage.setItem(PHOTO_TAB_KEY, namespace);
+  } catch {
+    // Storage blocked: the name still belongs to this document, it is simply
+    // not remembered for the next one, so the photos live as long as the
+    // document does — the same limit the rest of this file works within.
+  }
+  return namespace;
+};
+
+/**
+ * The database this document's photos are in, decided exactly once.
+ *
+ * Never re-decided while the document lives: WebKit refuses a second claim for
+ * a name this document already holds, so a later decision would be refused and
+ * open a second, empty database — the read would find nothing the write put
+ * there, and the professional would be sent back to the photos step. The stored
+ * name is offered back rather than replaced, which is what lets a reload find
+ * the photos picked before it.
+ */
+const photoDbName = () => {
+  ownedPhotoNamespace ||= claimOwnedNamespace().then(
+    (namespace) => `${LEGACY_DB_NAME}-${namespace}`,
+    () => {
+      // Storage-blocked tabs retain photos only for this document's lifetime.
+      memoryPhotoTab ||= crypto.randomUUID();
+      return `${LEGACY_DB_NAME}-${memoryPhotoTab}`;
+    }
+  );
+  return ownedPhotoNamespace;
 };
 const DB_VERSION = 1;
 const PHOTO_STORE = "photos";
@@ -196,6 +220,36 @@ const openPhotoDb = async () => {
 };
 
 /**
+ * What goes into the store for one picked photo: its bytes, name and type.
+ *
+ * The bytes rather than the File. WebKit refuses to write a Blob or File into
+ * IndexedDB — the transaction aborts with "Error preparing Blob/File data to be
+ * stored in object store" — so on Safari and iPhone a professional's photos
+ * were silently lost on every reload while Chromium kept them. Every engine
+ * stores bytes, and the name and type travel with them so the upload still sends
+ * exactly what was picked.
+ */
+const serialisePhoto = async (file) => {
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  return { name: file.name || "photo.png", type: file.type || "image/png", bytes };
+};
+
+/** The inverse: whatever shape a store holds, the flow gets a File back. */
+const restorePhoto = (value, key) => {
+  // Written by this build, and readable everywhere.
+  if (value && value.bytes && ArrayBuffer.isView(value.bytes)) {
+    return new File([value.bytes], value.name || `${key}.png`, { type: value.type || "image/png" });
+  }
+  if (value instanceof File) return value;
+  // Written by an earlier build, which stored the File or a bare Blob directly.
+  if (value instanceof Blob) return new File([value], `${key}.png`, { type: value.type || "image/png" });
+  if (value instanceof ArrayBuffer || ArrayBuffer.isView(value)) {
+    return new File([value], `${key}.png`, { type: "image/png" });
+  }
+  return null;
+};
+
+/**
  * The photos picked before the reload, keyed the way the flow holds them.
  *
  * A photo that comes back as a bare Blob rather than a File is still usable, so it
@@ -218,11 +272,8 @@ export const readSignupPhotos = async () => {
     PHOTO_KEYS.forEach((key) => {
       const request = store.get(key);
       request.onsuccess = () => {
-        const value = request.result;
-        if (value instanceof File) found[key] = value;
-        else if (value instanceof Blob) {
-          found[key] = new File([value], `${key}.png`, { type: value.type || "image/png" });
-        }
+        const restored = restorePhoto(request.result, key);
+        if (restored) found[key] = restored;
       };
     });
 
@@ -234,10 +285,29 @@ export const readSignupPhotos = async () => {
   });
 };
 
-/** Keep the currently picked photos, deleting any slot that was cleared. */
+/**
+ * Keep the currently picked photos, deleting any slot that was cleared.
+ *
+ * The bytes are read before the transaction starts: an IndexedDB transaction is
+ * dropped as soon as the event loop moves past it, so an `await` inside one
+ * would close it before the write could be issued.
+ */
 export const saveSignupPhotos = async (files = {}) => {
   const db = await openPhotoDb();
   if (!db) return false;
+
+  const picked = {};
+  for (const key of PHOTO_KEYS) {
+    const file = files?.[key];
+    if (!(file instanceof Blob)) continue;
+    try {
+      picked[key] = await serialisePhoto(file);
+    } catch {
+      // A file that cannot be read cannot be remembered. Say so rather than
+      // report a save that never happened and lose the photo on the next reload.
+      return false;
+    }
+  }
 
   return new Promise((resolve) => {
     let tx;
@@ -249,8 +319,7 @@ export const saveSignupPhotos = async (files = {}) => {
 
     const store = tx.objectStore(PHOTO_STORE);
     PHOTO_KEYS.forEach((key) => {
-      const file = files?.[key];
-      if (file instanceof Blob) store.put(file, key);
+      if (picked[key]) store.put(picked[key], key);
       else store.delete(key);
     });
 

@@ -23,6 +23,7 @@ const stylerTypeRequest = () => {
 };
 
 export class APIService {
+    static checkPromoCode(data) { return ApiClient.post("/check_promo_code", data); }
     static extractError(error){
         let extracted;
         if(error.isAxiosError){
@@ -787,9 +788,13 @@ export class APIService {
             throw(error);
         }
     }
-    static async updateStylerTravelSettings(includedTravelKm, baseTravelFee){
+    static async updateStylerTravelSettings(includedTravelKm, baseTravelFee, locationOptions = {}){
         try{
-            return await ApiClient.post("/update_styler_travel_settings", { includedTravelKm, baseTravelFee });
+            const body = { includedTravelKm, baseTravelFee };
+            for (const key of ["offersSalonVisits", "offersHomeVisits", "maxTravelKm"]) {
+                if (Object.prototype.hasOwnProperty.call(locationOptions, key)) body[key] = locationOptions[key];
+            }
+            return await ApiClient.post("/update_styler_travel_settings", body);
         }
         catch(error){
             APIService.extractError(error);

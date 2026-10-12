@@ -18,9 +18,9 @@ import { useState } from "react";
 const ADMIN_GROUPS = [
   ["Overview", [["/admin", "Dashboard"]]],
   ["Marketplace", [["/admin/stylers", "Stylists"], ["/admin/stylers?section=images", "Gallery"], ["/admin/operations?section=reviews", "Reviews"]]],
-  ["Catalog & content", [["/admin/categories", "Categories"], ["/admin/blog", "Blog"]]],
+  ["Catalog & content", [["/admin/service-areas", "Service areas"], ["/admin/categories", "Categories"], ["/admin/blog", "Blog"], ["/admin/content", "Website content"]]],
   ["Finance", [["/admin/payments", "Payments"], ["/admin/payments?section=disputes", "Disputes"], ["/admin/payments?section=unpaidPayouts", "Unpaid payouts"]]],
-  ["Marketing", [["/admin/recovery", "Recovery"], ["/admin/announcements", "Announcements"]]],
+  ["Marketing", [["/admin/promotions", "Promo codes"], ["/admin/newsletter", "Newsletter"], ["/admin/signup-funnel", "Signup funnel"], ["/admin/recovery", "Recovery"], ["/admin/announcements", "Announcements"]]],
   ["Platform", [["/admin/operations", "Operations"], ["/admin/operations?section=tickets", "Support"], ["/admin/operations?section=logs", "Audit log"]]],
 ];
 

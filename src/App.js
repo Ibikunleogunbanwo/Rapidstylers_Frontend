@@ -1,3 +1,4 @@
+import PublishedSeo from "./components/publishedSeo";
 import React, { lazy, Suspense } from 'react';
 import './App.css';
 import { BrowserRouter, Routes, Route } from "react-router-dom";
@@ -6,6 +7,15 @@ import { LocationProvider } from './context/LocationContext';
 import ScrollToTop from './components/scrollToTop';
 import IdleTimeout from './components/IdleTimeout';
 import DemoMode from './components/demoMode';
+
+const SiteContent = lazy(() => import('./pages/admin/siteContent'));
+const NewsletterAdmin = lazy(() => import('./pages/admin/newsletter'));
+const ServiceAreas = lazy(() => import('./pages/admin/serviceAreas'));
+const Promotions = lazy(() => import('./pages/admin/promotions'));
+const SignupFunnel = lazy(() => import('./pages/admin/signupFunnel'));
+const StylistLocationSettings = lazy(() => import('./components/stylistLocationSettings'));
+const NewsletterConfirm = lazy(() => import('./pages/generalPages/newsletterLinks').then(module => ({default:module.NewsletterConfirm})));
+const NewsletterUnsubscribe = lazy(() => import('./pages/generalPages/newsletterLinks').then(module => ({default:module.NewsletterUnsubscribe})));
 
 const LandingPage = lazy(() => import('./pages/generalPages/landing'));
 const Login = lazy(() => import('./pages/generalPages/login'));
@@ -75,6 +85,7 @@ function App() {
       <BrowserRouter>
       <DemoMode />
       <ScrollToTop />
+      <PublishedSeo />
       <IdleTimeout />
       <Suspense
         fallback={
@@ -86,6 +97,13 @@ function App() {
       >
       <Routes>
         <Route path="/" element={<LandingPage />} />
+        <Route path="/newsletter/confirm" element={<NewsletterConfirm />} />
+        <Route path="/newsletter/unsubscribe" element={<NewsletterUnsubscribe />} />
+        <Route path="/admin/content" element={<SiteContent />} />
+        <Route path="/admin/newsletter" element={<NewsletterAdmin />} />
+        <Route path="/admin/service-areas" element={<ServiceAreas />} />
+        <Route path="/admin/promotions" element={<Promotions />} />
+        <Route path="/admin/signup-funnel" element={<SignupFunnel />} />
         <Route path="/login" element={<Login />} />
         {/* The page the sign-in screen's "Forgot password?" link has always
             pointed at in its copy, and which the FAQ describes in detail. */}
@@ -115,6 +133,7 @@ function App() {
         <Route path='/styler-dashboard' element={<StylerLayout />} >
           <Route index element={<StylerDashboard />} />
           <Route path='appointments' element={<StylerAppointments />} />
+          <Route path='appointment-locations' element={<StylistLocationSettings />} />
           <Route path='calendar' element={<StylerCalendar />} />
           <Route path='availability' element={<StylerAvailability />} />
           <Route path='my-work' element={<MyWork />} />

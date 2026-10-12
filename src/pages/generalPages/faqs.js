@@ -1,3 +1,4 @@
+import { usePublishedContent } from "../../hooks/remote/usePublishedContent";
 import { useEffect, useState } from "react";
 import Footer from "../../components/footer";
 import { Section, Eyebrow, PageHeading, BackHome, HairlineList } from "../../components/pageSections";
@@ -109,6 +110,7 @@ const hashFor = (category) =>
   category.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 
 const Faqs = () => {
+  const published = usePublishedContent("faq");
   const [openIndex, setOpenIndex] = useState(0);
 
   useEffect(() => {
@@ -134,7 +136,8 @@ const Faqs = () => {
   }, []);
 
   // The open answer indexes per section so each group keeps its own state.
-  const sections = FAQS.reduce((acc, faq, index) => {
+  const items = published?.items?.map(item => ({q:item.question, a:item.answer, category:item.category || "General"})) || FAQS;
+  const sections = items.reduce((acc, faq, index) => {
     if (!acc.length || acc[acc.length - 1].category !== faq.category) {
       acc.push({ category: faq.category, items: [] });
     }

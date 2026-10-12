@@ -1,3 +1,4 @@
+import { NewsletterPreference } from "../../../components/newsletter";
 import { useEffect } from "react";
 import arrow from "../../../assets/svg-icons/black-arrow.svg"
 import { Link } from "react-router-dom";
@@ -16,6 +17,7 @@ const AccountSettings = ({setPageTitle}) => {
           </div>
         </div>
         <div className="p-4 grid gap-4">
+          <NewsletterPreference />
           <Link to={"/updatePersonalInformation"}>
           <div className="flex items-center justify-between py-3">
             <span className="">Update personal information</span>

@@ -24,10 +24,16 @@ test('admin overview opens actionable queues and supports mobile navigation', as
   await expect(page.getByText('24',{exact:true})).toBeVisible();
   await page.getByRole('link',{name:'Service disputes 0',exact:true}).click();
   await expect(page).toHaveURL(/payments\?section=disputes$/);
-  await expect(page.getByText('No service disputes.',{exact:true})).toBeVisible();
-  if (info.project.name === 'mobile') {
-    await page.getByRole('button',{name:'Menu',exact:true}).click();
-    await expect(page.getByRole('button',{name:'Close menu'})).toHaveAttribute('aria-expanded','true');
+  await expect(page.getByText('No service disputes.',{exact:true})).toBeVisible();  // Open the navigation if this viewport collapses it. The shell collapses at
+  // phone widths on every engine, so the decision is made from what is on screen
+  // rather than the project's name: `safari-iphone` runs the same layout as
+  // `mobile`, and a spec keyed on the name would sit waiting for a link that is
+  // behind a menu it never opened.
+  await expect(page.getByRole('heading', { name: 'Service disputes', exact: true })).toBeVisible();
+  const menu = page.getByRole('button', { name: 'Menu', exact: true });
+  if (await menu.isVisible()) {
+    await menu.click();
+    await expect(page.getByRole('button', { name: 'Close menu' })).toHaveAttribute('aria-expanded', 'true');
   }
   await page.getByRole('navigation',{name:'Admin sections'}).getByRole('link',{name:'Gallery',exact:true}).click();
   await expect(page).toHaveURL(/stylers\?section=images$/);

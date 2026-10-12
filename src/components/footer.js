@@ -1,20 +1,17 @@
-import { useState } from "react";
+import { NewsletterSubscribe } from "./newsletter";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import logo from "../assets/svg-icons/logo.svg";
 import instagram from "../assets/svg-icons/instagram.svg";
 import x from "../assets/svg-icons/x.svg";
-import Input from "./input";
-import Button from "./button";
 import mockup from "../assets/images/Mockup.svg";
 import playstore from "../assets/images/google_play-en-us.svg";
 import appstore from "../assets/images/app_store_en-us.svg";
-import { showSuccessToastMessage, getAuthToken, getUserRole, SUPPORT_EMAIL, SUPPORT_ADDRESS, SUPPORT_PHONE, SUPPORT_PHONE_TEL } from "../utils/constant";
+import { getAuthToken, getUserRole, SUPPORT_EMAIL, SUPPORT_ADDRESS, SUPPORT_PHONE, SUPPORT_PHONE_TEL } from "../utils/constant";
 import { userLogOut } from "../hooks/local/userReducer";
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
-  const [email, setEmail] = useState("");
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -36,15 +33,7 @@ const Footer = () => {
     navigate("/");
   };
 
-  const joinNewsletter = (event) => {
-    event.preventDefault();
-    const value = email.trim();
-    if (!value) {
-      return;
-    }
-    showSuccessToastMessage("You are on the list. We will keep you posted.");
-    setEmail("");
-  };
+
 
   return (
     <div className="bg-black text-white">
@@ -99,18 +88,7 @@ const Footer = () => {
             <div className="grid text-start">
               <h3 className="text-lg font-semibold tracking-tight">Join our newsletter</h3>
               <span className="mt-2 text-white/60 leading-relaxed max-w-xs">Get access to styling tips, new features and more</span>
-              <form onSubmit={joinNewsletter} className="flex gap-3 mt-5 items-center">
-                <div className="flex-1">
-                  <Input
-                    placeholder="Email address"
-                    name="newsletterEmail"
-                    type="email"
-                    value={email}
-                    onChange={(event) => setEmail(event.target.value)}
-                  />
-                </div>
-                <Button variant="primary" type="submit">Join!</Button>
-              </form>
+              <NewsletterSubscribe dark />
             </div>
           </div>
           <div className="col-span-1 lg:col-span-4 ps-0 lg:ps-10 pt-10 lg:pt-0">

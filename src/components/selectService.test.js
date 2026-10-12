@@ -16,6 +16,7 @@ vi.mock("../hooks/remote/apiService", () => ({
     singleStylerData: vi.fn(),
     estimateBooking: vi.fn(),
     bookAppointment: vi.fn(),
+    checkPromoCode: vi.fn(),
     // The home-visit address field asks these for suggestions.
     placeAutocomplete: vi.fn(),
     placeDetails: vi.fn(),
@@ -186,10 +187,7 @@ describe("Booking intent deep-linking for signed-out visitors", () => {
       (el) => el.className.includes("bg-brand") && el.textContent.trim() === "10:30 am"
     );
     expect(activeTime, "the picked time must be re-highlighted on reopen").toBeTruthy();
-    const activeType = [...document.querySelectorAll("div")].find(
-      (el) => el.className.includes("bg-brand") && el.textContent.trim() === "Home service"
-    );
-    expect(activeType, "the picked service type must be re-highlighted on reopen").toBeTruthy();
+    expect(screen.getByRole("button", { name: "Home service", exact: true })).toHaveAttribute("aria-pressed", "true");
   });
 
   test("ignores an intent belonging to a different stylist or service", () => {
@@ -795,4 +793,24 @@ describe("SelectService on the demo showroom", () => {
     renderDemo(null);
     expect(screen.getByRole("button", { name: "Book appointment" })).toBeInTheDocument();
   });
+});
+
+describe('Offered appointment locations and promotions',()=>{
+ const open=(props={})=>{render(<SelectService serviceName="Haircut" servicePrice="60" stylerId="s1" subServiceId="ss1" stylerTimeZone="America/Edmonton" {...props}/>);fireEvent.click(screen.getByText('Book service'));};
+ test('home-only professional defaults to home service and disallows salon visits',()=>{open({offersSalonVisits:false,offersHomeVisits:true});expect(screen.getByRole('button',{name:'Visit the stylist'})).toBeDisabled();expect(screen.getByRole('button',{name:'Home service'})).toHaveAttribute('aria-pressed','true');expect(screen.getByText('Where should the professional come?')).toBeInTheDocument();});
+ test('salon-only professional disables home service',()=>{open({offersSalonVisits:true,offersHomeVisits:false});expect(screen.getByRole('button',{name:'Home service'})).toBeDisabled();expect(screen.getByRole('button',{name:'Visit the stylist'})).toHaveAttribute('aria-pressed','true');});
+ test('no offered location cannot send a booking request',()=>{open({offersSalonVisits:false,offersHomeVisits:false});expect(screen.getByRole('button',{name:'Home service'})).toBeDisabled();expect(screen.getByRole('button',{name:'Visit the stylist'})).toBeDisabled();fireEvent.click(screen.getByRole('button',{name:'Book appointment'}));expect(APIService.bookAppointment).not.toHaveBeenCalled();});
+ test('booking sends the verified promo code, with server-authoritative totals',async()=>{
+  getAuthToken.mockReturnValue('token');APIService.bookAppointment.mockResolvedValue({data:{data:{}}});
+  APIService.estimateBooking.mockResolvedValue({data:{data:{totalPrice:'60.00',servicePrice:'60.00',travelFee:'0.00'}}});
+  APIService.checkPromoCode.mockResolvedValue({data:{statusCode:'200',data:{code:'WELCOME',discount:'6.00',total:'54.00'}}});
+  open();fireEvent.change(await screen.findByLabelText('Promo code (optional)'),{target:{value:'welcome'}});fireEvent.click(screen.getByRole('button',{name:'Apply'}));await screen.findByText('WELCOME: −$6.00 CAD');
+  fireEvent.click(screen.getByText('4:00 pm'));fireEvent.click(screen.getAllByText(/15/)[0]);fireEvent.click(screen.getByText('Book appointment'));await screen.findByTestId('booking-placed');
+  expect(APIService.bookAppointment.mock.calls.at(-1)[0]).toEqual(expect.objectContaining({promoCode:'WELCOME'}));expect(APIService.bookAppointment.mock.calls.at(-1)[0]).not.toHaveProperty('discount');
+ });
+ test('editing a verified promo removes the old code from the booking payload',async()=>{
+  getAuthToken.mockReturnValue('token');APIService.bookAppointment.mockResolvedValue({data:{data:{}}});
+  APIService.estimateBooking.mockResolvedValue({data:{data:{totalPrice:'60.00',servicePrice:'60.00',travelFee:'0.00'}}});APIService.checkPromoCode.mockResolvedValue({data:{statusCode:'200',data:{code:'WELCOME',discount:'6.00',total:'54.00'}}});
+  open();const field=await screen.findByLabelText('Promo code (optional)');fireEvent.change(field,{target:{value:'welcome'}});fireEvent.click(screen.getByRole('button',{name:'Apply'}));await screen.findByText('WELCOME: −$6.00 CAD');fireEvent.change(field,{target:{value:'OTHER'}});fireEvent.click(screen.getByText('4:00 pm'));fireEvent.click(screen.getAllByText(/15/)[0]);fireEvent.click(screen.getByText('Book appointment'));await screen.findByTestId('booking-placed');expect(APIService.bookAppointment.mock.calls.at(-1)[0]).not.toHaveProperty('promoCode');
+ });
 });

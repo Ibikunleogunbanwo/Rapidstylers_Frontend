@@ -1,3 +1,6 @@
+import { usePublishedContent } from "../../hooks/remote/usePublishedContent";
+import useFunnelVisit from "../../hooks/useFunnelVisit";
+import PublicServiceAreas from "../../components/publicServiceAreas";
 
 import Featured from "../../components/featuredStylists";
 import scissors from "../../assets/svg-icons/scissors.svg";
@@ -137,7 +140,9 @@ const BlogSection = () => {
 
 const LandingPage = () => {
   const allowDecorativeMotion = useDecorativeMotion(0);
-  document.title="Welcome - RapidStylers";
+  useFunnelVisit();
+  const homepage = usePublishedContent("homepage");
+  useEffect(() => { document.title="Welcome - RapidStylers"; }, []);
 
   useEffect(() => {
     if (window.location.hash === "#blog") {
@@ -149,7 +154,10 @@ const LandingPage = () => {
     return (
       <div className="grid">
         {/* Hero section */}
-        <Hero height="90vh" />
+        <Hero height="90vh" homepage={homepage} />
+        {homepage?.announcement && <p role="status" className="bg-brand/10 px-5 py-3 text-center text-sm">{homepage.announcement}</p>}
+        {homepage?.sections?.length > 0 && <div className="grid gap-6 px-5 py-8 md:px-[50px]">{homepage.sections.map((section, index) => <section key={index} className="grid gap-3"><h2 className="text-2xl">{section.title}</h2><p className="whitespace-pre-line">{section.body}</p>{/^https:\/\//.test(section.imageUrl || "") && <img src={section.imageUrl} alt={section.title} loading="lazy" className="max-h-64 w-full object-cover rounded-lg" />}</section>)}</div>}
+        <div className="px-4 md:px-[50px] py-5"><PublicServiceAreas /></div>
 
         {/* About us*/}
         <div className="bg-white">
@@ -169,15 +177,15 @@ const LandingPage = () => {
                   </svg>
                 </div>
                 <div>
-                  <p className="text-sm font-bold">In-home appointments</p>
-                  <p className="text-xs text-white/60">On your schedule</p>
+                  <p className="text-sm font-bold">Two ways to book</p>
+                  <p className="text-xs text-white/60">At home or at the stylist’s location</p>
                 </div>
               </div>
             </div>
             <div>
               <p className="text-[11px] uppercase tracking-[0.25em] text-muted">Who we are</p>
               <h2 className="mt-4 text-[clamp(1.75rem,3vw,2.5rem)] font-normal leading-[1.1] tracking-[-0.02em] text-onSurface">
-                A vetted professional, at your door. You choose the time.
+                Choose your professional, your time and your appointment location.
               </h2>
               <p className="mt-5 text-[14px] leading-[1.7] text-black/60 max-w-[520px]">
                 We are a Canadian booking platform for hair, nails and beauty.
@@ -261,17 +269,16 @@ const LandingPage = () => {
                 <div className="flex gap-5">
                   <div className="">01</div>
                   <div>
-                    <span className="text-[15px] font-medium">Salon Quality, At Home</span>
+                    <span className="text-[15px] font-medium">At home or at the stylist’s location</span>
                   </div>
                 </div>
                 <div className="flex gap-5">
                   <div className="border-l ms-2 mt-2"></div>
                   <div className="text-white/60 ps-2">
                     <span>
-                      Skip the wait and enjoy premium beauty services in the
-                      comfort of your own home. Our vetted professionals bring
-                      the salon experience directly to you, saving you time and
-                      stress.
+                      Book a professional to visit your home, or travel to their
+                      salon or studio. Choose your appointment location when
+                      booking.
                     </span>
                   </div>
                 </div>
@@ -461,10 +468,10 @@ const LandingPage = () => {
                 </div>
                 <div className="flex min-h-[242px] flex-col p-6 sm:p-8">
                   <h3 className="text-xl font-normal leading-tight tracking-[-0.01em] sm:text-2xl">
-                    Your best look, at home.
+                    Your appointment, your choice of location.
                   </h3>
                   <p className="mt-3 max-w-lg text-sm leading-relaxed text-white/65 sm:text-base">
-                    Save time and effort with trusted beauty professionals who bring cuts, colour, nails, lashes, and more to your door.
+                    Book cuts, colour, nails, lashes and more. Choose a home visit or an appointment at the stylist’s location.
                   </p>
                   <Link
                     to="/login"
@@ -495,7 +502,7 @@ const LandingPage = () => {
                     Turn your talent into a business.
                   </h3>
                   <p className="mt-3 max-w-lg text-sm leading-relaxed text-white/65 sm:text-base">
-                    Grow your client base, manage bookings, and offer in-home services with the support of the RapidStylers community.
+                    Grow your client base, manage bookings, and offer appointments at your location or in clients’ homes with the support of the RapidStylers community.
                   </p>
                   <Link
                     to="/styler-signup"

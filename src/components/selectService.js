@@ -1,3 +1,4 @@
+import BookingPromo from "./bookingPromo";
 import close from "../assets/svg-icons/closeBlack.svg";
 import React, { useEffect, useState, useRef } from "react";
 import { loadStripe } from "@stripe/stripe-js";
@@ -78,7 +79,7 @@ export const bookingConfirmationMessage = (dayLabel, time, zoneLabel) => {
     : "Booking request sent. The stylist will confirm shortly.";
 };
 
-const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerId, subServiceId, stylerLatitude, stylerLongitude, stylerProvince, stylerTimeZone, stylerAddress, stylerName, demoMode = demoBooking()}) => {
+const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerId, subServiceId, stylerLatitude, stylerLongitude, stylerProvince, stylerTimeZone, stylerAddress, stylerName, offersSalonVisits = true, offersHomeVisits = true, demoMode = demoBooking()}) => {
   const [bookAppointmentForm, setBookAppointmentForm] = useState(false);
   // Set once a booking lands, so the confirmation and its calendar action stay
   // on screen instead of scrolling away with the toast.
@@ -235,7 +236,12 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
   };
 
   // Function to select service type
-  const [selectedOption, setSelectedOption] = useState("visitBarber");
+  const [selectedOption, setSelectedOption] = useState(offersSalonVisits ? "visitBarber" : offersHomeVisits ? "homeService" : "");
+  useEffect(() => {
+    if (selectedOption === "visitBarber" && !offersSalonVisits || selectedOption === "homeService" && !offersHomeVisits) {
+      setSelectedOption(offersSalonVisits ? "visitBarber" : offersHomeVisits ? "homeService" : "");
+    }
+  }, [offersSalonVisits, offersHomeVisits, selectedOption]);
 
   const handleOptionChange = (option) => {
     setSelectedOption(option);
@@ -361,6 +367,7 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
 
   const [numberOfPeople, setNumberOfPeople] = useState(1);
   const [bookingEstimate, setBookingEstimate] = useState(null);
+  const [promoQuote, setPromoQuote] = useState(null);
   const [estimateLoading, setEstimateLoading] = useState(false);
   // Why the estimate could not be priced, in the server's words (for example an
   // address it could not find on the map).
@@ -393,7 +400,7 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
   useEffect(() => {
     if (!bookAppointmentForm) return;
     setEstimateError("");
-    if (needsHomeVisitAddress) {
+    if (needsHomeVisitAddress || !selectedOption) {
       setBookingEstimate(null);
       return;
     }
@@ -450,6 +457,7 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
         appointmentDate,
         arrivalTime: to24(selectedTime),
         serviceTime: selectedOption,
+        ...(promoQuote ? { promoCode: promoQuote.code } : {}),
         noOfPeople: String(numberOfPeople),
         ...(selectedOption === "homeService" ? { serviceAddress: homeVisitAddress.trim() } : {}),
       }, collectPaymentMethodId);
@@ -500,6 +508,10 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
   // quick-account flow (email -> OTP -> password) first; identity is required
   // because bookings, auth tokens and payments are all keyed to an account.
   const handleBookAppointment = async () => {
+    if (!selectedOption || (!offersSalonVisits && !offersHomeVisits)) {
+      showErrorToastMessage("This stylist has no appointment locations available.");
+      return;
+    }
     if (!selectedDay || !selectedTime) {
       showErrorToastMessage("Please select a date and arrival time");
       return;
@@ -942,26 +954,29 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
               <p className="mt-2 hidden">Selected Time: {selectedTime}</p>
             </div>
             <div className="px-6">
-              <p className="font-semibold mb-2 text-[15px]">Select Service type:</p>
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div
+              <p id="appointment-location-label" className="font-semibold mb-2 text-[15px]">Appointment location</p>
+              <div role="group" aria-labelledby="appointment-location-label" className="grid grid-cols-2 gap-3 text-sm">
+                <button type="button" disabled={!offersSalonVisits} aria-pressed={selectedOption === "visitBarber"}
                   className={`py-4 rounded-md text-center cursor-pointer ${
                     selectedOption === "visitBarber" ? "bg-brand text-white" : "border"
                   }`}
                   onClick={() => handleOptionChange("visitBarber")}
                 >
                   Visit the stylist
-                </div>
-                <div
+                </button>
+                <button type="button" disabled={!offersHomeVisits} aria-pressed={selectedOption === "homeService"}
                   className={`py-4 rounded-md text-center cursor-pointer ${
                     selectedOption === "homeService" ? "bg-brand text-white" : "border"
                   }`}
                   onClick={() => handleOptionChange("homeService")}
                 >
                   Home service
-                </div>
+                </button>
                 <p className="hidden">Selected Option: {selectedOption}</p>
               </div>
+              <p className="mt-2 text-sm text-gray-600">
+                {selectedOption === "homeService" ? "The stylist comes to your service address. Any travel fee appears in your total." : "You travel to the stylist’s salon or studio at the address below."}
+              </p>
             </div>
             {/* Where the client has to go. Visiting the stylist is the default
                 choice, so the address is on screen the moment the modal opens
@@ -1060,12 +1075,13 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
                     )}
                     <div className="mt-2 flex justify-between gap-4 border-t pt-3 font-bold text-brand">
                       <span>Total estimate</span>
-                      <span>${bookingEstimate.totalPrice}</span>
+                      <span>${promoQuote?.total ?? bookingEstimate.totalPrice}</span>
                     </div>
                   </div>
                 ) : (
                   <p className="text-gray-500">Select service options to calculate the booking total.</p>
                 )}
+                {bookingEstimate && <BookingPromo subtotal={bookingEstimate.totalPrice} onChange={setPromoQuote} />}
               </div>
             </div>
             </div>
@@ -1189,7 +1205,7 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
             <div className="border-t sticky w-full bottom-0 bg-white flex justify-between items-center px-6 py-4">
              <div>
               <p className="text-sm text-slate-400">Total estimate:</p>
-              <p className="text-brand font-bold text-xl">${bookingEstimate?.totalPrice || servicePrice}</p>
+              <p className="text-brand font-bold text-xl">${promoQuote?.total ?? bookingEstimate?.totalPrice ?? servicePrice}</p>
               </div>
              <div className="flex-1">
                 {bookingError && (

@@ -39,7 +39,7 @@ test("landing keeps media static for reduced motion and fits the viewport", asyn
   const videoRequests = [];
   page.on("request", request => { if (/\.mp4(?:\?|$)/.test(request.url())) videoRequests.push(request.url()); });
   const response = await page.goto("/");
-  await expect(page.getByRole("heading", { name: "Beauty services that come to you" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Beauty services at home or at a stylist’s location" })).toBeVisible();
   await expect(page.locator("video[src]")).toHaveCount(0);
   await expect(page.getByRole("img", { name: "Beauty tools ready for your appointment" })).toBeVisible();
   expect(videoRequests).toEqual([]);
@@ -55,7 +55,17 @@ test("brand logo animation plays on desktop and mobile", async ({ page }) => {
   await logo.scrollIntoViewIfNeeded();
   await expect(logo).toBeVisible();
   await expect.poll(() => logo.evaluate(video => video.currentTime)).toBeGreaterThan(0);
-  expect(await logo.evaluate(video => video.muted && video.playsInline && video.videoWidth > 0)).toBe(true);
+  // `playsInline` is checked as an attribute, not as `video.playsInline`: the
+  // property is only exposed on WebKit/Chromium, so reading it in Firefox gives
+  // `undefined` and `undefined && …` is `undefined` — an assertion that can
+  // never pass there. The attribute is what decides inline playback on iOS, and
+  // all three engines put it in the DOM. Muting is read from the property,
+  // because that is what stops autoplay from being blocked.
+  expect(await logo.evaluate(video => video.getAttribute("playsinline") !== null)).toBe(true);
+  expect(await logo.evaluate(video => video.muted)).toBe(true);
+  // videoWidth needs a decoded frame, so it is polled rather than read once:
+  // one cold read can land before the metadata has arrived.
+  await expect.poll(() => logo.evaluate(video => video.videoWidth), { timeout: 10_000 }).toBeGreaterThan(0);
 });
 
 test("invalid login is accessible and never sends credentials", async ({ page }) => {
@@ -181,7 +191,15 @@ test('booking discovery has clear sections, category image fallbacks and working
   await page.getByLabel('Password:',{exact:true}).fill('TestPassword123!');
   await page.getByRole('button',{name:'Sign In',exact:true}).click();
   await expect(page).toHaveURL(/\/dashboard$/);
+  // The dashboard's own appointment reads must settle before this test navigates
+  // away. A request cut short by navigation is reported by WebKit as "XMLHttpRequest
+  // cannot load ... due to access control checks", which would land in `errors`
+  // below and mask a real failure. "Your bookings" only renders once both reads
+  // have answered, so waiting for it asserts the dashboard loaded as well.
+  await expect(page.getByRole('heading',{name:'Your bookings',exact:true})).toBeVisible();
+  await page.waitForLoadState('networkidle');
   await page.goto('/bookAppointment');
+  await page.waitForLoadState('networkidle');
   await expect(page.getByRole('heading',{name:'Choose a service'})).toBeVisible();
   await expect(page.getByText('ADVERTISEMENT',{exact:true})).toHaveCount(0);
   await expect(page.getByRole('heading',{name:'Find a professional by name'})).toBeVisible();
@@ -194,7 +212,9 @@ test('booking discovery has clear sections, category image fallbacks and working
   await page.screenshot({path:info.outputPath(`booking-clarity-${info.project.name}.png`),fullPage:true});
   await page.getByRole('link',{name:'Hairstylist',exact:true}).click();
   await expect(page).toHaveURL(new RegExp(`/stylist/${Buffer.from('hair').toString('base64')}/${Buffer.from('Hairstylist').toString('base64')}$`));
+  await page.waitForLoadState('networkidle');
   await page.goto('/bookAppointment');
+  await page.waitForLoadState('networkidle');
   await page.getByRole('textbox',{name:'Professional name'}).fill('Ada');
   await page.getByRole('button',{name:'Search by name'}).click();
   await expect(page).toHaveURL(/\/searchAStyler$/);

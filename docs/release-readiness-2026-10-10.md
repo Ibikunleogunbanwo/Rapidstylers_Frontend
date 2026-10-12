@@ -13,18 +13,22 @@ Work branch: `dev`. Main has not been promoted. Backend source was reviewed with
 - Compressed embedded logo/mockup images and added a static hero poster. Decorative video sources are withheld for reduced motion and mobile viewports.
 - Upgraded vulnerable dependencies, migrated Tailwind/PostCSS and jest-dom, and added dependency audit and desktop/mobile browser tests to CI. Documented Tailwind 4 browser requirements in README.
 
-## Fresh verification
+## Verification
 
-| Check | Result |
+The table is the latest run. Every older count in this document is prefixed with the date it belongs to, because an undated number in a running report reads as a second, contradictory current figure.
+
+| Check | Result (2026-10-11) |
 | --- | --- |
-| Full Vitest suite | 85 files, **815 tests passed**, exit 0 |
-| Production build | Passed; browser harness rebuilds before execution |
-| Build manifest and shell integrity | 117 chunks / 140 files verified; no dangling references |
-| Playwright | **20 production fixture tests passed; 8 prior full dev checks + 2 latest customer checks**, desktop Chromium and iPhone viewport Chromium |
+| Full Vitest suite | **120 files, 1009 tests passed**, exit 0 |
+| Production build | Passed; browser harness rebuilds before every Playwright run |
+| Build manifest and shell integrity | 131 chunks / 154 files verified; shell and manifest agree on the entry chunk |
+| Playwright, 5 projects (desktop Chromium, iPhone Chromium, Firefox, WebKit/Safari, iPhone WebKit) | **155 tests passed, 0 failed** — 31 per project across 7 spec files, exit 0 |
 | npm audit --audit-level=moderate | **0 reported vulnerabilities**, exit 0 |
 | git diff --check | Passed |
 
-Browser tests cover static reduced-motion media, viewport overflow, invalid login without a credential request, signed-out customer/stylist/admin redirects, admin sign-in/logout, preference preservation, and booking lost-response/reload/empty-replay/success with the same key and payload. All external traffic is intercepted. These tests prove frontend behavior with fixtures, not live backend or payment correctness. Desktop/mobile screenshots were inspected; lazy content outside the viewport is not fully represented by a full-page capture.
+Browser tests cover static reduced-motion media, viewport overflow, invalid login without a credential request, signed-out customer/stylist/admin redirects, admin sign-in/logout, preference preservation, booking lost-response/reload/empty-replay/success with the same key and payload, the five-step professional sign-up with photo restore across a reload, and the stylist/admin navigation on every engine. All external traffic is intercepted. These tests prove frontend behavior with fixtures, not live backend or payment correctness. Desktop/mobile screenshots were inspected; lazy content outside the viewport is not fully represented by a full-page capture.
+
+Every engine in that table runs in CI-equivalent local runs; the earlier "Chromium only" position below is history. What Playwright does *not* supply is a real installed Safari, Firefox or device — see release-gates.json for what the browser gate still requires.
 
 Lottie includes an eval-capable expression player and emits a build warning. The enforcing CSP forbids eval and the existing regression proves bundled animations contain no expression strings. This is not an observed exploit. jsdom navigation/scroll and Vite configuration-format warnings also remain. Dependency audit is advisory coverage, not a claim that the application has no vulnerabilities.
 
@@ -44,7 +48,7 @@ Required backend work: replay the actual committed response, align retention win
 
 ### P1 release gate: Non-production integration evidence
 
-A non-production URL, seeded customer/stylist/admin accounts and Stripe test configuration are required. Run successful and declined/authentication-required payments, actual booking replay, authorization/ownership denial, OTP/onboarding, signed uploads, cancellation/refund and webhook reconciliation. Actual Safari/Firefox behavior and production performance measurements also remain unverified. No production financial mutations were attempted.
+A non-production URL, seeded customer/stylist/admin accounts and Stripe test configuration are required. Run successful and declined/authentication-required payments, actual booking replay, authorization/ownership denial, OTP/onboarding, signed uploads, cancellation/refund and webhook reconciliation. Engine-level Safari, Firefox and iPhone coverage now runs green in Playwright (see the table above), but behaviour in real installed browsers against the live API, and production performance measurements, remain unverified. No production financial mutations were attempted.
 
 ### Authentication architecture follow-up
 
@@ -68,7 +72,7 @@ Next prerequisite: restore the existing backend encryption key in local configur
 
 After user authorization, a separate localhost database and encryption key were created. The API booted successfully. One synthetic stylist account was configured in that database, preserving the existing database. Desktop and mobile Playwright checks passed through actual local API sign-in, all nine stylist navigation destinations, logout and subsequent protected-route denial. Third-party traffic was blocked; payments and uploads remain unverified. The missing original dev encryption key is no longer a blocker for these isolated tests.
 
-Stylist mobile navigation was repaired, including a previously invisible white menu icon. Fresh full unit verification: **742 tests / 76 files passed**. Production build and chunk integrity passed. See stylist-dashboard-review-2026-10-10.md for the remaining page-specific gaps; successful navigation is not completion of those workflows.
+Stylist mobile navigation was repaired, including a previously invisible white menu icon. Unit verification on 2026-10-10 was **742 tests / 76 files passed** — superseded by the table above. Production build and chunk integrity passed. See stylist-dashboard-review-2026-10-10.md for the remaining page-specific gaps; successful navigation is not completion of those workflows.
 
 ## Final page-gap fixes
 
@@ -78,4 +82,4 @@ Booking discovery was subsequently restructured with clear service/name paths, r
 
 ## Dev checkpoint
 
-The reviewed frontend changes, regression tests, architecture/audit reports and release script are included in a dev checkpoint. Local planning notes remain ignored; real environment files and test artifacts are excluded. Promotion to main remains blocked by release-gates.json. Latest unit verification includes 823 tests across 86 files; the production browser suite contains 20 desktop/mobile checks. Backend source remains unchanged.
+The reviewed frontend changes, regression tests, architecture/audit reports and release script are included in a dev checkpoint. Local planning notes remain ignored; real environment files and test artifacts are excluded. Promotion to main remains blocked by release-gates.json. Unit verification on 2026-10-10 at that checkpoint was 823 tests across 86 files with 20 desktop/mobile browser checks — superseded by the table above. Backend source remains unchanged.
