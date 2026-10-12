@@ -366,7 +366,11 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
   }, [availability, selectedTime, selectedDay]);
 
   const [numberOfPeople, setNumberOfPeople] = useState(1);
+  // The last price the server gave, and the exact inputs it priced
+  // (`estimateKey`). A booking only goes ahead on a quote whose key matches
+  // what is about to be sent: see `quoteFor` and `ensureCurrentQuote` below.
   const [bookingEstimate, setBookingEstimate] = useState(null);
+  const [estimateKey, setEstimateKey] = useState("");
   const [promoQuote, setPromoQuote] = useState(null);
   const [estimateLoading, setEstimateLoading] = useState(false);
   // Why the estimate could not be priced, in the server's words (for example an
@@ -397,37 +401,108 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
     userLocation?.source === "ip" || userLocation?.source === "default";
   const visitTravelLine = travelLine(travelDistanceKm, { approximate: locationIsApproximate });
 
+  // What the server is asked to price, and a key naming exactly those inputs
+  // (service, date and time, where, how many, and the visit address). The
+  // server prices from the stylist, service, location and address; the date and
+  // time travel along so a quote always belongs to one specific request.
+  const appointmentDateFor = (month, day) =>
+    day ? `${stylistYear}-${String(months.indexOf(month) + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}` : "";
+  const quoteRequestFor = ({ option, people, address, month, day, time }) => ({
+    stylerId,
+    subServiceId,
+    serviceTime: option,
+    noOfPeople: String(people),
+    ...(option === "homeService" ? { serviceAddress: address.trim() } : {}),
+    ...(day && time ? { appointmentDate: appointmentDateFor(month, day), arrivalTime: to24(time) } : {}),
+  });
+  const quoteKeyFor = (request) => JSON.stringify(request);
+  const currentQuoteRequest = quoteRequestFor({
+    option: selectedOption, people: numberOfPeople, address: homeVisitAddress,
+    month: selectedMonth, day: selectedDay, time: selectedTime,
+  });
+  const currentQuoteKey = quoteKeyFor(currentQuoteRequest);
+  const quoteIsUsable = (data) =>
+    !!data && data.totalPrice !== null && data.totalPrice !== undefined && data.totalPrice !== ""
+    && Number.isFinite(Number(data.totalPrice)) && Number(data.totalPrice) >= 0;
+  // A quote counts only for the inputs it priced and only while no newer
+  // request is in flight; otherwise there is no price to show or book on.
+  const currentQuote =
+    !estimateLoading && estimateKey === currentQuoteKey && quoteIsUsable(bookingEstimate) ? bookingEstimate : null;
+
+  // Latest finished quote, readable from async paths (sign-in, sign-up) whose
+  // closures were created before it arrived.
+  const latestQuote = useRef({ key: "", data: null });
+  const quoteGeneration = useRef(0);
+  const fetchQuote = async (request) => {
+    const key = quoteKeyFor(request);
+    const generation = ++quoteGeneration.current;
+    setEstimateError("");
+    setEstimateLoading(true);
+    try {
+      const res = await APIService.estimateBooking(request);
+      const data = res?.data?.data || null;
+      if (generation !== quoteGeneration.current) return null;
+      if (!quoteIsUsable(data)) {
+        latestQuote.current = { key: "", data: null };
+        setBookingEstimate(null);
+        setEstimateKey("");
+        setEstimateError(res?.data?.message && res?.data?.statusCode !== "200"
+          ? res.data.message
+          : "We couldn't price this booking right now.");
+        return null;
+      }
+      latestQuote.current = { key, data };
+      setBookingEstimate(data);
+      setEstimateKey(key);
+      return data;
+    } catch (error) {
+      if (generation !== quoteGeneration.current) return null;
+      latestQuote.current = { key: "", data: null };
+      setBookingEstimate(null);
+      setEstimateKey("");
+      setEstimateError(error?.response?.data?.message || "We couldn't price this booking right now.");
+      return null;
+    } finally {
+      if (generation === quoteGeneration.current) setEstimateLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!bookAppointmentForm) return;
-    setEstimateError("");
     if (needsHomeVisitAddress || !selectedOption) {
+      quoteGeneration.current += 1; // drop any answer still on its way
+      latestQuote.current = { key: "", data: null };
+      setEstimateError("");
+      setEstimateLoading(false);
       setBookingEstimate(null);
+      setEstimateKey("");
       return;
     }
-    let mounted = true;
-    setEstimateLoading(true);
-    APIService.estimateBooking({
-      stylerId,
-      subServiceId,
-      serviceTime: selectedOption,
-      noOfPeople: String(numberOfPeople),
-      ...(selectedOption === "homeService" ? { serviceAddress: homeVisitAddress.trim() } : {}),
-    })
-      .then((res) => {
-        if (mounted) setBookingEstimate(res.data?.data || null);
-      })
-      .catch((error) => {
-        if (!mounted) return;
-        setBookingEstimate(null);
-        setEstimateError(error?.response?.data?.message || "");
-      })
-      .finally(() => {
-        if (mounted) setEstimateLoading(false);
-      });
-    return () => {
-      mounted = false;
-    };
-  }, [bookAppointmentForm, selectedOption, numberOfPeople, stylerId, subServiceId, homeVisitAddress]);
+    fetchQuote(currentQuoteRequest);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bookAppointmentForm, currentQuoteKey, needsHomeVisitAddress]);
+
+  // Unmounting abandons whatever quote is still in flight.
+  useEffect(() => () => { quoteGeneration.current += 1; }, []);
+
+  const retryQuote = () => {
+    if (needsHomeVisitAddress || !selectedOption) return;
+    fetchQuote(currentQuoteRequest);
+  };
+
+  /**
+   * The price the booking about to be sent stands on: the finished quote when it
+   * was made for exactly `request`, otherwise a fresh one fetched now (inputs
+   * changed since the last quote). Null means there is no valid price, and the
+   * booking must not go ahead.
+   */
+  const ensureCurrentQuote = async (request) => {
+    const key = quoteKeyFor(request);
+    if (latestQuote.current.key === key && quoteIsUsable(latestQuote.current.data)) {
+      return latestQuote.current.data;
+    }
+    return fetchQuote(request);
+  };
 
   // Collects a one-time Stripe payment method from the card element (only used
   // when a publishable key is configured). Returns a pm_ id or the original
@@ -450,7 +525,18 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
     setBookingError("");
     setIsBooking(true);
     try {
-      const appointmentDate = `${stylistYear}-${String(months.indexOf(selectedMonth) + 1).padStart(2, "0")}-${String(selectedDay).padStart(2, "0")}`;
+      // Every way into a booking (the button, finishing sign-up, signing in,
+      // Google) passes through here, so this is where a missing, failed or
+      // out-of-date price stops the request.
+      const quote = await ensureCurrentQuote(quoteRequestFor({
+        option: selectedOption, people: numberOfPeople, address: homeVisitAddress,
+        month: selectedMonth, day: selectedDay, time: selectedTime,
+      }));
+      if (!quote) {
+        setBookingError("We couldn't confirm the price for this booking. Retry the estimate, then book.");
+        return;
+      }
+      const appointmentDate = appointmentDateFor(selectedMonth, selectedDay);
       const attempt = await prepareBookingAttempt({
         stylerId,
         subServiceId,
@@ -518,6 +604,11 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
     }
     if (needsHomeVisitAddress) {
       showErrorToastMessage("Add the address where the professional should come.");
+      return;
+    }
+    if (estimateLoading) return; // the button is disabled meanwhile
+    if (!currentQuote && estimateError) {
+      showErrorToastMessage("We couldn't price this booking. Retry the estimate before booking.");
       return;
     }
     if (!getAuthToken()) {
@@ -1044,14 +1135,20 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
               <div className="rounded-md border bg-slate-50 p-4 text-sm">
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <p className="font-semibold">Booking estimate</p>
-                  {estimateLoading && <span className="text-xs text-gray-400">Updating...</span>}
+                  {estimateLoading && <span className="text-xs text-gray-400" role="status">Updating...</span>}
                 </div>
                 {needsHomeVisitAddress ? (
                   <p className="text-amber-600">
                     Add your address above to see the travel fee.
                   </p>
                 ) : estimateError ? (
-                  <p className="text-amber-600">{estimateError}</p>
+                  <div className="grid gap-2" data-testid="estimate-error">
+                    <p className="text-amber-600">{estimateError}</p>
+                    <button type="button" onClick={retryQuote} disabled={estimateLoading}
+                      className="w-max rounded-md border px-3 py-1 text-xs font-semibold disabled:opacity-50">
+                      Retry estimate
+                    </button>
+                  </div>
                 ) : bookingEstimate ? (
                   <div className="grid gap-2">
                     <div className="flex justify-between gap-4">
@@ -1077,7 +1174,7 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
                     )}
                     <div className="mt-2 flex justify-between gap-4 border-t pt-3 font-bold text-brand">
                       <span>Total estimate</span>
-                      <span>${promoQuote?.total ?? bookingEstimate.totalPrice}</span>
+                      <span>{currentQuote ? `$${promoQuote?.total ?? currentQuote.totalPrice}` : "Updating…"}</span>
                     </div>
                   </div>
                 ) : (
@@ -1207,7 +1304,17 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
             <div className="border-t sticky w-full bottom-0 bg-white flex justify-between items-center px-6 py-4">
              <div>
               <p className="text-sm text-slate-400">Total estimate:</p>
-              <p className="text-brand font-bold text-xl">${promoQuote?.total ?? bookingEstimate?.totalPrice ?? servicePrice}</p>
+              {/* No price is shown that the server did not give for these exact
+                  choices: never the base service price as a stand-in. */}
+              <p className="text-brand font-bold text-xl" data-testid="booking-total">
+                {currentQuote
+                  ? `$${promoQuote?.total ?? currentQuote.totalPrice}`
+                  : estimateLoading
+                  ? "Calculating…"
+                  : estimateError
+                  ? "Unavailable"
+                  : "Not priced yet"}
+              </p>
               </div>
              <div className="flex-1">
                 {bookingError && (
@@ -1235,9 +1342,9 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
               </a>
              ) : (
              <button
-                className="text-sm bg-brand text-white rounded-md px-6 py-4"
+                className="text-sm bg-brand text-white rounded-md px-6 py-4 disabled:opacity-60 disabled:cursor-not-allowed"
                 onClick={handleBookAppointment}
-                disabled={isBooking}
+                disabled={isBooking || estimateLoading}
               >
                 {isBooking ? "Booking..." : "Book appointment"}
               </button>

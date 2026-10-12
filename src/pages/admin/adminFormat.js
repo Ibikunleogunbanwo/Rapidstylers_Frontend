@@ -7,7 +7,12 @@
  * as UTC and shown in the business zone with its abbreviation, e.g.
  * "11 Oct 2026, 9:43 PM MDT". Unknown shapes are shown unchanged.
  */
+import { zoneDisplayName } from '../../utils/vendorTimeZone';
+
 export const ADMIN_TIME_ZONE = 'America/Edmonton';
+
+/** The business zone's name for copy ("Times are Mountain Time."), from Intl, never a fixed string. */
+export const adminZoneLabel = () => zoneDisplayName(ADMIN_TIME_ZONE) || ADMIN_TIME_ZONE;
 
 const pad = value => String(value).padStart(2, '0');
 

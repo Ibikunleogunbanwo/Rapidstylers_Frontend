@@ -86,24 +86,30 @@ export const vendorCalendarToday = (stylist, now = new Date()) => {
 };
 
 /**
- * Human-readable name for a vendor's time zone ("Mountain Time",
- * "Eastern Time"...). `longGeneric` deliberately omits the DST marker so the
- * label stays true year-round — the zone is the contract, not the offset.
- * Returns "" when Intl cannot name the zone (never blocks a render).
+ * The plain-language name Intl gives an IANA zone id ("Eastern Time"), or ""
+ * when it cannot name it. Every zone label on the site comes from here, never
+ * from a fixed string or abbreviation: the name and offsets are the visitor's
+ * browser's own tz data for that zone id, so they follow rule changes (Canada's
+ * 2026 moves to permanent daylight time) as soon as the browser has them.
  */
-export const vendorTimeZoneLabel = (stylist) => {
+export const zoneDisplayName = (timeZone, at = new Date()) => {
   try {
-    const part = new Intl.DateTimeFormat("en-US", {
-      timeZone: vendorTimeZone(stylist),
-      timeZoneName: "longGeneric",
-    })
-      .formatToParts(new Date())
+    const part = new Intl.DateTimeFormat("en-US", { timeZone, timeZoneName: "longGeneric" })
+      .formatToParts(at)
       .find((p) => p.type === "timeZoneName");
     return (part && part.value) || "";
   } catch {
     return "";
   }
 };
+
+/**
+ * Human-readable name for a vendor's time zone ("Mountain Time",
+ * "Eastern Time"...). `longGeneric` deliberately omits the DST marker so the
+ * label stays true year-round — the zone is the contract, not the offset.
+ * Returns "" when Intl cannot name the zone (never blocks a render).
+ */
+export const vendorTimeZoneLabel = (stylist) => zoneDisplayName(vendorTimeZone(stylist));
 
 /**
  * Strict label for surfaces that DISPLAY a stored appointment's times (cards,
@@ -118,31 +124,14 @@ export const vendorTimeZoneLabelStrict = (stylist) => {
   if (stored && typeof stored === "string") {
     try {
       new Intl.DateTimeFormat("en-US", { timeZone: stored });
-      const part = new Intl.DateTimeFormat("en-US", {
-        timeZone: stored,
-        timeZoneName: "longGeneric",
-      })
-        .formatToParts(new Date())
-        .find((p) => p.type === "timeZoneName");
-      return (part && part.value) || "";
+      return zoneDisplayName(stored);
     } catch {
       // fall through to the province map
     }
   }
   const province = stylist && stylist.province;
   if (!province) return "";
-  try {
-    const zone = vendorTimeZoneForProvince(province);
-    const part = new Intl.DateTimeFormat("en-US", {
-      timeZone: zone,
-      timeZoneName: "longGeneric",
-    })
-      .formatToParts(new Date())
-      .find((p) => p.type === "timeZoneName");
-    return (part && part.value) || "";
-  } catch {
-    return "";
-  }
+  return zoneDisplayName(vendorTimeZoneForProvince(province));
 };
 
 /**

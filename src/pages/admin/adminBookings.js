@@ -3,12 +3,17 @@ import { AdminAPI, saveFile } from "../../hooks/remote/adminApi";
 import { requestError } from "../../hooks/remote/marketplaceApi";
 import { AdminInput, AdminPill, AdminStat } from "./adminShell";
 import { formatAdminTime, formatMoney } from "./adminFormat";
+import { isAdminOwner } from "./adminRole";
 
 /**
  * Bookings and payments: every booking with its customer, stylist and payment,
  * filtered on the server (the same filters drive the totals and the CSV), with
  * revenue for the chosen dates and a Refund action that pre-fills the refund
  * form on the Refunds tab.
+ *
+ * A manager gets the read-only part: the list and each booking's detail, with
+ * no amounts, revenue panel, CSV export or Refund action (the server leaves the
+ * money out of a manager's answers and refuses the rest).
  */
 const STATUSES = ["PENDING", "ACCEPTED", "COMPLETED", "DECLINED", "CANCELLED"];
 const PAYMENT_STATUSES = ["AUTHORIZED", "CAPTURED", "REFUNDED", "PAYMENT_FAILED", "PAYMENT_SCHEDULED", "RELEASED", "DISPUTED"];
@@ -21,6 +26,7 @@ export const isRefundable = row => row.paymentStatus === "CAPTURED";
 const params = filters => Object.fromEntries(Object.entries(filters).map(([key, value]) => [key, value.trim()]).filter(([, value]) => value));
 
 export default function AdminBookings({ onRefund }) {
+  const owner = isAdminOwner();
   const [draft, setDraft] = useState(EMPTY_FILTERS);
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [page, setPage] = useState(0);
@@ -46,6 +52,7 @@ export default function AdminBookings({ onRefund }) {
       if (id === generation.current) setLoading(false);
     }
     // Revenue is a side panel: its failure must not hide the bookings.
+    if (!owner) return;
     AdminAPI.revenue(params({ from: filters.from, to: filters.to }))
       .then(result => { if (id === generation.current) setRevenue(result); })
       .catch(() => { if (id === generation.current) setRevenue(null); });
@@ -106,14 +113,14 @@ export default function AdminBookings({ onRefund }) {
         <div className="flex flex-wrap gap-2 sm:col-span-2 lg:col-span-6">
           <button type="submit" className="rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white">Apply filters</button>
           <button type="button" onClick={() => { setDraft(EMPTY_FILTERS); setFilters(EMPTY_FILTERS); setPage(0); }} className="rounded-md border px-4 py-2 text-sm">Clear</button>
-          <button type="button" onClick={exportCsv} disabled={exporting} className="rounded-md border px-4 py-2 text-sm disabled:opacity-60">{exporting ? "Exporting…" : "Export CSV"}</button>
+          {owner && <button type="button" onClick={exportCsv} disabled={exporting} className="rounded-md border px-4 py-2 text-sm disabled:opacity-60">{exporting ? "Exporting…" : "Export CSV"}</button>}
         </div>
       </form>
       {exportError && <p role="alert" className="text-sm text-red-700">{exportError}</p>}
 
       {(totals || summary) && (
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          {totals && <AdminStat label="Bookings" value={Number(totals.count || 0).toLocaleString()} hint={`Value ${formatMoney(totals.bookingValue)}`} />}
+          {totals && <AdminStat label="Bookings" value={Number(totals.count || 0).toLocaleString()} hint={owner ? `Value ${formatMoney(totals.bookingValue)}` : undefined} />}
           {summary && <AdminStat label="Captured" value={formatMoney(summary.capturedValue)} hint={`${summary.charges ?? 0} charges${revenue.from ? ` · ${revenue.from} to ${revenue.to}` : ""}`} />}
           {summary && <AdminStat label="Refunded" value={formatMoney(summary.refunds)} hint={`Net ${formatMoney(summary.netValue)}`} />}
           {summary && <AdminStat label="Platform revenue" value={formatMoney(summary.platformRevenue)} hint={`Stylists ${formatMoney(summary.stylistEarnings)}`} />}
@@ -146,11 +153,11 @@ export default function AdminBookings({ onRefund }) {
                       <td className="p-3">{row.stylist?.name || row.stylist?.stylerId || "-"}</td>
                       <td className="p-3">{row.service?.name || row.service?.serviceType || "-"}</td>
                       <td className="p-3"><AdminPill tone={STATUS_TONES[row.status] || "neutral"}>{row.status}</AdminPill></td>
-                      <td className="p-3"><p>{formatMoney(row.paymentAmount ?? row.price)}</p><p className="text-xs text-gray-500">{String(row.paymentStatus || "-").replace(/_/g, " ")}</p></td>
+                      <td className="p-3">{owner && <p>{formatMoney(row.paymentAmount ?? row.price)}</p>}<p className="text-xs text-gray-500">{String(row.paymentStatus || "-").replace(/_/g, " ")}</p></td>
                       <td className="p-3">
                         <div className="flex flex-wrap gap-2">
                           <button type="button" onClick={() => setOpenId(openId === row.appointmentId ? null : row.appointmentId)} aria-expanded={openId === row.appointmentId} className="rounded-md border px-3 py-1.5 text-xs font-semibold">Details</button>
-                          {isRefundable(row) && <button type="button" onClick={() => onRefund(row)} className="rounded-md bg-brand px-3 py-1.5 text-xs font-semibold text-white">Refund</button>}
+                          {owner && onRefund && isRefundable(row) && <button type="button" onClick={() => onRefund(row)} className="rounded-md bg-brand px-3 py-1.5 text-xs font-semibold text-white">Refund</button>}
                         </div>
                       </td>
                     </tr>
@@ -173,6 +180,7 @@ export default function AdminBookings({ onRefund }) {
 }
 
 function BookingDetail({ appointmentId }) {
+  const owner = isAdminOwner();
   const [detail, setDetail] = useState(null);
   const [error, setError] = useState("");
   useEffect(() => {
@@ -184,14 +192,19 @@ function BookingDetail({ appointmentId }) {
   }, [appointmentId]);
   if (error) return <p role="alert" className="text-sm text-red-700">{error}</p>;
   if (!detail) return <p className="text-sm text-gray-500">Loading booking…</p>;
-  const rows = [
-    ["Booked", formatAdminTime(detail.createdAt)],
-    ["Service address", detail.serviceAddress],
+  // A manager's answer carries no money (the server leaves it out), so those rows are owners' only.
+  const money = owner ? [
     ["Price / travel fee", `${formatMoney(detail.price)} / ${formatMoney(detail.travelFee)}`],
     ["Platform fee / stylist share", `${formatMoney(detail.platformFee)} / ${formatMoney(detail.stylistShare)}`],
     ["Refunded", formatMoney(detail.refundedTotal)],
     ["Payment intent", detail.paymentIntentId],
     ["Stylist payout", detail.stripeTransferId || detail.payoutHoldReason || "Not paid out"],
+  ] : [];
+  const rows = [
+    ["Booked", formatAdminTime(detail.createdAt)],
+    ["Service address", detail.serviceAddress],
+    ...money,
+    ["Payment status", owner ? null : String(detail.paymentStatus || "").replace(/_/g, " ")],
     ["Dispute", detail.disputeStatus ? `${detail.disputeStatus}${detail.disputeReason ? `: ${detail.disputeReason}` : ""}` : null],
   ].filter(([, value]) => value !== null && value !== undefined && value !== "");
   return (

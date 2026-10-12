@@ -138,6 +138,7 @@ export const clearAllSessionTokens = () => {
   sessionStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
   sessionStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY);
   sessionStorage.removeItem(ADMIN_ROLE_KEY);
+  sessionStorage.removeItem(ADMIN_LEVEL_KEY);
   sessionStorage.removeItem(USER_ROLE_STORAGE_KEY);
   clearIntendedRoute();
   clearBookingIntent();
@@ -153,6 +154,35 @@ export const setRefreshToken = (token) => sessionStorage.setItem(REFRESH_TOKEN_S
 export const clearRefreshToken = () => sessionStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY);
 
 export const isAdminRole = () => sessionStorage.getItem(ADMIN_ROLE_KEY) === "admin";
+
+// Which kind of admin is signed in: "ADMIN" (an owner, every screen) or
+// "MANAGER" (day-to-day moderation, support and read-only bookings). Saved from
+// the admin sign-in response; the server enforces the same split on every route.
+export const ADMIN_LEVEL_KEY = "rapidstylers_admin_level";
+const ADMIN_LEVELS = ["ADMIN", "MANAGER"];
+const tokenRole = () => {
+  try {
+    const segment = getAuthToken().split(".")[1];
+    if (!segment) return "";
+    const { role } = JSON.parse(atob(segment.replace(/-/g, "+").replace(/_/g, "/")));
+    return typeof role === "string" ? role : "";
+  } catch (_) {
+    return "";
+  }
+};
+/** The signed-in admin's role: the saved one, else the token's, else ADMIN. */
+export const getAdminLevel = () => {
+  let saved = "";
+  try { saved = sessionStorage.getItem(ADMIN_LEVEL_KEY) || ""; } catch (_) {}
+  if (ADMIN_LEVELS.includes(saved)) return saved;
+  const fromToken = tokenRole();
+  return ADMIN_LEVELS.includes(fromToken) ? fromToken : "ADMIN";
+};
+export const setAdminLevel = (role) => {
+  const level = String(role || "").toUpperCase() === "MANAGER" ? "MANAGER" : "ADMIN";
+  try { sessionStorage.setItem(ADMIN_LEVEL_KEY, level); } catch (_) {}
+};
+export const isAdminOwner = () => getAdminLevel() !== "MANAGER";
 export const setAdminRole = () => sessionStorage.setItem(ADMIN_ROLE_KEY, "admin");
 export const clearAdminRole = () => sessionStorage.removeItem(ADMIN_ROLE_KEY);
 

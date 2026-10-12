@@ -1,4 +1,5 @@
 import { describe, test, expect } from "vitest";
+import { zoneDisplayName } from "./vendorTimeZone";
 import {
   vendorOpenState,
   openWindows,
@@ -8,9 +9,10 @@ import {
 
 /**
  * The vendor's hours are written in the vendor's zone, so every expectation here
- * is an instant converted by hand: Calgary is MDT (UTC-6) until 1 November 2026
- * and MST (UTC-7) after, and the same written window has to answer differently
- * on either side of that line.
+ * is an instant converted by hand. Only past Calgary offsets are used (MDT, UTC-6,
+ * in September 2026; MST, UTC-7, in January 2026): Alberta stays on UTC-6 from
+ * 1 November 2026 (tz 2026c), and an expectation after that date would depend on
+ * which tz data the test runtime ships.
  */
 const TUESDAY = { dayOfWeek: "2", startTime: "10:00", endTime: "17:00" };
 const SATURDAY = { dayOfWeek: "6", startTime: "09:00", endTime: "16:00" };
@@ -42,10 +44,10 @@ describe("reading a professional's own clock", () => {
   });
 
   test("reads the window the same way after the daylight-saving change", () => {
-    // 12 January 2027 is a Tuesday, and Calgary is MST (UTC-7). The same written
-    // 10:00 to 17:00 window must still read as open at noon, which a fixed
-    // UTC offset would get wrong for half the year.
-    const state = vendorOpenState(calgary(), { now: instant("2027-01-12T19:00:00Z") });
+    // 13 January 2026 is a Tuesday, and Calgary was on MST (UTC-7). The same
+    // written 10:00 to 17:00 window must still read as open at noon, which a
+    // fixed UTC offset would get wrong.
+    const state = vendorOpenState(calgary(), { now: instant("2026-01-13T19:00:00Z") });
     expect(state.open).toBe(true);
     expect(state.detail).toBe("Closes 5:00 PM");
   });
@@ -59,9 +61,9 @@ describe("reading a professional's own clock", () => {
 
   test("names the zone whenever it states a time", () => {
     const open = vendorOpenState(calgary(), { now: instant("2026-09-22T18:00:00Z") });
-    expect(open.hint).toContain("Mountain Time");
+    expect(open.hint).toContain(zoneDisplayName("America/Edmonton"));
     const closed = vendorOpenState(calgary(), { now: instant("2026-09-22T15:00:00Z") });
-    expect(closed.hint).toContain("Mountain Time");
+    expect(closed.hint).toContain(zoneDisplayName("America/Edmonton"));
     expect(closed.hint).not.toMatch(/[—–]/);
   });
 

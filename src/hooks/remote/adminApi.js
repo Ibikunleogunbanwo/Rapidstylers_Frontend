@@ -10,6 +10,9 @@ import { responseData } from './marketplaceApi';
  */
 const get = (path, params) => ApiClient.get(path, { params }).then(responseData);
 const post = (path, body) => ApiClient.post(path, body).then(responseData);
+/** Admin-account changes re-prove the acting owner's password in a header, never the body. */
+const postWithStepUp = (path, body, stepUpPassword) =>
+  ApiClient.post(path, body, { headers: { 'X-Step-Up-Password': stepUpPassword } }).then(responseData);
 
 /** A CSV download: the body is the file, unless the backend answered with a JSON error. */
 const download = async (path, params, fallbackName) => {
@@ -42,6 +45,10 @@ export const AdminAPI = {
   announcementAudienceCount: () => get('/admin/announcement_audience_count'),
   auditLogs: params => get('/admin/audit_logs', params),
   feedback: () => get('/list_feedback'),
+  me: () => get('/admin/me'),
+  accounts: () => get('/admin/accounts'),
+  createAccount: (account, stepUpPassword) => postWithStepUp('/admin/accounts', account, stepUpPassword),
+  changeAccountRole: (id, role, stepUpPassword) => postWithStepUp(`/admin/accounts/${id}/role`, { role }, stepUpPassword),
 };
 
 /** Hands a downloaded file to the browser. */

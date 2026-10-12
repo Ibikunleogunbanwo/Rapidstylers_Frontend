@@ -25,11 +25,14 @@
  *
  * Daylight saving takes care of itself for the same reason, which is why the
  * conversion below resolves the zone's offset *at the booking's own date*
- * rather than at today's: an Edmonton booking is -6 in July and -7 in January,
- * and hard-coding either would shift half the year's appointments.
+ * rather than at today's: a Toronto booking is -4 in July and -5 in January,
+ * and Alberta stopped changing its clocks on 2026-11-01, so any fixed offset
+ * would be wrong for someone. The offsets are the browser's own tz data; a
+ * visitor whose device predates a rule change gets that device's idea of the
+ * zone (see the tz note in the backend Dockerfile for the server side).
  */
 
-import { vendorTimeZone } from "./vendorTimeZone";
+import { vendorTimeZone, zoneDisplayName } from "./vendorTimeZone";
 
 /** ICS lines are CRLF-terminated, and it is the only line break RFC 5545 allows. */
 const CRLF = "\r\n";
@@ -122,16 +125,7 @@ export function zonedWallTimeToInstant(dateStr, timeStr, timeZone) {
 }
 
 /** The zone's friendly name ("Mountain Time"), or "" when Intl cannot name it. */
-function zoneName(timeZone) {
-  try {
-    const part = new Intl.DateTimeFormat("en-US", { timeZone, timeZoneName: "longGeneric" })
-      .formatToParts(new Date())
-      .find((entry) => entry.type === "timeZoneName");
-    return (part && part.value) || "";
-  } catch {
-    return "";
-  }
-}
+const zoneName = (timeZone) => zoneDisplayName(timeZone);
 
 /** RFC 5545 text values escape backslash, semicolon, comma and line breaks. */
 export function escapeIcsText(value) {

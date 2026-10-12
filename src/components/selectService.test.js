@@ -6,6 +6,7 @@ import SelectService, { bookingConfirmationMessage } from "./selectService";
 process.env.TZ = "America/Toronto";
 // Resolves to the vi.mock() below (hoisted), so APIService is the mock.
 import { APIService } from "../hooks/remote/apiService";
+import { zoneDisplayName } from "../utils/vendorTimeZone";
 import { getBookingIntent, setBookingIntent, getAuthToken, showSuccessToastMessage } from "../utils/constant";
 
 // react-scripts resets mock implementations between tests, so the factory only
@@ -65,7 +66,10 @@ beforeEach(() => {
   APIService.singleStylerData.mockResolvedValue({
     data: { data: { availability: [], bookedSlots: [], exceptions: [] } },
   });
-  APIService.estimateBooking.mockResolvedValue({ data: { data: null } });
+  // A priced quote by default: booking only goes ahead on one.
+  APIService.estimateBooking.mockResolvedValue({
+    data: { statusCode: "200", data: { servicePrice: "80.00", travelFee: "0.00", totalPrice: "80.00" } },
+  });
   APIService.placeAutocomplete.mockResolvedValue({ data: { data: [] } });
 });
 
@@ -75,6 +79,14 @@ const enterVisitAddress = (text) => {
   const field = screen.getByPlaceholderText("Start typing your address…");
   fireEvent.change(field, { target: { value: text } });
   fireEvent.blur(field);
+};
+
+// The button stays disabled while the price for the current choices is being
+// fetched, the way a customer meets it; wait for the quote like they would.
+const clickBook = async () => {
+  const button = screen.getByRole("button", { name: "Book appointment" });
+  await waitFor(() => expect(button).toBeEnabled());
+  fireEvent.click(button);
 };
 
 const renderOpen = () => {
@@ -263,7 +275,7 @@ describe("SelectService shows the stylist's time zone on the pickers", () => {
     );
     fireEvent.click(screen.getByText("Book service"));
 
-    expect(screen.getByText(/Times are in the stylist's local time \(Eastern Time\)/)).toBeInTheDocument();
+    expect(screen.getByText(`Times are in the stylist's local time (${zoneDisplayName("America/Toronto")}).`)).toBeInTheDocument();
   });
 
   test("with no zone data at all, the line states the app's default assumption", () => {
@@ -272,7 +284,7 @@ describe("SelectService shows the stylist's time zone on the pickers", () => {
     render(<SelectService serviceName="Haircut" servicePrice="60" stylerId="s1" subServiceId="ss1" />);
     fireEvent.click(screen.getByText("Book service"));
 
-    expect(screen.getByText(/Times are in the stylist's local time \(Mountain Time\)/)).toBeInTheDocument();
+    expect(screen.getByText(`Times are in the stylist's local time (${zoneDisplayName("America/Edmonton")}).`)).toBeInTheDocument();
   });
 });
 
@@ -445,11 +457,11 @@ describe("Booking confirmation names the stylist's clock", () => {
     fireEvent.click(screen.getByText("Book service"));
     fireEvent.click(screen.getByText("4:00 pm"));
     fireEvent.click(screen.getAllByText(/15/)[0]);
-    fireEvent.click(screen.getByText("Book appointment"));
+    await clickBook();
     expect(await screen.findByText(/could not confirm whether your booking/i)).toBeInTheDocument();
     const key = APIService.bookAppointment.mock.calls[0][1];
     expect(key).toEqual(expect.any(String));
-    fireEvent.click(screen.getByText("Book appointment"));
+    await clickBook();
     await screen.findByTestId("booking-placed");
     expect(APIService.bookAppointment.mock.calls[1][1]).toBe(key);
   });
@@ -492,11 +504,11 @@ describe("Booking confirmation names the stylist's clock", () => {
     fireEvent.click(screen.getByText("Book service"));
     fireEvent.click(screen.getByText("4:00 pm"));
     fireEvent.click(screen.getAllByText(/15/)[0]);
-    fireEvent.click(screen.getByText("Book appointment"));
+    await clickBook();
 
     await waitFor(() => expect(showSuccessToastMessage).toHaveBeenCalled());
     const toast = showSuccessToastMessage.mock.calls.at(-1)[0];
-    expect(toast).toContain("at 4:00 pm (Mountain Time)");
+    expect(toast).toContain(`at 4:00 pm (${zoneDisplayName("America/Edmonton")})`);
     // The day is named in the stylist's calendar, the same words the strip used.
     expect(toast).toMatch(/Booking request sent for \w{3}, 15th at 4:00 pm/);
   });
@@ -606,7 +618,7 @@ describe("Adding a fresh booking to a calendar", () => {
     fireEvent.click(screen.getByText("Book service"));
     fireEvent.click(screen.getByText("4:00 pm"));
     fireEvent.click(screen.getAllByText(/15/)[0]);
-    fireEvent.click(screen.getByText("Book appointment"));
+    await clickBook();
     return screen.findByTestId("booking-placed");
   };
 
@@ -646,7 +658,7 @@ describe("Adding a fresh booking to a calendar", () => {
 
     const params = calendarParams();
     expect(params.get("text")).toBe("Braids with Demo Hairstylist Studio");
-    expect(params.get("details")).toContain("Mountain Time");
+    expect(params.get("details")).toContain(zoneDisplayName("America/Edmonton"));
     expect(params.get("details")).toContain("America/Edmonton");
     expect(params.get("location")).toBe("700 2 St SW, Calgary");
   });
@@ -676,7 +688,7 @@ describe("Adding a fresh booking to a calendar", () => {
     enterVisitAddress("10 Main St, Calgary");
     fireEvent.click(screen.getByText("4:00 pm"));
     fireEvent.click(screen.getAllByText(/15/)[0]);
-    fireEvent.click(screen.getByText("Book appointment"));
+    await clickBook();
     await screen.findByTestId("booking-placed");
 
     // A home visit has no address in this modal, and inventing one would send
@@ -775,7 +787,7 @@ describe("Home visit address", () => {
     enterVisitAddress("10 Main St, Calgary");
     fireEvent.click(screen.getByText("4:00 pm"));
     fireEvent.click(screen.getAllByText(/15/)[0]);
-    fireEvent.click(screen.getByText("Book appointment"));
+    await clickBook();
     await screen.findByTestId("booking-placed");
 
     const [body] = APIService.bookAppointment.mock.calls.at(-1);
@@ -818,12 +830,156 @@ describe('Offered appointment locations and promotions',()=>{
   APIService.estimateBooking.mockResolvedValue({data:{data:{totalPrice:'60.00',servicePrice:'60.00',travelFee:'0.00'}}});
   APIService.checkPromoCode.mockResolvedValue({data:{statusCode:'200',data:{code:'WELCOME',discount:'6.00',total:'54.00'}}});
   open();fireEvent.change(await screen.findByLabelText('Promo code (optional)'),{target:{value:'welcome'}});fireEvent.click(screen.getByRole('button',{name:'Apply'}));await screen.findByText('WELCOME: −$6.00 CAD');
-  fireEvent.click(screen.getByText('4:00 pm'));fireEvent.click(screen.getAllByText(/15/)[0]);fireEvent.click(screen.getByText('Book appointment'));await screen.findByTestId('booking-placed');
+  fireEvent.click(screen.getByText('4:00 pm'));fireEvent.click(screen.getAllByText(/15/)[0]);await clickBook();await screen.findByTestId('booking-placed');
   expect(APIService.bookAppointment.mock.calls.at(-1)[0]).toEqual(expect.objectContaining({promoCode:'WELCOME'}));expect(APIService.bookAppointment.mock.calls.at(-1)[0]).not.toHaveProperty('discount');
  });
  test('editing a verified promo removes the old code from the booking payload',async()=>{
   getAuthToken.mockReturnValue('token');APIService.bookAppointment.mockResolvedValue({data:{data:{}}});
   APIService.estimateBooking.mockResolvedValue({data:{data:{totalPrice:'60.00',servicePrice:'60.00',travelFee:'0.00'}}});APIService.checkPromoCode.mockResolvedValue({data:{statusCode:'200',data:{code:'WELCOME',discount:'6.00',total:'54.00'}}});
-  open();const field=await screen.findByLabelText('Promo code (optional)');fireEvent.change(field,{target:{value:'welcome'}});fireEvent.click(screen.getByRole('button',{name:'Apply'}));await screen.findByText('WELCOME: −$6.00 CAD');fireEvent.change(field,{target:{value:'OTHER'}});fireEvent.click(screen.getByText('4:00 pm'));fireEvent.click(screen.getAllByText(/15/)[0]);fireEvent.click(screen.getByText('Book appointment'));await screen.findByTestId('booking-placed');expect(APIService.bookAppointment.mock.calls.at(-1)[0]).not.toHaveProperty('promoCode');
+  open();const field=await screen.findByLabelText('Promo code (optional)');fireEvent.change(field,{target:{value:'welcome'}});fireEvent.click(screen.getByRole('button',{name:'Apply'}));await screen.findByText('WELCOME: −$6.00 CAD');fireEvent.change(field,{target:{value:'OTHER'}});fireEvent.click(screen.getByText('4:00 pm'));fireEvent.click(screen.getAllByText(/15/)[0]);await clickBook();await screen.findByTestId('booking-placed');expect(APIService.bookAppointment.mock.calls.at(-1)[0]).not.toHaveProperty('promoCode');
  });
+});
+
+// A booking goes ahead only on a price the server gave for exactly the choices
+// being sent. A failed, missing, loading or out-of-date quote never books, and
+// the total never falls back to the listed service price.
+describe("Booking waits for a valid price", () => {
+  const openSignedIn = (props = {}) => {
+    getAuthToken.mockReturnValue("token");
+    APIService.bookAppointment.mockResolvedValue({ data: { data: {} } });
+    render(<SelectService serviceName="Braids" servicePrice="60" stylerId="s1" subServiceId="ss1"
+      stylerTimeZone="America/Edmonton" {...props} />);
+    fireEvent.click(screen.getByText("Book service"));
+  };
+  const pickSlot = () => {
+    fireEvent.click(screen.getAllByText(/15/)[0]);
+    fireEvent.click(screen.getByText("4:00 pm"));
+  };
+  const deferred = () => {
+    let resolve;
+    let reject;
+    const promise = new Promise((res, rej) => { resolve = res; reject = rej; });
+    return { promise, resolve, reject };
+  };
+  const quote = (total) => ({ data: { statusCode: "200", data: { servicePrice: total, travelFee: "0.00", totalPrice: total } } });
+
+  test("a failed quote blocks the booking, shows no base-price total and offers a retry", async () => {
+    APIService.estimateBooking.mockRejectedValue({ response: { data: { message: "Pricing is down" } } });
+    openSignedIn();
+    pickSlot();
+
+    expect(await screen.findByText("Pricing is down")).toBeInTheDocument();
+    expect(screen.getByTestId("booking-total")).toHaveTextContent("Unavailable");
+    expect(screen.getByTestId("booking-total")).not.toHaveTextContent("$60");
+    fireEvent.click(screen.getByRole("button", { name: "Book appointment" }));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Book appointment" })).toBeEnabled());
+    expect(APIService.bookAppointment).not.toHaveBeenCalled();
+
+    APIService.estimateBooking.mockResolvedValue(quote("75.00"));
+    fireEvent.click(screen.getByRole("button", { name: "Retry estimate" }));
+    await waitFor(() => expect(screen.getByTestId("booking-total")).toHaveTextContent("$75.00"));
+    await clickBook();
+    await screen.findByTestId("booking-placed");
+    expect(APIService.bookAppointment).toHaveBeenCalledTimes(1);
+  });
+
+  test("a quote with no usable total counts as no quote", async () => {
+    APIService.estimateBooking.mockResolvedValue({ data: { statusCode: "200", data: { servicePrice: "60.00" } } });
+    openSignedIn();
+    pickSlot();
+    expect(await screen.findByRole("button", { name: "Retry estimate" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Book appointment" }));
+    expect(APIService.bookAppointment).not.toHaveBeenCalled();
+  });
+
+  test("while the price loads the button is disabled and no total is shown", async () => {
+    const pending = deferred();
+    APIService.estimateBooking.mockReturnValue(pending.promise);
+    openSignedIn();
+    pickSlot();
+
+    const button = screen.getByRole("button", { name: "Book appointment" });
+    expect(button).toBeDisabled();
+    expect(screen.getByTestId("booking-total")).toHaveTextContent("Calculating…");
+    fireEvent.click(button);
+    expect(APIService.bookAppointment).not.toHaveBeenCalled();
+
+    pending.resolve(quote("80.00"));
+    await waitFor(() => expect(button).toBeEnabled());
+    expect(screen.getByTestId("booking-total")).toHaveTextContent("$80.00");
+  });
+
+  test("each quote is asked for the date, time, place and people being booked", async () => {
+    openSignedIn();
+    pickSlot();
+    await waitFor(() => expect(APIService.estimateBooking).toHaveBeenLastCalledWith(
+      expect.objectContaining({ serviceTime: "visitBarber", noOfPeople: "1", arrivalTime: "16:00",
+        appointmentDate: expect.stringMatching(/^\d{4}-\d{2}-15$/) })
+    ));
+  });
+
+  test("changing a choice after pricing re-prices before the booking can go", async () => {
+    openSignedIn();
+    pickSlot();
+    await waitFor(() => expect(screen.getByTestId("booking-total")).toHaveTextContent("$80.00"));
+
+    const pending = deferred();
+    APIService.estimateBooking.mockReturnValue(pending.promise);
+    fireEvent.change(screen.getByLabelText("Number of people:"), { target: { value: "2" } });
+    // The old price no longer belongs to these choices.
+    expect(screen.getByTestId("booking-total")).toHaveTextContent("Calculating…");
+    expect(screen.getByRole("button", { name: "Book appointment" })).toBeDisabled();
+
+    pending.resolve(quote("160.00"));
+    await waitFor(() => expect(screen.getByTestId("booking-total")).toHaveTextContent("$160.00"));
+    await clickBook();
+    await screen.findByTestId("booking-placed");
+    expect(APIService.bookAppointment.mock.calls.at(-1)[0]).toEqual(expect.objectContaining({ noOfPeople: "2" }));
+  });
+
+  test("signing in books only on a quote for the current choices, fetching a fresh one when stale", async () => {
+    getAuthToken.mockReturnValue(null);
+    APIService.bookAppointment.mockResolvedValue({ data: { data: {} } });
+    render(<SelectService serviceName="Braids" servicePrice="60" stylerId="s1" subServiceId="ss1" />);
+    fireEvent.click(screen.getByText("Book service"));
+    pickSlot();
+    await waitFor(() => expect(screen.getByTestId("booking-total")).toHaveTextContent("$80.00"));
+    await clickBook();
+    fireEvent.click(await screen.findByText("Already have an account? Sign in"));
+
+    // The choices change while the customer signs in, and that quote is still
+    // on its way when they submit: the booking must fetch its own fresh price.
+    const stale = deferred();
+    APIService.estimateBooking.mockReturnValueOnce(stale.promise).mockResolvedValue(quote("160.00"));
+    fireEvent.change(screen.getByLabelText("Number of people:"), { target: { value: "2" } });
+    const callsBefore = APIService.estimateBooking.mock.calls.length;
+    fireEvent.change(screen.getByLabelText("Email address"), { target: { value: "a@example.com" } });
+    fireEvent.change(screen.getByLabelText("Password"), { target: { value: "secret123" } });
+    fireEvent.click(screen.getByRole("button", { name: "Sign in & book" }));
+
+    await screen.findByTestId("booking-placed");
+    expect(APIService.estimateBooking.mock.calls.length).toBe(callsBefore + 1);
+    expect(APIService.estimateBooking.mock.calls.at(-1)[0]).toEqual(expect.objectContaining({ noOfPeople: "2" }));
+    expect(APIService.bookAppointment.mock.calls.at(-1)[0]).toEqual(expect.objectContaining({ noOfPeople: "2" }));
+    stale.resolve(quote("1.00")); // a superseded answer changes nothing
+  });
+
+  test("signing in does not book when the price cannot be confirmed", async () => {
+    getAuthToken.mockReturnValue(null);
+    render(<SelectService serviceName="Braids" servicePrice="60" stylerId="s1" subServiceId="ss1" />);
+    fireEvent.click(screen.getByText("Book service"));
+    pickSlot();
+    await waitFor(() => expect(screen.getByTestId("booking-total")).toHaveTextContent("$80.00"));
+    await clickBook();
+    fireEvent.click(await screen.findByText("Already have an account? Sign in"));
+
+    APIService.estimateBooking.mockRejectedValue(new Error("network"));
+    fireEvent.change(screen.getByLabelText("Number of people:"), { target: { value: "3" } });
+    fireEvent.change(screen.getByLabelText("Email address"), { target: { value: "a@example.com" } });
+    fireEvent.change(screen.getByLabelText("Password"), { target: { value: "secret123" } });
+    fireEvent.click(screen.getByRole("button", { name: "Sign in & book" }));
+
+    expect(await screen.findByText(/couldn't confirm the price for this booking/i)).toBeInTheDocument();
+    expect(APIService.bookAppointment).not.toHaveBeenCalled();
+  });
 });

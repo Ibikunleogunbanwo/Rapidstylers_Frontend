@@ -13,22 +13,36 @@ import { logoutSession } from "../../utils/sessionLogout";
  */
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { canOpen, isAdminOwner } from "./adminRole";
 
-/** The admin section nav. `current` is underlined; the rest stay quiet links. */
+/**
+ * The admin section nav. `current` is underlined; the rest stay quiet links.
+ * A manager sees only the links they may use (see adminRole.js); a link with a
+ * third entry opens that URL for a manager instead (bookings outside Payments).
+ */
 const ADMIN_GROUPS = [
   ["Overview", [["/admin", "Dashboard"]]],
   ["Marketplace", [["/admin/stylers", "Stylists"], ["/admin/stylers?section=images", "Gallery"], ["/admin/operations?section=reviews", "Reviews"]]],
   ["Catalog & content", [["/admin/service-areas", "Service areas"], ["/admin/categories", "Categories"], ["/admin/blog", "Blog"], ["/admin/content", "Website content"]]],
-  ["Finance", [["/admin/payments", "Payments"], ["/admin/payments?section=bookings", "Bookings"], ["/admin/payments?section=disputes", "Disputes"], ["/admin/payments?section=unpaidPayouts", "Unpaid payouts"]]],
+  ["Finance", [["/admin/payments", "Payments"], ["/admin/payments?section=bookings", "Bookings", "/admin/bookings"], ["/admin/payments?section=disputes", "Disputes"], ["/admin/payments?section=unpaidPayouts", "Unpaid payouts"]]],
   ["Marketing", [["/admin/promotions", "Promo codes"], ["/admin/newsletter", "Newsletter"], ["/admin/signup-funnel", "Signup funnel"], ["/admin/recovery", "Recovery"], ["/admin/announcements", "Announcements"]]],
-  ["Platform", [["/admin/operations", "Operations"], ["/admin/operations?section=tickets", "Support"], ["/admin/operations?section=feedback", "Feedback"], ["/admin/operations?section=logs", "Audit log"]]],
+  ["Platform", [["/admin/operations", "Operations"], ["/admin/operations?section=tickets", "Support"], ["/admin/operations?section=feedback", "Feedback"], ["/admin/operations?section=logs", "Audit log"], ["/admin/accounts", "Admin accounts"]]],
 ];
+
+const visibleGroups = () => {
+  const owner = isAdminOwner();
+  return ADMIN_GROUPS
+    .map(([group, links]) => [group, links
+      .map(([to, label, managerTo]) => [owner || !managerTo ? to : managerTo, label])
+      .filter(([to]) => owner || canOpen(to))])
+    .filter(([, links]) => links.length > 0);
+};
 
 export function AdminNav({ onNavigate } = {}) {
   const { pathname, search } = useLocation();
   return (
     <nav id="admin-navigation" aria-label="Admin sections" className="space-y-5 text-sm">
-      {ADMIN_GROUPS.map(([group, links]) => <div key={group}>
+      {visibleGroups().map(([group, links]) => <div key={group}>
         <p className="mb-2 text-xs font-semibold text-gray-500">{group}</p>
         <ul className="space-y-1">{links.map(([to, label]) => {
           const current = to === pathname + search || (!search && to === pathname);
@@ -72,7 +86,7 @@ export function AdminPage({ eyebrow, title, pageTitle, actions, children }) {
     <div className="min-h-screen bg-[#f5f5f5] lg:grid lg:grid-cols-[220px_minmax(0,1fr)]">
       <aside className="border-b lg:border-b-0 lg:border-r border-black/10 bg-white p-4 lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto">
         <div className="mb-4 flex items-center justify-between gap-3">
-          <Link to="/admin" className="font-semibold text-gray-900">RapidStylers <span className="block text-xs font-normal text-gray-500">Admin console</span></Link>
+          <Link to="/admin" className="font-semibold text-gray-900">RapidStylers <span className="block text-xs font-normal text-gray-500">{isAdminOwner() ? "Admin console" : "Admin console · Manager"}</span></Link>
           <button type="button" className="rounded-md border px-3 py-2 text-sm lg:hidden" aria-expanded={menuOpen} aria-controls="admin-navigation" onClick={() => setMenuOpen(!menuOpen)}>{menuOpen ? "Close menu" : "Menu"}</button>
         </div>
         <div className={menuOpen ? "block" : "hidden lg:block"}><AdminNav onNavigate={() => setMenuOpen(false)} /></div>

@@ -1,5 +1,6 @@
 import { render, screen, fireEvent, within } from "@testing-library/react";
 import StylistProfile from "./stylistProfile";
+import { zoneDisplayName } from "../../../utils/vendorTimeZone";
 // Resolves to the vi.mock() below (hoisted).
 import { APIService } from "../../../hooks/remote/apiService";
 
@@ -253,7 +254,7 @@ describe("StylistProfile names the vendor's time zone on working hours", () => {
       availability: [{ dayOfWeek: 2, startTime: "09:00", endTime: "17:00" }],
     });
 
-    expect(screen.getByText(/Book during these weekly windows \(Pacific Time\)/)).toBeInTheDocument();
+    expect(screen.getByText(`Book during these weekly windows (${zoneDisplayName("America/Vancouver")})`, { exact: false })).toBeInTheDocument();
   });
 
   test("an Alberta stylist (or any default) reads Mountain Time", () => {
@@ -262,7 +263,7 @@ describe("StylistProfile names the vendor's time zone on working hours", () => {
       availability: [{ dayOfWeek: 5, startTime: "10:00", endTime: "18:00" }],
     });
 
-    expect(screen.getByText(/Book during these weekly windows \(Mountain Time\)/)).toBeInTheDocument();
+    expect(screen.getByText(`Book during these weekly windows (${zoneDisplayName("America/Edmonton")})`, { exact: false })).toBeInTheDocument();
   });
 });
 

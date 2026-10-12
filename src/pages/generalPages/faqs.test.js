@@ -1,6 +1,13 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import Faqs from "./faqs";
+import Faqs, { groupFaqSections, slugFor } from "./faqs";
+
+// Published FAQ content from the admin; null (nothing published) unless a test
+// installs some, which is also what the page sees when the request fails.
+const published = vi.hoisted(() => ({ current: null }));
+vi.mock("../../hooks/remote/usePublishedContent", () => ({
+  usePublishedContent: () => published.current,
+}));
 // The shared site header needs the app's store; these tests are about the page body.
 vi.mock("../../components/publicHeader", () => ({ default: () => null }));
 
@@ -144,5 +151,88 @@ describe("FAQs page", () => {
 
     expect(screen.getByRole("link", { name: "Back home" })).toBeInTheDocument();
     expect(screen.getByTestId("footer")).toBeInTheDocument();
+  });
+});
+
+describe("FAQ sections from published content", () => {
+  const scrolled = [];
+  beforeEach(() => {
+    published.current = null;
+    scrolled.length = 0;
+    Element.prototype.scrollIntoView = vi.fn(function scrollIntoView() {
+      scrolled.push(this.id);
+    });
+  });
+  afterEach(() => {
+    window.history.replaceState(null, "", "/");
+  });
+
+  const interleaved = {
+    items: [
+      { question: "What is RapidStylers?", answer: "A marketplace.", category: "General" },
+      { question: "How do I book?", answer: "Pick a time.", category: "Booking" },
+      { question: "Is it free to join?", answer: "Yes.", category: "General" },
+      { question: "Can I rebook?", answer: "Any time.", category: "Booking!" },
+    ],
+  };
+
+  test("groups every item of a category into one section, in first-seen order", () => {
+    const sections = groupFaqSections(interleaved.items.map((i) => ({ q: i.question, a: i.answer, category: i.category })));
+    expect(sections.map((s) => s.category)).toEqual(["General", "Booking", "Booking!"]);
+    expect(sections[0].items.map((i) => i.q)).toEqual(["What is RapidStylers?", "Is it free to join?"]);
+  });
+
+  test("labels that fold to the same slug still get distinct ids", () => {
+    const sections = groupFaqSections([
+      { q: "a", category: "Booking" },
+      { q: "b", category: "Booking!" },
+      { q: "c", category: " booking " },
+      { q: "d", category: "" },
+      { q: "e", category: "Réservation" },
+      { q: "f", category: "???" },
+    ]);
+    expect(sections.map((s) => s.id)).toEqual(["booking", "booking-2", "booking-3", "general", "reservation", "section"]);
+    expect(slugFor("Accounts & security")).toBe("accounts-security");
+  });
+
+  test("answers keep stable, unique keys even when questions repeat", () => {
+    const sections = groupFaqSections([
+      { q: "Same?", category: "General" },
+      { q: "Same?", category: "General" },
+      { id: 42, q: "Has id", category: "Booking" },
+    ]);
+    expect(sections[0].items.map((i) => i.key)).toEqual(["faq-at-0", "faq-at-1"]);
+    expect(sections[1].items[0].key).toBe("faq-42");
+  });
+
+  test("the page renders one section per category with no duplicate ids", () => {
+    published.current = interleaved;
+    renderFaqs();
+    const ids = [...document.querySelectorAll("section[id]")].map((el) => el.id);
+    expect(ids).toEqual(["general", "booking", "booking-2"]);
+    expect(document.getElementById("general").textContent).toContain("Is it free to join?");
+    expect(document.getElementById("booking-2").textContent).toContain("Can I rebook?");
+  });
+
+  test("a deep link scrolls to its section once published content arrives", async () => {
+    window.history.replaceState(null, "", "/faqs#booking-2");
+    const view = renderFaqs();
+    expect(document.getElementById("booking-2")).toBeNull();
+
+    published.current = interleaved;
+    view.rerender(
+      <MemoryRouter>
+        <Faqs />
+      </MemoryRouter>
+    );
+    await waitFor(() => expect(scrolled).toEqual(["booking-2"]));
+  });
+
+  test("a hash change on the page scrolls to the matching section", async () => {
+    published.current = interleaved;
+    renderFaqs();
+    window.history.replaceState(null, "", "/faqs#general");
+    window.dispatchEvent(new HashChangeEvent("hashchange"));
+    await waitFor(() => expect(scrolled).toContain("general"));
   });
 });

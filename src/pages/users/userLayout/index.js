@@ -8,7 +8,7 @@ import { useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import LogOut from "../auth/logout";
 import { userLogOut } from "../../../hooks/local/userReducer";
-import { setIntendedRoute, getAuthToken, getUserRole } from "../../../utils/constant";
+import { setIntendedRoute, getAuthToken, getUserRole, isAdminOwner } from "../../../utils/constant";
 import BookAppointment from "../pages/bookAnAppointment";
 import UpdateInformation from "../pages/updatePersonal";
 import SavedStylist from "../pages/savedStylists";
@@ -86,7 +86,7 @@ const UserLayout = () => {
         return <Navigate to="/" replace />;
     }
     if (token && role !== "CUSTOMER") {
-        return <Navigate to={role === "STYLER" ? "/styler-dashboard" : role === "ADMIN" ? "/admin/categories" : "/login"} replace />;
+        return <Navigate to={role === "STYLER" ? "/styler-dashboard" : role === "ADMIN" ? (isAdminOwner() ? "/admin/categories" : "/admin") : "/login"} replace />;
     }
     if(!token || !userSession){
         setIntendedRoute(pathname);

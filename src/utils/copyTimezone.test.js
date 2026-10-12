@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { CLOCK_TIME, scanDir, scanText } from "../../scripts/find-unzoned-times.mjs";
 import { bookingConfirmationMessage } from "../components/selectService";
 import { buildAppointmentEvent, icsFileText } from "./appointmentCalendar";
+import { zoneDisplayName } from "./vendorTimeZone";
 
 const SRC = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -103,12 +104,12 @@ describe("the calendar entry", () => {
   it("names the zone in the body, since the hour it carries is an instant", () => {
     // Every calendar app renders the stamp in the customer's own zone, so the
     // only place the professional's clock can be legible is the description.
-    expect(event.details).toContain("Mountain Time");
+    expect(event.details).toContain(zoneDisplayName("America/Edmonton"));
     expect(event.details).toContain("America/Edmonton");
   });
 
   it("carries that same statement into the file and the link", () => {
-    expect(icsFileText(event)).toContain("Mountain Time");
+    expect(icsFileText(event)).toContain(zoneDisplayName("America/Edmonton"));
   });
 
   it("names a zone even for a professional with none on record", () => {

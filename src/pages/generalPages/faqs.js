@@ -1,6 +1,6 @@
 import { usePublishedContent } from "../../hooks/remote/usePublishedContent";
 import PublicHeader from "../../components/publicHeader";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Footer from "../../components/footer";
 import { Section, Eyebrow, PageHeading, BackHome, HairlineList } from "../../components/pageSections";
 
@@ -104,47 +104,96 @@ const FAQS = [
   },
 ];
 
-// The three sections the accordion groups into, in the order the list defines
-// them. The ids are the deep-link targets (/faqs#for-customers) and are pinned
-// by the tests, so renaming them breaks links from the footer and the about page.
-const hashFor = (category) =>
-  category.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+// A section's deep-link id: lower-case ASCII words joined by hyphens, accents
+// folded ("Réservation" -> "reservation"). The ids of the built-in sections are
+// the targets the footer links to (/faqs#for-customers) and are pinned by the
+// tests, so renaming those categories breaks links.
+export const slugFor = (category) =>
+  String(category || "")
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "") || "section";
+
+/**
+ * Groups FAQ items into one section per category, sections in the order their
+ * category first appears and items in list order within each, however the list
+ * interleaves them (General, Booking, General gives two sections, not three).
+ * Every section gets a distinct id even when different labels fold to the same
+ * slug ("Booking" and "Booking!" become "booking" and "booking-2"), and every
+ * item a key that stays put when other items change: its own id when the
+ * published content has one, otherwise its place in the list.
+ */
+export const groupFaqSections = (items) => {
+  const sections = [];
+  const byCategory = new Map();
+  const usedIds = new Set();
+  (items || []).forEach((faq, index) => {
+    const category = String(faq.category || "").trim() || "General";
+    let section = byCategory.get(category);
+    if (!section) {
+      const base = slugFor(category);
+      let id = base;
+      for (let n = 2; usedIds.has(id); n += 1) id = `${base}-${n}`;
+      usedIds.add(id);
+      section = { category, id, items: [] };
+      byCategory.set(category, section);
+      sections.push(section);
+    }
+    const key = faq.id !== undefined && faq.id !== null && faq.id !== "" ? `faq-${faq.id}` : `faq-at-${index}`;
+    section.items.push({ ...faq, category, index, key });
+  });
+  return sections;
+};
+
+// Scrolls to the section named in the URL hash, if it is on the page. Returns
+// whether it found one.
+const scrollToHashTarget = () => {
+  const raw = window.location.hash.slice(1);
+  if (!raw) return false;
+  let id = raw;
+  try {
+    id = decodeURIComponent(raw);
+  } catch (error) {
+    // A malformed escape is looked up as written.
+  }
+  const el = document.getElementById(id);
+  if (!el) return false;
+  // Small delay so layout settles after the accordion mounts.
+  setTimeout(() => el.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+  return true;
+};
 
 const Faqs = () => {
   const published = usePublishedContent("faq");
   const [openIndex, setOpenIndex] = useState(0);
+  // The hash already scrolled to, so content arriving later does not yank the
+  // page back to it, while a hash whose section is not on the page yet (the
+  // published list is still loading) is tried again once it is.
+  const scrolledTo = useRef(null);
 
   useEffect(() => {
     document.title = "FAQs | RapidStylers";
-    // Deep-link support: /faqs#for-customers scrolls to that section (handles
-    // both initial loads and same-page hash changes), otherwise start at top.
-    const scrollToHash = () => {
-      const hash = window.location.hash;
-      if (hash) {
-        const el = document.getElementById(hash.slice(1));
-        if (el) {
-          // Small delay so layout settles after the accordion mounts.
-          setTimeout(() => el.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
-          return true;
-        }
-      }
-      window.scrollTo(0, 0);
-      return false;
+    // Deep-link support: /faqs#for-customers scrolls to that section (initial
+    // loads and same-page hash changes); with no hash, start at the top.
+    if (!window.location.hash) window.scrollTo(0, 0);
+    const onHashChange = () => {
+      scrolledTo.current = scrollToHashTarget() ? window.location.hash : null;
     };
-    scrollToHash();
-    window.addEventListener("hashchange", scrollToHash);
-    return () => window.removeEventListener("hashchange", scrollToHash);
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
   }, []);
 
-  // The open answer indexes per section so each group keeps its own state.
-  const items = published?.items?.map(item => ({q:item.question, a:item.answer, category:item.category || "General"})) || FAQS;
-  const sections = items.reduce((acc, faq, index) => {
-    if (!acc.length || acc[acc.length - 1].category !== faq.category) {
-      acc.push({ category: faq.category, items: [] });
-    }
-    acc[acc.length - 1].items.push({ ...faq, index });
-    return acc;
-  }, []);
+  const items = published?.items?.map(item => ({id:item.id, q:item.question, a:item.answer, category:item.category || "General"})) || FAQS;
+  const sections = groupFaqSections(items);
+  const sectionIds = sections.map((section) => section.id).join(" ");
+
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (!hash || scrolledTo.current === hash) return;
+    if (scrollToHashTarget()) scrolledTo.current = hash;
+  }, [sectionIds]);
 
   return (
     <div className="min-h-screen bg-white">
@@ -164,13 +213,13 @@ const Faqs = () => {
         />
       </Section>
 
-      {sections.map(({ category, items }, sectionIndex) => (
+      {sections.map(({ category, id, items }, sectionIndex) => (
         // The intro already closes with its own margin, so the first section
         // starts close under it rather than a full section's rhythm below.
         <Section
-          key={category}
+          key={id}
           muted={sectionIndex % 2 === 1}
-          id={hashFor(category)}
+          id={id}
           pad={sectionIndex === 0 ? "pt-4 md:pt-6 pb-20 md:pb-28" : undefined}
         >
           <Eyebrow className="scroll-mt-8">{category}</Eyebrow>
@@ -178,7 +227,7 @@ const Faqs = () => {
             {items.map((faq) => {
               const isOpen = openIndex === faq.index;
               return (
-                <div key={faq.q} className="border-t border-black/10">
+                <div key={faq.key} className="border-t border-black/10">
                   <button
                     type="button"
                     onClick={() => setOpenIndex(isOpen ? null : faq.index)}

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate, Navigate } from "react-router-dom";
 import { APIService } from "../../hooks/remote/apiService";
-import { getAuthToken, isAdminRole, setAuthToken, setRefreshToken, setAdminRole, setUserRole, showSuccessToastMessage } from "../../utils/constant";
+import { getAuthToken, isAdminRole, setAuthToken, setRefreshToken, setAdminRole, setAdminLevel, setUserRole, showSuccessToastMessage } from "../../utils/constant";
 import TurnstileWidget from "../../components/turnstileWidget";
 import Button from "../../components/button";
 import { AdminInput } from "./adminShell";
@@ -36,8 +36,11 @@ const AdminLogin = () => {
           setRefreshToken(refreshToken);
         }
         setAdminRole();
+        // Owner (ADMIN) or MANAGER: decides which admin screens are shown.
+        const role = res.data?.data?.role;
+        setAdminLevel(role);
         setUserRole("ADMIN");
-        showSuccessToastMessage("Welcome, admin");
+        showSuccessToastMessage(role === "MANAGER" ? "Welcome, manager" : "Welcome, admin");
         navigate("/admin");
       }
     } catch (error) {

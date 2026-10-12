@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import SearchResults from "./searchResults";
 import { APIService } from "../../hooks/remote/apiService";
-import { vendorTimeZoneForProvince, vendorTimeZone, vendorTimeZoneLabel, vendorTimeZoneLabelStrict, DEFAULT_VENDOR_ZONE } from "../../utils/vendorTimeZone";
+import { vendorTimeZoneForProvince, vendorTimeZone, vendorTimeZoneLabel, vendorTimeZoneLabelStrict, zoneDisplayName, DEFAULT_VENDOR_ZONE } from "../../utils/vendorTimeZone";
 // The shared site header needs the app's store; these tests are about the page body.
 vi.mock("../../components/publicHeader", () => ({ default: () => null }));
 
@@ -103,23 +103,39 @@ describe("vendor time zones", () => {
   });
 });
 
+// Labels are whatever Intl calls the zone id in this runtime's tz/CLDR data, so
+// the expectations ask Intl too instead of pinning "Mountain Time": Canada's 2026
+// rule changes (BC, Alberta, NWT, Manitoba on permanent daylight time) can change
+// a zone's name once a runtime ships newer data, and the site must follow it.
+const named = (zone) => zoneDisplayName(zone);
+
+describe("zoneDisplayName", () => {
+  test("names a zone in plain language and nothing for an unknown id", () => {
+    expect(named("America/Toronto")).toMatch(/\S/);
+    expect(named("America/Toronto")).not.toMatch(/^[A-Z]{3,4}$/); // a name, not an abbreviation
+    expect(named("America/Halifax")).not.toBe(named("America/Toronto"));
+    expect(zoneDisplayName("Not/AZone")).toBe("");
+  });
+});
+
 describe("vendorTimeZoneLabel", () => {
   test("names the stored zone in plain language", () => {
-    expect(vendorTimeZoneLabel({ timeZone: "America/Toronto", province: "Ontario" })).toBe("Eastern Time");
-    expect(vendorTimeZoneLabel({ timeZone: "America/Edmonton", province: "Alberta" })).toBe("Mountain Time");
-    expect(vendorTimeZoneLabel({ timeZone: "America/Vancouver", province: "British Columbia" })).toBe("Pacific Time");
+    expect(vendorTimeZoneLabel({ timeZone: "America/Toronto", province: "Ontario" })).toBe(named("America/Toronto"));
+    expect(vendorTimeZoneLabel({ timeZone: "America/Edmonton", province: "Alberta" })).toBe(named("America/Edmonton"));
+    expect(vendorTimeZoneLabel({ timeZone: "America/Vancouver", province: "British Columbia" })).toBe(named("America/Vancouver"));
+    expect(named("America/Toronto")).toBeTruthy();
   });
 
   test("falls back to the province map when nothing is stored", () => {
-    expect(vendorTimeZoneLabel({ province: "Nova Scotia" })).toBe("Atlantic Time");
-    expect(vendorTimeZoneLabel({})).toBe("Mountain Time"); // app default
+    expect(vendorTimeZoneLabel({ province: "Nova Scotia" })).toBe(named("America/Halifax"));
+    expect(vendorTimeZoneLabel({})).toBe(named("America/Edmonton")); // app default
   });
 
   test("degrades gracefully on impossible data instead of throwing", () => {
     // An unrecognizable stored zone falls through the province map to the app
     // default, so the label still says something true rather than blank.
-    expect(vendorTimeZoneLabel({ timeZone: "Not/AZone" })).toBe("Mountain Time");
-    expect(vendorTimeZoneLabel(null)).toBe("Mountain Time"); // null stylist -> default zone
+    expect(vendorTimeZoneLabel({ timeZone: "Not/AZone" })).toBe(named("America/Edmonton"));
+    expect(vendorTimeZoneLabel(null)).toBe(named("America/Edmonton")); // null stylist -> default zone
   });
 });
 

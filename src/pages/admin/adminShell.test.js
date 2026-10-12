@@ -58,6 +58,7 @@ describe("AdminPage shell", () => {
       "Support",
       "Feedback",
       "Audit log",
+      "Admin accounts",
     ]);
   });
 

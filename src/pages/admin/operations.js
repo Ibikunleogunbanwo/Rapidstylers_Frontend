@@ -6,7 +6,9 @@ import { AdminPage, AdminInput, AdminTextarea, AdminPill, AdminStat } from "./ad
 import { getAuthToken, isAdminRole, showErrorToastMessage, showSuccessToastMessage } from "../../utils/constant";
 import AdminReviews from "./adminReviews";
 import AdminFeedback from "./adminFeedback";
-import { adminDay, formatAdminTime } from "./adminFormat";
+import { adminDay, adminZoneLabel, formatAdminTime } from "./adminFormat";
+import { isAdminOwner, managerMayOpen } from "./adminRole";
+import { OwnerAccessNeeded } from "./adminAccess";
 
 const SECTIONS = [["overview", "Overview"], ["tickets", "Support"], ["reviews", "Reviews"], ["feedback", "Feedback"], ["logs", "Audit log"], ["business", "Business"], ["settings", "Settings"], ["payouts", "Payouts"]];
 /** Sections that load and page themselves rather than through `load` below. */
@@ -15,6 +17,11 @@ export const COMMISSION_MAX = 50;
 const Operations = () => {
   const [params, setParams] = useSearchParams();
   const tab = SECTIONS.some(([key]) => key === params.get("section")) ? params.get("section") : "overview";
+  // A manager sees the support, review and feedback work; the audit log,
+  // business figures, settings and payout accounts are for owners.
+  const owner = isAdminOwner();
+  const sections = owner ? SECTIONS : SECTIONS.filter(([key]) => managerMayOpen(`/admin/operations?section=${key}`));
+  const ownerOnlyTab = !sections.some(([key]) => key === tab);
   const setTab = value => { activeList.setSearch(""); setActionError(""); setTicketDraft(null); setParams({section:value}); };
   const [kpis, setKpis] = useState(null);
   const [tickets, setTickets] = useState([]);
@@ -60,7 +67,7 @@ const Operations = () => {
       setLoadingSections(previous => ({...previous, [section]:false}));
     }
   };
-  useEffect(() => { if (getAuthToken() && isAdminRole() && !SELF_LOADING.includes(tab) && !completed.current.has(tab)) load(tab); }, [tab]);
+  useEffect(() => { if (getAuthToken() && isAdminRole() && !ownerOnlyTab && !SELF_LOADING.includes(tab) && !completed.current.has(tab)) load(tab); }, [tab]);
   const loading = !SELF_LOADING.includes(tab) && (loadingSections[tab] || !completed.current.has(tab));
   const saveTicket = async event => {
     event.preventDefault();
@@ -94,14 +101,15 @@ const Operations = () => {
   const sectionLists = {tickets,logs:filteredLogs,business:businessSummaries,payouts:connectStatuses};
   const activeList = useAdminList(sectionLists[tab] || [], item=>JSON.stringify(item));
   if (!getAuthToken() || !isAdminRole()) return <Navigate to="/admin/login" replace />;
+  if (ownerOnlyTab) return <OwnerAccessNeeded />;
   const sectionLabel = SECTIONS.find(([key]) => key === tab)?.[1];
   const cards = kpis ? [["Customers", kpis.customers], ["Stylists", kpis.stylists], ["Approved stylists", kpis.approvedStylists], ["Appointments", kpis.appointments], ["Completed", kpis.completedAppointments], ["Open tickets", kpis.openSupportTickets], ["Reviews", kpis.reviews]] : [];
 
   return <AdminPage eyebrow="Admin operations" title={tab === "overview" ? "Admin operations" : sectionLabel} pageTitle={tab === "overview" ? "Operations" : sectionLabel}>
     <div className="mb-5">
       <label htmlFor="operation-section" className="mb-1 block text-sm text-gray-600 md:hidden">Operations section</label>
-      <select id="operation-section" value={tab} onChange={event => setTab(event.target.value)} className="w-full rounded border bg-white p-3 md:hidden">{SECTIONS.map(([value,label]) => <option key={value} value={value}>{label}</option>)}</select>
-      <nav aria-label="Operations sections" className="hidden flex-wrap gap-2 md:flex">{SECTIONS.map(([value,label]) => <button key={value} type="button" aria-current={tab === value ? "page" : undefined} onClick={() => setTab(value)} className={`rounded-md border px-3 py-2 text-sm ${tab === value ? "border-brand text-brand bg-brand/5" : "border-black/10 bg-white text-gray-600"}`}>{label}</button>)}</nav>
+      <select id="operation-section" value={tab} onChange={event => setTab(event.target.value)} className="w-full rounded border bg-white p-3 md:hidden">{sections.map(([value,label]) => <option key={value} value={value}>{label}</option>)}</select>
+      <nav aria-label="Operations sections" className="hidden flex-wrap gap-2 md:flex">{sections.map(([value,label]) => <button key={value} type="button" aria-current={tab === value ? "page" : undefined} onClick={() => setTab(value)} className={`rounded-md border px-3 py-2 text-sm ${tab === value ? "border-brand text-brand bg-brand/5" : "border-black/10 bg-white text-gray-600"}`}>{label}</button>)}</nav>
     </div>
     {ticketDraft && <form onSubmit={saveTicket} className="mb-5 rounded-lg border bg-white p-4">
       <h2 className="mb-3 font-semibold">Update support ticket</h2>
@@ -257,7 +265,7 @@ const AuditLogTable = ({ rows, actions, filters, onFilters, total }) => (
         <AdminInput type="date" value={filters.day} onChange={e => onFilters({ ...filters, day: e.target.value })} />
       </label>
     </div>
-    <p className="text-xs text-gray-500">Showing the latest {total} entries. Times are Mountain Time.</p>
+    <p className="text-xs text-gray-500">Showing the latest {total} entries. Times are {adminZoneLabel()}.</p>
     {rows.length === 0 ? <p className="text-sm text-gray-500">No audit entries match these filters.</p> : (
       <div className="overflow-x-auto rounded-lg border bg-white"><table className="w-full text-left text-sm"><thead><tr className="border-b text-xs text-gray-500"><th className="p-3">When</th><th className="p-3">Actor</th><th className="p-3">Action</th><th className="p-3">Resource</th></tr></thead><tbody>{rows.map((log) => <tr key={log.id} className="border-b align-top last:border-0"><td className="whitespace-nowrap p-3 text-gray-500">{formatAdminTime(log.createdAt)}</td><td className="p-3">{log.actorEmail || log.actorRole}{log.actorEmail && log.actorRole ? <span className="block text-xs text-gray-400">{log.actorRole}</span> : null}</td><td className="p-3">{log.action}</td><td className="p-3">{log.resourceType} {log.resourceId}</td></tr>)}</tbody></table></div>
     )}

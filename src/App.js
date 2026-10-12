@@ -8,6 +8,7 @@ import ScrollToTop from './components/scrollToTop';
 import IdleTimeout from './components/IdleTimeout';
 import DemoMode from './components/demoMode';
 import CustomerRoleRedirect from './components/customerRoleRedirect';
+import { OwnerOnly } from './pages/admin/adminAccess';
 
 const SiteContent = lazy(() => import('./pages/admin/siteContent'));
 const NewsletterAdmin = lazy(() => import('./pages/admin/newsletter'));
@@ -60,6 +61,8 @@ const AdminOperations = lazy(() => import('./pages/admin/operations'));
 const AdminPayments = lazy(() => import('./pages/admin/payments'));
 const AdminRecovery = lazy(() => import('./pages/admin/recovery'));
 const AdminAnnouncements = lazy(() => import('./pages/admin/announcements'));
+const AdminBookingsPage = lazy(() => import('./pages/admin/bookings'));
+const AdminAccounts = lazy(() => import('./pages/admin/adminAccounts'));
 const PublicStylist = lazy(() => import('./pages/users/pages/stylistRoute'));
 const PublicStylistProfile = lazy(() => import('./pages/users/pages/stylistProfile'));
 const NotFound = lazy(() => import('./pages/generalPages/notFound'));
@@ -104,11 +107,11 @@ function App() {
         <Route path="/newsletter/unsubscribe" element={<NewsletterUnsubscribe />} />
         {/* Admin areas: a signed-in customer is sent to their dashboard. */}
         <Route element={<CustomerRoleRedirect area="admin" />}>
-        <Route path="/admin/content" element={<SiteContent />} />
-        <Route path="/admin/newsletter" element={<NewsletterAdmin />} />
-        <Route path="/admin/service-areas" element={<ServiceAreas />} />
-        <Route path="/admin/promotions" element={<Promotions />} />
-        <Route path="/admin/signup-funnel" element={<SignupFunnel />} />
+        <Route path="/admin/content" element={<OwnerOnly><SiteContent /></OwnerOnly>} />
+        <Route path="/admin/newsletter" element={<OwnerOnly><NewsletterAdmin /></OwnerOnly>} />
+        <Route path="/admin/service-areas" element={<OwnerOnly><ServiceAreas /></OwnerOnly>} />
+        <Route path="/admin/promotions" element={<OwnerOnly><Promotions /></OwnerOnly>} />
+        <Route path="/admin/signup-funnel" element={<OwnerOnly><SignupFunnel /></OwnerOnly>} />
         </Route>
         <Route path="/login" element={<Login />} />
         {/* The page the sign-in screen's "Forgot password?" link has always
@@ -156,13 +159,15 @@ function App() {
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route element={<CustomerRoleRedirect area="admin" />}>
         <Route path="/admin" element={<AdminDashboard />} />
-        <Route path="/admin/categories" element={<ManageCategories />} />
-        <Route path="/admin/blog" element={<ManageBlog />} />
+        <Route path="/admin/categories" element={<OwnerOnly><ManageCategories /></OwnerOnly>} />
+        <Route path="/admin/blog" element={<OwnerOnly><ManageBlog /></OwnerOnly>} />
         <Route path="/admin/stylers" element={<ManageStylers />} />
         <Route path="/admin/operations" element={<AdminOperations />} />
-        <Route path="/admin/payments" element={<AdminPayments />} />
-        <Route path="/admin/recovery" element={<AdminRecovery />} />
-        <Route path="/admin/announcements" element={<AdminAnnouncements />} />
+        <Route path="/admin/payments" element={<OwnerOnly managerTo={params => params.get("section") === "bookings" ? "/admin/bookings" : null}><AdminPayments /></OwnerOnly>} />
+        <Route path="/admin/bookings" element={<AdminBookingsPage />} />
+        <Route path="/admin/accounts" element={<OwnerOnly><AdminAccounts /></OwnerOnly>} />
+        <Route path="/admin/recovery" element={<OwnerOnly><AdminRecovery /></OwnerOnly>} />
+        <Route path="/admin/announcements" element={<OwnerOnly><AdminAnnouncements /></OwnerOnly>} />
         </Route>
         {/* Customer area. Only known account workflows mount the authenticated shell. */}
         <Route path="/dashboard/*" element={<UserLayout />} />

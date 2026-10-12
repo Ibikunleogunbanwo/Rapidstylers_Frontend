@@ -1,4 +1,5 @@
 import { describe, test, expect } from "vitest";
+import { zoneDisplayName } from "./vendorTimeZone";
 import {
   zonedWallTimeToInstant,
   buildAppointmentEvent,
@@ -109,7 +110,7 @@ describe("the calendar entry for a booking", () => {
 
   test("names the professional's zone in the event body", () => {
     const event = buildAppointmentEvent(booking);
-    expect(event.details).toContain("Mountain Time");
+    expect(event.details).toContain(zoneDisplayName("America/Edmonton"));
     expect(event.details).toContain("America/Edmonton");
   });
 
@@ -262,7 +263,7 @@ describe("the Google Calendar action", () => {
     const params = new URLSearchParams(url.split("?")[1]);
     expect(params.get("text")).toBe("Braids & colour with Demo Studio");
     expect(params.get("location")).toBe("102 8 Ave SW, Calgary");
-    expect(params.get("details")).toContain("Mountain Time");
+    expect(params.get("details")).toContain(zoneDisplayName("America/Edmonton"));
   });
 
   test("omits the location when the professional travels to the customer", () => {
