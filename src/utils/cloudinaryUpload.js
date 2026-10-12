@@ -92,7 +92,19 @@ export async function uploadToCloudinary(file, folder) {
   const sigUrl = folder
     ? `/get_upload_signature?folderPrefix=${encodeURIComponent(folder)}`
     : "/get_upload_signature";
-  const sigRes = await ApiClient.get(sigUrl, signatureRequestConfig());
+  let sigRes;
+  try {
+    sigRes = await ApiClient.get(sigUrl, signatureRequestConfig());
+  } catch (error) {
+    // Nobody is signed in, so this was a stylist still signing up, asking with
+    // the pass their email code earned. A 401/403 means that pass has run out
+    // (or this tab never had one). Retrying cannot fix it; only verifying the
+    // email again hands out a fresh pass, so say exactly that.
+    if (!getAuthToken() && [401, 403].includes(error?.response?.status)) {
+      throw Object.assign(new Error("Signup upload pass expired"), { code: "SIGNUP_PASS_EXPIRED" });
+    }
+    throw error;
+  }
   const sig = sigRes.data?.data;
   if (!sig) throw new Error("Failed to get upload credentials");
 

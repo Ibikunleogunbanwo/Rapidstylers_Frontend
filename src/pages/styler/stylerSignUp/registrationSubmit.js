@@ -10,6 +10,12 @@ export async function submitRegistration({ files, payload, upload, remove, creat
   const failed = results.find(result => result.status === 'rejected');
   if (failed) {
     await cleanup();
+    if (failed.reason?.code === "SIGNUP_PASS_EXPIRED") {
+      throw Object.assign(
+        new Error("Your email confirmation has expired. Verify your email again with a new code to finish. Everything you entered is saved."),
+        { stage: "upload", code: "SIGNUP_PASS_EXPIRED" }
+      );
+    }
     const message = failed.reason?.code === "UPLOAD_AUTHORIZATION"
       ? "Photo uploads are temporarily unavailable. Please try again later or contact support."
       : "Photo upload failed. Check your connection and try again.";

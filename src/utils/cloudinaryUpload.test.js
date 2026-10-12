@@ -151,3 +151,18 @@ test('classifies provider authorization failures without exposing signature deta
  vi.stubGlobal('fetch',vi.fn().mockResolvedValue({ok:false,status:401,json:async()=>({error:{message:'Invalid Signature private-value'}})}));
  try {await expect(uploadToCloudinary(jpeg(),'profile')).rejects.toMatchObject({code:'UPLOAD_AUTHORIZATION',message:'Photo upload failed'});} finally {get.mockRestore();vi.unstubAllGlobals();}
 });
+
+test('an expired sign-up pass is reported as such, not as a connection problem', async () => {
+  const {ApiClient}=await import('../hooks/remote/apiClient');const {uploadToCloudinary}=await import('./cloudinaryUpload');
+  saveSignupUploadPass('expired-pass');
+  const get=vi.spyOn(ApiClient,'get').mockRejectedValue(Object.assign(new Error('Request failed with status code 401'),{response:{status:401}}));
+  try {await expect(uploadToCloudinary(jpeg(),'profile')).rejects.toMatchObject({code:'SIGNUP_PASS_EXPIRED'});} finally {get.mockRestore();sessionStorage.clear();}
+});
+
+test('a signed-in stylist whose request fails keeps the original error', async () => {
+  const {ApiClient}=await import('../hooks/remote/apiClient');const {uploadToCloudinary}=await import('./cloudinaryUpload');
+  sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY,'account-token');
+  const failure=Object.assign(new Error('Request failed with status code 401'),{response:{status:401}});
+  const get=vi.spyOn(ApiClient,'get').mockRejectedValue(failure);
+  try {await expect(uploadToCloudinary(jpeg(),'profile')).rejects.toBe(failure);} finally {get.mockRestore();sessionStorage.clear();}
+});

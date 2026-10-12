@@ -10,7 +10,7 @@ import { useStylerSignup } from "../../../context/StylerSignupContext";
 import { clearStoredSignupEmail } from "./signupFlow";
 import { APIService } from "../../../hooks/remote/apiService";
 import { uploadToCloudinary, deleteCloudinaryImage } from "../../../utils/cloudinaryUpload";
-import { showSuccessToastMessage } from "../../../utils/constant";
+import { showSuccessToastMessage, showErrorToastMessage } from "../../../utils/constant";
 import { clearSignupUploadPass } from "../../../utils/signupUploadPass";
 import { isAccountAlreadyExists } from "../../../utils/signupReply";
 
@@ -50,7 +50,7 @@ function toFormikErrors(zodError) {
 /* ── Component ──────────────────────────────────────────────────────── */
 const CreatePassword = () => {
   const navigate = useNavigate();
-  const { formData, imageFiles, forgetSignupDraft, creationUncertain, markCreationUncertain } = useStylerSignup();
+  const { formData, imageFiles, forgetSignupDraft, creationUncertain, markCreationUncertain, markEmailUnverified } = useStylerSignup();
   const [submitting, setSubmitting] = useState(false);
   const [uploadingImages, setUploadingImages] = useState(false);
   const [submitError, setSubmitError] = useState(creationUncertain ? "We could not confirm whether your account was created. Try signing in before registering again." : "");
@@ -100,6 +100,15 @@ const CreatePassword = () => {
 
       }
     } catch (err) {
+      // The photo pass from the email code has run out. Nothing was created and
+      // the draft and photos are kept, so send them back to get a fresh code.
+      if (err?.code === "SIGNUP_PASS_EXPIRED") {
+        clearSignupUploadPass();
+        markEmailUnverified();
+        showErrorToastMessage(err.message);
+        navigate("/styler-signup/verify-email");
+        return;
+      }
       // APIService.extractError already shows a toast, but set inline too
       if (err.uncertain) markCreationUncertain();
       // An email that already has an account is not the professional's mistake,

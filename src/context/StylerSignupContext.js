@@ -163,6 +163,8 @@ export function StylerSignupProvider({ children }) {
 
   /** The emailed code was accepted, so the verification step is behind us. */
   const markEmailVerified = useCallback(() => setEmailVerified(true), []);
+  /** The upload pass the email code earned has run out, so the email must be verified again. */
+  const markEmailUnverified = useCallback(() => setEmailVerified(false), []);
 
   /**
    * The account exists, so the remembered answers have done their job. Leaving
@@ -183,6 +185,7 @@ export function StylerSignupProvider({ children }) {
         updateImageFiles,
         emailVerified,
         markEmailVerified,
+        markEmailUnverified,
         restoringPhotos,
         forgetSignupDraft,
         creationUncertain,

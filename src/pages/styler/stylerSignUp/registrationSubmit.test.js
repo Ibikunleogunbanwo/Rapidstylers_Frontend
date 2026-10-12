@@ -43,3 +43,10 @@ it('shows a provider authorization failure without blaming the user connection o
  const error=Object.assign(new Error('private signature'),{code:'UPLOAD_AUTHORIZATION'});
  await expect(submitRegistration({files:{},payload:{},upload:async()=>{throw error;},remove:vi.fn(),create:vi.fn()})).rejects.toMatchObject({stage:'upload',message:'Photo uploads are temporarily unavailable. Please try again later or contact support.'});
 });
+
+it('asks for the email to be verified again when the upload pass has expired, not for a better connection', async () => {
+  const expired = Object.assign(new Error('Signup upload pass expired'), { code: 'SIGNUP_PASS_EXPIRED' });
+  const create = vi.fn();
+  await expect(submitRegistration({ files: {}, payload: {}, upload: async () => { throw expired; }, remove: vi.fn(), create })).rejects.toMatchObject({ stage: 'upload', code: 'SIGNUP_PASS_EXPIRED', message: expect.stringMatching(/Verify your email again/) });
+  expect(create).not.toHaveBeenCalled();
+});
