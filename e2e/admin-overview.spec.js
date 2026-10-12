@@ -37,7 +37,8 @@ test('admin overview opens actionable queues and supports mobile navigation', as
   }
   await page.getByRole('navigation',{name:'Admin sections'}).getByRole('link',{name:'Gallery',exact:true}).click();
   await expect(page).toHaveURL(/stylers\?section=images$/);
-  await expect(page.getByText('No stylist portfolio images uploaded yet.',{exact:false})).toBeVisible();
+  await expect(page.getByRole('heading',{name:'Gallery',exact:true})).toBeVisible();
+  await expect(page.getByText('No photos waiting for review.',{exact:false})).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.goto('/admin');
   await expect(page.getByText('24',{exact:true})).toBeVisible();

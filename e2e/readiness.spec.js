@@ -125,8 +125,9 @@ test("booking replays an uncertain result with the same key after a reload", asy
   });
   await page.goto("/stylistProfile/czE=/VGVzdCBTYWxvbg==");
   await page.getByRole("button", { name: "Book service", exact: true }).click();
-  await page.getByText("4:00 pm", { exact: true }).click();
+  // The picker is date-first: arrival times appear only once a date is chosen.
   await page.getByText(/ · today$/).click();
+  await page.getByText("4:00 pm", { exact: true }).click();
   await page.getByRole("button", { name: "Book appointment", exact: true }).click();
   await expect(page.getByText(/could not confirm whether your booking/i)).toBeVisible();
   await page.reload();
