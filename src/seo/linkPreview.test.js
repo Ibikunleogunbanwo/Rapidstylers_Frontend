@@ -139,8 +139,10 @@ describe('link-preview function', () => {
     const res = await handleLinkPreview({ query: { kind: 'blog', id: '7' }, userAgent: UA.slack, env, fetchImpl: failures[name], timeoutMs: 30 });
     expect(res.status).toBe(200);
     expect(res.body).toContain('<title>RapidStylers</title>');
-    expect(meta(res.body, 'property="og:image"')).toBe('https://www.rapidstylers.ca/logo512.png');
-    expect(meta(res.body, 'name="twitter:card"')).toBe('summary');
+    expect(meta(res.body, 'property="og:image"')).toBe('https://www.rapidstylers.ca/og-image.png');
+    expect(meta(res.body, 'property="og:image:width"')).toBe('1200');
+    expect(meta(res.body, 'property="og:image:height"')).toBe('630');
+    expect(meta(res.body, 'name="twitter:card"')).toBe('summary_large_image');
     expect(meta(res.body, 'property="og:url"')).toBe('https://www.rapidstylers.ca/blog/7');
   });
 
@@ -158,6 +160,16 @@ describe('link-preview function', () => {
     const res = await handleLinkPreview({ query: { kind: 'profile', id: profileId, name: profileName }, userAgent: UA.linkedin, env: { ...env, REACT_APP_DEMO_MODE: 'true' }, fetchImpl: () => json(profile) });
     expect(res.body).toContain('<meta name="robots" content="noindex, nofollow" />');
     expect(res.headers['X-Robots-Tag']).toBe('noindex, nofollow');
+  });
+
+  it('adds fb:app_id when REACT_APP_FACEBOOK_APP_ID is set, on success and on fallback', async () => {
+    const withId = { ...env, REACT_APP_FACEBOOK_APP_ID: '1234567890' };
+    const ok = await handleLinkPreview({ query: { kind: 'profile', id: profileId, name: profileName }, userAgent: UA.facebook ?? UA.slack, env: withId, fetchImpl: () => json(profile) });
+    expect(meta(ok.body, 'property="fb:app_id"')).toBe('1234567890');
+    const failed = await handleLinkPreview({ query: { kind: 'blog', id: '7' }, userAgent: UA.slack, env: withId, fetchImpl: () => json({}, 500) });
+    expect(meta(failed.body, 'property="fb:app_id"')).toBe('1234567890');
+    const none = await handleLinkPreview({ query: { kind: 'blog', id: '7' }, userAgent: UA.slack, env, fetchImpl: () => json({}, 500) });
+    expect(none.body).not.toContain('fb:app_id');
   });
 
   it('runs as a Vercel Node function', async () => {

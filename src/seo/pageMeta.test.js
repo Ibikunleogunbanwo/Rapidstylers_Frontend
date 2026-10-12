@@ -2,7 +2,8 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { PAGE_SEO, PRERENDERED_ROUTES, addNoindex, applyHeadTags, escapeHtml, headTags, pageMeta, summarize } from './pageMeta.mjs';
+import { existsSync } from 'node:fs';
+import { DEFAULT_IMAGE, PAGE_SEO, PRERENDERED_ROUTES, addFacebookAppId, addNoindex, applyHeadTags, escapeHtml, facebookAppId, headTags, pageMeta, summarize } from './pageMeta.mjs';
 
 const repo = resolve(__dirname, '../..');
 const read = (path) => readFileSync(resolve(repo, path), 'utf8');
@@ -23,6 +24,39 @@ describe('summarize', () => {
     const long = summarize('word '.repeat(80));
     expect(long.length).toBeLessThanOrEqual(155);
     expect(long.endsWith('word…')).toBe(true);
+  });
+});
+
+describe('default share image', () => {
+  it('is the branded card in public/, with its size in every page head', () => {
+    expect(DEFAULT_IMAGE).toBe('https://www.rapidstylers.ca/og-image.png');
+    expect(existsSync(resolve(repo, 'public/og-image.png'))).toBe(true);
+    const png = readFileSync(resolve(repo, 'public/og-image.png'));
+    expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([1200, 630]);
+    expect(attr(shell, 'property="og:image"')).toBe(DEFAULT_IMAGE);
+    expect(attr(shell, 'name="twitter:image"')).toBe(DEFAULT_IMAGE);
+    const html = applyHeadTags(shell, pageMeta('/about'));
+    expect(count(html, /property="og:image:width"/g)).toBe(1);
+    expect(attr(html, 'property="og:image:height"')).toBe('630');
+    expect(headTags({ image: 'https://img.example/a.png' })).not.toContain('og:image:width');
+  });
+});
+
+describe('Facebook App ID', () => {
+  it('only accepts a plain numeric id', () => {
+    expect(facebookAppId({ REACT_APP_FACEBOOK_APP_ID: ' 1234567890 ' })).toBe('1234567890');
+    for (const bad of [undefined, '', 'abc', '12"><script>', '123']) expect(facebookAppId({ REACT_APP_FACEBOOK_APP_ID: bad })).toBe('');
+  });
+
+  it('is absent when unset and appears once in every shell when set', () => {
+    expect(shell).not.toContain('fb:app_id');
+    expect(headTags(pageMeta('/faqs'))).not.toContain('fb:app_id');
+    const root = addFacebookAppId(shell, '1234567890');
+    expect(addFacebookAppId(root, '1234567890')).toBe(root);
+    expect(addFacebookAppId(shell, '')).toBe(shell);
+    const page = applyHeadTags(root, pageMeta('/faqs', { fbAppId: '1234567890' }));
+    expect(count(page, /property="fb:app_id"/g)).toBe(1);
+    expect(attr(page, 'property="fb:app_id"')).toBe('1234567890');
   });
 });
 

@@ -2,7 +2,7 @@ import { defineConfig, loadEnv, transformWithOxc } from "vite";
 import react from "@vitejs/plugin-react";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
-import { PRERENDERED_ROUTES, addNoindex, applyHeadTags, pageMeta } from "./src/seo/pageMeta.mjs";
+import { PRERENDERED_ROUTES, addFacebookAppId, addNoindex, applyHeadTags, facebookAppId, pageMeta } from "./src/seo/pageMeta.mjs";
 
 /**
  * Compiles JSX that lives in plain `.js` files — the Create React App
@@ -60,8 +60,9 @@ const transformJsxInJs = () => {
  *
  * On the demo build (REACT_APP_DEMO_MODE=true) every shell also carries
  * `noindex`, so the showroom stays out of search before any script runs.
+ * When REACT_APP_FACEBOOK_APP_ID is set, every shell carries fb:app_id.
  */
-const prerenderPageMeta = ({ demo }) => {
+const prerenderPageMeta = ({ demo, fbAppId }) => {
   let outDir = "build";
   return {
     name: "rapidstylers:page-meta",
@@ -70,14 +71,15 @@ const prerenderPageMeta = ({ demo }) => {
       outDir = resolve(config.root, config.build.outDir);
     },
     transformIndexHtml(html) {
-      return demo ? addNoindex(html) : html;
+      const withAppId = addFacebookAppId(html, fbAppId);
+      return demo ? addNoindex(withAppId) : withAppId;
     },
     async writeBundle() {
       const shell = await readFile(resolve(outDir, "index.html"), "utf8");
       for (const route of PRERENDERED_ROUTES) {
         const file = resolve(outDir, `.${route}`, "index.html");
         await mkdir(dirname(file), { recursive: true });
-        await writeFile(file, applyHeadTags(shell, pageMeta(route, { noindex: demo })));
+        await writeFile(file, applyHeadTags(shell, pageMeta(route, { noindex: demo, fbAppId })));
       }
     },
   };
@@ -109,7 +111,7 @@ export default defineConfig(({ mode }) => {
   );
 
   return {
-    plugins: [react(), transformJsxInJs(), prerenderPageMeta({ demo: env.REACT_APP_DEMO_MODE === "true" })],
+    plugins: [react(), transformJsxInJs(), prerenderPageMeta({ demo: env.REACT_APP_DEMO_MODE === "true", fbAppId: facebookAppId(env) })],
     define: processEnv,
     build: {
       outDir: "build",

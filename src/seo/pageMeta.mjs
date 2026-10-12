@@ -20,7 +20,26 @@
 export const SITE_ORIGIN = 'https://www.rapidstylers.ca';
 export const SITE_NAME = 'RapidStylers';
 export const SITE_DESCRIPTION = 'Find and book trusted beauty professionals near you, from barbers and stylists to nails and lashes.';
-export const DEFAULT_IMAGE = `${SITE_ORIGIN}/logo512.png`;
+// The branded share card (public/og-image.png), shown whenever a page has no
+// photo of its own. 1200x630 is the size Facebook, WhatsApp, LinkedIn and X
+// show as a full-width card.
+export const DEFAULT_IMAGE = `${SITE_ORIGIN}/og-image.png`;
+export const DEFAULT_IMAGE_WIDTH = 1200;
+export const DEFAULT_IMAGE_HEIGHT = 630;
+export const DEFAULT_IMAGE_ALT = 'RapidStylers: book trusted beauty professionals near you';
+
+/**
+ * The Facebook App ID from REACT_APP_FACEBOOK_APP_ID, or '' when it is unset
+ * or not a plain number. Facebook uses fb:app_id to tie shared links to the
+ * app for Insights and ads reporting; without it previews still work.
+ */
+export const facebookAppId = (env = {}) => {
+  const id = String(env.REACT_APP_FACEBOOK_APP_ID || '').trim();
+  return /^\d{5,20}$/.test(id) ? id : '';
+};
+
+/** The fb:app_id tag for `id`, or '' when there is none. */
+export const facebookAppIdTag = (id) => (id ? `<meta property="fb:app_id" content="${id}" />` : '');
 
 /**
  * Fixed public pages. Titles match what each page sets as document.title, so
@@ -61,7 +80,7 @@ export function summarize(text, max = 155) {
   return `${(space > max * 0.6 ? cut.slice(0, space) : cut).replace(/[\s.,;:!?-]+$/, '')}…`;
 }
 
-/** Only absolute https images are offered to crawlers; anything else falls back to the logo. */
+/** Only absolute https images are offered to crawlers; anything else falls back to the share card. */
 export const safeImage = (url) => (typeof url === 'string' && /^https:\/\/[^\s"'<>]+$/.test(url.trim()) ? url.trim() : DEFAULT_IMAGE);
 
 /** Absolute URL of a site path, without a trailing slash except for the home page. */
@@ -77,16 +96,17 @@ export function completeMeta(meta = {}) {
     url: meta.url || `${SITE_ORIGIN}/`,
     image: safeImage(meta.image),
     type: meta.type || 'website',
-    // A real photo deserves the large card; the logo stays a small summary card.
-    card: meta.image && safeImage(meta.image) !== DEFAULT_IMAGE ? 'summary_large_image' : 'summary',
+    // Photos and the branded share card are both wide images.
+    card: 'summary_large_image',
+    fbAppId: meta.fbAppId || '',
     noindex: Boolean(meta.noindex),
   };
 }
 
 /** Site defaults for a fixed page, or for the site as a whole when `path` is not one. */
-export function pageMeta(path, { noindex = false } = {}) {
+export function pageMeta(path, { noindex = false, fbAppId = '' } = {}) {
   const page = PAGE_SEO[path] || PAGE_SEO['/'];
-  return completeMeta({ ...page, url: canonicalUrl(PAGE_SEO[path] ? path : '/'), noindex });
+  return completeMeta({ ...page, url: canonicalUrl(PAGE_SEO[path] ? path : '/'), noindex, fbAppId });
 }
 
 /** The <title>, description, canonical, Open Graph and Twitter tags for `meta`, one per line. */
@@ -102,12 +122,18 @@ export function headTags(input, indent = '    ') {
     `<meta property="og:description" content="${escapeHtml(meta.description)}" />`,
     `<meta property="og:url" content="${escapeHtml(meta.url)}" />`,
     `<meta property="og:image" content="${escapeHtml(meta.image)}" />`,
+    ...(meta.image === DEFAULT_IMAGE ? [
+      `<meta property="og:image:width" content="${DEFAULT_IMAGE_WIDTH}" />`,
+      `<meta property="og:image:height" content="${DEFAULT_IMAGE_HEIGHT}" />`,
+      `<meta property="og:image:alt" content="${escapeHtml(DEFAULT_IMAGE_ALT)}" />`,
+    ] : []),
     `<meta property="og:locale" content="en_CA" />`,
     `<meta name="twitter:card" content="${meta.card}" />`,
     `<meta name="twitter:title" content="${escapeHtml(meta.title)}" />`,
     `<meta name="twitter:description" content="${escapeHtml(meta.description)}" />`,
     `<meta name="twitter:image" content="${escapeHtml(meta.image)}" />`,
   ];
+  if (meta.fbAppId) lines.push(facebookAppIdTag(meta.fbAppId));
   if (meta.noindex) lines.push('<meta name="robots" content="noindex, nofollow" />');
   return lines.join(`\n${indent}`);
 }
@@ -117,7 +143,7 @@ export function headTags(input, indent = '    ') {
 const OWNED_TAGS = [
   /<title>[\s\S]*?<\/title>\s*/gi,
   /<meta\s+name="(?:description|robots|twitter:[\w:]+)"[^>]*>\s*/gi,
-  /<meta\s+property="og:[\w:]+"[^>]*>\s*/gi,
+  /<meta\s+property="(?:og|fb):[\w:]+"[^>]*>\s*/gi,
   /<link\s+rel="canonical"[^>]*>\s*/gi,
 ];
 
@@ -141,6 +167,12 @@ export function applyHeadTags(html, meta) {
   });
   if (!placed) inner = `${inner}  ${block}\n  `;
   return html.slice(0, head.index) + `<head>${inner}</head>` + html.slice(head.index + head[0].length);
+}
+
+/** Adds fb:app_id to the app shell when an id is set (once; never twice). */
+export function addFacebookAppId(html, id) {
+  if (!id || /<meta\s+property="fb:app_id"/i.test(html)) return html;
+  return html.replace(/<\/head>/i, `  ${facebookAppIdTag(id)}\n  </head>`);
 }
 
 /** A noindex robots tag for builds that must stay out of search (the demo). */

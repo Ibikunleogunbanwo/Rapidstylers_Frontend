@@ -7,9 +7,9 @@
  * with a small HTML document that carries only the page's metadata and a link
  * to the real page. No scripts, so the site's CSP is unaffected. Any failure
  * (slow or unreachable API, unknown id, bad response) answers with the site
- * defaults instead of an error, because a preview with the logo beats none.
+ * defaults instead of an error, because a preview with the share card beats none.
  */
-import { DEFAULT_IMAGE, SITE_NAME, canonicalUrl, completeMeta, escapeHtml, headTags, safeImage, summarize } from './pageMeta.mjs';
+import { DEFAULT_IMAGE, SITE_NAME, canonicalUrl, completeMeta, escapeHtml, facebookAppId, headTags, safeImage, summarize } from './pageMeta.mjs';
 
 /**
  * User-Agent tokens of the crawlers that build link previews and do not run
@@ -111,16 +111,17 @@ const KINDS = {
  */
 export async function resolvePreview(query, { env = {}, fetchImpl = globalThis.fetch, timeoutMs = API_TIMEOUT_MS } = {}) {
   const noindex = isDemoEnv(env);
+  const fbAppId = facebookAppId(env);
   const kind = KINDS[query?.kind];
-  if (!kind) return completeMeta({ noindex });
+  if (!kind) return completeMeta({ noindex, fbAppId });
   const url = kind.url(query);
   try {
     const apiBase = String(env.REACT_APP_API_BASE_URL || '').trim();
     if (!apiBase || typeof fetchImpl !== 'function') throw new Error('No API configured');
     const meta = await kind.load(query, { apiBase, apiKey: env.REACT_APP_API_KEY, fetchImpl, timeoutMs });
-    return completeMeta({ ...meta, url, noindex });
+    return completeMeta({ ...meta, url, noindex, fbAppId });
   } catch {
-    return completeMeta({ url, noindex });
+    return completeMeta({ url, noindex, fbAppId });
   }
 }
 
