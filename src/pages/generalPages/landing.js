@@ -277,9 +277,12 @@ const LandingPage = ({ showCurated = IS_DEMO }) => {
           <div className="flex justify-center">
             <img src={scissors} alt="" className="h-5 brightness-0 invert opacity-70" />
           </div>
-          <p className="text-[13px] text-white/75">
-            Style is a way to say who you are without having to speak
-          </p>
+          <figure className="m-0">
+            <blockquote className="text-[13px] text-white/75">
+              “Style is a way to say who you are without having to speak.”
+            </blockquote>
+            <figcaption className="mt-1 text-[12px] text-white/55">Rachel Zoe</figcaption>
+          </figure>
         </div>
 
         {/* benefits for clients */}

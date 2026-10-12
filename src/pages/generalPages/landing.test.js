@@ -60,6 +60,15 @@ describe("Home page layout", () => {
     expect(section.querySelectorAll(".text-white").length).toBeGreaterThan(0);
   });
 
+  test("the homepage quote is credited to Rachel Zoe", () => {
+    renderHome();
+
+    const quote = screen.getByText(/Style is a way to say who you are without having to speak/);
+    const figure = quote.closest("figure");
+    expect(figure, "the quote lost its figure").not.toBeNull();
+    expect(figure.querySelector("figcaption").textContent).toBe("Rachel Zoe");
+  });
+
   test("no white text is left sitting on a light page", () => {
     renderHome();
 
