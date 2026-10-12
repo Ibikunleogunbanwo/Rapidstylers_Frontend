@@ -10,15 +10,17 @@ export const announceUnreadNotifications = (count) =>
 
 /**
  * Unread notification count for the sidebar badge. Read from /notifications
- * (which carries unreadCount) through the bare client: a badge that cannot
- * load just stays hidden, it must never raise an error toast on every page.
+ * (which carries unreadCount), or the stylist's /styler/notifications, through
+ * the bare client: a badge that cannot load just stays hidden, it must never
+ * raise an error toast on every page.
  */
-export const useUnreadNotifications = (refreshKey) => {
+export const useUnreadNotifications = (refreshKey, path = "/notifications") => {
   const [count, setCount] = useState(0);
   useEffect(() => {
-    if (!getAuthToken()) return undefined;
+    // No path: nothing to read (the stylist shell passes none until it knows the role).
+    if (!getAuthToken() || !path) return undefined;
     let current = true;
-    ApiClient.get("/notifications")
+    ApiClient.get(path)
       .then((response) => {
         const data = response?.data?.data;
         const unread = typeof data?.unreadCount === "number"
@@ -28,7 +30,7 @@ export const useUnreadNotifications = (refreshKey) => {
       })
       .catch(() => {});
     return () => { current = false; };
-  }, [refreshKey]);
+  }, [refreshKey, path]);
   useEffect(() => {
     const onChange = (event) => setCount(Number(event.detail?.count) || 0);
     window.addEventListener(UNREAD_NOTIFICATIONS_EVENT, onChange);

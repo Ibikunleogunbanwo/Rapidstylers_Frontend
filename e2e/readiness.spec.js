@@ -22,6 +22,8 @@ test.beforeEach(async ({ page }) => {
       data = [{ id: "test-category", serviceTypeId: "test-category", serviceTypeName: "Hair", serviceName: "Hair" }];
     } else if (path === "/styler/business_summary" || path === "/styler/connect_status") {
       data = {};
+    } else if (path === "/styler/notifications") {
+      data = { items: [], unreadCount: 0 };
     } else if (path === "/single_styler") {
       data = {
         stylerInformation: { stylerId: "s1", businessName: "Test Salon", province: "Alberta", city: "Calgary", timeZone: "America/Edmonton", serviceTypeId: "test-category", reviewCount: 0 },
@@ -233,7 +235,7 @@ test('stylist navigation gives every tab a focused workspace and logout survives
   await page.getByRole('button', {name:'Sign In', exact:true}).click();
   await expect(page).toHaveURL(/\/styler-dashboard$/);
   await expect(page.getByRole('heading', {level:1, name:'Overview', exact:true})).toBeVisible();
-  const tabs = [['Overview',''],['Appointments','/appointments'],['Calendar','/calendar'],['Availability','/availability'],['Services','/services'],['My work','/my-work'],['Payouts','/payouts'],['Reviews','/reviews'],['My profile','/profile']];
+  const tabs = [['Overview',''],['Notifications','/notifications'],['Appointments','/appointments'],['Calendar','/calendar'],['Availability','/availability'],['Services','/services'],['My work','/my-work'],['Payouts','/payouts'],['Reviews','/reviews'],['My profile','/profile']];
   for (const [label, path] of tabs) {
     const toggle = page.getByRole('button', {name:'Open dashboard navigation'});
     if (await toggle.isVisible()) await toggle.click();

@@ -2,7 +2,9 @@ import { useAdminList, AdminListControls, AdminNoMatches } from "./adminList";
 import React, { useState, useEffect, useRef } from "react";
 import { Navigate, Link } from "react-router-dom";
 import { APIService } from "../../hooks/remote/apiService";
-import { AdminPage, AdminCard, AdminInput, AdminTextarea } from "./adminShell";
+import { AdminPage, AdminCard, AdminInput, AdminTextarea, AdminPill } from "./adminShell";
+import AccessibleDialog, { DialogCloseButton } from "../../components/accessibleDialog";
+import BlogArticle from "../../components/blogArticle";
 import {
   getAuthToken,
   isAdminRole,
@@ -34,6 +36,35 @@ export const articleBody = form => {
   return body;
 };
 
+/** A post without a status predates drafts and is live, as the backend treats it. */
+export const isDraft = item => String(item?.status || "").toUpperCase() === "DRAFT";
+
+const todayLabel = () => new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+
+/**
+ * The article exactly as readers will see it (the public article page's own
+ * rendering), in a dialog, before anything is published.
+ */
+function ArticlePreview({ post, onClose }) {
+  return (
+    <AccessibleDialog open={Boolean(post)} onClose={onClose} labelledBy="blog-preview-title" portal closeOnOverlayClick
+      overlayClassName="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 px-4 py-8"
+      className="w-full max-w-4xl rounded-lg bg-white">
+      {post && <>
+        <div className="flex items-center justify-between gap-3 border-b px-4 py-3">
+          <p id="blog-preview-title" className="text-sm font-semibold text-gray-900">
+            Preview{post.draft ? " · Draft, not visible to readers yet" : ""}
+          </p>
+          <DialogCloseButton onClick={onClose} label="Close preview" />
+        </div>
+        <div className="px-5 py-8 md:px-10">
+          <BlogArticle post={post} />
+        </div>
+      </>}
+    </AccessibleDialog>
+  );
+}
+
 const categoryName = item => item.serviceTypeName || item.serviceName || item.name || "";
 
 /** The category picker: the admin Categories list, plus the article's current value if it is no longer listed. */
@@ -62,12 +93,14 @@ const ManageBlog = () => {
   const [editItem, setEditItem] = useState(null); // { id } while editing
   const [editForm, setEditForm] = useState(EMPTY_FORM);
   const [createError, setCreateError] = useState("");
+  const [preview, setPreview] = useState(null);
 
   const loadPosts = () => {
     setLoading(true);
     setLoadError("");
-    APIService.listBlog()
-      .then((res) => setPosts(res.data?.data || []))
+    // The admin list includes drafts; the public list_blog never does.
+    APIService.adminBlogPosts()
+      .then((res) => setPosts(Array.isArray(res.data?.data) ? res.data.data : []))
       .catch(() => setLoadError("Unable to load articles."))
       .finally(() => setLoading(false));
   };
@@ -85,8 +118,8 @@ const ManageBlog = () => {
     return <Navigate to="/admin/login" replace />;
   }
 
-  const handleCreate = async (e) => {
-    e.preventDefault();
+  /** New article as a draft (DRAFT) or live straight away (PUBLISHED). */
+  const handleCreate = async (status) => {
     if (writeLock.current) return;
     setCreateError("");
     let body;
@@ -95,8 +128,8 @@ const ManageBlog = () => {
     setActionError("");
     setSubmitting(true);
     try {
-      await APIService.adminCreateBlog(body);
-      showSuccessToastMessage("Article created");
+      await APIService.adminCreateBlog({ ...body, status });
+      showSuccessToastMessage(status === "DRAFT" ? "Draft saved" : "Article published");
       setForm(EMPTY_FORM);
       loadPosts();
     } catch (error) {
@@ -107,7 +140,11 @@ const ManageBlog = () => {
     }
   };
 
-  const handleUpdate = async (item) => {
+  /**
+   * Saves an edit with an explicit status: the backend publishes an update
+   * that has none, so a draft must say DRAFT to stay a draft.
+   */
+  const handleUpdate = async (item, status) => {
     if (writeLock.current) return;
     setActionError("");
     let body;
@@ -118,8 +155,10 @@ const ManageBlog = () => {
       await APIService.adminUpdateBlog({
         id: item.id,
         ...body,
+        status,
       });
-      showSuccessToastMessage("Article updated");
+      const wasDraft = isDraft(item);
+      showSuccessToastMessage(status === "DRAFT" ? (wasDraft ? "Draft saved" : "Article unpublished") : (wasDraft ? "Article published" : "Article updated"));
       setEditItem(null);
       setEditForm(EMPTY_FORM);
       loadPosts();
@@ -149,6 +188,14 @@ const ManageBlog = () => {
     }
   };
 
+  /** Opens the preview for form values, or shows why they cannot be previewed. */
+  const previewForm = (values, meta, onError) => {
+    let body;
+    try { body = articleBody(values); } catch (error) { onError(error.message); return; }
+    onError("");
+    setPreview({ ...body, dateCreated: meta.dateCreated || todayLabel(), draft: meta.draft });
+  };
+
   const startEdit = (item) => {
     setEditItem({ id: item.id });
     setEditForm({
@@ -164,7 +211,8 @@ const ManageBlog = () => {
     <AdminPage eyebrow="Admin" title="Manage Blog" pageTitle="Blog">
       {/* Create */}
       {actionError && <p role="alert" className="mb-4 text-sm text-red-700">{actionError}</p>}
-      <form onSubmit={handleCreate}>
+      <ArticlePreview post={preview} onClose={() => setPreview(null)} />
+      <form onSubmit={(e) => { e.preventDefault(); handleCreate("PUBLISHED"); }}>
         <AdminCard className="mb-6">
           <p className="font-semibold text-gray-900 mb-3">Write a new article</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -217,19 +265,39 @@ const ManageBlog = () => {
               <span>{createError}</span>
             </div>
           )}
-          <button
-            type="submit"
-            disabled={submitting}
-            className="mt-4 py-3 px-6 bg-brand rounded-md text-sm text-white font-semibold hover:opacity-90 disabled:opacity-60"
-          >
-            {submitting ? "Working…" : "Publish Article"}
-          </button>
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <button
+              type="submit"
+              disabled={submitting}
+              className="py-3 px-6 bg-brand rounded-md text-sm text-white font-semibold hover:opacity-90 disabled:opacity-60"
+            >
+              Publish
+            </button>
+            <button
+              type="button"
+              disabled={submitting}
+              onClick={() => handleCreate("DRAFT")}
+              className="py-3 px-5 rounded-md border border-gray-300 text-sm font-semibold text-gray-800 hover:bg-gray-50 disabled:opacity-60"
+            >
+              Save draft
+            </button>
+            <button
+              type="button"
+              disabled={submitting}
+              onClick={() => previewForm(form, { draft: true }, setCreateError)}
+              className="py-3 px-4 rounded-md text-sm font-semibold text-brand hover:underline disabled:opacity-60"
+            >
+              Preview
+            </button>
+            {submitting && <span role="status" className="text-xs text-gray-500">Working…</span>}
+          </div>
+          <p className="mt-2 text-xs text-gray-500">A draft is saved here only; readers see it once you publish it.</p>
         </AdminCard>
       </form>
 
       {/* List */}
       <AdminCard>
-          <p className="font-semibold text-gray-900 mb-3">Published articles</p>
+          <p className="font-semibold text-gray-900 mb-3">Articles</p>
           <AdminListControls list={list} label="Search articles" />
           {loading ? (
             <p className="text-sm text-gray-500">Loading…</p>
@@ -283,13 +351,49 @@ const ManageBlog = () => {
                           placeholder="Article content"
                         />
                       </label>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        {isDraft(item) ? <>
+                          <button
+                            type="button"
+                            disabled={submitting}
+                            onClick={() => handleUpdate(item, "PUBLISHED")}
+                            className="py-1.5 px-4 bg-brand rounded-md text-xs text-white font-semibold hover:opacity-90"
+                          >
+                            Publish
+                          </button>
+                          <button
+                            type="button"
+                            disabled={submitting}
+                            onClick={() => handleUpdate(item, "DRAFT")}
+                            className="py-1.5 px-3 rounded-md border border-gray-300 text-xs font-semibold text-gray-800"
+                          >
+                            Save draft
+                          </button>
+                        </> : <>
+                          <button
+                            type="button"
+                            disabled={submitting}
+                            onClick={() => handleUpdate(item, "PUBLISHED")}
+                            className="py-1.5 px-4 bg-brand rounded-md text-xs text-white font-semibold hover:opacity-90"
+                          >
+                            Save changes
+                          </button>
+                          <button
+                            type="button"
+                            disabled={submitting}
+                            onClick={() => handleUpdate(item, "DRAFT")}
+                            className="py-1.5 px-3 rounded-md border border-gray-300 text-xs font-semibold text-gray-800"
+                          >
+                            Unpublish
+                          </button>
+                        </>}
                         <button
+                          type="button"
                           disabled={submitting}
-                          onClick={() => handleUpdate(item)}
-                          className="py-1.5 px-4 bg-brand rounded-md text-xs text-white font-semibold hover:opacity-90"
+                          onClick={() => previewForm(editForm, { dateCreated: item.dateCreated, draft: isDraft(item) }, setActionError)}
+                          className="py-1.5 px-3 rounded-md text-xs font-semibold text-brand"
                         >
-                          Save
+                          Preview
                         </button>
                         <button
                           disabled={submitting}
@@ -304,18 +408,28 @@ const ManageBlog = () => {
                     <>
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-gray-900 truncate">{item.title}</p>
+                          <p className="flex min-w-0 items-center gap-2">
+                            <span className="text-sm font-semibold text-gray-900 truncate">{item.title}</span>
+                            <AdminPill tone={isDraft(item) ? "attention" : "positive"}>{isDraft(item) ? "Draft" : "Published"}</AdminPill>
+                          </p>
                           <p className="text-xs text-gray-500 mt-1">
                             {item.category || "Uncategorized"} · {item.dateCreated || ""}
                           </p>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
-                          <Link
+                          <button
+                            type="button"
+                            onClick={() => setPreview({ ...item, imageUrl: item.imageUrl || item.img || "", draft: isDraft(item) })}
+                            className="py-1.5 px-3 rounded-md text-xs font-semibold text-brand hover:text-brand-dark"
+                          >
+                            Preview
+                          </button>
+                          {!isDraft(item) && <Link
                             to={`/blog/${item.id}`}
                             className="py-1.5 px-3 rounded-md text-xs font-semibold text-brand hover:text-brand-dark"
                           >
                             View
-                          </Link>
+                          </Link>}
                           <button
                             disabled={submitting}
                             onClick={() => startEdit(item)}

@@ -3,10 +3,10 @@ import PublicHeader from "../../components/publicHeader";
 import { Link, useParams } from "react-router-dom";
 import Footer from "../../components/footer";
 import AdSlot from "../../components/adSlot";
-import { Section, PageHeading, BackHome } from "../../components/pageSections";
+import { Section, BackHome } from "../../components/pageSections";
+import BlogArticle from "../../components/blogArticle";
 import { fetchBlogPost, isServerAnswer } from "../../hooks/remote/publicContentApi";
 import { useNoIndex } from "./notFound";
-import { blogImageSrc } from "../../utils/blogImage";
 
 // Fallback used only when the backend is unreachable — mirrors the seeded posts.
 // The images are our own work photos from public/images/gallery/ (the same ones
@@ -140,33 +140,12 @@ const BlogPost = () => {
     return <div className="min-h-screen bg-white" />;
   }
 
-  const paragraphs = String(post.content || "").split("\n").filter((p) => p.trim());
-
   return (
     <div className="min-h-screen bg-white">
       <PublicHeader spacer />
       <Section pad="pt-10 md:pt-14 pb-6">
         <BackHome label="All articles" to="/blog" />
-        <PageHeading
-          eyebrow={post.category}
-          title={post.title}
-          lead={`By ${post.author || "RapidStylers Team"} \u00b7 ${post.dateCreated || ""}`}
-        />
-        {post.imageUrl && (
-          <img
-            src={blogImageSrc(post.imageUrl)}
-            alt={post.title || ""}
-            className="aspect-[16/9] w-full object-cover"
-            loading="lazy"
-          />
-        )}
-        <article className="mt-12 max-w-[680px] space-y-5">
-          {paragraphs.map((p, i) => (
-            <p key={i} className="text-[14px] leading-[1.75] text-black/70">
-              {p}
-            </p>
-          ))}
-        </article>
+        <BlogArticle post={post} />
         <AdSlot slot="blog_in_article" style={{ marginTop: "1.5rem" }} />
         <div className="mt-12 border-t border-black/10 pt-8">
           <Link

@@ -9,6 +9,8 @@ import AdminFeedback from "./adminFeedback";
 import { adminDay, adminZoneLabel, formatAdminTime } from "./adminFormat";
 import { isAdminOwner, managerMayOpen } from "./adminRole";
 import { OwnerAccessNeeded } from "./adminAccess";
+import { SUPPORT_CATEGORIES, supportCategoryLabel } from "../../utils/supportCategory";
+import IdPhotoMigration from "./idPhotoMigration";
 
 const SECTIONS = [["overview", "Overview"], ["tickets", "Support"], ["reviews", "Reviews"], ["feedback", "Feedback"], ["logs", "Audit log"], ["business", "Business"], ["settings", "Settings"], ["payouts", "Payouts"]];
 /** Sections that load and page themselves rather than through `load` below. */
@@ -25,6 +27,9 @@ const Operations = () => {
   const setTab = value => { activeList.setSearch(""); setActionError(""); setTicketDraft(null); setParams({section:value}); };
   const [kpis, setKpis] = useState(null);
   const [tickets, setTickets] = useState([]);
+  // The server filters by category; the ref lets `load` read the latest choice.
+  const [ticketCategory, setTicketCategory] = useState("");
+  const ticketCategoryRef = useRef("");
   const [logs, setLogs] = useState([]);
   const [logFilters, setLogFilters] = useState({ action: "", actor: "", day: "" });
   const [commission, setCommission] = useState("");
@@ -48,7 +53,7 @@ const Operations = () => {
     setReadErrors(previous => ({...previous, [section]:""}));
     const requests = {
       overview: [() => APIService.adminKpis(), setKpis],
-      tickets: [() => APIService.adminSupportTickets(), setTickets],
+      tickets: [() => APIService.adminSupportTickets(ticketCategoryRef.current || undefined), setTickets],
       logs: [() => APIService.adminAuditLogs(), setLogs],
       settings: [() => APIService.getCommissionSetting(), data => { setCommission(String(data.commissionPercent ?? "")); setSavedCommission(String(data.commissionPercent ?? "")); }],
       payouts: [() => APIService.adminStylerConnectStatuses(), setConnectStatuses],
@@ -69,6 +74,12 @@ const Operations = () => {
   };
   useEffect(() => { if (getAuthToken() && isAdminRole() && !ownerOnlyTab && !SELF_LOADING.includes(tab) && !completed.current.has(tab)) load(tab); }, [tab]);
   const loading = !SELF_LOADING.includes(tab) && (loadingSections[tab] || !completed.current.has(tab));
+  const changeTicketCategory = value => {
+    ticketCategoryRef.current = value;
+    setTicketCategory(value);
+    activeList.setSearch("");
+    load("tickets");
+  };
   const saveTicket = async event => {
     event.preventDefault();
     if (actionLock.current || !ticketDraft) return;
@@ -120,8 +131,15 @@ const Operations = () => {
       <div className="mt-3 flex gap-3"><button type="submit" disabled={pendingAction} className="rounded bg-brand px-4 py-2 text-sm text-white">{pendingAction ? "Saving ticket…" : "Save ticket"}</button><button type="button" disabled={pendingAction} onClick={()=>setTicketDraft(null)}>Cancel</button></div>
     </form>}
     {!loading && !readErrors[tab] && sectionLists[tab] && <AdminListControls key={tab} list={activeList} label="Search this section" />}
+    {tab === "tickets" && <div className="mb-4 max-w-xs">
+      <label htmlFor="ticket-category-filter" className="mb-1 block text-sm text-gray-600">Ticket category</label>
+      <select id="ticket-category-filter" value={ticketCategory} disabled={Boolean(loadingSections.tickets)} onChange={event => changeTicketCategory(event.target.value)} className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm">
+        <option value="">All categories</option>
+        {SUPPORT_CATEGORIES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+      </select>
+    </div>}
     {actionError && <p role="alert">{actionError}</p>}
-    {loading ? <p className="text-sm text-gray-500">Loading operations…</p> : readErrors[tab] ? <div role="alert">{readErrors[tab]} <button type="button" onClick={() => load(tab)}>Retry</button></div> : tab === "overview" ? <div className="grid grid-cols-2 gap-3 md:grid-cols-4">{cards.map(([label, value]) => <AdminStat key={label} label={label} value={value} />)}</div> : tab === "tickets" ? <div className="grid gap-3">{tickets.length === 0 ? <p className="text-sm text-gray-500">No support tickets.</p> : activeList.filteredCount === 0 ? <AdminNoMatches list={activeList} noun="tickets" /> : activeList.visibleItems.map((ticket) => <div key={ticket.id} className="rounded-lg border bg-white p-4"><div className="flex items-start justify-between gap-3"><p className="min-w-0 break-words font-semibold">{ticket.subject}</p><span className="text-xs font-bold text-gray-500">{ticket.status}</span></div><p className="mt-1 break-words text-xs text-gray-500">#{ticket.ticketId ?? ticket.id} · {ticket.senderName || "Unknown sender"}{ticket.senderEmail ? ` <${ticket.senderEmail}>` : ""}{ticket.senderRole ? ` · ${ticket.senderRole === "STYLIST" ? "Stylist" : "Customer"}` : ""} · {formatAdminTime(ticket.createdAt)}</p><p className="mt-2 break-words text-sm text-gray-600">{ticket.message}</p>{ticket.adminResponse && <p className="mt-2 text-sm text-brand">{ticket.adminResponse}</p>}<button type="button" disabled={pendingAction} onClick={() => {setActionError("");setTicketDraft({ticketId:ticket.id,status:ticket.status,adminResponse:ticket.adminResponse || ""});}} className="mt-3 rounded-md bg-brand px-3 py-2 text-xs font-semibold text-white">Update ticket</button></div>)}</div> : tab === "reviews" ? <AdminReviews /> : tab === "feedback" ? <AdminFeedback /> : tab === "settings" ? <CommissionSetting value={commission} saved={savedCommission} onChange={setCommission} onSave={saveCommission} saving={savingCommission} /> : ["business", "payouts"].includes(tab) && activeList.search.trim() && activeList.filteredCount === 0 ? <AdminNoMatches list={activeList} noun="stylists" /> : tab === "business" ? <BusinessStatsTable rows={activeList.visibleItems} /> : tab === "payouts" ? <ConnectStatusTable rows={activeList.visibleItems} /> : <AuditLogTable rows={activeList.visibleItems} actions={logActions} filters={logFilters} onFilters={value => { setLogFilters(value); activeList.setPage(1); }} total={logs.length} />}
+    {loading ? <p className="text-sm text-gray-500">Loading operations…</p> : readErrors[tab] ? <div role="alert">{readErrors[tab]} <button type="button" onClick={() => load(tab)}>Retry</button></div> : tab === "overview" ? <div className="grid grid-cols-2 gap-3 md:grid-cols-4">{cards.map(([label, value]) => <AdminStat key={label} label={label} value={value} />)}</div> : tab === "tickets" ? <div className="grid gap-3">{tickets.length === 0 ? <p className="text-sm text-gray-500">{ticketCategory ? `No ${supportCategoryLabel(ticketCategory)} tickets.` : "No support tickets."}</p> : activeList.filteredCount === 0 ? <AdminNoMatches list={activeList} noun="tickets" /> : activeList.visibleItems.map((ticket) => <div key={ticket.id} className="rounded-lg border bg-white p-4"><div className="flex items-start justify-between gap-3"><p className="min-w-0 break-words font-semibold">{ticket.subject}</p><span className="flex shrink-0 flex-wrap items-center justify-end gap-2">{ticket.category && <AdminPill>{supportCategoryLabel(ticket.category)}</AdminPill>}<span className="text-xs font-bold text-gray-500">{ticket.status}</span></span></div><p className="mt-1 break-words text-xs text-gray-500">#{ticket.ticketId ?? ticket.id} · {ticket.senderName || "Unknown sender"}{ticket.senderEmail ? ` <${ticket.senderEmail}>` : ""}{ticket.senderRole ? ` · ${ticket.senderRole === "STYLIST" ? "Stylist" : "Customer"}` : ""} · {formatAdminTime(ticket.createdAt)}</p><p className="mt-2 break-words text-sm text-gray-600">{ticket.message}</p>{ticket.adminResponse && <p className="mt-2 text-sm text-brand">{ticket.adminResponse}</p>}<button type="button" disabled={pendingAction} onClick={() => {setActionError("");setTicketDraft({ticketId:ticket.id,status:ticket.status,adminResponse:ticket.adminResponse || ""});}} className="mt-3 rounded-md bg-brand px-3 py-2 text-xs font-semibold text-white">Update ticket</button></div>)}</div> : tab === "reviews" ? <AdminReviews /> : tab === "feedback" ? <AdminFeedback /> : tab === "settings" ? <div className="grid gap-5"><CommissionSetting value={commission} saved={savedCommission} onChange={setCommission} onSave={saveCommission} saving={savingCommission} />{owner && <IdPhotoMigration />}</div> : ["business", "payouts"].includes(tab) && activeList.search.trim() && activeList.filteredCount === 0 ? <AdminNoMatches list={activeList} noun="stylists" /> : tab === "business" ? <BusinessStatsTable rows={activeList.visibleItems} /> : tab === "payouts" ? <ConnectStatusTable rows={activeList.visibleItems} /> : <AuditLogTable rows={activeList.visibleItems} actions={logActions} filters={logFilters} onFilters={value => { setLogFilters(value); activeList.setPage(1); }} total={logs.length} />}
   </AdminPage>;
 };
 

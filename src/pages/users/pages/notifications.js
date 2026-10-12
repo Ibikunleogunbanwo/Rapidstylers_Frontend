@@ -21,7 +21,44 @@ export const formatNotificationTime = (value, now = new Date()) => {
   return `${datePart}, ${timePart}`;
 };
 
-const Notifications = ({ setPageTitle }) => {
+/**
+ * When a notification was made, for people: from createdAtUtc (an ISO instant
+ * such as "2026-10-12T03:12:25Z") in the viewer's own time zone when the server
+ * sends one, otherwise the older createdAt stamp as formatNotificationTime reads it.
+ */
+export const notificationTime = (item, now = new Date()) => {
+  const instant = utcInstant(item?.createdAtUtc);
+  if (!instant) return formatNotificationTime(item?.createdAt, now);
+  const datePart = instant.toLocaleDateString("en-US", { month: "short", day: "numeric", ...(instant.getFullYear() !== now.getFullYear() ? { year: "numeric" } : {}) });
+  const timePart = instant.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+  return `${datePart}, ${timePart}`;
+};
+
+/** A Date for an ISO instant that names its zone (Z or an offset); null otherwise. */
+const utcInstant = (value) => {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:?\d{2})$/i.test(value.trim())) return null;
+  const date = new Date(value.trim());
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+/** The machine-readable time for <time dateTime>. */
+const notificationDateTime = (item) => utcInstant(item?.createdAtUtc) ? item.createdAtUtc : String(item?.createdAt || "").replace(" ", "T");
+
+/** The customer's inbox calls; a stylist's page passes its own set with the same shape. */
+const CUSTOMER_INBOX = {
+  list: () => APIService.listNotifications(),
+  markRead: (id) => APIService.markNotificationRead(id),
+  markAllRead: () => APIService.markAllNotificationsRead(),
+  remove: (id) => APIService.deleteNotification(id),
+  removeAll: () => APIService.deleteAllNotifications(),
+};
+
+/**
+ * An in-app inbox: the list, mark one or all read, delete one or all, and an
+ * empty state. `api` holds the five calls (each resolving to the HTTP
+ * response, as APIService does), so the same page serves customers and stylists.
+ */
+export const NotificationsInbox = ({ setPageTitle, api = CUSTOMER_INBOX, subtitle = "In-app updates from RapidStylers" }) => {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
@@ -38,7 +75,7 @@ const Notifications = ({ setPageTitle }) => {
     setLoading(true);
     setLoadError(false);
     try {
-      const response = await APIService.listNotifications();
+      const response = await api.list();
       if (!Array.isArray(response.data?.data?.items)) throw new Error("Invalid notifications");
       setItems(response.data.data.items);
     } catch (error) {
@@ -59,7 +96,7 @@ const Notifications = ({ setPageTitle }) => {
     if (notification.read || markingAll || pendingReads.has(notification.id)) return;
     setPendingReads((current) => new Set(current).add(notification.id));
     try {
-      await APIService.markNotificationRead(notification.id);
+      await api.markRead(notification.id);
       setItems((current) => current.map((item) => item.id === notification.id ? { ...item, read: true } : item));
     } catch (error) {
       showErrorToastMessage("Unable to update notification");
@@ -71,7 +108,7 @@ const Notifications = ({ setPageTitle }) => {
   const markAllRead = async () => {
     setMarkingAll(true);
     try {
-      await APIService.markAllNotificationsRead();
+      await api.markAllRead();
       setItems((current) => current.map((item) => ({ ...item, read: true })));
     } catch (error) {
       showErrorToastMessage("Unable to update notifications");
@@ -85,7 +122,7 @@ const Notifications = ({ setPageTitle }) => {
     if (clearing || deleting.has(notification.id)) return;
     setDeleting((current) => new Set(current).add(notification.id));
     try {
-      await APIService.deleteNotification(notification.id);
+      await api.remove(notification.id);
       setItems((current) => current.filter((item) => item.id !== notification.id));
     } catch (error) {
       showErrorToastMessage("Unable to delete notification");
@@ -98,7 +135,7 @@ const Notifications = ({ setPageTitle }) => {
     if (!window.confirm("Delete all notifications? This cannot be undone.")) return;
     setClearing(true);
     try {
-      await APIService.deleteAllNotifications();
+      await api.removeAll();
       setItems([]);
     } catch (error) {
       showErrorToastMessage("Unable to delete notifications");
@@ -120,7 +157,7 @@ const Notifications = ({ setPageTitle }) => {
           <Back />
           <div>
             <h1 className="text-[15px] font-bold text-gray-900">Notifications</h1>
-            <p className="mt-0.5 text-xs text-gray-500">In-app updates from RapidStylers</p>
+            <p className="mt-0.5 text-xs text-gray-500">{subtitle}</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -146,7 +183,7 @@ const Notifications = ({ setPageTitle }) => {
                   <div><p className="text-sm font-bold text-gray-900">{item.title}</p><p className="mt-1 text-sm leading-5 text-gray-600">{item.message}</p></div>
                   {!item.read && <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-brand" aria-label="Unread" />}
                 </div>
-                <p className="mt-2 text-[11px] text-gray-400"><time dateTime={String(item.createdAt || "").replace(" ", "T")}>{formatNotificationTime(item.createdAt)}</time></p>
+                <p className="mt-2 text-[11px] text-gray-400"><time dateTime={notificationDateTime(item)}>{notificationTime(item)}</time></p>
               </button>
               <button type="button" onClick={() => deleteOne(item)} disabled={clearing || deleting.has(item.id)} aria-label="Delete this notification" title="Delete this notification" className="absolute right-2 top-2 rounded-full px-2 py-1 text-lg leading-none text-gray-400 hover:bg-gray-100 hover:text-red-600 disabled:opacity-50">&times;</button>
               </div>
@@ -157,5 +194,7 @@ const Notifications = ({ setPageTitle }) => {
     </div>
   );
 };
+
+const Notifications = (props) => <NotificationsInbox {...props} />;
 
 export default Notifications;

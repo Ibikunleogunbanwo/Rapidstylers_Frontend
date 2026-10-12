@@ -28,6 +28,9 @@ vi.mock("../../../utils/constant", async (importOriginal) => ({
   setIntendedRoute: vi.fn(),
 }));
 
+// The sidebar badge reads the stylist's unread count through the bare client.
+vi.mock("../../../hooks/remote/apiClient", () => ({ ApiClient: { get: vi.fn(() => Promise.resolve({ data: { data: { items: [], unreadCount: 0 } } })) } }));
+
 vi.mock("../stylerComponents/businessSummary", () => ({ default: () => <aside>summary</aside> }));
 vi.mock("../stylerComponents/reviewsSummary", () => ({ default: () => <aside>reviews</aside> }));
 vi.mock("../stylerComponents/listingStatusNotice", () => ({ default: () => null }));
@@ -45,6 +48,7 @@ describe("the stylist sidebar", () => {
     const nav = screen.getByRole("navigation");
     for (const label of [
       "Overview",
+      "Notifications",
       "Appointments",
       "Calendar",
       "Availability",
@@ -57,7 +61,7 @@ describe("the stylist sidebar", () => {
     ]) {
       expect(nav.querySelectorAll(`a[href="${label === "Overview" ? "/styler-dashboard" : "/styler-dashboard/" + ({"My work":"my-work","My profile":"profile"}[label] || label.toLowerCase())}"]`).length).toBe(1);
     }
-    expect(nav.querySelectorAll("a").length).toBe(10);
+    expect(nav.querySelectorAll("a").length).toBe(11);
   });
 
   it("marks the active section with a quiet brand pill, never the solid slab", () => {
@@ -188,4 +192,20 @@ test("the support page brings its own heading, so the shell adds none", () => {
   renderLayout("/styler-dashboard/support");
   expect(screen.queryByRole("heading", { level: 1 })).not.toBeInTheDocument();
   expect(screen.getByRole("link", { name: "Support" })).toHaveAttribute("aria-current", "page");
+});
+
+import { ApiClient } from "../../../hooks/remote/apiClient";
+import { announceUnreadNotifications } from "../../users/userLayout/unreadNotifications";
+import { act, waitFor } from "@testing-library/react";
+
+test("the Notifications item carries the stylist's unread count and follows the inbox", async () => {
+  ApiClient.get.mockResolvedValueOnce({ data: { data: { items: [], unreadCount: 3 } } });
+  renderLayout("/styler-dashboard/notifications");
+  expect(await screen.findByRole("link", { name: "Notifications, 3 unread" })).toHaveAttribute("aria-current", "page");
+  expect(ApiClient.get).toHaveBeenCalledWith("/styler/notifications");
+  // The inbox page brings its own heading; the tab title still comes from the shell.
+  expect(screen.queryByRole("heading", { level: 1 })).not.toBeInTheDocument();
+  expect(document.title).toBe("Notifications | RapidStylers");
+  act(() => announceUnreadNotifications(0));
+  await waitFor(() => expect(screen.getByRole("link", { name: "Notifications" })).toBeInTheDocument());
 });

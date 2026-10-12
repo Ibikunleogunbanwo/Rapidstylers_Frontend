@@ -253,3 +253,31 @@ describe('service dispute API contracts',()=>{
   await APIService.adminResolveServiceDispute({appointmentId:'a1',note:'Refund completed'});expect(ApiClient.post).toHaveBeenLastCalledWith('/admin/resolve_service_dispute',{appointmentId:'a1',note:'Refund completed'});
  });
 });
+
+describe('support categories, blog drafts and the stylist inbox', () => {
+  beforeEach(() => { vi.clearAllMocks(); ApiClient.post.mockResolvedValue({ data: { statusCode: '200' } }); ApiClient.get.mockResolvedValue({ data: { statusCode: '200' } }); });
+  test('admin tickets filter by category only when one is chosen', async () => {
+    await APIService.adminSupportTickets('PAYMENT');
+    expect(ApiClient.get).toHaveBeenLastCalledWith('/admin/support_tickets', { params: { category: 'PAYMENT' } });
+    await APIService.adminSupportTickets();
+    expect(ApiClient.get).toHaveBeenLastCalledWith('/admin/support_tickets');
+  });
+  test('admin blog reads include drafts', async () => {
+    await APIService.adminBlogPosts();
+    expect(ApiClient.get).toHaveBeenLastCalledWith('/admin/blog_posts');
+    await APIService.adminBlogPost('11');
+    expect(ApiClient.get).toHaveBeenLastCalledWith('/admin/blog_post', { params: { id: '11' } });
+  });
+  test('the stylist inbox uses the styler/notifications routes', async () => {
+    await APIService.stylerNotifications();
+    expect(ApiClient.get).toHaveBeenLastCalledWith('/styler/notifications');
+    await APIService.stylerMarkNotificationRead('N1');
+    expect(ApiClient.post).toHaveBeenLastCalledWith('/styler/notifications/read', { notificationId: 'N1' });
+    await APIService.stylerMarkAllNotificationsRead();
+    expect(ApiClient.post).toHaveBeenLastCalledWith('/styler/notifications/read_all');
+    await APIService.stylerDeleteNotification('N1');
+    expect(ApiClient.post).toHaveBeenLastCalledWith('/styler/notifications/delete', { notificationId: 'N1' });
+    await APIService.stylerDeleteAllNotifications();
+    expect(ApiClient.post).toHaveBeenLastCalledWith('/styler/notifications/delete_all');
+  });
+});

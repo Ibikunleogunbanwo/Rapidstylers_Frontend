@@ -3,6 +3,7 @@ import Back from "../../../components/goBack";
 import { APIService } from "../../../hooks/remote/apiService";
 import { ApiClient } from "../../../hooks/remote/apiClient";
 import { getAuthToken, getUserRole, showSuccessToastMessage } from "../../../utils/constant";
+import { SUPPORT_CATEGORIES, supportCategoryLabel } from "../../../utils/supportCategory";
 
 // The server's limits (SupportTicketService), shown as counters under the fields.
 const SUBJECT_LIMIT = 120;
@@ -12,7 +13,7 @@ const appointmentLabel = (appointment) =>
   [appointment?.stylerData?.businessName, appointment?.subServiceData?.name, appointment?.appointmentDate].filter(Boolean).join(" · ");
 
 const Support = ({ setPageTitle }) => {
-  const [form, setForm] = useState({ subject: "", message: "" });
+  const [form, setForm] = useState({ subject: "", message: "", category: "" });
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
@@ -60,13 +61,13 @@ const Support = ({ setPageTitle }) => {
 
   const submit = async (event) => {
     event.preventDefault();
-    if (!form.subject.trim() || !form.message.trim() || submitting) return;
+    if (!form.subject.trim() || !form.message.trim() || !form.category || submitting) return;
     setErrorMsg("");
     setSubmitting(true);
     try {
       const message = [appointmentLine, form.message.trim()].filter(Boolean).join("\n\n");
-      await APIService.createSupportTicket({ subject: form.subject.trim(), message });
-      setForm({ subject: "", message: "" });
+      await APIService.createSupportTicket({ subject: form.subject.trim(), message, category: form.category });
+      setForm({ subject: "", message: "", category: "" });
       setAppointmentId("");
       showSuccessToastMessage("Support ticket submitted");
       await loadTickets();
@@ -93,6 +94,13 @@ const Support = ({ setPageTitle }) => {
           <form onSubmit={submit} className="grid gap-3">
             <div><p className="font-semibold">Contact support</p><p className="mt-1 text-sm text-gray-500">Tell us what happened and, when it is about a booking, which appointment.</p></div>
             <p className="text-xs text-gray-500">Fields marked <span aria-hidden="true" className="text-red-600">*</span><span className="sr-only">with an asterisk</span> are required.</p>
+            <div className="grid gap-1">
+              <label htmlFor="support-category" className="text-sm font-medium">What is this about? <span aria-hidden="true" className="text-red-600">*</span></label>
+              <select id="support-category" value={form.category} onChange={(event) => setForm({ ...form, category: event.target.value })} className="rounded-md border bg-white px-3 py-2 text-sm outline-none focus:border-brand" required>
+                <option value="" disabled>Choose a topic</option>
+                {SUPPORT_CATEGORIES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+              </select>
+            </div>
             <div className="grid gap-1">
               <label htmlFor="support-subject" className="text-sm font-medium">Subject <span aria-hidden="true" className="text-red-600">*</span></label>
               <input id="support-subject" aria-describedby="support-subject-count" value={form.subject} onChange={(event) => setForm({ ...form, subject: event.target.value })} placeholder="For example: Refund for a cancelled booking" maxLength={SUBJECT_LIMIT} className="rounded-md border px-3 py-2 text-sm outline-none focus:border-brand" required />
@@ -126,7 +134,7 @@ const Support = ({ setPageTitle }) => {
             <p className="mb-3 font-semibold">Your tickets</p>
             {loading ? <p className="text-sm text-gray-500">Loading tickets...</p> : loadError ? <div role="alert">Unable to load support tickets. <button type="button" onClick={loadTickets}>Retry</button></div> : tickets.length === 0 ? <p className="text-sm text-gray-500">No support tickets yet.</p> : <div className="grid gap-3">{tickets.map((ticket) => (
               <div key={ticket.id} className="rounded-md border border-gray-100 p-3">
-                <div className="flex items-start justify-between gap-3"><p className="text-sm font-semibold text-gray-900">{ticket.subject}</p><span className="rounded-full bg-gray-100 px-2 py-1 text-[10px] font-bold text-gray-600">{ticket.status}</span></div>
+                <div className="flex items-start justify-between gap-3"><p className="text-sm font-semibold text-gray-900">{ticket.subject}</p><span className="flex shrink-0 flex-wrap justify-end gap-1">{ticket.category && <span className="rounded-full border border-brand/20 bg-brand/5 px-2 py-1 text-[10px] font-bold text-brand">{supportCategoryLabel(ticket.category)}</span>}<span className="rounded-full bg-gray-100 px-2 py-1 text-[10px] font-bold text-gray-600">{ticket.status}</span></span></div>
                 <p className="mt-2 whitespace-pre-line text-sm text-gray-600">{ticket.message}</p>
                 {ticket.adminResponse && <p className="mt-2 border-l-2 border-brand pl-2 text-sm text-gray-700">{ticket.adminResponse}</p>}
                 <p className="mt-2 text-[11px] text-gray-400">Updated {ticket.updatedAt}</p>

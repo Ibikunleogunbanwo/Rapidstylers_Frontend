@@ -22,7 +22,8 @@ it('asks before sending to everyone with the recipient count, then reports how m
   await waitFor(() => expect(screen.getByRole('button', { name: 'Send announcement' })).not.toBeDisabled());
   fireEvent.click(screen.getByRole('button', { name: 'Send announcement' }));
   expect(await screen.findByRole('status')).toHaveTextContent('Sent to 12 customers.');
-  expect(APIService.adminSendAnnouncement).toHaveBeenCalledWith({ title: 'Holiday hours', message: 'Closed Monday.', recipientEmail: '' });
+  expect(APIService.adminSendAnnouncement).toHaveBeenCalledWith({ title: 'Holiday hours', message: 'Closed Monday.', recipientEmail: '', audience: 'CUSTOMERS' });
+  expect(AdminAPI.announcementAudienceCount).toHaveBeenCalledWith('CUSTOMERS');
   expect(confirm).toHaveBeenCalledTimes(2);
   expect(AdminAPI.announcements).toHaveBeenCalledTimes(2);
 });
@@ -44,7 +45,7 @@ it('sends to one customer by email without the everyone prompt, and shows backen
   fill();
   fireEvent.click(screen.getByRole('button', { name: 'Send announcement' }));
   expect(await screen.findByRole('alert')).toHaveTextContent('No customer with that email');
-  expect(APIService.adminSendAnnouncement).toHaveBeenCalledWith({ title: 'Holiday hours', message: 'Closed Monday.', recipientEmail: 'a@b.com' });
+  expect(APIService.adminSendAnnouncement).toHaveBeenCalledWith({ title: 'Holiday hours', message: 'Closed Monday.', recipientEmail: 'a@b.com', audience: 'CUSTOMERS' });
   expect(confirm).not.toHaveBeenCalled();
 });
 it('keeps Send disabled until there is a title and a message', () => {
@@ -63,4 +64,45 @@ it('lists sent announcements, newest first as the backend returns them', async (
   expect(await screen.findByText('Holiday hours')).toBeInTheDocument();
   expect(screen.getByText(/12 Oct 2026, 9:00 AM MDT · All customers · 1,204 recipients · by ops@rapidstylers.ca/)).toBeInTheDocument();
   expect(screen.getByText(/To a@b.com · 1 recipient$/)).toBeInTheDocument();
+});
+it('offers all four audiences', () => {
+  render(<MemoryRouter><Announcements /></MemoryRouter>);
+  const group = screen.getByRole('group', { name: 'Send to' });
+  expect([...group.querySelectorAll('label')].map(label => label.textContent.trim())).toEqual(['All customers', 'One customer', 'All stylists', 'One stylist']);
+  expect(screen.getByLabelText('All customers')).toBeChecked();
+});
+it('sends to every stylist after confirming with the stylist count', async () => {
+  AdminAPI.announcementAudienceCount.mockImplementation(audience => Promise.resolve({ count: audience === 'STYLISTS' ? 87 : 1204 }));
+  APIService.adminSendAnnouncement.mockResolvedValue({ data: { statusCode: '200', data: { sent: 87 } } });
+  const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true);
+  render(<MemoryRouter><Announcements /></MemoryRouter>);
+  fireEvent.click(screen.getByLabelText('All stylists'));
+  fill();
+  expect(screen.getByText(/Shows on the Notifications page of the stylist's dashboard/)).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Send announcement' }));
+  expect(await screen.findByRole('status')).toHaveTextContent('Sent to 87 stylists.');
+  expect(AdminAPI.announcementAudienceCount).toHaveBeenCalledWith('STYLISTS');
+  expect(confirm).toHaveBeenCalledWith('Send this to 87 active stylists? It cannot be recalled.');
+  expect(APIService.adminSendAnnouncement).toHaveBeenCalledWith({ title: 'Holiday hours', message: 'Closed Monday.', recipientEmail: '', audience: 'STYLISTS' });
+});
+it('sends to one stylist by email without asking', async () => {
+  APIService.adminSendAnnouncement.mockResolvedValue({ data: { statusCode: '200', data: { sent: 1 } } });
+  const confirm = vi.spyOn(window, 'confirm');
+  render(<MemoryRouter><Announcements /></MemoryRouter>);
+  fireEvent.click(screen.getByLabelText('One stylist'));
+  fill();
+  expect(screen.getByRole('button', { name: 'Send announcement' })).toBeDisabled();
+  fireEvent.change(screen.getByLabelText('Stylist email'), { target: { value: 'pro@salon.ca' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Send announcement' }));
+  expect(await screen.findByRole('status')).toHaveTextContent('Sent to 1 stylist.');
+  expect(APIService.adminSendAnnouncement).toHaveBeenCalledWith({ title: 'Holiday hours', message: 'Closed Monday.', recipientEmail: 'pro@salon.ca', audience: 'STYLISTS' });
+  expect(confirm).not.toHaveBeenCalled();
+});
+it('shows each sent announcement\'s audience', async () => {
+  AdminAPI.announcements.mockResolvedValue([{ title: 'New payout dates', message: 'Fridays now.', recipientCount: 87, recipientEmail: null, audience: 'STYLISTS', sentAt: '2026-10-12 15:00:00' }, { title: 'Sale', message: 'Ten percent off.', recipientCount: 5, recipientEmail: null, audience: 'CUSTOMERS', sentAt: '2026-10-11 15:00:00' }]);
+  render(<MemoryRouter><Announcements /></MemoryRouter>);
+  const stylistRow = (await screen.findByText('New payout dates')).closest('li');
+  expect(stylistRow).toHaveTextContent('Stylists');
+  expect(stylistRow).toHaveTextContent(/All stylists · 87 recipients/);
+  expect(screen.getByText('Sale').closest('li')).toHaveTextContent(/Customers.*All customers · 5 recipients/);
 });

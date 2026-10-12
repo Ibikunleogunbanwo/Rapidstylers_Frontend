@@ -7,10 +7,12 @@ import ListingStatusNotice from "../stylerComponents/listingStatusNotice";
 import PayoutSetupNotice from "../stylerComponents/payoutSetupNotice";
 import { getAuthToken, getUserRole, setIntendedRoute } from "../../../utils/constant";
 import { logoutSession } from "../../../utils/sessionLogout";
+import { useUnreadNotifications } from "../../users/userLayout/unreadNotifications";
 
 // Shared navigation and a focused workspace for each stylist page.
 const NAV_ITEMS = [
   { to: "/styler-dashboard", label: "Overview" },
+  { to: "/styler-dashboard/notifications", label: "Notifications" },
   { to: "/styler-dashboard/appointments", label: "Appointments", group: "Bookings" },
   { to: "/styler-dashboard/calendar", label: "Calendar" },
   { to: "/styler-dashboard/availability", label: "Availability" },
@@ -32,7 +34,20 @@ const PROFILE_PAGES = {
   "/styler-dashboard/change-password": "Change password",
 };
 // Pages that print their own H1, so the shell does not add a second one.
-const OWN_HEADING = new Set(["/styler-dashboard/support"]);
+const OWN_HEADING = new Set(["/styler-dashboard/support", "/styler-dashboard/notifications"]);
+
+// The unread count rides on the Notifications item, read out with the label.
+const NavLabel = ({ to, label, unread }) => (
+  to === "/styler-dashboard/notifications" && unread > 0 ? (
+    <span className="flex items-center justify-between gap-2">
+      {label}
+      <span className="min-w-[20px] rounded-full bg-brand px-1.5 py-0.5 text-center text-[11px] font-semibold leading-none text-white">
+        <span aria-hidden="true">{unread > 99 ? "99+" : unread}</span>
+        <span className="sr-only">, {unread} unread</span>
+      </span>
+    </span>
+  ) : label
+);
 
 /** The sidebar item a path belongs to and the heading/tab title it shows. */
 export const stylerPageFor = (pathname) => {
@@ -53,6 +68,9 @@ const StylerLayout = () => {
     setMenuOpen(false);
   };
   const page = stylerPageFor(location.pathname);
+  // Re-read on every page change; the inbox page also announces its own changes.
+  const signedInStyler = Boolean(getAuthToken()) && getUserRole() === "STYLER";
+  const unreadNotifications = useUnreadNotifications(location.pathname, signedInStyler ? "/styler/notifications" : null);
   // One tab title per page, set here so a title left behind by the previous
   // page (Overview used to read "Reviews | RapidStylers") cannot stick.
   useEffect(() => {
@@ -106,7 +124,7 @@ const StylerLayout = () => {
                     : "text-black/60 hover:text-onSurface hover:bg-black/[0.04] cursor-pointer"
                 }`}
               >
-                {label}
+                <NavLabel to={to} label={label} unread={unreadNotifications} />
               </Link>
               </div>
             ))}

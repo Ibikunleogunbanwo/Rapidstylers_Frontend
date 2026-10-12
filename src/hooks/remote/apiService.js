@@ -494,6 +494,28 @@ export class APIService {
         }
     }
 
+    // A professional's own in-app inbox: the same shape as /notifications.
+    static async stylerNotifications(){
+        try { return await ApiClient.get("/styler/notifications"); }
+        catch (error) { APIService.extractError(error); throw error; }
+    }
+    static async stylerMarkNotificationRead(notificationId){
+        try { return await ApiClient.post("/styler/notifications/read", { notificationId }); }
+        catch (error) { APIService.extractError(error); throw error; }
+    }
+    static async stylerMarkAllNotificationsRead(){
+        try { return await ApiClient.post("/styler/notifications/read_all"); }
+        catch (error) { APIService.extractError(error); throw error; }
+    }
+    static async stylerDeleteNotification(notificationId){
+        try { return await ApiClient.post("/styler/notifications/delete", { notificationId }); }
+        catch (error) { APIService.extractError(error); throw error; }
+    }
+    static async stylerDeleteAllNotifications(){
+        try { return await ApiClient.post("/styler/notifications/delete_all"); }
+        catch (error) { APIService.extractError(error); throw error; }
+    }
+
     static async getNotificationPreferences(){
         try{
             return await ApiClient.get("/notification_preferences");
@@ -921,7 +943,11 @@ export class APIService {
         catch (error) { APIService.extractError(error); throw error; }
     }
 
-    /** In-app announcement to every active customer, or one customer when recipientEmail is set. */
+    /**
+     * In-app announcement {title, message, recipientEmail?, audience?}. audience is
+     * CUSTOMERS (the default) or STYLISTS; with recipientEmail it goes to that one
+     * customer or stylist. Resolves {sent}.
+     */
     static async adminSendAnnouncement(data){
         try { return await ApiClient.post("/admin/send_announcement", data); }
         catch (error) { APIService.extractError(error); throw error; }
@@ -966,9 +992,12 @@ export class APIService {
             throw(error);
         }
     }
-    static async adminSupportTickets(){
+    /** Every ticket, or only one category (BOOKING, PAYMENT, ACCOUNT, TECHNICAL, OTHER). */
+    static async adminSupportTickets(category){
         try{
-            return await ApiClient.get("/admin/support_tickets");
+            return await (category
+                ? ApiClient.get("/admin/support_tickets", { params: { category } })
+                : ApiClient.get("/admin/support_tickets"));
         }
         catch(error){
             APIService.extractError(error);
@@ -1147,6 +1176,17 @@ export class APIService {
             throw(error);
         }
     }
+    /** Every article, drafts included, newest first (ADMIN). The public list never returns drafts. */
+    static async adminBlogPosts(){
+        try { return await ApiClient.get("/admin/blog_posts"); }
+        catch (error) { APIService.extractError(error); throw error; }
+    }
+    /** One article by id, drafts included (ADMIN). */
+    static async adminBlogPost(id){
+        try { return await ApiClient.get("/admin/blog_post", { params: { id } }); }
+        catch (error) { APIService.extractError(error); throw error; }
+    }
+    /** `status` is DRAFT or PUBLISHED; the backend publishes when it is missing. */
     static async adminCreateBlog(data){
         try{
             return await ApiClient.post("/create_blog", data);

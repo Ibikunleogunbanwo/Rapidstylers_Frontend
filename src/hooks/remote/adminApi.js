@@ -42,7 +42,17 @@ export const AdminAPI = {
   refundContext: appointmentId => get('/admin/refund_context', { appointmentId }),
   reconciliationLatest: () => get('/admin/payment_reconciliation_latest'),
   announcements: () => get('/admin/announcements'),
-  announcementAudienceCount: () => get('/admin/announcement_audience_count'),
+  /** {count} of active customers, or of stylists when audience is STYLISTS. */
+  announcementAudienceCount: audience => get('/admin/announcement_audience_count', audience ? { audience } : undefined),
+  /**
+   * One page of the legacy ID-photo move (owner only): {dryRun, afterId, limit}.
+   * Resolves the page's totals and nextAfterId (null when the last page is done).
+   */
+  migrateIdentificationImages: ({ dryRun = true, afterId, limit } = {}) => post('/admin/migrate_identification_images', {
+    dryRun,
+    ...(afterId !== undefined && afterId !== null ? { afterId } : {}),
+    ...(limit ? { limit } : {}),
+  }),
   auditLogs: params => get('/admin/audit_logs', params),
   feedback: () => get('/list_feedback'),
   me: () => get('/admin/me'),

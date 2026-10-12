@@ -64,6 +64,7 @@ test('support fields have accessible labels', () => {
  render(<Support setPageTitle={vi.fn()} />);
  expect(screen.getByRole('textbox',{name:'Subject'})).toBeInTheDocument();
  expect(screen.getByRole('textbox',{name:'Describe the issue'})).toBeInTheDocument();
+ expect(screen.getByRole('combobox',{name:'What is this about?'})).toBeInTheDocument();
 });
 test('referral field has an accessible label', async () => {
  APIService.getLoyaltyAccount.mockResolvedValue({data:{data:{points:20}}});
@@ -92,8 +93,12 @@ test('support fields show visible labels, counters, and an optional appointment 
  const picker = await screen.findByLabelText(/Related appointment/);
  fireEvent.change(picker,{target:{value:'A7'}});
  fireEvent.change(screen.getByLabelText(/^Describe the issue/),{target:{value:'Charged twice'}});
+ const topic = screen.getByLabelText(/^What is this about\?/);
+ expect(topic).toBeRequired();
+ expect([...topic.querySelectorAll('option:not([disabled])')].map(o=>o.textContent)).toEqual(['Booking','Payment','Account','Technical','Other']);
+ fireEvent.change(topic,{target:{value:'PAYMENT'}});
  fireEvent.click(screen.getByRole('button',{name:'Submit ticket'}));
- await waitFor(()=>expect(APIService.createSupportTicket).toHaveBeenCalledWith({subject:'Refund',message:'Appointment A7 (Keripe Salon · Braids · 2026-10-20)\n\nCharged twice'}));
+ await waitFor(()=>expect(APIService.createSupportTicket).toHaveBeenCalledWith({subject:'Refund',message:'Appointment A7 (Keripe Salon · Braids · 2026-10-20)\n\nCharged twice',category:'PAYMENT'}));
 });
 test('loyalty explains points, offers a copy button, and reports a refused code once, inline (QA C-10)', async () => {
  APIService.getLoyaltyAccount.mockResolvedValue({data:{data:{points:20,referralCode:'RS-ABC'}}});

@@ -52,6 +52,7 @@ const PersonalInformation = lazy(() => import('./pages/styler/updatePersonalInfo
 const Reviews = lazy(() => import('./pages/styler/reviews'));
 const StylerChangePassword = lazy(() => import('./pages/styler/stylerChangePassword'));
 const StylerSupport = lazy(() => import('./pages/styler/stylerSupport'));
+const StylerNotifications = lazy(() => import('./pages/styler/stylerNotifications'));
 const AdminLogin = lazy(() => import('./pages/admin/adminLogin'));
 const AdminDashboard = lazy(() => import('./pages/admin/dashboard'));
 const ManageCategories = lazy(() => import('./pages/admin/manageCategories'));
@@ -155,6 +156,7 @@ function App() {
           <Route path='reviews' element={<Reviews />} />
           <Route path='change-password' element={<StylerChangePassword />} />
           <Route path='support' element={<StylerSupport />} />
+          <Route path='notifications' element={<StylerNotifications />} />
         </Route>
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route element={<CustomerRoleRedirect area="admin" />}>
