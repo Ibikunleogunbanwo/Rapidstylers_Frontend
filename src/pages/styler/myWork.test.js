@@ -102,3 +102,39 @@ describe("My Work upload", () => {
     expect(deleteCloudinaryImage).not.toHaveBeenCalled();
   });
 });
+
+describe("My Work moderation status (QA BUG-18)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  test("badges each photo with its moderation status and explains pending photos", async () => {
+    APIService.getOwnPortfolio.mockResolvedValue({
+      data: {
+        data: [
+          { id: 1, imageUrl: "https://img/1.jpg", category: "Braids", moderationStatus: "PENDING" },
+          { id: 2, imageUrl: "https://img/2.jpg", category: "Wigs", moderationStatus: "APPROVED" },
+          { id: 3, imageUrl: "https://img/3.jpg", category: "Locs", moderationStatus: "REJECTED", moderationNote: "Not your work" },
+          { id: 4, imageUrl: "https://img/4.jpg", category: "Makeup" },
+        ],
+      },
+    });
+    render(<MyWork />);
+
+    const badges = await screen.findAllByTestId("moderation-badge");
+    expect(badges.map((b) => b.textContent)).toEqual(["Pending review", "Approved", "Not approved"]);
+    expect(badges[2]).toHaveAttribute("title", "Reason: Not your work");
+    expect(screen.getByText(/Pending review are not public until our team approves them/)).toBeInTheDocument();
+  });
+
+  test("a new upload is described as waiting for approval, not already public", async () => {
+    APIService.getOwnPortfolio.mockResolvedValue({ data: { data: [] } });
+    uploadToCloudinary.mockResolvedValue({ url: "https://img/new.jpg", publicId: "p1" });
+    APIService.createPortfolio.mockResolvedValue({ data: {} });
+    render(<MyWork />);
+    await submitWithPhoto();
+    await waitFor(() =>
+      expect(showSuccessToastMessage).toHaveBeenCalledWith("Work added. It will appear in the gallery once it's approved.")
+    );
+  });
+});

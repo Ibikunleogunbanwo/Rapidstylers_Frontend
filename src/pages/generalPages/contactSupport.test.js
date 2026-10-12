@@ -1,10 +1,13 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import ContactSupport from "./contactSupport";
+import ContactSupport, { supportTicketTarget } from "./contactSupport";
 import {
   SUPPORT_EMAIL,
   SUPPORT_PHONE,
   SUPPORT_PHONE_TEL,
+  setAuthToken,
+  setUserRole,
+  getIntendedRoute,
 } from "../../utils/constant";
 // The shared site header needs the app's store; these tests are about the page body.
 vi.mock("../../components/publicHeader", () => ({ default: () => null }));
@@ -51,5 +54,40 @@ describe("Contact support page", () => {
     expect(text).not.toMatch(/\+?1?[\s.-]?\(?234\)?[\s.-]?567[\s.-]?890/);
     expect(text).not.toMatch(/\b555[-.\s]?\d{3,4}\b/);
     expect(text).not.toMatch(/123 style street/i);
+  });
+});
+
+describe("Support ticket link follows the visitor's role", () => {
+  afterEach(() => sessionStorage.clear());
+  const ticketLink = () => screen.getByRole("link", { name: /submit a support ticket/i });
+
+  test("a signed-in professional goes to their dashboard's support screen", () => {
+    setAuthToken("token");
+    setUserRole("STYLER");
+    renderPage();
+    expect(ticketLink()).toHaveAttribute("href", "/styler-dashboard/support");
+  });
+
+  test("a signed-in customer goes to customer support", () => {
+    setAuthToken("token");
+    setUserRole("CUSTOMER");
+    renderPage();
+    expect(ticketLink()).toHaveAttribute("href", "/support");
+  });
+
+  test("a signed-out visitor signs in first, with a return to support", () => {
+    renderPage();
+    const link = ticketLink();
+    expect(link).toHaveAttribute("href", "/login");
+    link.addEventListener("click", (e) => e.preventDefault());
+    fireEvent.click(link);
+    expect(getIntendedRoute()).toBe("/support");
+  });
+
+  test("the target helper covers each case", () => {
+    expect(supportTicketTarget("", "")).toMatchObject({ href: "/login", returnTo: "/support" });
+    expect(supportTicketTarget("t", "STYLER").href).toBe("/styler-dashboard/support");
+    expect(supportTicketTarget("t", "CUSTOMER").href).toBe("/support");
+    expect(supportTicketTarget("t", "").href).toBe("/support");
   });
 });

@@ -6,7 +6,42 @@ import {
   SUPPORT_EMAIL,
   SUPPORT_PHONE,
   SUPPORT_PHONE_TEL,
+  getAuthToken,
+  getUserRole,
+  setIntendedRoute,
 } from "../../utils/constant";
+
+/**
+ * Where "Submit a support ticket" goes for whoever is reading. It always pointed
+ * at the customer /support page, so a signed-in professional landed in the
+ * customer area instead of their own dashboard's support screen, and a signed-out
+ * visitor was bounced to sign in with nothing to bring them back. The role comes
+ * from the session the same way the site header reads it.
+ */
+export function supportTicketTarget(token = getAuthToken(), role = getUserRole()) {
+  if (!token) {
+    return {
+      href: "/login",
+      returnTo: "/support",
+      // Login honours this for customers; a professional who signs in
+      // lands on their dashboard, which has its own support screen.
+      note: "Sign in to your account to open a ticket and track our replies.",
+    };
+  }
+  if (role === "STYLER") {
+    return {
+      href: "/styler-dashboard/support",
+      note: "Open a ticket from your professional dashboard and follow each reply there.",
+    };
+  }
+  if (role === "ADMIN") {
+    return { href: "/admin/operations?section=tickets", note: "Open the support queue in the admin area." };
+  }
+  return {
+    href: "/support",
+    note: "Open a ticket from your account and track our replies. You can follow along with each update right from your dashboard.",
+  };
+}
 
 /**
  * The four ways to reach us, on the shared design language. Every value comes
@@ -52,11 +87,10 @@ const CONTACT_CARDS = [
     ),
   },
   {
+    // href and note are filled per visitor by supportTicketTarget().
     key: "ticket",
     title: "Submit a support ticket",
-    href: "/support",
     isRoute: true,
-    note: "Sign in to your account to open a ticket and track our replies. You can follow along with each update right from your dashboard.",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
         <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
@@ -83,12 +117,19 @@ const ContactSupport = () => {
         />
 
         <div className="max-w-[720px]">
-          {CONTACT_CARDS.map(({ key, title, note, icon, href, isRoute }) => {
+          {CONTACT_CARDS.map((card) => {
+            const { key, title, icon, isRoute } = card;
+            const ticket = key === "ticket" ? supportTicketTarget() : null;
+            const href = ticket ? ticket.href : card.href;
+            const note = ticket ? ticket.note : card.note;
             const Tag = isRoute ? "a" : "a";
             return (
               <Tag
                 key={key}
                 href={href}
+                // Signing in from here returns the visitor to support, the
+                // same way the header's sign-in remembers the page.
+                onClick={ticket?.returnTo ? () => setIntendedRoute(ticket.returnTo) : undefined}
                 className="group grid grid-cols-[44px_1fr] items-start gap-5 border-t border-black/10 py-6 transition-colors first:border-t-0 hover:bg-black/[0.015]"
               >
                 <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand/10 text-brand">

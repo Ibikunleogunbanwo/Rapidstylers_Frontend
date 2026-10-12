@@ -344,8 +344,13 @@ describe("VerifyUserEmailAddress code help", () => {
     render(<VerifyUserEmailAddress />);
     expect(otpInputs()[0]).toHaveAttribute("autocomplete", "one-time-code");
     expect(screen.getByRole("button", { name: "Verify" })).toBeDisabled();
-    expect(screen.getByText(/No code\? Check spam/)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "sign in instead" })).toHaveAttribute("href", "/login");
+    expect(screen.getByText(/No code\? Check your spam/)).toBeInTheDocument();
+    expect(screen.getByText(/spam or junk folder and any promotions tab/)).toBeInTheDocument();
+    expect(screen.getByText(/Resend code above/)).toBeInTheDocument();
+    // Neutral about whether the address has an account, with both ways forward.
+    expect(screen.getByText(/If this email already has a RapidStylers account, we've sent sign-in instructions instead of a code/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "sign in" })).toHaveAttribute("href", "/login");
+    expect(screen.getByRole("link", { name: "reset your password" })).toHaveAttribute("href", "/resetPassword");
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Verify your email address");
   });
 });

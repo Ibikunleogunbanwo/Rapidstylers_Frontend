@@ -164,3 +164,12 @@ test("an old /signOut link, once signed out, goes home without remembering /sign
   expect(screen.getByTestId("page-home")).toBeInTheDocument();
   expect(sessionStorage.getItem("rapidstylers_intended_route")).toBeNull();
 });
+
+test("visiting /signOut while signed in asks first instead of signing out on mount (QA C-15)", () => {
+  useSelector.mockReturnValue({userId:1}); setAuthToken("customer-test"); setUserRole("CUSTOMER");
+  dispatch.mockClear();
+  renderAt("/signOut");
+  expect(screen.getByTestId("page-logout")).toBeInTheDocument();
+  expect(dispatch).not.toHaveBeenCalled();
+  expect(sessionStorage.getItem("rapidstylers_auth_token")).toBe("customer-test");
+});

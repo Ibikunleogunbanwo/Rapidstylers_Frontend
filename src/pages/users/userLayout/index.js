@@ -35,7 +35,8 @@ const UserLayout = () => {
     // person home instead of to /login with this page remembered.
     const [signedOut, setSignedOut] = useState(false);
     // Sign out is a button running the logout action (never a GET link
-    // another site could point at). /signOut still works for old links.
+    // another site could point at). /signOut still works for old links, but
+    // only asks: the same action runs when its Sign out button is pressed.
     const signOut = () => {
         setSignedOut(true);
         dispatch(userLogOut());
@@ -69,7 +70,7 @@ const UserLayout = () => {
             case "/loyalty": return <Loyalty setPageTitle={setPageTitle} />;
             case "/feedback": return <Feedback setPageTitle={setPageTitle} />;
             case "/searchAStyler": return <SearchStyler setPageTitle={setPageTitle} stylerSearchName={stylerSearchName} />;
-            case "/signOut": return <LogOut />;
+            case "/signOut": return <LogOut setPageTitle={setPageTitle} onConfirm={signOut} onCancel={() => navigate("/dashboard")} />;
             default:
                 // A service's professional list (/stylist/:id/:name), kept inside
                 // the dashboard for a signed-in customer (see pages/stylistRoute).

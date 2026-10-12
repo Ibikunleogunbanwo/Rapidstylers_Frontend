@@ -3,6 +3,7 @@ import Footer from "../../components/footer";
 import AdSlot from "../../components/adSlot";
 import React, { useState, useEffect, useRef } from "react";
 import { APIService } from "../../hooks/remote/apiService";
+import { toGalleryPhoto } from "../../hooks/remote/useLatestGalleryUploads";
 
 // Curated work: real photos provided by the RapidStylers team. They lead the
 // grid (replacing stock imagery) while approved stylist uploads still render
@@ -93,13 +94,7 @@ const ElevateLooks = ({ showCurated = IS_DEMO }) => {
           .filter(Array.isArray)
           .flat()
           .forEach((p) => {
-            const photo = {
-              src: p.src?.medium || p.src?.large || p.src?.original || "",
-              alt: p.alt || category,
-              photographer: p.photographer || "",
-              stylerId: p.stylerId || "",
-              source: p.source || "stylist",
-            };
+            const photo = toGalleryPhoto(p, category);
             const key = `${photo.stylerId}|${photo.src}`;
             if (seen.has(key)) return;
             seen.add(key);

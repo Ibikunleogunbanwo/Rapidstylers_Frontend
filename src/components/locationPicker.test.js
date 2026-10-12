@@ -170,4 +170,37 @@ describe("LocationPicker city/province reconciliation", () => {
       expect.objectContaining({ province: "Saskatchewan" })
     );
   });
+
+  test("an unknown new city is not paired with the carried-over province", () => {
+    render(<LocationPicker onClose={vi.fn()} />);
+
+    fireEvent.change(screen.getByPlaceholderText("e.g. Calgary"), {
+      target: { value: "Somewhereville" },
+    });
+
+    // The select shows as unset and Save waits for the visitor to choose.
+    expect(document.querySelector('select[name="Province"]').value).toBe("");
+    expect(screen.getByText(/We don't recognise Somewhereville/)).toBeInTheDocument();
+    expect(screen.getByText("Save location")).toBeDisabled();
+    fireEvent.click(screen.getByText("Save location"));
+    expect(__updateLocation).not.toHaveBeenCalled();
+
+    fireEvent.change(document.querySelector('select[name="Province"]'), {
+      target: { value: "Alberta" },
+    });
+    fireEvent.click(screen.getByText("Save location"));
+    expect(__updateLocation).toHaveBeenCalledWith(
+      expect.objectContaining({ city: "Somewhereville", province: "Alberta" })
+    );
+  });
+
+  test("an unset province shows as unset rather than the first option", () => {
+    render(<LocationPicker onClose={vi.fn()} />);
+    fireEvent.change(document.querySelector('select[name="Province"]'), {
+      target: { value: "" },
+    });
+    const select = document.querySelector('select[name="Province"]');
+    expect(select.value).toBe("");
+    expect(select.selectedOptions[0].textContent).toBe("Choose a province or territory");
+  });
 });

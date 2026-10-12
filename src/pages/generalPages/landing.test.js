@@ -2,6 +2,8 @@ import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import LandingPage from "./landing";
 import { APIService } from "../../hooks/remote/apiService";
+import { fetchGalleryUploads } from "../../hooks/remote/publicContentApi";
+import { within } from "@testing-library/react";
 
 /**
  * The home page is the one surface the design-system pass has not been applied
@@ -19,6 +21,10 @@ vi.mock("../../components/featuredStylists", () => ({ default: () => null }));
 vi.mock("../../components/img-slider", () => ({ default: () => null }));
 vi.mock("../../components/adSlot", () => ({ default: () => null }));
 vi.mock("../../components/footer", () => ({ default: () => null }));
+// The elevate grid's uploads: never settles by default, wired per test below.
+vi.mock("../../hooks/remote/publicContentApi", () => ({
+  fetchGalleryUploads: vi.fn(() => new Promise(() => {})),
+}));
 vi.mock("../../hooks/remote/apiService", () => ({
   // Deliberately never settles: this file is about layout, and a resolved blog
   // fetch would only add an act() warning about state nobody here asserts on.
@@ -164,5 +170,72 @@ describe("Canada band media loading", () => {
       expect(video).toBeNull();
       expect(screen.getByAltText("Calgary skyline at dusk")).toHaveAttribute("src", expect.stringContaining("calgary-skyline-dusk.jpg"));
     }
+  });
+});
+
+describe("Home page gallery grid", () => {
+  const renderWith = (props) =>
+    render(
+      <MemoryRouter>
+        <LandingPage {...props} />
+      </MemoryRouter>
+    );
+  const gallerySection = () => screen.getByText("Elevate your style.").closest(".grid");
+
+  test("the demo keeps the curated photos and asks the API for nothing", () => {
+    fetchGalleryUploads.mockClear();
+    renderWith({ showCurated: true });
+    const sources = [...gallerySection().querySelectorAll("img")].map((i) => i.getAttribute("src"));
+    expect(sources).toHaveLength(4);
+    sources.forEach((src) => expect(src).toMatch(/^\/images\/gallery\//));
+    expect(fetchGalleryUploads).not.toHaveBeenCalled();
+  });
+
+  test("live shows the latest approved uploads, never the curated photos", async () => {
+    fetchGalleryUploads.mockImplementation((category) =>
+      Promise.resolve({
+        data: {
+          data:
+            category === "Braids"
+              ? [{ src: { medium: "https://res.cloudinary.com/x/braids.jpg" }, alt: "Braids by Ama", stylerId: "S1", source: "stylist" }]
+              : [],
+        },
+      })
+    );
+    renderWith({ showCurated: false });
+    const photo = await screen.findByAltText("Braids by Ama");
+    expect(photo).toHaveAttribute("src", "https://res.cloudinary.com/x/braids.jpg");
+    expect([...gallerySection().querySelectorAll("img")].map((i) => i.getAttribute("src"))).toEqual([
+      "https://res.cloudinary.com/x/braids.jpg",
+    ]);
+  });
+
+  test("live holds the grid's space while loading", () => {
+    fetchGalleryUploads.mockImplementation(() => new Promise(() => {}));
+    renderWith({ showCurated: false });
+    expect(screen.getByTestId("elevate-loading").children).toHaveLength(4);
+  });
+
+  test("live with no approved uploads points to the gallery instead", async () => {
+    fetchGalleryUploads.mockImplementation(() => Promise.reject(new Error("offline")));
+    renderWith({ showCurated: false });
+    expect(await screen.findByText("New work is on its way")).toBeInTheDocument();
+    expect(gallerySection().querySelectorAll("img")).toHaveLength(0);
+    expect(screen.getByRole("link", { name: "See the gallery" })).toHaveAttribute("href", "/elevate-your-looks");
+  });
+});
+
+describe("Home page province links", () => {
+  test("lists all ten provinces and the three territories, each linked to search", () => {
+    renderHome();
+    const list = screen.getByText("Nationwide coverage").closest("div").parentElement.querySelector("ul");
+    const links = within(list).getAllByRole("link");
+    expect(links).toHaveLength(13);
+    ["Yukon", "Northwest Territories", "Nunavut", "Alberta", "Quebec"].forEach((name) => {
+      expect(within(list).getByRole("link", { name })).toHaveAttribute(
+        "href",
+        `/search?province=${encodeURIComponent(name)}`
+      );
+    });
   });
 });

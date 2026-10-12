@@ -9,7 +9,12 @@ import { PROVINCE_NAMES, toProvinceName } from "../utils/signupValidation";
 // All 13 provinces and territories, the same list every form on the site uses.
 const PROVINCES = PROVINCE_NAMES;
 
-const provinceOptions = PROVINCES.map((p) => ({ value: p, label: p }));
+// The empty first option keeps an unset province visibly unset. Without it the
+// select drew "Alberta" (its first option) while the form held no province.
+const provinceOptions = [
+  { value: "", label: "Choose a province or territory" },
+  ...PROVINCES.map((p) => ({ value: p, label: p })),
+];
 
 /**
  * Change-location modal. Saves the chosen city/province to the global
@@ -21,12 +26,28 @@ const LocationPicker = ({ onClose }) => {
   // "Karachi" was a pair that belonged to no real place.
   const knownProvince = toProvinceName(location?.province);
   const [province, setProvince] = useState(knownProvince);
-  const [city, setCity] = useState(knownProvince ? location?.city || "" : "");
+  const openingCity = knownProvince ? location?.city || "" : "";
+  const [city, setCity] = useState(openingCity);
+  // Whether the visitor picked the province themselves in this dialog, as
+  // opposed to it being carried over from the location the dialog opened with.
+  const [provinceChosen, setProvinceChosen] = useState(false);
 
   // When the typed city is a known Canadian city that belongs to a different
   // province (e.g. Calgary with Saskatchewan selected), tell the user and let
   // Save correct it instead of silently saving a contradiction.
   const resolvedProvince = cityProvinceOf(city);
+
+  // A city we cannot place is only saved with a province the visitor chose. The
+  // carried-over province used to be paired with whatever was typed, so a new
+  // town ended up "in" the province of the old location. Until they choose, the
+  // select shows as unset and Save stays disabled.
+  const typedCity = city.trim();
+  const needsProvince =
+    Boolean(typedCity) &&
+    !resolvedProvince &&
+    !provinceChosen &&
+    typedCity.toLowerCase() !== openingCity.trim().toLowerCase();
+  const shownProvince = needsProvince ? "" : province;
   const cityMismatch =
     resolvedProvince && province && resolvedProvince !== province
       ? {
@@ -37,8 +58,8 @@ const LocationPicker = ({ onClose }) => {
 
   const handleSave = () => {
     // The city's real province wins when it is known; otherwise keep the
-    // selected province. Province is required, so fall back to the current one.
-    const effectiveProvince = resolvedProvince || province;
+    // province the visitor chose. Province is required.
+    const effectiveProvince = resolvedProvince || shownProvince;
     if (!effectiveProvince) {
       return;
     }
@@ -73,8 +94,11 @@ const LocationPicker = ({ onClose }) => {
         valueKey={"value"}
         labelKey={"label"}
         selectName={"Province"}
-        selectValue={province}
-        onChange={(e) => setProvince(e.target.value)}
+        selectValue={shownProvince}
+        onChange={(e) => {
+          setProvince(e.target.value);
+          setProvinceChosen(Boolean(e.target.value));
+        }}
       />
       <Input
         label={"City (optional)"}
@@ -83,6 +107,11 @@ const LocationPicker = ({ onClose }) => {
         placeholder={"e.g. Calgary"}
         onChange={(e) => setCity(e.target.value)}
       />
+      {needsProvince && (
+        <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
+          We don't recognise {typedCity}. Choose its province to save it.
+        </p>
+      )}
       {cityMismatch && (
         <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
           {cityMismatch.message}
@@ -107,7 +136,7 @@ const LocationPicker = ({ onClose }) => {
           <button
             type="button"
             onClick={handleSave}
-            disabled={!province && !resolvedProvince}
+            disabled={!shownProvince && !resolvedProvince}
             className="px-6 py-2.5 rounded-md bg-brand text-white text-sm font-semibold disabled:opacity-50"
           >
             Save location

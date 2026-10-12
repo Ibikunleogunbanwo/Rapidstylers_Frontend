@@ -33,11 +33,15 @@ const LocationContext = createContext(null);
 
 // A manually chosen location (via the Change-location picker) is persisted so
 // it survives navigation and reloads — auto-detection only runs when there is
-// no saved override yet.
-function loadSavedLocation() {
+// no saved override yet. What comes back goes through the same Canada check as
+// a detected location: storage can hold a value from an older build, or one
+// written by hand, and "Karachi, Sindh" must not skip the check by being saved.
+export function loadSavedLocation() {
   try {
     const raw = localStorage.getItem(SAVED_LOCATION_KEY);
-    return raw ? JSON.parse(raw) : null;
+    const saved = raw ? JSON.parse(raw) : null;
+    if (!saved || typeof saved !== "object" || Array.isArray(saved)) return null;
+    return canadianLocationOrDefault(saved);
   } catch (e) {
     return null;
   }

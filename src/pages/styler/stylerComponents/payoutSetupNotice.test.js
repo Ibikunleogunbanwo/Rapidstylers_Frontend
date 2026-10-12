@@ -3,6 +3,7 @@ import { render, screen, act, cleanup } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import PayoutSetupNotice from './payoutSetupNotice';
 import { APIService } from '../../../hooks/remote/apiService';
+import { setAuthToken } from '../../../utils/constant';
 
 vi.mock('../../../hooks/remote/apiService', () => ({ APIService: { getStylerConnectStatus: vi.fn() } }));
 
@@ -44,4 +45,48 @@ it('tells a stylist whose account Stripe rejected to reconnect', async () => {
 it('does not show over the Payouts page, which already carries the setup card', async () => {
   await mount('/styler-dashboard/payouts', { status: 'PENDING', payoutsWaiting: 1, payoutsWaitingAmount: '$10.00' });
   expect(screen.queryByText(/payout setup/i)).not.toBeInTheDocument();
+});
+
+describe('while the status loads (QA BUG-03)', () => {
+  beforeEach(() => { sessionStorage.clear(); });
+
+  it('holds the banner space with a wordless placeholder, never a warning', async () => {
+    let answer;
+    APIService.getStylerConnectStatus.mockReturnValue(new Promise((resolve) => { answer = resolve; }));
+    render(<MemoryRouter initialEntries={['/styler-dashboard']}><PayoutSetupNotice /></MemoryRouter>);
+    const placeholder = screen.getByTestId('payout-notice-placeholder');
+    expect(placeholder).toHaveAttribute('aria-hidden', 'true');
+    expect(placeholder.textContent).toBe('');
+    expect(screen.queryByText(/payout setup/i)).not.toBeInTheDocument();
+    await act(async () => { answer({ data: { data: { status: 'PENDING', payoutsWaiting: 0 } } }); });
+    expect(screen.queryByTestId('payout-notice-placeholder')).not.toBeInTheDocument();
+    expect(screen.getByText('Your payout setup is not finished')).toBeInTheDocument();
+  });
+
+  it('a later mount in the same sign-in draws the known state at once', async () => {
+    setAuthToken('header.payload.signature-for-this-session');
+    await mount('/styler-dashboard', { status: 'NOT_STARTED', payoutsWaiting: 0 });
+    cleanup();
+    APIService.getStylerConnectStatus.mockReturnValue(new Promise(() => {}));
+    render(<MemoryRouter initialEntries={['/styler-dashboard']}><PayoutSetupNotice /></MemoryRouter>);
+    expect(screen.queryByTestId('payout-notice-placeholder')).not.toBeInTheDocument();
+    expect(screen.getByText('Finish your payout setup to get paid')).toBeInTheDocument();
+  });
+
+  it('ignores a cached answer from a different sign-in', async () => {
+    setAuthToken('first-session-token-aaaaaaaaaaaaaaaaaaaaaaaa');
+    await mount('/styler-dashboard', { status: 'NOT_STARTED', payoutsWaiting: 0 });
+    cleanup();
+    setAuthToken('second-session-token-bbbbbbbbbbbbbbbbbbbbbbbb');
+    APIService.getStylerConnectStatus.mockReturnValue(new Promise(() => {}));
+    render(<MemoryRouter initialEntries={['/styler-dashboard']}><PayoutSetupNotice /></MemoryRouter>);
+    expect(screen.getByTestId('payout-notice-placeholder')).toBeInTheDocument();
+    expect(screen.queryByText(/payout setup/i)).not.toBeInTheDocument();
+  });
+
+  it('shows no placeholder on the Payouts page', () => {
+    APIService.getStylerConnectStatus.mockReturnValue(new Promise(() => {}));
+    render(<MemoryRouter initialEntries={['/styler-dashboard/payouts']}><PayoutSetupNotice /></MemoryRouter>);
+    expect(screen.queryByTestId('payout-notice-placeholder')).not.toBeInTheDocument();
+  });
 });

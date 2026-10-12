@@ -26,6 +26,34 @@ const CATEGORIES = [
 
 const MAX_IMAGES = 30;
 
+/**
+ * Each photo's place in moderation, as the portfolio endpoint reports it
+ * (`moderationStatus`: PENDING, APPROVED or REJECTED, the values the admin
+ * gallery queue sets). The grid used to show every upload the same way, so a
+ * professional could not tell a photo the public sees from one still waiting, or
+ * one that was turned down. A row without a status (older uploads) gets no badge.
+ */
+export const MODERATION_BADGES = {
+  PENDING: { label: "Pending review", className: "bg-amber-100 text-amber-900" },
+  APPROVED: { label: "Approved", className: "bg-emerald-100 text-emerald-900" },
+  REJECTED: { label: "Not approved", className: "bg-red-100 text-red-800" },
+};
+
+/** The photo's moderation badge, or nothing when the status is missing or unknown. */
+const ModerationBadge = ({ status, note }) => {
+  const badge = MODERATION_BADGES[String(status || "").toUpperCase()];
+  if (!badge) return null;
+  return (
+    <span
+      data-testid="moderation-badge"
+      title={note ? `Reason: ${note}` : undefined}
+      className={`absolute top-2 left-2 rounded-full px-2 py-0.5 text-[10px] font-semibold ${badge.className}`}
+    >
+      {badge.label}
+    </span>
+  );
+};
+
 const MyWork = () => {
   document.title = "My work | RapidStylers";
   const [portfolio, setPortfolio] = useState([]);
@@ -76,7 +104,7 @@ const MyWork = () => {
         await deleteCloudinaryImage(uploaded.publicId);
         throw saveError;
       }
-      showSuccessToastMessage("Work added. It now appears in the gallery.");
+      showSuccessToastMessage("Work added. It will appear in the gallery once it's approved.");
       setFile(null);
       e.target.reset();
       loadPortfolio();
@@ -165,7 +193,10 @@ const MyWork = () => {
 
       {/* Portfolio grid */}
       <div className="bg-white rounded-lg border border-black/10 p-6">
-        <p className="text-sm font-semibold mb-4">Your photos</p>
+        <p className="text-sm font-semibold">Your photos</p>
+        <p className="text-xs text-gray-500 mt-1 mb-4">
+          Photos marked Pending review are not public until our team approves them.
+        </p>
         {loading ? (
           <p className="text-sm text-gray-500">Loading…</p>
         ) : loadError ? (<div role="alert" className="p-4 text-sm text-red-700">{loadError} <button type="button" onClick={loadPortfolio}>Retry</button></div>) : portfolio.length === 0 ? (
@@ -185,6 +216,7 @@ const MyWork = () => {
                 <span className="absolute bottom-2 left-2 text-[10px] uppercase tracking-wide text-white bg-black/60 backdrop-blur rounded-full px-2 py-0.5">
                   {item.category || "Work"}
                 </span>
+                <ModerationBadge status={item.moderationStatus} note={item.moderationNote} />
                 <button
                   type="button"
                   onClick={() => handleDelete(item)}

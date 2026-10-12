@@ -32,10 +32,69 @@ import AdSlot from "../../components/adSlot";
 import { useEffect, useState } from "react";
 import { APIService } from "../../hooks/remote/apiService";
 import { ELEVATE_GRID, curatedById } from "../../utils/curatedGallery";
+import { IS_DEMO } from "../../utils/demo";
+import { PROVINCE_NAMES } from "../../utils/signupValidation";
+import { useLatestGalleryUploads } from "../../hooks/remote/useLatestGalleryUploads";
+import { safeBlogImage } from "../../utils/blogImage";
 
 // The same curated photos the gallery page leads with, resolved from its list so
 // the two cannot drift (they previously kept separate copies of the paths).
 const GALLERY_GRID = ELEVATE_GRID;
+
+/**
+ * The "Elevate your style" photo grid. It shows what the gallery page shows: on
+ * the live site that is approved stylist uploads only, so the home page no longer
+ * advertises the team's curated photos as work a visitor will find there; the
+ * demo showroom keeps them. The grid keeps a fixed 2x2 footprint whether it is
+ * loading, full or empty, so nothing below it moves when the uploads arrive.
+ */
+const ElevateGrid = ({ showCurated }) => {
+  const uploads = useLatestGalleryUploads(4, { enabled: !showCurated });
+  const photos = showCurated ? GALLERY_GRID : uploads;
+
+  if (photos === null) {
+    return (
+      <div className="relative grid grid-cols-2 gap-3 md:gap-4" aria-hidden="true" data-testid="elevate-loading">
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className="w-full aspect-square bg-black/[0.06] animate-pulse" />
+        ))}
+      </div>
+    );
+  }
+
+  if (photos.length === 0) {
+    return (
+      <div className="flex aspect-square w-full flex-col items-center justify-center border border-dashed border-black/15 bg-white/60 px-8 text-center">
+        <p className="text-[15px] font-medium text-onSurface">New work is on its way</p>
+        <p className="mt-2 max-w-[320px] text-[13px] leading-[1.6] text-black/55">
+          Photos appear here once professionals share their work and it is
+          approved. See what is in the gallery so far.
+        </p>
+        <Link
+          to={"/elevate-your-looks"}
+          className="mt-5 text-[13px] font-semibold underline underline-offset-4 transition-colors hover:text-brand"
+        >
+          See the gallery
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative grid grid-cols-2 gap-3 md:gap-4">
+      {photos.map((img) => (
+        <img
+          key={img.src}
+          src={img.src}
+          alt={img.alt}
+          loading="lazy"
+          decoding="async"
+          className="w-full aspect-square object-cover"
+        />
+      ))}
+    </div>
+  );
+};
 
 /**
  * The brand story block used `about-landing.jpg`: a glossy manicure close-up,
@@ -46,18 +105,10 @@ const GALLERY_GRID = ELEVATE_GRID;
  */
 const BRAND_STORY_PHOTO = curatedById("g-lashes-2");
 
-const PROVINCES = [
-  "Alberta",
-  "British Columbia",
-  "Manitoba",
-  "New Brunswick",
-  "Newfoundland and Labrador",
-  "Nova Scotia",
-  "Ontario",
-  "Prince Edward Island",
-  "Quebec",
-  "Saskatchewan",
-];
+// All ten provinces and the three territories, from the same list every form on
+// the site uses, so a visitor in Whitehorse, Yellowknife or Iqaluit has a link
+// too and every link's name is one the search page recognises.
+const PROVINCES = PROVINCE_NAMES;
 
 // Offline fallback for when the blog API is unreachable. The old entries used
 // freepik URLs whose 2024 signature links had expired, so the cards rendered
@@ -121,7 +172,7 @@ const BlogSection = () => {
           >
             <div className="aspect-[4/5] overflow-hidden bg-neutral">
               <img
-                src={post.img}
+                src={safeBlogImage(post.img)}
                 alt=""
                 className="object-cover w-full h-full"
                 loading="lazy"
@@ -139,7 +190,7 @@ const BlogSection = () => {
   );
 };
 
-const LandingPage = () => {
+const LandingPage = ({ showCurated = IS_DEMO }) => {
   const allowDecorativeMotion = useDecorativeMotion(0);
   useFunnelVisit();
   const homepage = usePublishedContent("homepage");
@@ -388,18 +439,7 @@ const LandingPage = () => {
                 </Link>
               </div>
             </div>
-            <div className="relative grid grid-cols-2 gap-3 md:gap-4">
-              {GALLERY_GRID.map((img) => (
-                <img
-                  key={img.src}
-                  src={img.src}
-                  alt={img.alt}
-                  loading="lazy"
-                  decoding="async"
-                  className="w-full aspect-square object-cover"
-                />
-              ))}
-            </div>
+            <ElevateGrid showCurated={showCurated} />
           </div>
         </div>
 
@@ -572,7 +612,7 @@ const LandingPage = () => {
                 Find beauty professionals<br />anywhere in <span className="text-brand">Canada.</span>
               </h2>
               <p className="text-white/50 mt-4 text-[14px] leading-[1.6] max-w-xl mx-auto">
-                Choose a province to discover top-rated stylists near you.
+                Choose a province or territory to discover top-rated stylists near you.
               </p>
             </div>
             <ul className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
