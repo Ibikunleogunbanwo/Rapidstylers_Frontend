@@ -139,7 +139,7 @@ describe('link-preview function', () => {
     const res = await handleLinkPreview({ query: { kind: 'blog', id: '7' }, userAgent: UA.slack, env, fetchImpl: failures[name], timeoutMs: 30 });
     expect(res.status).toBe(200);
     expect(res.body).toContain('<title>RapidStylers</title>');
-    expect(meta(res.body, 'property="og:image"')).toBe('https://www.rapidstylers.ca/og-image.png');
+    expect(meta(res.body, 'property="og:image"')).toBe('https://www.rapidstylers.ca/og-image.png?v=20261012');
     expect(meta(res.body, 'property="og:image:width"')).toBe('1200');
     expect(meta(res.body, 'property="og:image:height"')).toBe('630');
     expect(meta(res.body, 'name="twitter:card"')).toBe('summary_large_image');

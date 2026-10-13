@@ -23,10 +23,10 @@ export const SITE_DESCRIPTION = 'Find and book trusted beauty professionals near
 // The branded share card (public/og-image.png), shown whenever a page has no
 // photo of its own. 1200x630 is the size Facebook, WhatsApp, LinkedIn and X
 // show as a full-width card.
-export const DEFAULT_IMAGE = `${SITE_ORIGIN}/og-image.png`;
+export const DEFAULT_IMAGE = `${SITE_ORIGIN}/og-image.png?v=20261012`;
 export const DEFAULT_IMAGE_WIDTH = 1200;
 export const DEFAULT_IMAGE_HEIGHT = 630;
-export const DEFAULT_IMAGE_ALT = 'RapidStylers: book trusted beauty professionals near you';
+export const DEFAULT_IMAGE_ALT = 'RapidStylers: beauty appointments, your place or theirs';
 
 /**
  * The Facebook App ID from REACT_APP_FACEBOOK_APP_ID, or '' when it is unset

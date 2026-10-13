@@ -29,7 +29,7 @@ describe('summarize', () => {
 
 describe('default share image', () => {
   it('is the branded card in public/, with its size in every page head', () => {
-    expect(DEFAULT_IMAGE).toBe('https://www.rapidstylers.ca/og-image.png');
+    expect(DEFAULT_IMAGE).toBe('https://www.rapidstylers.ca/og-image.png?v=20261012');
     expect(existsSync(resolve(repo, 'public/og-image.png'))).toBe(true);
     const png = readFileSync(resolve(repo, 'public/og-image.png'));
     expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([1200, 630]);
