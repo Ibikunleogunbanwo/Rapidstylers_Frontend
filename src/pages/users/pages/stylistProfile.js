@@ -18,6 +18,7 @@ import { Section, Eyebrow, Statement, BackHome } from "../../../components/pageS
 import SectionPager from "../../../components/sectionPager";
 import Footer from "../../../components/footer";
 import PublicHeader from "../../../components/publicHeader";
+import { IS_DEMO } from "../../../utils/demo";
 
 const WEEKDAY_LABELS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
@@ -318,6 +319,10 @@ const StylistProfile = ({ setPageTitle }) => {
   }, [stylerId]);
 
   const toggleSaved = async () => {
+    if (IS_DEMO) {
+      showErrorToastMessage("This is a preview. Create your account on rapidstylers.ca to save professionals.");
+      return;
+    }
     if (!getAuthToken()) {
       showErrorToastMessage("Please sign in to save professionals");
       return;

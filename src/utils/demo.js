@@ -9,6 +9,9 @@ export const LIVE_API_BASE_URL = process.env.REACT_APP_LIVE_API_BASE_URL || "htt
  * submit it until launch. After launch, set REACT_APP_DEMO_BOOKING_OPEN=true
  * on the demo project and the submit button sends visitors to the live site.
  */
+/** Send a demo visitor to a page on the live site (sign-up and anything else that needs an account). */
+export const goToLiveSite = (path = "/") => window.location.assign(`${LIVE_SITE_URL}${path}`);
+
 export const DEMO_BOOKING_OPEN = process.env.REACT_APP_DEMO_BOOKING_OPEN === "true";
 
 /** What the demo booking submit button does: "closed", "live" (go to the live site), or null off the demo. */

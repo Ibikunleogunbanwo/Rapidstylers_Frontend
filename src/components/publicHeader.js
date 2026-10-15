@@ -13,6 +13,7 @@ import { verifySignUpEmailAddress, userLogOut } from "../hooks/local/userReducer
 import LocationPicker from "./locationPicker";
 import { useUserLocation } from "../context/LocationContext";
 import { getAuthToken, getUserRole, setIntendedRoute, showErrorToastMessage } from "../utils/constant";
+import { IS_DEMO, goToLiveSite } from "../utils/demo";
 
 /**
  * The one public site header: logo, location, the sign-in / sign-up / join
@@ -22,7 +23,7 @@ import { getAuthToken, getUserRole, setIntendedRoute, showErrorToastMessage } fr
  * It is fixed to the top of the viewport. Pages whose first section is not a
  * full-bleed dark hero pass `spacer` so their content starts below it.
  */
-const PublicHeader = ({ spacer = false }) => {
+const PublicHeader = ({ spacer = false, demo = IS_DEMO }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -73,12 +74,16 @@ const PublicHeader = ({ spacer = false }) => {
   // Auto-open the signup modal when arriving with ?signup=1 (e.g. from the login page)
   useEffect(() => {
     if (searchParams.get("signup")) {
-      setSignUpVisible(true);
+      if (demo) goToLiveSite("/?signup=1");
+      else setSignUpVisible(true);
     }
-  }, [searchParams]);
+  }, [searchParams, demo]);
 
   // Function to toggle the sign up modal
   const toggleSignUp = () => {
+    // The demo API is read-only, so sign-up happens on the live site, which
+    // opens this same dialog from ?signup=1.
+    if (demo) { goToLiveSite("/?signup=1"); return; }
     setSignUpVisible(!signUpVisible);
     setMobileMenuOpen(false);
   };

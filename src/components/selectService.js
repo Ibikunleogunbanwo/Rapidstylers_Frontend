@@ -1180,7 +1180,7 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
                 ) : (
                   <p className="text-gray-500">Select service options to calculate the booking total.</p>
                 )}
-                {bookingEstimate && <BookingPromo subtotal={bookingEstimate.totalPrice} onChange={setPromoQuote} />}
+                {bookingEstimate && !demoMode && <BookingPromo subtotal={bookingEstimate.totalPrice} onChange={setPromoQuote} />}
               </div>
             </div>
             </div>
