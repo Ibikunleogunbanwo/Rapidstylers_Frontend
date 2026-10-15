@@ -363,7 +363,7 @@ const LandingPage = () => {
 
         {/* Elevate your looks */}
         <div className="bg-neutral">
-          <div className="px-5 md:px-[50px] lg:px-[100px] py-20 lg:py-24 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center max-w-[1240px] mx-auto">
+          <div className="px-5 md:px-[50px] lg:px-[100px] py-14 lg:py-20 grid grid-cols-1 gap-8 max-w-[1240px] mx-auto">
             <div className="text-center lg:text-start">
               <p className="text-[11px] uppercase tracking-[0.25em] text-muted">The gallery</p>
               <h2 className="mt-4 text-[clamp(1.75rem,3vw,2.5rem)] font-normal leading-[1.1] tracking-[-0.02em] text-onSurface">

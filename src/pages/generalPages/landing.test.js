@@ -189,14 +189,13 @@ describe("Home page style inspiration", () => {
     expect(SERVICE_INSPIRATION.map(group => group.name)).toEqual(GALLERY_CATEGORIES);
     renderHome();
     const area = screen.getByLabelText("Service style inspiration");
-    for (const name of GALLERY_CATEGORIES) {
-      const button = within(area).getByRole("button", {name, exact:true});
-      fireEvent.click(button);
-      expect(button).toHaveAttribute("aria-pressed", "true");
-      const photos = within(area).getAllByRole("img");
-      expect(photos).toHaveLength(1);
-      photos.forEach(photo => expect(photo).toHaveAttribute("src", expect.stringContaining("/images/inspiration/")));
-    }
+    const cards = within(area).getAllByRole("heading", {level:3});
+    expect(cards.map(card => card.textContent)).toEqual(GALLERY_CATEGORIES);
+    const photos = within(area).getAllByRole("img");
+    expect(photos).toHaveLength(11);
+    photos.forEach(photo => expect(photo).toHaveAttribute("src", expect.stringContaining("/images/inspiration/")));
+    expect(within(area).getByRole("button", {name:"Next styles"})).toBeInTheDocument();
+    expect(within(area).getByRole("region", {name:"Browse service inspiration"})).toHaveAttribute("tabindex", "0");
     expect(within(area).getByText(/AI generated style inspiration/)).toBeInTheDocument();
     expect(screen.getByRole("link", {name:"Browse gallery"})).toHaveAttribute("href", "/elevate-your-looks");
   });
