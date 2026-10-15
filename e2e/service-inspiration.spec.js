@@ -1,5 +1,5 @@
 const { test, expect } = require('@playwright/test');
-const categories = ['Locs & dreadlocks', 'Buzz cut', 'Braids', 'Cornrows', 'Wigs', 'High-top fade', 'Hair dye', 'Nail Technician', 'Makeup', 'Eyelash extensions', 'Natural hair'];
+const categories = ['Locs & dreadlocks', 'Buzz cut', 'Braids', 'Cornrows', 'High-top fade', 'Hair dye', 'Nail Technician', 'Makeup', 'Eyelash extensions', 'Natural hair'];
 test('homepage inspiration represents every gallery category and keeps real work separate', async ({page, browserName}, info) => {
   await page.route('**/*', route => {
     const url = new URL(route.request().url());
@@ -12,7 +12,7 @@ test('homepage inspiration represents every gallery category and keeps real work
   await section.scrollIntoViewIfNeeded();
   await expect(section.getByText(/AI generated style inspiration/)).toBeVisible();
   const rail = section.getByRole('region', {name:'Browse service inspiration'});
-  await expect(section.getByRole('img')).toHaveCount(11);
+  await expect(section.getByRole('img')).toHaveCount(10);
   const start = await rail.evaluate(el=>el.scrollLeft);
   await section.getByRole('button',{name:'Next styles',exact:true}).click();
   await expect.poll(()=>rail.evaluate(el=>el.scrollLeft)).toBeGreaterThan(start);
@@ -43,6 +43,7 @@ test('homepage inspiration represents every gallery category and keeps real work
   await rail.focus();
   await rail.press('ArrowRight');
   await expect.poll(()=>rail.evaluate(el=>el.scrollLeft)).toBeGreaterThan(start);
+  await expect(page).toHaveURL(/\/$/);
   const seen = new Set();
   for (const category of categories) {
     const heading = section.getByRole('heading', {name:category,exact:true});
@@ -60,19 +61,27 @@ test('homepage inspiration represents every gallery category and keeps real work
     expect(Math.abs(offsets.title-offsets.image)).toBeLessThan(2);
     seen.add(await photo.getAttribute('src'));
     expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
+    await card.click();
+    await expect.poll(()=>new URL(page.url()).searchParams.get('category')).toBe(category);
+    await expect(page).toHaveURL(/\/elevate-your-looks\?/);
+    await expect(page.getByRole('button', {name:category,exact:true})).toHaveClass(/bg-brand/);
+    await page.goBack();
+    await expect(page).toHaveURL(/\/$/);
+
   }
-  expect(seen.size).toBe(11);
+  expect(seen.size).toBe(10);
   await section.screenshot({path:info.outputPath('service-inspiration.png')});
   await page.getByRole('link',{name:'Browse gallery',exact:true}).click();
   await expect(page).toHaveURL(/\/elevate-your-looks$/);
   await expect(page.getByLabel('Service style inspiration',{exact:true})).toHaveCount(0);
   if (process.env.REACT_APP_DEMO_MODE === 'true') {
-    await expect(page.locator('img[src^="/images/inspiration/"]')).toHaveCount(33);
+    await expect(page.locator('img[src^="/images/inspiration/"]')).toHaveCount(30);
     for (const [index, category] of categories.entries()) {
       await page.getByRole('button', {name:category,exact:true}).click();
       await expect(page.locator('img[src^="/images/inspiration/"]')).toHaveCount(3);
-      const prefix = ['locs','buzz','braids','cornrows','wigs','high-top','colour','nails','makeup','lashes','natural'][index];
-      await expect(page.locator('img[src^="/images/inspiration/"]').first()).toHaveAttribute('src', `/images/inspiration/${prefix}-1.jpg`);
+      const prefix = ['locs','buzz','braids','cornrows','high-top','colour','nails','makeup','lashes','natural'][index];
+      const firstImage = prefix === 'colour' || prefix === 'natural' ? `${prefix}-session` : `${prefix}-1`;
+      await expect(page.locator('img[src^="/images/inspiration/"]').first()).toHaveAttribute('src', `/images/inspiration/${firstImage}.jpg`);
       for (const photo of await page.locator('img[src^="/images/inspiration/"]').all()) {
         await expect.poll(async()=>{await photo.scrollIntoViewIfNeeded();return photo.evaluate(el=>el.complete && el.naturalWidth>0);}).toBe(true);
       }

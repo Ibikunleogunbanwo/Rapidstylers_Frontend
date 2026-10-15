@@ -1,5 +1,7 @@
 import { render, screen, fireEvent, within, waitFor } from "@testing-library/react";
-import ElevateLooks from "./elevateYourLooks";
+import GalleryPage from "./elevateYourLooks";
+import { MemoryRouter } from "react-router-dom";
+const ElevateLooks = props => <MemoryRouter><GalleryPage {...props} /></MemoryRouter>;
 import { APIService } from "../../hooks/remote/apiService";
 
 // The gallery page is what we're testing — stub the heavy chrome (Hero pulls in
@@ -80,17 +82,17 @@ describe("ElevateLooks gallery cards", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
-  test("shows three demo wig examples when there are no uploads", async () => {
+  test("shows three demo colour examples when there are no uploads", async () => {
     APIService.searchGallery.mockResolvedValue({ data: { data: [] } });
     render(<ElevateLooks />);
 
     // Wait for the first (curated) view to settle before switching, so the
     // category change runs against the populated grid.
     await screen.findByRole("button", { name: "View Makeup artist applying blush" });
-    fireEvent.click(screen.getByRole("button", { name: "Wigs" }));
+    fireEvent.click(screen.getByRole("button", { name: "Hair dye" }));
 
     expect(
-      await screen.findByRole("button", {name:"View Long wavy wig"})
+      await screen.findByRole("button", {name:"View Colourist applying black dye to grey roots"})
     ).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /profile$/ })).not.toBeInTheDocument();
   });
@@ -249,12 +251,12 @@ describe("ElevateLooks gallery search", () => {
   test("finds curated work by keyword rather than only the upload feed", async () => {
     await renderWithNoUploads();
 
-    await searchFor("bob");
+    await searchFor("braids");
 
     expect(
-      await screen.findByRole("button", { name: "View Sleek bob wig" })
+      await screen.findByRole("button", { name: "View Knotless box braids" })
     ).toBeInTheDocument();
-    expect(screen.getByText(/results? for "bob"/)).toBeInTheDocument();
+    expect(screen.getByText(/results? for "braids"/)).toBeInTheDocument();
   });
 
   test("searches every category, not just the selected tab", async () => {
@@ -433,13 +435,22 @@ describe("ElevateLooks heading", () => {
   });
 });
 
- test("demo exposes all 33 generated examples and live exposes none", async () => {
+ test("demo exposes all 30 generated examples and live exposes none", async () => {
    APIService.searchGallery.mockResolvedValue({data:{data:[]}});
    const demo = render(<ElevateLooks showCurated={true} />);
    await screen.findByRole("button", {name:"View Long locs"});
-   expect(demo.container.querySelectorAll('img[src^="/images/inspiration/"]')).toHaveLength(33);
+   expect(demo.container.querySelectorAll('img[src^="/images/inspiration/"]')).toHaveLength(30);
    demo.unmount();
    const live = render(<ElevateLooks showCurated={false} />);
    await screen.findByText("No work posted yet");
    expect(live.container.querySelectorAll('img[src^="/images/inspiration/"]')).toHaveLength(0);
+ });
+
+ test.each([['Hair dye', 'Hair dye'], ['Wigs', 'All work'], ['invalid', 'All work']])('gallery deep link %s selects %s', async (query, selected) => {
+   APIService.searchGallery.mockResolvedValue({data:{data:[]}});
+   render(<MemoryRouter initialEntries={[`/elevate-your-looks?category=${encodeURIComponent(query)}`]}><GalleryPage showCurated={true} /></MemoryRouter>);
+   await screen.findByRole('button', {name:selected,exact:true});
+   expect(screen.getByRole('button', {name:selected,exact:true}).className).toContain('bg-brand');
+   expect(screen.queryByRole('button', {name:'Wigs',exact:true})).not.toBeInTheDocument();
+   await waitFor(()=>expect(screen.queryByText('Loading images…')).not.toBeInTheDocument());
  });

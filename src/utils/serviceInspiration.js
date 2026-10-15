@@ -70,23 +70,6 @@ export const SERVICE_INSPIRATION = [
     ]
   },
   {
-    "name": "Wigs",
-    "images": [
-      {
-        "src": "/images/inspiration/wigs-1.jpg",
-        "alt": "Long wavy wig"
-      },
-      {
-        "src": "/images/inspiration/wigs-2.jpg",
-        "alt": "Sleek bob wig"
-      },
-      {
-        "src": "/images/inspiration/wigs-3.jpg",
-        "alt": "Curly wig"
-      }
-    ]
-  },
-  {
     "name": "High-top fade",
     "images": [
       {
@@ -107,8 +90,8 @@ export const SERVICE_INSPIRATION = [
     "name": "Hair dye",
     "images": [
       {
-        "src": "/images/inspiration/colour-1.jpg",
-        "alt": "Auburn curls"
+        "src": "/images/inspiration/colour-session.jpg",
+        "alt": "Colourist applying black dye to grey roots"
       },
       {
         "src": "/images/inspiration/colour-2.jpg",
@@ -125,7 +108,7 @@ export const SERVICE_INSPIRATION = [
     "images": [
       {
         "src": "/images/inspiration/nails-1.jpg",
-        "alt": "Nail technician painting a client’s nails"
+        "alt": "Nail technician painting a client\u2019s nails"
       },
       {
         "src": "/images/inspiration/nails-2.jpg",
@@ -175,8 +158,8 @@ export const SERVICE_INSPIRATION = [
     "name": "Natural hair",
     "images": [
       {
-        "src": "/images/inspiration/natural-1.jpg",
-        "alt": "Rounded natural afro"
+        "src": "/images/inspiration/natural-session.jpg",
+        "alt": "Stylist working on a woman\u2019s natural coily hair"
       },
       {
         "src": "/images/inspiration/natural-2.jpg",

@@ -26,7 +26,6 @@ export const GALLERY_TABS = [
   { label: "Buzz cut", categories: ["Buzz cut"] },
   { label: "Braids", categories: ["Braids"] },
   { label: "Cornrows", categories: ["Cornrows"] },
-  { label: "Wigs", categories: ["Wigs"] },
   { label: "High-top fade", categories: ["High-top fade"] },
   { label: "Hair dye", categories: ["Hair dye"] },
   // Labelled with the service catalogue's name; the backend category stays "Nail tech".

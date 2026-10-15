@@ -192,7 +192,12 @@ describe("Home page style inspiration", () => {
     const cards = within(area).getAllByRole("heading", {level:3});
     expect(cards.map(card => card.textContent)).toEqual(GALLERY_CATEGORIES);
     const photos = within(area).getAllByRole("img");
-    expect(photos).toHaveLength(11);
+    expect(photos).toHaveLength(10);
+    for (const name of GALLERY_CATEGORIES) {
+      const card = within(area).getByRole("heading", {name, exact:true}).closest("a");
+      expect(card).toHaveAttribute("href", `/elevate-your-looks?category=${encodeURIComponent(name)}`);
+    }
+    expect(within(area).queryByRole("heading", {name:"Wigs"})).not.toBeInTheDocument();
     photos.forEach(photo => expect(photo).toHaveAttribute("src", expect.stringContaining("/images/inspiration/")));
     expect(within(area).getByRole("button", {name:"Next styles"})).toBeInTheDocument();
     expect(within(area).getByRole("region", {name:"Browse service inspiration"})).toHaveAttribute("tabindex", "0");

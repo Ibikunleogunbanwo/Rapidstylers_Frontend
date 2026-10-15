@@ -2,6 +2,7 @@ import PublicHeader from "../../components/publicHeader";
 import Footer from "../../components/footer";
 import AdSlot from "../../components/adSlot";
 import React, { useState, useEffect, useRef } from "react";
+import { useSearchParams } from "react-router-dom";
 import { APIService } from "../../hooks/remote/apiService";
 import { toGalleryPhoto } from "../../hooks/remote/useLatestGalleryUploads";
 
@@ -25,7 +26,9 @@ const ElevateLooks = ({ showCurated = IS_DEMO }) => {
   }, []);
   // The strip's first entry is "All work", so the opening grid is a named,
   // highlighted view rather than an unlabelled default that no tab admitted to.
-  const [activeCategory, setActiveCategory] = useState(CATEGORIES[0]);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestedCategory = searchParams.get("category");
+  const activeCategory = CATEGORIES.includes(requestedCategory) ? requestedCategory : ALL_WORK;
   const [images, setImages] = useState(null);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
@@ -156,7 +159,12 @@ const ElevateLooks = ({ showCurated = IS_DEMO }) => {
   };
 
   const switchCategory = (cat) => {
-    setActiveCategory(cat);
+    setSearchParams(previous => {
+      const next = new URLSearchParams(previous);
+      if (cat === ALL_WORK) next.delete("category");
+      else next.set("category", cat);
+      return next;
+    });
     setSearchInput("");
     setSearchQuery("");
   };
