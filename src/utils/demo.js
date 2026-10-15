@@ -1,6 +1,8 @@
 /** True on the demo showroom build (demo.rapidstylers.ca), set in its Vercel env. */
 export const IS_DEMO = process.env.REACT_APP_DEMO_MODE === "true";
 export const LIVE_SITE_URL = process.env.REACT_APP_LIVE_SITE_URL || "https://rapidstylers.ca";
+/** The live API, used by the demo only for newsletter sign-ups (the demo API is read-only). */
+export const LIVE_API_BASE_URL = process.env.REACT_APP_LIVE_API_BASE_URL || "https://api.rapidstylers.ca/rapid_stylers";
 
 /**
  * On the demo a visitor can open the booking form and pick a time, but cannot
