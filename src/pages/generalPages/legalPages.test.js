@@ -20,6 +20,18 @@ describe("legal pages on the shared shell", () => {
   it("privacy renders its sections inside the shared shell", () => {
     render(<MemoryRouter><Privacy /></MemoryRouter>);
     expect(screen.getByText("Privacy Policy")).toBeInTheDocument();
-    expect(screen.getByText("10. Contact us")).toBeInTheDocument();
+    expect(screen.getByText("11. Contact our Privacy Officer")).toBeInTheDocument();
+  });
+  it("names the operating company, Alberta law and the privacy contact (P-19)", () => {
+    const terms = render(<MemoryRouter><Terms /></MemoryRouter>);
+    expect(terms.container.textContent).toContain("operated by Keripe Inc.");
+    expect(terms.container.textContent).toContain("laws of the Province of Alberta");
+    terms.unmount();
+    const privacy = render(<MemoryRouter><Privacy /></MemoryRouter>);
+    const text = privacy.container.textContent;
+    expect(text).toContain("Keripe Inc.");
+    expect(text).toContain("admin@rapidstylers.ca");
+    expect(text).toContain("Stylist ID photos");
+    expect(text).toContain("outside Canada");
   });
 });

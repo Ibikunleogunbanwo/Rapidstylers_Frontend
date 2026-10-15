@@ -21,6 +21,11 @@ export const API_BASE_URL = resolveApiBaseUrl(process.env.REACT_APP_API_BASE_URL
  */
 export const SUPPORT_EMAIL = "support@rapidstylers.ca";
 
+/** The company that operates RapidStylers, as named on the legal pages. */
+export const LEGAL_ENTITY = "Keripe Inc.";
+/** Where privacy requests go (access, correction, deletion, complaints). */
+export const PRIVACY_EMAIL = "admin@rapidstylers.ca";
+
 /**
  * The real contact details we publish in the footer. Until these were provided
  * the footer deliberately printed nothing there, after an invented street

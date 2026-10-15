@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import PublicHeader from "../../components/publicHeader";
 import Footer from "../../components/footer";
 import { Section, PageHeading, BackHome } from "../../components/pageSections";
-import { SUPPORT_EMAIL } from "../../utils/constant";
+import { LEGAL_ENTITY, SUPPORT_EMAIL, SUPPORT_PHONE } from "../../utils/constant";
 
 const TermsAndConditions = () => {
   useEffect(() => {
@@ -17,14 +17,14 @@ const TermsAndConditions = () => {
         <PageHeading
           eyebrow="Legal"
           title="Terms and Conditions"
-          lead="Effective date: August 23, 2026"
+          lead="Effective date: October 15, 2026"
         />
 
         <div className="max-w-[720px] space-y-10 text-[13px] leading-[1.7] text-black/65">
           <section>
             <h2 className="text-[15px] font-medium text-onSurface">1. Acceptance of Terms</h2>
             <p className="mt-2">
-              By accessing or using the RapidStylers platform (the "Service"), you agree to be bound by these Terms and Conditions. If you do not agree, do not use the Service.
+              RapidStylers is operated by {LEGAL_ENTITY} ("RapidStylers", "we", "us"), a company based in Alberta, Canada. By accessing or using the RapidStylers platform (the "Service"), you agree to be bound by these Terms and Conditions. If you do not agree, do not use the Service.
             </p>
           </section>
 
@@ -101,7 +101,7 @@ const TermsAndConditions = () => {
           <section>
             <h2 className="text-[15px] font-medium text-onSurface">11. Limitation of Liability</h2>
             <p className="mt-2">
-              RapidStylers is not liable for any injury, loss, or damage arising from services provided by stylists. The platform facilitates connections but does not control the quality, safety, or legality of services. Users engage stylists at their own risk.
+              To the extent permitted by law, RapidStylers is not liable for any injury, loss, or damage arising from services provided by stylists. The platform facilitates connections but does not control the quality, safety, or legality of services. Nothing in these terms limits any rights you have under consumer protection laws that cannot be waived.
             </p>
           </section>
 
@@ -115,21 +115,21 @@ const TermsAndConditions = () => {
           <section>
             <h2 className="text-[15px] font-medium text-onSurface">13. Changes to Terms</h2>
             <p className="mt-2">
-              RapidStylers reserves the right to modify these terms at any time. Continued use of the Service after changes constitutes acceptance of the modified terms.
+              We may update these terms from time to time. We will post the new version on this page with a new effective date and let you know through the platform when a change is significant. Continued use of the Service after changes take effect constitutes acceptance of the updated terms.
             </p>
           </section>
 
           <section>
             <h2 className="text-[15px] font-medium text-onSurface">14. Governing Law</h2>
             <p className="mt-2">
-              These terms are governed by the laws of Canada and the applicable province. Any disputes shall be resolved in the courts of that jurisdiction.
+              These terms are governed by the laws of the Province of Alberta and the federal laws of Canada that apply there. Any dispute will be resolved in the courts of Alberta, unless the consumer protection laws of the province where you live give you the right to bring it there.
             </p>
           </section>
 
           <section>
             <h2 className="text-[15px] font-medium text-onSurface">15. Contact</h2>
             <p className="mt-2">
-              For questions about these terms, contact us at {SUPPORT_EMAIL}.
+              For questions about these terms, contact {LEGAL_ENTITY} at {SUPPORT_EMAIL} or {SUPPORT_PHONE}.
             </p>
           </section>
         </div>
