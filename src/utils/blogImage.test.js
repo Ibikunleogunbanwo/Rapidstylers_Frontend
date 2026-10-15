@@ -23,3 +23,13 @@ describe("blog images", () => {
     expect(blogImageSrc("https://res.cloudinary.com/demo/image/upload/v1/a.jpg")).toContain("/image/upload/c_fill,");
   });
 });
+
+ test("seeded article titles get distinct images, while custom images stay intact", async () => {
+  const { ARTICLE_IMAGES, articleImageFallback } = await import("./blogImage");
+  expect(new Set(Object.values(ARTICLE_IMAGES)).size).toBe(4);
+  for (const [title, image] of Object.entries(ARTICLE_IMAGES)) {
+    expect(blogImageSrc("", articleImageFallback(title))).toBe(image);
+    expect(blogImageSrc("https://img.freepik.com/old.jpg", articleImageFallback(title))).toBe(image);
+    expect(blogImageSrc("https://cdn.example/custom.jpg", articleImageFallback(title))).toBe("https://cdn.example/custom.jpg");
+  }
+ });

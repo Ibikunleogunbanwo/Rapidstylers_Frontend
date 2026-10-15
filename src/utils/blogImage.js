@@ -6,7 +6,8 @@ import { cloudinaryBlog } from "./cloudinaryImage";
  * Older seeded posts (and the offline fallbacks, until they were replaced) point
  * at img.freepik.com: third-party, watermarked and signed with tokens that
  * expire, so they render either someone else's branding or a broken image. Any
- * freepik host, or no image at all, shows our own branded share image instead.
+ * freepik host, or no image at all, uses the article-specific editorial image
+ * when available, otherwise our branded share card.
  */
 export const BLOG_FALLBACK_IMAGE = "/og-image.png";
 
@@ -30,4 +31,18 @@ export function safeBlogImage(url, fallback = BLOG_FALLBACK_IMAGE) {
 export function blogImageSrc(url, fallback = BLOG_FALLBACK_IMAGE) {
   const safe = safeBlogImage(url, fallback);
   return safe === fallback ? fallback : cloudinaryBlog(safe);
+}
+
+// Match article titles rather than database IDs, which vary by environment.
+export const ARTICLE_IMAGES = {
+  "The Ultimate Guide to Braiding: From Basic to Intricate Styles": "/images/blog/braiding.jpg",
+  "Quick and Easy Hairstyles for Busy Mornings": "/images/blog/morning-styles.jpg",
+  "Healthy Hair Tips: Essential Care and Maintenance Guide": "/images/blog/healthy-hair.jpg",
+  "Short and Chic: Modern Hairstyles for Short Haircuts": "/images/blog/short-hair.jpg",
+};
+
+export function articleImageFallback(title) {
+  const normalized = String(title || "").trim().toLowerCase();
+  const match = Object.keys(ARTICLE_IMAGES).find(key => key.toLowerCase() === normalized);
+  return match ? ARTICLE_IMAGES[match] : BLOG_FALLBACK_IMAGE;
 }

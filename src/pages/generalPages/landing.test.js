@@ -143,8 +143,8 @@ describe("Home page blog cards", () => {
     const sources = [...blogSection.querySelectorAll("img")].map((i) => i.getAttribute("src"));
     expect(sources.length).toBeGreaterThanOrEqual(4);
     expect(
-      sources.filter((src) => !src.startsWith("/images/gallery/")),
-      "every fallback card must use a verified local gallery photo"
+      sources.filter((src) => !src.startsWith("/images/blog/")),
+      "every fallback card must use a topic-specific local editorial photo"
     ).toEqual([]);
   });
 

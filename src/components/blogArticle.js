@@ -1,5 +1,5 @@
 import { PageHeading } from "./pageSections";
-import { blogImageSrc } from "../utils/blogImage";
+import { blogImageSrc, articleImageFallback } from "../utils/blogImage";
 
 /**
  * An article as readers see it: category eyebrow, title, byline, cover image
@@ -15,9 +15,9 @@ const BlogArticle = ({ post }) => {
         title={post.title}
         lead={`By ${post.author || "RapidStylers Team"} · ${post.dateCreated || ""}`}
       />
-      {post.imageUrl && (
+      {(post.imageUrl || articleImageFallback(post.title)) && (
         <img
-          src={blogImageSrc(post.imageUrl)}
+          src={blogImageSrc(post.imageUrl, articleImageFallback(post.title))}
           alt={post.title || ""}
           className="aspect-[16/9] w-full object-cover"
           loading="lazy"

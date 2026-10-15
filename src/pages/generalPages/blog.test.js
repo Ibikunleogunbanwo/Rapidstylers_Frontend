@@ -24,13 +24,13 @@ const FREEPIK = "https://img.freepik.com/free-photo/side-view-woman-styling-hair
  * posts from the API still carry them. Neither may reach the page.
  */
 describe("blog images never hotlink freepik", () => {
-  test("the offline list renders local gallery photos", async () => {
+  test("the offline list renders topic-specific editorial photos", async () => {
     APIService.listBlog.mockRejectedValue(new Error("offline"));
     const { container } = render(<MemoryRouter><Blog /></MemoryRouter>);
     await screen.findByText("Quick and Easy Hairstyles for Busy Mornings");
     const srcs = [...container.querySelectorAll("img")].map((img) => img.getAttribute("src"));
     expect(srcs).toHaveLength(4);
-    srcs.forEach((src) => expect(src).toMatch(/^\/images\/gallery\/g-[a-z-]+-\d+\.jpg$/));
+    srcs.forEach((src) => expect(src).toMatch(/^\/images\/blog\/[a-z-]+\.jpg$/));
   });
 
   test("a freepik image from the API shows the local fallback", async () => {
@@ -58,7 +58,7 @@ describe("blog images never hotlink freepik", () => {
       </MemoryRouter>
     );
     const img = await screen.findByRole("img", { name: /Ultimate Guide to Braiding/ });
-    expect(img.getAttribute("src")).toMatch(/^\/images\/gallery\//);
+    expect(img.getAttribute("src")).toBe("/images/blog/braiding.jpg");
   });
 
   test("no blog source file hotlinks freepik", () => {

@@ -35,7 +35,7 @@ import { ELEVATE_GRID, curatedById } from "../../utils/curatedGallery";
 import { IS_DEMO } from "../../utils/demo";
 import { PROVINCE_NAMES } from "../../utils/signupValidation";
 import { useLatestGalleryUploads } from "../../hooks/remote/useLatestGalleryUploads";
-import { safeBlogImage } from "../../utils/blogImage";
+import { safeBlogImage, articleImageFallback } from "../../utils/blogImage";
 
 // The same curated photos the gallery page leads with, resolved from its list so
 // the two cannot drift (they previously kept separate copies of the paths).
@@ -115,10 +115,10 @@ const PROVINCES = PROVINCE_NAMES;
 // broken images exactly when the backend was down. These are our own verified
 // work photos from the public gallery, matched to each article's topic.
 const FALLBACK_BLOGS = [
-  { img: "/images/gallery/g-braids-2.jpg", cat: "Braiding", title: "The Ultimate Guide to Braiding: From Basic to Intricate Styles", date: "May 29, 2024" },
-  { img: "/images/gallery/g-natural-hair-1.jpg", cat: "Styling", title: "Quick and Easy Hairstyles for Busy Mornings", date: "May 29, 2024" },
-  { img: "/images/gallery/g-natural-hair-3.jpg", cat: "Hair Care", title: "Healthy Hair Tips: Essential Care and Maintenance Guide", date: "May 29, 2024" },
-  { img: "/images/gallery/g-buzz-cut-1.jpg", cat: "Trends", title: "Short and Chic: Modern Hairstyles for Short Haircuts", date: "May 29, 2024" },
+  { img: "/images/blog/braiding.jpg", cat: "Braiding", title: "The Ultimate Guide to Braiding: From Basic to Intricate Styles", date: "May 29, 2024" },
+  { img: "/images/blog/morning-styles.jpg", cat: "Styling", title: "Quick and Easy Hairstyles for Busy Mornings", date: "May 29, 2024" },
+  { img: "/images/blog/healthy-hair.jpg", cat: "Hair Care", title: "Healthy Hair Tips: Essential Care and Maintenance Guide", date: "May 29, 2024" },
+  { img: "/images/blog/short-hair.jpg", cat: "Trends", title: "Short and Chic: Modern Hairstyles for Short Haircuts", date: "May 29, 2024" },
 ];
 
 const normalizeBlog = (p) => ({
@@ -172,7 +172,7 @@ const BlogSection = () => {
           >
             <div className="aspect-[4/5] overflow-hidden bg-neutral">
               <img
-                src={safeBlogImage(post.img)}
+                src={safeBlogImage(post.img, articleImageFallback(post.title))}
                 alt=""
                 className="object-cover w-full h-full"
                 loading="lazy"
