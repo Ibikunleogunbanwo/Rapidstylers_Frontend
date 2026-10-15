@@ -1,6 +1,8 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import LandingPage from "./landing";
+import { SERVICE_INSPIRATION } from "../../utils/serviceInspiration";
+import { GALLERY_CATEGORIES } from "../../utils/galleryCategories";
 import { APIService } from "../../hooks/remote/apiService";
 import { fetchGalleryUploads } from "../../hooks/remote/publicContentApi";
 import { within } from "@testing-library/react";
@@ -182,55 +184,21 @@ describe("Canada band media loading", () => {
   });
 });
 
-describe("Home page gallery grid", () => {
-  const renderWith = (props) =>
-    render(
-      <MemoryRouter>
-        <LandingPage {...props} />
-      </MemoryRouter>
-    );
-  const gallerySection = () => screen.getByText("Elevate your style.").closest(".grid");
-
-  test("the demo keeps the curated photos and asks the API for nothing", () => {
-    fetchGalleryUploads.mockClear();
-    renderWith({ showCurated: true });
-    const sources = [...gallerySection().querySelectorAll("img")].map((i) => i.getAttribute("src"));
-    expect(sources).toHaveLength(4);
-    sources.forEach((src) => expect(src).toMatch(/^\/images\/gallery\//));
-    expect(fetchGalleryUploads).not.toHaveBeenCalled();
-  });
-
-  test("live shows the latest approved uploads, never the curated photos", async () => {
-    fetchGalleryUploads.mockImplementation((category) =>
-      Promise.resolve({
-        data: {
-          data:
-            category === "Braids"
-              ? [{ src: { medium: "https://res.cloudinary.com/x/braids.jpg" }, alt: "Braids by Ama", stylerId: "S1", source: "stylist" }]
-              : [],
-        },
-      })
-    );
-    renderWith({ showCurated: false });
-    const photo = await screen.findByAltText("Braids by Ama");
-    expect(photo).toHaveAttribute("src", "https://res.cloudinary.com/x/braids.jpg");
-    expect([...gallerySection().querySelectorAll("img")].map((i) => i.getAttribute("src"))).toEqual([
-      "https://res.cloudinary.com/x/braids.jpg",
-    ]);
-  });
-
-  test("live holds the grid's space while loading", () => {
-    fetchGalleryUploads.mockImplementation(() => new Promise(() => {}));
-    renderWith({ showCurated: false });
-    expect(screen.getByTestId("elevate-loading").children).toHaveLength(4);
-  });
-
-  test("live with no approved uploads points to the gallery instead", async () => {
-    fetchGalleryUploads.mockImplementation(() => Promise.reject(new Error("offline")));
-    renderWith({ showCurated: false });
-    expect(await screen.findByText("New work is on its way")).toBeInTheDocument();
-    expect(gallerySection().querySelectorAll("img")).toHaveLength(0);
-    expect(screen.getByRole("link", { name: "See the gallery" })).toHaveAttribute("href", "/elevate-your-looks");
+describe("Home page style inspiration", () => {
+  test("each service has one labelled homepage inspiration image without claiming stylist work", () => {
+    expect(SERVICE_INSPIRATION.map(group => group.name)).toEqual(GALLERY_CATEGORIES);
+    renderHome();
+    const area = screen.getByLabelText("Service style inspiration");
+    for (const name of GALLERY_CATEGORIES) {
+      const button = within(area).getByRole("button", {name, exact:true});
+      fireEvent.click(button);
+      expect(button).toHaveAttribute("aria-pressed", "true");
+      const photos = within(area).getAllByRole("img");
+      expect(photos).toHaveLength(1);
+      photos.forEach(photo => expect(photo).toHaveAttribute("src", expect.stringContaining("/images/inspiration/")));
+    }
+    expect(within(area).getByText(/AI generated style inspiration/)).toBeInTheDocument();
+    expect(screen.getByRole("link", {name:"Browse gallery"})).toHaveAttribute("href", "/elevate-your-looks");
   });
 });
 

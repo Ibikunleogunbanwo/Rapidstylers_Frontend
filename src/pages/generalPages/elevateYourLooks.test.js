@@ -80,17 +80,17 @@ describe("ElevateLooks gallery cards", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
-  test("shows the empty state when a category without curated work has no uploads", async () => {
+  test("shows three demo wig examples when there are no uploads", async () => {
     APIService.searchGallery.mockResolvedValue({ data: { data: [] } });
     render(<ElevateLooks />);
 
     // Wait for the first (curated) view to settle before switching, so the
     // category change runs against the populated grid.
-    await screen.findByRole("button", { name: "View Professional makeup application" });
+    await screen.findByRole("button", { name: "View Makeup artist applying blush" });
     fireEvent.click(screen.getByRole("button", { name: "Wigs" }));
 
     expect(
-      await screen.findByText("No Wigs work posted yet")
+      await screen.findByRole("button", {name:"View Long wavy wig"})
     ).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /profile$/ })).not.toBeInTheDocument();
   });
@@ -100,10 +100,10 @@ describe("ElevateLooks gallery cards", () => {
     render(<ElevateLooks />);
 
     expect(
-      await screen.findByRole("button", { name: "View Professional makeup application" })
+      await screen.findByRole("button", { name: "View Makeup artist applying blush" })
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "View Barber fading the sides with clippers" })
+      screen.getByRole("button", { name: "View Barber giving a buzz cut" })
     ).toBeInTheDocument();
   });
 
@@ -114,18 +114,18 @@ describe("ElevateLooks gallery cards", () => {
     // The opening view shows everything, so "a braids photo is present" proves
     // nothing, and "the makeup photo is gone" is also true of the empty grid
     // mid-load. Only the filtered state satisfies both at once.
-    await screen.findByRole("button", { name: "View Professional makeup application" });
+    await screen.findByRole("button", { name: "View Makeup artist applying blush" });
     fireEvent.click(screen.getByRole("button", { name: "Braids" }));
 
     await waitFor(() => {
       expect(
-        screen.getByRole("button", { name: "View Long auburn knotless braids" })
+        screen.getByRole("button", { name: "View Knotless box braids" })
       ).toBeInTheDocument();
       expect(
-        screen.queryByRole("button", { name: "View Professional makeup application" })
+        screen.queryByRole("button", { name: "View Makeup artist applying blush" })
       ).not.toBeInTheDocument();
       expect(
-        screen.queryByRole("button", { name: "View Long faux locs worn with statement sunglasses" })
+        screen.queryByRole("button", { name: "View Long locs" })
       ).not.toBeInTheDocument();
     });
   });
@@ -137,7 +137,7 @@ describe("ElevateLooks gallery cards", () => {
     APIService.searchGallery.mockResolvedValue({ data: { data: [] } });
     render(<ElevateLooks />);
 
-    await screen.findByRole("button", { name: "View Professional makeup application" });
+    await screen.findByRole("button", { name: "View Makeup artist applying blush" });
 
     const strip = screen.getByRole("button", { name: "All work" });
     expect(strip.className).toContain("bg-brand");
@@ -149,22 +149,22 @@ describe("ElevateLooks gallery cards", () => {
   test("comes back to the whole gallery from a category", async () => {
     APIService.searchGallery.mockResolvedValue({ data: { data: [] } });
     render(<ElevateLooks />);
-    await screen.findByRole("button", { name: "View Professional makeup application" });
+    await screen.findByRole("button", { name: "View Makeup artist applying blush" });
 
     fireEvent.click(screen.getByRole("button", { name: "Braids" }));
     await waitFor(() =>
       expect(
-        screen.queryByRole("button", { name: "View Professional makeup application" })
+        screen.queryByRole("button", { name: "View Makeup artist applying blush" })
       ).not.toBeInTheDocument()
     );
 
     fireEvent.click(screen.getByRole("button", { name: "All work" }));
 
     expect(
-      await screen.findByRole("button", { name: "View Professional makeup application" })
+      await screen.findByRole("button", { name: "View Makeup artist applying blush" })
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "View Long auburn knotless braids" })
+      screen.getByRole("button", { name: "View Knotless box braids" })
     ).toBeInTheDocument();
   });
 
@@ -172,7 +172,7 @@ describe("ElevateLooks gallery cards", () => {
     APIService.searchGallery.mockResolvedValue({ data: { data: [] } });
     render(<ElevateLooks />);
 
-    await screen.findByRole("button", { name: "View Professional makeup application" });
+    await screen.findByRole("button", { name: "View Makeup artist applying blush" });
     fireEvent.click(screen.getByRole("button", { name: "Locs & dreadlocks" }));
 
     // Both backend names behind the one tab. The tab queries for each of them —
@@ -180,13 +180,13 @@ describe("ElevateLooks gallery cards", () => {
     // own would hide the other's work.
     await waitFor(() => {
       expect(
-        screen.getByRole("button", { name: "View Long faux locs worn with statement sunglasses" })
+        screen.getByRole("button", { name: "View Long locs" })
       ).toBeInTheDocument();
       expect(
-        screen.getByRole("button", { name: "View Soft locs styled loose past the shoulder" })
+        screen.getByRole("button", { name: "View Locs tied back" })
       ).toBeInTheDocument();
       expect(
-        screen.queryByRole("button", { name: "View Professional makeup application" })
+        screen.queryByRole("button", { name: "View Makeup artist applying blush" })
       ).not.toBeInTheDocument();
     });
 
@@ -243,7 +243,7 @@ describe("ElevateLooks gallery search", () => {
   const renderWithNoUploads = async () => {
     APIService.searchGallery.mockResolvedValue({ data: { data: [] } });
     render(<ElevateLooks />);
-    await screen.findByRole("button", { name: "View Professional makeup application" });
+    await screen.findByRole("button", { name: "View Makeup artist applying blush" });
   };
 
   test("finds curated work by keyword rather than only the upload feed", async () => {
@@ -252,7 +252,7 @@ describe("ElevateLooks gallery search", () => {
     await searchFor("bob");
 
     expect(
-      await screen.findByRole("button", { name: "View Blunt braided bob with a centre part" })
+      await screen.findByRole("button", { name: "View Sleek bob wig" })
     ).toBeInTheDocument();
     expect(screen.getByText(/results? for "bob"/)).toBeInTheDocument();
   });
@@ -264,7 +264,7 @@ describe("ElevateLooks gallery search", () => {
     await searchFor("nails");
 
     expect(
-      await screen.findByRole("button", { name: "View Glossy red almond nails" })
+      await screen.findByRole("button", { name: "View Burgundy manicure" })
     ).toBeInTheDocument();
   });
 
@@ -274,10 +274,10 @@ describe("ElevateLooks gallery search", () => {
     await searchFor("french");
 
     expect(
-      await screen.findByRole("button", { name: "View Classic French tip almond nails" })
+      await screen.findByRole("button", { name: "View French manicure" })
     ).toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: "View Professional makeup application" })
+      screen.queryByRole("button", { name: "View Makeup artist applying blush" })
     ).not.toBeInTheDocument();
   });
 
@@ -292,7 +292,7 @@ describe("ElevateLooks gallery search", () => {
   test("a keyword with no match reads as no results, not a gallery outage", async () => {
     APIService.searchGallery.mockRejectedValue(new Error("network down"));
     render(<ElevateLooks />);
-    await screen.findByRole("button", { name: "View Professional makeup application" });
+    await screen.findByRole("button", { name: "View Makeup artist applying blush" });
 
     fireEvent.change(screen.getByPlaceholderText(/search the gallery/i), {
       target: { value: "zzzqqq" },
@@ -326,7 +326,7 @@ describe("ElevateLooks gallery search", () => {
     });
 
     render(<ElevateLooks />);
-    await screen.findByRole("button", { name: "View Professional makeup application" });
+    await screen.findByRole("button", { name: "View Makeup artist applying blush" });
 
     const input = screen.getByPlaceholderText(/search the gallery/i);
     const requestedWith = (text) =>
@@ -383,7 +383,7 @@ describe("ElevateLooks gallery search", () => {
     // it used to collapse to the selected tab (Dreadlocks: no photos) and empty
     // the gallery with a "couldn't load" message.
     expect(
-      await screen.findByRole("button", { name: "View Professional makeup application" })
+      await screen.findByRole("button", { name: "View Makeup artist applying blush" })
     ).toBeInTheDocument();
     expect(screen.queryByText(/Couldn't load the gallery/)).not.toBeInTheDocument();
   });
@@ -391,7 +391,7 @@ describe("ElevateLooks gallery search", () => {
   test("choosing a category tab leaves search mode", async () => {
     await renderWithNoUploads();
     await searchFor("nails");
-    await screen.findByRole("button", { name: "View Glossy red almond nails" });
+    await screen.findByRole("button", { name: "View Burgundy manicure" });
 
     fireEvent.click(screen.getByRole("button", { name: "Braids" }));
 
@@ -400,7 +400,7 @@ describe("ElevateLooks gallery search", () => {
       { timeout: 2500 }
     );
     expect(
-      await screen.findByRole("button", { name: "View Long auburn knotless braids" })
+      await screen.findByRole("button", { name: "View Knotless box braids" })
     ).toBeInTheDocument();
     await settle();
   });
@@ -428,7 +428,18 @@ describe("ElevateLooks heading", () => {
     render(<ElevateLooks />);
     const headings = screen.getAllByRole("heading", { level: 1 });
     expect(headings).toHaveLength(1);
-    expect(headings[0]).toHaveTextContent("Work by RapidStylers professionals");
+    expect(headings[0]).toHaveTextContent("Styles to explore");
     expect(document.title).toBe("Gallery | RapidStylers");
   });
 });
+
+ test("demo exposes all 33 generated examples and live exposes none", async () => {
+   APIService.searchGallery.mockResolvedValue({data:{data:[]}});
+   const demo = render(<ElevateLooks showCurated={true} />);
+   await screen.findByRole("button", {name:"View Long locs"});
+   expect(demo.container.querySelectorAll('img[src^="/images/inspiration/"]')).toHaveLength(33);
+   demo.unmount();
+   const live = render(<ElevateLooks showCurated={false} />);
+   await screen.findByText("No work posted yet");
+   expect(live.container.querySelectorAll('img[src^="/images/inspiration/"]')).toHaveLength(0);
+ });

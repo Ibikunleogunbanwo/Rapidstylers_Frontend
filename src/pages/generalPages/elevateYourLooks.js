@@ -5,13 +5,9 @@ import React, { useState, useEffect, useRef } from "react";
 import { APIService } from "../../hooks/remote/apiService";
 import { toGalleryPhoto } from "../../hooks/remote/useLatestGalleryUploads";
 
-// Curated work: real photos provided by the RapidStylers team. They lead the
-// grid (replacing stock imagery) while approved stylist uploads still render
-// alongside them via the API. The list itself lives in one place — the landing
-// strip reads the same source — and the images are plain static files under
-// public/images/gallery/ (see curatedGallery.js).
-import { CURATED_GALLERY as CURATED, searchCuratedPhotos } from "../../utils/curatedGallery";
+// Generated examples are restricted to the demo gallery. Live renders approved uploads only.
 import { IS_DEMO } from "../../utils/demo";
+import { DEMO_INSPIRATION, searchDemoInspiration } from "../../utils/serviceInspiration";
 import {
   ALL_WORK,
   // The strip as it renders: the "everything" view first, then the categories.
@@ -22,8 +18,7 @@ import {
 
 const PER_PAGE = 12;
 
-// The live site shows real stylist uploads only, so the gallery never presents
-// the team's photos as a professional's work. The demo showroom keeps them.
+// Demo examples are never inserted into the live professional gallery.
 const ElevateLooks = ({ showCurated = IS_DEMO }) => {
   useEffect(() => {
     document.title = "Gallery | RapidStylers";
@@ -42,12 +37,12 @@ const ElevateLooks = ({ showCurated = IS_DEMO }) => {
   // True when the gallery request itself failed (network/server), vs. simply empty.
   const [loadError, setLoadError] = useState(false);
 
-  // Curated RapidStylers work leads the grid. Filtering goes through the tab
+  // Demo inspiration filters through the existing gallery categories.
   // rather than a category equality test, because a tab can cover more than one
   // category ("Locs & dreadlocks") and the first tab covers all of them, so there
   // is no separate "show everything" flag to keep in step with the selection.
-  const browseCurated = (category) =>
-    showCurated ? CURATED.filter((p) => isInTab(p.category, category)) : [];
+  const browseExamples = (category) =>
+    showCurated ? DEMO_INSPIRATION.filter((p) => isInTab(p.category, category)) : [];
 
   // Typing or switching category fires a request per change, and they can come
   // back out of order — without this, a slow "dr" could repaint over "dreadlocks".
@@ -120,10 +115,10 @@ const ElevateLooks = ({ showCurated = IS_DEMO }) => {
         // business or full name.
         //
         // The curated photos are static files, so they cannot fail alongside the
-        // API. An API outage used to empty the gallery entirely; showing our own
-        // work with a note is both more useful and more truthful than a blank page.
-        const curated = !showCurated ? [] : needle ? searchCuratedPhotos(needle) : browseCurated(category);
-        setImages([...curated, ...uploads]);
+        // API. An API outage used to empty the gallery entirely; showing labelled demo
+        // inspiration with a note is both more useful and more truthful than a blank page.
+        const examples = !showCurated ? [] : needle ? searchDemoInspiration(needle) : browseExamples(category);
+        setImages([...examples, ...uploads]);
         setLoadError(loadError);
         setHasMore(moreWaiting);
       })
@@ -190,12 +185,14 @@ const ElevateLooks = ({ showCurated = IS_DEMO }) => {
         <header className="mx-auto w-full max-w-[1240px] px-5 pt-12 md:px-[50px] lg:px-[100px]">
           <p className="text-[11px] uppercase tracking-[0.25em] text-muted">Gallery</p>
           <h1 className="mt-5 text-[clamp(2rem,4vw,2.75rem)] font-normal leading-[1.08] tracking-[-0.02em] text-onSurface">
-            Work by RapidStylers professionals
+            {showCurated ? "Styles to explore" : "Work by RapidStylers professionals"}
           </h1>
           <p className="mt-5 max-w-[680px] text-[14px] leading-[1.6] text-black/60">
-            Browse hair, nails, lashes, makeup and barbering from professionals on
-            RapidStylers. Pick a category, or search for a style.
+            {showCurated
+              ? "Explore examples across our gallery categories. Pick a category, or search for a style."
+              : "Browse hair, nails, lashes, makeup and barbering from professionals on RapidStylers. Pick a category, or search for a style."}
           </p>
+          {showCurated && <p className="mt-3 text-sm text-black/60">Demo includes AI generated style inspiration, labelled on each image.</p>}
         </header>
       </div>
 
@@ -332,6 +329,7 @@ const ElevateLooks = ({ showCurated = IS_DEMO }) => {
                     className="absolute inset-0 h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
                     loading="lazy"
                   />
+                  {img.source === "generated" && <span className="absolute bottom-2 left-2 rounded-full bg-black/75 px-2 py-1 text-[10px] text-white">AI generated inspiration</span>}
                   {isStylerWork && profileHref && (
                     <span className="absolute top-2 left-2 inline-flex items-center gap-1 rounded-full bg-black/60 backdrop-blur px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
                       <svg viewBox="0 0 20 20" fill="currentColor" className="h-3 w-3 text-emerald-400">
@@ -480,7 +478,7 @@ const Lightbox = ({ images, index, category, onClose, onPrev, onNext }) => {
         />
         <figcaption className="mt-4 text-white/80 text-sm text-center">
           {photographer && (
-            <span>{isStylerWork ? "Work by " : "Photo by "}<span className="text-white font-medium">{photographer}</span> · </span>
+            <span>{img.source === "generated" ? "AI generated inspiration by " : isStylerWork ? "Work by " : "Photo by "}<span className="text-white font-medium">{photographer}</span> · </span>
           )}
           <span>{alt}</span>
           {isStylerWork && stylerId && (

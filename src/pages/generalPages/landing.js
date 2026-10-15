@@ -31,70 +31,10 @@ import ScrollContainer from "../../components/img-slider";
 import AdSlot from "../../components/adSlot";
 import { useEffect, useState } from "react";
 import { APIService } from "../../hooks/remote/apiService";
-import { ELEVATE_GRID, curatedById } from "../../utils/curatedGallery";
-import { IS_DEMO } from "../../utils/demo";
+import { curatedById } from "../../utils/curatedGallery";
 import { PROVINCE_NAMES } from "../../utils/signupValidation";
-import { useLatestGalleryUploads } from "../../hooks/remote/useLatestGalleryUploads";
+import ServiceInspiration from "../../components/serviceInspiration";
 import { safeBlogImage, articleImageFallback } from "../../utils/blogImage";
-
-// The same curated photos the gallery page leads with, resolved from its list so
-// the two cannot drift (they previously kept separate copies of the paths).
-const GALLERY_GRID = ELEVATE_GRID;
-
-/**
- * The "Elevate your style" photo grid. It shows what the gallery page shows: on
- * the live site that is approved stylist uploads only, so the home page no longer
- * advertises the team's curated photos as work a visitor will find there; the
- * demo showroom keeps them. The grid keeps a fixed 2x2 footprint whether it is
- * loading, full or empty, so nothing below it moves when the uploads arrive.
- */
-const ElevateGrid = ({ showCurated }) => {
-  const uploads = useLatestGalleryUploads(4, { enabled: !showCurated });
-  const photos = showCurated ? GALLERY_GRID : uploads;
-
-  if (photos === null) {
-    return (
-      <div className="relative grid grid-cols-2 gap-3 md:gap-4" aria-hidden="true" data-testid="elevate-loading">
-        {[0, 1, 2, 3].map((i) => (
-          <div key={i} className="w-full aspect-square bg-black/[0.06] animate-pulse" />
-        ))}
-      </div>
-    );
-  }
-
-  if (photos.length === 0) {
-    return (
-      <div className="flex aspect-square w-full flex-col items-center justify-center border border-dashed border-black/15 bg-white/60 px-8 text-center">
-        <p className="text-[15px] font-medium text-onSurface">New work is on its way</p>
-        <p className="mt-2 max-w-[320px] text-[13px] leading-[1.6] text-black/55">
-          Photos appear here once professionals share their work and it is
-          approved. See what is in the gallery so far.
-        </p>
-        <Link
-          to={"/elevate-your-looks"}
-          className="mt-5 text-[13px] font-semibold underline underline-offset-4 transition-colors hover:text-brand"
-        >
-          See the gallery
-        </Link>
-      </div>
-    );
-  }
-
-  return (
-    <div className="relative grid grid-cols-2 gap-3 md:gap-4">
-      {photos.map((img) => (
-        <img
-          key={img.src}
-          src={img.src}
-          alt={img.alt}
-          loading="lazy"
-          decoding="async"
-          className="w-full aspect-square object-cover"
-        />
-      ))}
-    </div>
-  );
-};
 
 /**
  * The brand story block used `about-landing.jpg`: a glossy manicure close-up,
@@ -190,7 +130,7 @@ const BlogSection = () => {
   );
 };
 
-const LandingPage = ({ showCurated = IS_DEMO }) => {
+const LandingPage = () => {
   const allowDecorativeMotion = useDecorativeMotion(0);
   useFunnelVisit();
   const homepage = usePublishedContent("homepage");
@@ -430,8 +370,7 @@ const LandingPage = ({ showCurated = IS_DEMO }) => {
                 Elevate your style.
               </h2>
               <p className="mt-4 text-[14px] leading-[1.6] text-black/60 max-w-[440px] mx-auto lg:mx-0">
-                Explore our exclusive collection of trendsetting styles for
-                men and women.
+                Find ideas for your next appointment. Explore the gallery categories below, then browse work shared by our professionals.
               </p>
               <div className="mt-8 flex justify-center lg:justify-start">
                 <Link
@@ -442,7 +381,7 @@ const LandingPage = ({ showCurated = IS_DEMO }) => {
                 </Link>
               </div>
             </div>
-            <ElevateGrid showCurated={showCurated} />
+            <ServiceInspiration />
           </div>
         </div>
 
