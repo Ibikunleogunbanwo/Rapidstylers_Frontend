@@ -27,6 +27,7 @@
     "dev": "vite",
     "start": "vite",
     "build": "vite build",
+    "build:demo-qa": "vite build --mode demo-qa",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",

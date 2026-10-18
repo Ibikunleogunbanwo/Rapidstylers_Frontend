@@ -3,6 +3,7 @@ import react from "@vitejs/plugin-react";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { PRERENDERED_ROUTES, addFacebookAppId, addNoindex, applyHeadTags, facebookAppId, pageMeta } from "./src/seo/pageMeta.mjs";
+import { demoQaBuildEnv } from "./src/utils/demoQaBuild.mjs";
 
 /**
  * Compiles JSX that lives in plain `.js` files — the Create React App
@@ -105,13 +106,14 @@ const prerenderPageMeta = ({ demo, fbAppId }) => {
  */
 export default defineConfig(({ mode }) => {
   // Load .env / .env.local etc. and expose REACT_APP_* as process.env.*
-  const env = loadEnv(mode, process.cwd(), "REACT_APP_");
+  const loadedEnv = loadEnv(mode, process.cwd(), "REACT_APP_");
+  const env = mode === "demo-qa" ? demoQaBuildEnv(loadedEnv) : loadedEnv;
   const processEnv = Object.fromEntries(
     Object.entries(env).map(([key, value]) => [`process.env.${key}`, JSON.stringify(value)])
   );
 
   return {
-    plugins: [react(), transformJsxInJs(), prerenderPageMeta({ demo: env.REACT_APP_DEMO_MODE === "true", fbAppId: facebookAppId(env) })],
+    plugins: [react(), transformJsxInJs(), prerenderPageMeta({ demo: mode === "demo-qa" || env.REACT_APP_DEMO_MODE === "true", fbAppId: facebookAppId(env) })],
     define: processEnv,
     build: {
       outDir: "build",
