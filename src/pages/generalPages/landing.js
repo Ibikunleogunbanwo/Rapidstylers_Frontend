@@ -229,10 +229,8 @@ const LandingPage = () => {
         <div className="px-4 md:px-[50px] pt-5 pb-10 md:pt-6 md:pb-12 grid grid-cols-1 lg:grid-cols-2 items-center gap-6 bg-black">
           <div className="">
             {/* Intrinsic dimensions are declared so the browser reserves the
-                image's space before it loads. Without them this band grew by
-                ~376px once the picture arrived, which shifted every section
-                below it and moved the visitor's restored scroll position with
-                them. */}
+                image's proportions remain known before it loads. Explicit responsive
+                heights keep the portrait from stretching this section on wide screens. */}
             <img
               src={canada2}
               alt=""
@@ -240,7 +238,7 @@ const LandingPage = () => {
               height="1600"
               loading="lazy"
               decoding="async"
-              className="rounded-3xl w-full h-auto hidden lg:block"
+              className="rounded-3xl w-full h-[520px] xl:h-[600px] object-cover object-center hidden lg:block"
             />
             <img
               src={canada}
@@ -249,22 +247,22 @@ const LandingPage = () => {
               height="1162"
               loading="lazy"
               decoding="async"
-              className="w-full h-auto block lg:hidden"
+              className="rounded-3xl w-full h-[220px] sm:h-[300px] object-cover block lg:hidden"
             />
           </div>
           <div className="">
             <h2 className="text-[clamp(1.75rem,3vw,2.5rem)] font-normal leading-[1.1] tracking-[-0.02em] text-white mb-8">Why choose RapidStylers?</h2>
-            <div className="gap-6 grid">
+            <div className="gap-5 grid text-base lg:text-[17px] leading-relaxed">
               <div className="text-white">
                 <div className="flex gap-5">
                   <div className="">01</div>
                   <div>
-                    <span className="text-[15px] font-medium">At home or at the stylist’s location</span>
+                    <span className="text-lg font-medium leading-snug">At home or at the stylist’s location</span>
                   </div>
                 </div>
                 <div className="flex gap-5">
                   <div className="border-l ms-2 mt-2"></div>
-                  <div className="text-white/60 ps-2">
+                  <div className="text-white/75 ps-2">
                     <span>
                       Book a professional to visit your home, or travel to their
                       salon or studio. Choose your appointment location when
@@ -277,12 +275,12 @@ const LandingPage = () => {
                 <div className="flex gap-5">
                   <div className="">02</div>
                   <div>
-                    <span className="text-[15px] font-medium">Your Perfect Match, Every Time</span>
+                    <span className="text-lg font-medium leading-snug">Your Perfect Match, Every Time</span>
                   </div>
                 </div>
                 <div className="flex gap-5">
                   <div className="border-l ms-2 mt-2"></div>
-                  <div className="text-white/60 ps-2">
+                  <div className="text-white/75 ps-2">
                     <span>
                       Tired of guessing who to book? Our smart matching connects
                       you with the ideal professional based on your needs,
@@ -296,12 +294,12 @@ const LandingPage = () => {
                 <div className="flex gap-5">
                   <div className="">03</div>
                   <div>
-                    <span className="text-[15px] font-medium">Convenience, Redefined</span>
+                    <span className="text-lg font-medium leading-snug">Convenience, Redefined</span>
                   </div>
                 </div>
                 <div className="flex gap-5">
                   <div className="border-l ms-2 mt-2"></div>
-                  <div className="text-white/60 ps-2">
+                  <div className="text-white/75 ps-2">
                     <span>
                       Book appointments, manage payments and leave feedback, all
                       at your fingertips. Our easy to use app puts your beauty
@@ -314,12 +312,12 @@ const LandingPage = () => {
                 <div className="flex gap-5">
                   <div className="">04</div>
                   <div>
-                    <span className="text-[15px] font-medium">Community, Not Just a Service</span>
+                    <span className="text-lg font-medium leading-snug">Community, Not Just a Service</span>
                   </div>
                 </div>
                 <div className="flex gap-5">
                   <div className="border-l ms-2 mt-2"></div>
-                  <div className="text-white/60 ps-2">
+                  <div className="text-white/75 ps-2">
                     <span>
                       RapidStylers is more than appointments. It is a thriving
                       community of clients and professionals. Connect, share
@@ -333,12 +331,12 @@ const LandingPage = () => {
                 <div className="flex gap-5">
                   <div className="">05</div>
                   <div>
-                    <span className="text-[15px] font-medium">Beyond the Basics</span>
+                    <span className="text-lg font-medium leading-snug">Beyond the Basics</span>
                   </div>
                 </div>
                 <div className="flex gap-5">
                   <div className="border-l ms-2 mt-2"></div>
-                  <div className="text-white/60 ps-2">
+                  <div className="text-white/75 ps-2">
                     <span>
                       Our services go beyond cuts and styles. Explore a wide
                       range of options, from coloring and treatments to nails,
