@@ -17,18 +17,19 @@ Work branch: `dev`. Main has not been promoted. Backend source was reviewed with
 
 The table is the latest run. Every older count in this document is prefixed with the date it belongs to, because an undated number in a running report reads as a second, contradictory current figure.
 
-| Check | Result (2026-10-11) |
+| Check | Result (2026-10-11, commit de8a618) |
 | --- | --- |
-| Full Vitest suite | **120 files, 1009 tests passed**, exit 0 |
+| Full Vitest suite | **121 files, 1014 tests passed**, exit 0 |
 | Production build | Passed; browser harness rebuilds before every Playwright run |
 | Build manifest and shell integrity | 131 chunks / 154 files verified; shell and manifest agree on the entry chunk |
-| Playwright, 5 projects (desktop Chromium, iPhone Chromium, Firefox, WebKit/Safari, iPhone WebKit) | **155 tests passed, 0 failed** — 31 per project across 7 spec files, exit 0 |
+| Playwright, 5 projects (desktop Chromium, iPhone Chromium, Firefox, WebKit/Safari, iPhone WebKit) | **150 tests passed, 0 failed** — 30 per project across 6 spec files, exit 0 |
+| GitHub Actions on dev, commit de8a618 (Linux runners) | Frontend CI green: gitleaks secret scan, unit tests (121 files), build, chunk verification, all 5 Playwright projects (150/150); Chunk integrity check green |
 | npm audit --audit-level=moderate | **0 reported vulnerabilities**, exit 0 |
 | git diff --check | Passed |
 
 Browser tests cover static reduced-motion media, viewport overflow, invalid login without a credential request, signed-out customer/stylist/admin redirects, admin sign-in/logout, preference preservation, booking lost-response/reload/empty-replay/success with the same key and payload, the five-step professional sign-up with photo restore across a reload, and the stylist/admin navigation on every engine. All external traffic is intercepted. These tests prove frontend behavior with fixtures, not live backend or payment correctness. Desktop/mobile screenshots were inspected; lazy content outside the viewport is not fully represented by a full-page capture.
 
-Every engine in that table runs in CI-equivalent local runs; the earlier "Chromium only" position below is history. What Playwright does *not* supply is a real installed Safari, Firefox or device — see release-gates.json for what the browser gate still requires.
+Every engine in that table runs both locally on macOS and in GitHub Actions on Linux; the earlier "Chromium only" position below is history. CI's Linux WebKit caught two defects macOS WebKit could not (logo video not resuming under its stricter autoplay policy, and a full-page screenshot exceeding WebKit's 32767px limit); both were fixed in commit de8a618 and all five projects pass on both platforms. What Playwright does *not* supply is a real installed Safari, Firefox or device — see release-gates.json for what the browser gate still requires.
 
 Lottie includes an eval-capable expression player and emits a build warning. The enforcing CSP forbids eval and the existing regression proves bundled animations contain no expression strings. This is not an observed exploit. jsdom navigation/scroll and Vite configuration-format warnings also remain. Dependency audit is advisory coverage, not a claim that the application has no vulnerabilities.
 
@@ -56,7 +57,7 @@ Refresh tokens remain readable by JavaScript in sessionStorage. Coordinate an Ht
 
 ## Promotion decision
 
-Frontend automated checks pass. Keep the work on `dev` until the booking replay and schema gates are resolved and live non-production business workflows pass. No merge, push or deployment to main was performed.
+Frontend automated checks pass. The booking replay, schema validation and stylist-profile gates are now passed in release-gates.json; two gates remain pending as of 2026-10-11: providerWorkflows (live end-to-end refunds and disputes through the app, and a browser upload with real Cloudinary egress) and browserCompatibility (real installed Safari/Firefox/iPhone against the live site plus performance measurements). Promotion stays blocked on those two. A concurrent session pushed the verified frontend to both `origin/dev` and `origin/main` earlier; see progress.md for that record.
 
 ## Development environment attempt
 

@@ -238,6 +238,10 @@ describe("photo-less card fallbacks", () => {
     expect(offField, `Sample photo from the wrong field for: ${offField.join(", ")}`).toEqual([]);
   });
 
+  test("a stylist keeps the same fallback when grid position changes", () => {
+    expect(fallbackPhotoFor("Hairstylist", "S7", 4)).toEqual(fallbackPhotoFor("Hairstylist", "S7", 0));
+  });
+
   test("the same stylist always gets the same photo", () => {
     expect(fallbackPhotoFor("Hairstylist", "S7")).toEqual(fallbackPhotoFor("Hairstylist", "S7"));
   });

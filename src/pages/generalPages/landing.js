@@ -21,12 +21,8 @@ import useDecorativeMotion from "../../hooks/useDecorativeMotion";
 import cityLoop from "../../assets/images/canada/city-loop.mp4";
 import Hero from "./newHeroSection";
 // import rapidGIF from "../../assets/Videos/stylers.gif";
-// The "for clients" card used stylist-1.jpg, which is the same braiding close-up
-// as the gallery's natural-hair tile — a tight portrait crop that cut the
-// forehead at the card's 16:10 ratio. barbers.jpg shows a client in the chair
-// with a professional at work, crops cleanly, and appears nowhere else.
-import forClientsImg from "../../assets/images/barbers.jpg"
-import stylistImg2 from "../../assets/images/stylist-2.jpg"
+import forClientsImg from "../../assets/images/homepage/client-home-appointment.webp";
+import stylistImg2 from "../../assets/images/homepage/professional-studio.webp";
 import ScrollContainer from "../../components/img-slider";
 import AdSlot from "../../components/adSlot";
 import { useEffect, useState } from "react";
@@ -410,85 +406,34 @@ const LandingPage = () => {
           </div>
         </div>
 
-        {/* Book appointment / register */}
-        <section className="bg-[#f7f7f8] px-4 py-16 sm:px-6 md:px-[50px] md:py-20">
+        {/* Two routes into the marketplace: book a service or grow a business. */}
+        <section aria-labelledby="next-move-heading" className="bg-[#f7f7fb] px-4 py-12 sm:px-6 md:px-[50px] md:py-20">
           <div className="mx-auto max-w-7xl">
-            <div className="mb-10 flex flex-col gap-4 md:mb-12 md:flex-row md:items-end md:justify-between">
-              <div className="max-w-2xl">
-                <p className="text-[11px] uppercase tracking-[0.25em] text-muted">
-                  Your next move
-                </p>
-                <h2 className="mt-4 text-[clamp(1.75rem,3vw,2.5rem)] font-normal leading-[1.1] tracking-[-0.02em] text-onSurface">
-                  Beauty that fits your life.
-                </h2>
-              </div>
-              <p className="max-w-md text-base leading-relaxed text-black/55 md:text-right">
-                Whether you are booking a fresh look or building your beauty business, there is a place for you here.
-              </p>
+            <div className="mb-7 max-w-2xl md:mb-10">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#6550bd]">Made for your next move</p>
+              <h2 id="next-move-heading" className="mt-3 text-[clamp(1.8rem,3vw,2.6rem)] font-normal leading-[1.12] tracking-[-0.025em] text-[#242133]">Good style. On your terms.</h2>
+              <p className="mt-4 text-base leading-relaxed text-[#615d70]">Find your next beauty appointment, or make room for your next client.</p>
             </div>
-
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-              <article className="group overflow-hidden rounded-2xl bg-[#1e1e1e] text-white shadow-[0_18px_45px_rgba(0,0,0,0.12)] transition-shadow duration-300 hover:shadow-[0_24px_55px_rgba(0,0,0,0.18)]">
-                <div className="relative aspect-[4/3] overflow-hidden sm:aspect-[16/10]">
-                  <img
-                    src={forClientsImg}
-                    alt="A client in the chair while a barber finishes their cut"
-                    className="h-full w-full object-cover object-top transition-transform duration-700 group-hover:scale-105"
-                    loading="lazy"
-                    decoding="async"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent"></div>
-                  <span className="absolute left-5 top-5 rounded-full border border-white/30 bg-black/25 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-white backdrop-blur-sm sm:left-6 sm:top-6">
-                    For clients
-                  </span>
-                </div>
-                <div className="flex min-h-[242px] flex-col p-6 sm:p-8">
-                  <h3 className="text-xl font-normal leading-tight tracking-[-0.01em] sm:text-2xl">
-                    Your appointment, your choice of location.
-                  </h3>
-                  <p className="mt-3 max-w-lg text-sm leading-relaxed text-white/65 sm:text-base">
-                    Book cuts, colour, nails, lashes and more. Choose a home visit or an appointment at the stylist’s location.
-                  </p>
-                  <Link
-                    to="/login"
-                    className="mt-auto inline-flex min-h-[50px] w-full items-center justify-center gap-2 rounded-md bg-white px-6 py-3 text-sm font-semibold text-[#1e1e1e] transition hover:bg-brand hover:text-white sm:w-fit"
-                  >
-                    Book an appointment
-                    <span aria-hidden="true" className="text-base">→</span>
-                  </Link>
-                </div>
-              </article>
-
-              <article className="group overflow-hidden rounded-2xl bg-[#1e1e1e] text-white shadow-[0_18px_45px_rgba(0,0,0,0.12)] transition-shadow duration-300 hover:shadow-[0_24px_55px_rgba(0,0,0,0.18)]">
-                <div className="relative aspect-[4/3] overflow-hidden sm:aspect-[16/10]">
-                  <img
-                    src={stylistImg2}
-                    alt="Beauty professional ready to serve a client"
-                    className="h-full w-full object-cover object-top transition-transform duration-700 group-hover:scale-105"
-                    loading="lazy"
-                    decoding="async"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent"></div>
-                  <span className="absolute left-5 top-5 rounded-full border border-white/30 bg-black/25 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-white backdrop-blur-sm sm:left-6 sm:top-6">
-                    For professionals
-                  </span>
-                </div>
-                <div className="flex min-h-[242px] flex-col p-6 sm:p-8">
-                  <h3 className="text-xl font-normal leading-tight tracking-[-0.01em] sm:text-2xl">
-                    Turn your talent into a business.
-                  </h3>
-                  <p className="mt-3 max-w-lg text-sm leading-relaxed text-white/65 sm:text-base">
-                    Grow your client base, manage bookings, and offer appointments at your location or in clients’ homes with the support of the RapidStylers community.
-                  </p>
-                  <Link
-                    to="/styler-signup"
-                    className="mt-auto inline-flex min-h-[50px] w-full items-center justify-center gap-2 rounded-md bg-white px-6 py-3 text-sm font-semibold text-[#1e1e1e] transition hover:bg-brand hover:text-white sm:w-fit"
-                  >
-                    Register as a beauty professional
-                    <span aria-hidden="true" className="text-base">→</span>
-                  </Link>
-                </div>
-              </article>
+              {[
+                { audience: "For clients", image: forClientsImg, alt: "A hairstylist styling a client's hair during an at-home appointment", title: "Your look. Your place.", description: "From cuts and colour to nails and lashes. Find a professional for a home visit or an appointment at their studio.", detail: "Home visits · Studio appointments", label: "Find an appointment", to: "/search" },
+                { audience: "For professionals", image: stylistImg2, alt: "A beauty professional managing appointments in her own studio", title: "Your talent. Your business.", description: "Bring your services, availability and bookings together. Connect with clients at your studio or in their homes.", detail: "Your services · Your schedule", label: "Join as a professional", to: "/styler-signup" },
+              ].map(card => (
+                <article key={card.audience} className="overflow-hidden rounded-2xl border border-[#e6e2ef] bg-white">
+                  <div className="relative h-[210px] overflow-hidden sm:h-[260px] lg:h-[280px]">
+                    <img src={card.image} alt={card.alt} className="h-full w-full object-cover object-top" loading="lazy" decoding="async" width="1200" height="800" />
+                    <span className="absolute left-4 top-4 rounded-full bg-white/95 px-3 py-2 text-xs font-semibold text-[#332b4e] sm:left-6 sm:top-6">{card.audience}</span>
+                  </div>
+                  <div className="flex flex-col p-5 sm:p-7">
+                    <p className="text-xs font-medium tracking-wide text-[#756b8d]">{card.detail}</p>
+                    <h3 className="mt-3 text-[26px] font-normal leading-tight tracking-[-0.02em] text-[#242133] sm:text-[30px]">{card.title}</h3>
+                    <p className="mb-6 mt-3 text-base leading-relaxed text-[#615d70] lg:min-h-[78px]">{card.description}</p>
+                    <Link to={card.to} className="mt-auto inline-flex min-h-[48px] items-center justify-between gap-3 rounded-lg bg-[#6950bd] px-5 py-3 text-base font-semibold text-white transition-colors hover:bg-[#533d9c] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#6950bd]">
+                      {card.label}<span aria-hidden="true">→</span>
+                    </Link>
+                  </div>
+                </article>
+              ))}
             </div>
           </div>
         </section>

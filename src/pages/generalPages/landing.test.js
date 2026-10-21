@@ -90,16 +90,11 @@ describe("Home page layout", () => {
     ).toEqual([]);
   });
 
-  test("the clients card shows our own barbering photo", () => {
+  test("the client card shows the home appointment image and opens discovery", () => {
     renderHome();
-
-    // It used to be stylist-1.jpg, the same braiding close-up as the gallery's
-    // natural-hair tile, which cut the forehead at the card's crop.
-    expect(
-      screen
-        .getByAltText("A client in the chair while a barber finishes their cut")
-        .getAttribute("src")
-    ).toMatch(/barbers/);
+    expect(screen.getByAltText("A hairstylist styling a client's hair during an at-home appointment").getAttribute("src")).toMatch(/client-home-appointment/);
+    expect(screen.getByRole("link", {name: /Find an appointment/})).toHaveAttribute("href", "/search");
+    expect(screen.getByRole("link", {name: /Join as a professional/})).toHaveAttribute("href", "/styler-signup");
   });
 
   test("the brand story shows our own work, not a bundled stock photo", () => {

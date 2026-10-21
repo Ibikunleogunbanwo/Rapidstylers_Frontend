@@ -26,6 +26,7 @@ import { fallbackPhotoFor } from "../utils/curatedGallery";
  * than claiming anything.
  */
 const ServiceCard = ({ coverImg, name, rating, reviews, status, openState = null, distance, stylerId, businessName, serviceTypeName = "", isSaved = false, onToggleSaved, saveLoading = false, payoutReady = true, gridPosition = 0 }) => {
+  const isDemo = String(stylerId || "").startsWith("DEMO");
   const cropped = cloudinaryCard(coverImg);
   const [imgFailed, setImgFailed] = useState(false);
   const fallback = !coverImg || imgFailed ? fallbackPhotoFor(serviceTypeName, stylerId || name, gridPosition) : null;
@@ -56,7 +57,7 @@ const ServiceCard = ({ coverImg, name, rating, reviews, status, openState = null
         {photoSrc ? (
           <img
             src={photoSrc}
-            alt={coverImg && !imgFailed ? name : `Sample photo: ${fallback.alt}`}
+            alt={coverImg && !imgFailed ? (isDemo ? `Sample service photo for ${name}` : name) : `Sample photo: ${fallback.alt}`}
             className="h-full w-full object-cover"
             onError={() => setImgFailed(true)}
           />
