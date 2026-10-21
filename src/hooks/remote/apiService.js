@@ -337,6 +337,17 @@ export class APIService {
         }
     }
 
+    /** Every bookable professional; what "All services" shows when no other filter narrows it. */
+    static async listAllStylers(){
+        try{
+            return await ApiClient.get("/list_all_stylers")
+        }
+        catch(error){
+            APIService.extractError(error);
+            throw(error);
+        }
+    }
+
     static async stylersBaseOnCategory(categoryId){
         try{
             return await ApiClient.get(`/search_by_service?serviceTypeId=${encodeURIComponent(categoryId)}`)

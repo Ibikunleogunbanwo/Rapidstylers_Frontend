@@ -181,6 +181,11 @@ const SearchResults = () => {
           } else {
             results = Array.isArray(data) ? data : [];
           }
+        } else {
+          // "All services" with nothing else to narrow it: list every bookable
+          // professional instead of an empty page.
+          const res = await currentResponse(APIService.listAllStylers());
+          results = res.data?.data || [];
         }
 
         // Opening hours ride along on every list row the backend returns, so an

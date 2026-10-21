@@ -28,6 +28,7 @@ vi.mock("../../hooks/remote/apiService", () => ({
     searchNearby: vi.fn(),
     searchByCity: vi.fn(),
     searchByProvince: vi.fn(),
+    listAllStylers: vi.fn(),
     // Kept only so a test can prove the open-now filter no longer reaches for a
     // full profile per result.
     singleStylerData: vi.fn(),
@@ -393,5 +394,19 @@ describe("SearchResults filter pills match the URL", () => {
     fireEvent.click(await screen.findByRole("button", { name: "Remove Hairstylist filter" }));
     const params = new URLSearchParams(lastSearch);
     expect(params.has("serviceTypeId") || params.has("serviceTypeName")).toBe(false);
+  });
+});
+
+describe("SearchResults with All services", () => {
+  beforeEach(() => {
+    window.scrollTo = vi.fn();
+    APIService.getStylerType.mockResolvedValue({ data: { data: [] } });
+  });
+
+  test("shows every bookable professional when no filter narrows the search", async () => {
+    APIService.listAllStylers.mockResolvedValue({ data: { data: stylists(3) } });
+    renderPage("/search");
+    expect(await screen.findAllByTestId("stylist-card")).toHaveLength(3);
+    expect(APIService.listAllStylers).toHaveBeenCalled();
   });
 });
