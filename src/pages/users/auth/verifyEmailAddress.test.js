@@ -7,7 +7,7 @@ vi.mock("react-router-dom", () => {
   const navigate = vi.fn();
   // Handed out as a mutable object so a test can render the page as a visitor who
   // arrived without an address (a bookmark, a restored tab).
-  const location = { pathname: "/verifyEmailAddress", state: { emailAddress: "test@example.com" } };
+  const location = { pathname: "/verifyEmailAddress", state: { signupToken: "st1.test-token" } };
   return {
     useLocation: () => location,
     useNavigate: () => navigate,
@@ -63,7 +63,7 @@ beforeEach(() => {
   document.head.innerHTML = "";
   __testDispatch.mockClear();
   __testNavigate.mockClear();
-  __testLocation.state = { emailAddress: "test@example.com" };
+  __testLocation.state = { signupToken: "st1.test-token" };
   // CRA's jest config resets mock implementations between tests.
   verifyOtpCode.mockImplementation((code) => code);
   __testDispatch.mockImplementation(() => ({ payload: { statusCode: "200" } }));
@@ -166,12 +166,11 @@ describe("VerifyUserEmailAddress OTP inputs", () => {
     render(<VerifyUserEmailAddress />);
     ["1", "2", "3", "4", "5", "6"].forEach((d, i) => typeDigit(i, d));
 
-    // The address travels with the code: codes are looked up by the address they
-    // were issued to, and sending the digits alone made the endpoint refuse every
-    // code, however correct. This is the assertion that would have caught it.
+    // The sign-up token travels with the code: it tells the server which address
+    // the code was issued to, without the address itself being sent again.
     await waitFor(() =>
       expect(__testDispatch).toHaveBeenCalledWith({
-        emailAddress: "test@example.com",
+        signupToken: "st1.test-token",
         otpCode: "123456",
       })
     );
@@ -194,13 +193,13 @@ describe("VerifyUserEmailAddress OTP inputs", () => {
 
     await waitFor(() =>
       expect(__testDispatch).toHaveBeenCalledWith({
-        emailAddress: "test@example.com",
+        signupToken: "st1.test-token",
         otpCode: "654321",
       })
     );
   });
 
-  test("refuses to submit without an address rather than sending a doomed code", async () => {
+  test("refuses to submit without a sign-up session rather than sending a doomed code", async () => {
     // The page reads the address from the router state, so a visit that arrived
     // some other way has none. Asking the server would only get a rejection the
     // page cannot explain.
@@ -210,7 +209,7 @@ describe("VerifyUserEmailAddress OTP inputs", () => {
     render(<VerifyUserEmailAddress />);
     ["1", "2", "3", "4", "5", "6"].forEach((d, i) => typeDigit(i, d));
 
-    expect(await screen.findByRole("alert")).toHaveTextContent(/don't have your email on file/i);
+    expect(await screen.findByRole("alert")).toHaveTextContent(/sign-up session has expired/i);
     expect(__testDispatch).not.toHaveBeenCalled();
   });
 
@@ -245,7 +244,7 @@ describe("VerifyUserEmailAddress OTP inputs", () => {
     fireEvent.click(screen.getByRole("button", { name: "Resend code" }));
     await waitFor(() =>
       expect(APIService.generateSignUpOtpCode).toHaveBeenCalledWith({
-        emailAddress: "test@example.com",
+        signupToken: "st1.test-token",
       })
     );
     // Wait for the async resend to settle: the fresh code clears the old
@@ -312,7 +311,7 @@ describe("VerifyUserEmailAddress OTP inputs", () => {
     ["7", "8", "9", "0", "1", "2"].forEach((d, i) => typeDigit(i, d));
     await waitFor(() => expect(__testDispatch).toHaveBeenCalledTimes(2));
     expect(__testDispatch).toHaveBeenLastCalledWith({
-      emailAddress: "test@example.com",
+      signupToken: "st1.test-token",
       otpCode: "789012",
     });
   });
@@ -352,5 +351,15 @@ describe("VerifyUserEmailAddress code help", () => {
     expect(screen.getByRole("link", { name: "sign in" })).toHaveAttribute("href", "/login");
     expect(screen.getByRole("link", { name: "reset your password" })).toHaveAttribute("href", "/resetPassword");
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Verify your email address");
+  });
+});
+
+describe("VerifyUserEmailAddress privacy", () => {
+  test("never shows or stores the email address", () => {
+    __testLocation.state = { signupToken: "st1.test-token" };
+    sessionStorage.setItem("signupEmail", "old@example.com");
+    render(<VerifyUserEmailAddress />);
+    expect(screen.getByText(/sent to the email address you entered/i)).toBeInTheDocument();
+    expect(document.body.textContent).not.toMatch(/@example\.com/);
   });
 });

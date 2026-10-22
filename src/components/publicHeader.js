@@ -15,6 +15,7 @@ import { useUserLocation } from "../context/LocationContext";
 import { getAuthToken, getUserRole, setIntendedRoute, showErrorToastMessage } from "../utils/constant";
 import { IS_DEMO, goToLiveSite } from "../utils/demo";
 import GoogleSignInButton from "./googleSignInButton";
+import { saveSignupToken } from "../pages/users/auth/signupSession";
 import { useGoogleSignup } from "../hooks/useGoogleSignup";
 
 // Google Sign-In client id (public). When absent, the Google sign-up option is hidden.
@@ -105,7 +106,12 @@ const PublicHeader = ({ spacer = false, demo = IS_DEMO, googleClientId = GOOGLE_
       let verifyUserEmailData = { emailAddress };
       const { payload } = await dispatch(verifySignUpEmailAddress(verifyUserEmailData));
       if (payload?.statusCode === "200") {
-        navigate("/verifyEmailAddress", { state: { emailAddress } });
+        // From here on the steps carry the server's token, not the address.
+        const signupToken = payload.data?.signupToken;
+        saveSignupToken(signupToken);
+        // An API that predates sign-up tokens returns none; then the address
+        // rides in memory for this one step (never in storage), as before.
+        navigate("/verifyEmailAddress", { state: signupToken ? { signupToken } : { emailAddress } });
       } else {
         showErrorToastMessage(payload?.message || "Could not start registration. Please try again.");
       }

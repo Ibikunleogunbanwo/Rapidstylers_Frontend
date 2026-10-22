@@ -109,9 +109,11 @@ export class APIService {
      * signup verification fail with "Invalid OTP Code" regardless of the code the
      * customer had typed.
      */
-    static async verifyOtpCode({ emailAddress, otpCode }){
+    static async verifyOtpCode({ emailAddress, signupToken, otpCode }){
         try{
-            return await ApiClient.post("/verify_otp_code", { emailAddress, otpCode })
+            // Sign-up sends its token instead of the address (see signupSession.js).
+            const body = signupToken ? { signupToken, otpCode } : { emailAddress, otpCode };
+            return await ApiClient.post("/verify_otp_code", body)
         }
         catch(error){
             APIService.extractError(error);

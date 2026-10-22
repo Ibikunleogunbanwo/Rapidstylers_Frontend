@@ -13,6 +13,7 @@ import { createUserAccount, getUserDetails } from "../../../hooks/local/userRedu
 import { showErrorToastMessage } from "../../../utils/constant";
 import { isAccountAlreadyExists } from "../../../utils/signupReply";
 import { useNavigate } from "react-router-dom";
+import { getSignupToken, clearSignupSession } from "./signupSession";
 import { CustomerSignupCounter, CustomerSignupRail } from "./customerSignupRail";
 
 const SecureAccount = () => {
@@ -67,13 +68,19 @@ const SecureAccount = () => {
           showErrorToastMessage("Session expired. Please restart your registration.");
           return;
         }
-        // Fall back to the persisted signup email if the profile snapshot lacks it.
-        const { firstname, lastname, country, address, state, phoneNumber, emailAddress, agreeToTerms } = userProfileData;
-        const finalEmailAddress = emailAddress || sessionStorage.getItem('signupEmail') || '';
-        let userRegistrationData = { firstname, lastname, country, address, state, emailAddress: finalEmailAddress, phoneNumber, password, agreeToTerms: agreeToTerms === true };
+        // The sign-up token identifies the verified address; the address itself is not sent again.
+        const { firstname, lastname, country, address, state, phoneNumber, signupToken: profileToken, emailAddress: legacyEmail, agreeToTerms } = userProfileData;
+        const signupToken = profileToken || getSignupToken();
+        if (!signupToken && !legacyEmail) {
+          setSubmitError("Your sign-up session has expired. Please restart your registration.");
+          return;
+        }
+        let userRegistrationData = { firstname, lastname, country, address, state, ...(signupToken ? { signupToken } : { emailAddress: legacyEmail }), phoneNumber, password, agreeToTerms: agreeToTerms === true };
         try {
           const { payload } = await dispatch(createUserAccount(userRegistrationData));
           if(payload?.statusCode === "200"){
+            clearSignupSession();
+            sessionStorage.removeItem('userProfileData');
             setSubmitError(null);
             setSignedInUserId(payload.token ? payload.data?.userId : null);
             setDashboardModal(true);

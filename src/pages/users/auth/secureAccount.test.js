@@ -33,7 +33,7 @@ const PROFILE = {
   address: "1 Main St",
   state: "Alberta",
   phoneNumber: "+1 403 555 0100",
-  emailAddress: "ada@example.com",
+  signupToken: "st1.test-token",
   agreeToTerms: true,
 };
 

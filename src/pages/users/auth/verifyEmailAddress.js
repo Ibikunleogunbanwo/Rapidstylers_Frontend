@@ -11,6 +11,7 @@ import Spinner from "../../../components/spinner";
 import { APIService } from "../../../hooks/remote/apiService";
 import { showSuccessToastMessage, showErrorToastMessage } from "../../../utils/constant";
 import { CustomerSignupCounter, CustomerSignupRail } from "./customerSignupRail";
+import { getSignupToken, saveSignupToken } from "./signupSession";
 
 
 const VerifyUserEmailAddress = () => {
@@ -26,7 +27,10 @@ const location  = useLocation();
 const navigate = useNavigate();
 const dispatch = useDispatch();
 
-const userEmailAddress = location.state?.emailAddress || sessionStorage.getItem('signupEmail') || '';
+const signupToken = getSignupToken(location.state);
+// Only set when talking to an API that predates sign-up tokens.
+const legacyEmail = signupToken ? "" : (location.state?.emailAddress || "");
+const signupRef = signupToken ? { signupToken } : { emailAddress: legacyEmail };
 
   // Controlled OTP digits — the digit you type is rendered by React from state
   // on every keystroke, so it is always visible and can never be wiped or
@@ -119,13 +123,13 @@ const userEmailAddress = location.state?.emailAddress || sessionStorage.getItem(
 
   const handleResendCode = async () => {
     setOtpError(null);
-    if (!userEmailAddress) {
-      showErrorToastMessage("We don't have your email on file. Please restart registration.");
+    if (!signupToken && !legacyEmail) {
+      showErrorToastMessage("Your sign-up session has expired. Please restart registration.");
       return;
     }
     setResending(true);
     try {
-      await APIService.generateSignUpOtpCode({ emailAddress: userEmailAddress });
+      await APIService.generateSignUpOtpCode(signupRef);
       showSuccessToastMessage("A new verification code was sent to your email.");
       clearUserOTP(); // the old digits no longer match the fresh code
       setResendIn(60);
@@ -143,21 +147,21 @@ const userEmailAddress = location.state?.emailAddress || sessionStorage.getItem(
     },
     onSubmit: async (values) => {
       const {otpCode} = values
-      // The code is looked up by the address it was issued to, so both travel
-      // together. Sending the code alone made the endpoint refuse every code.
-      if (!userEmailAddress) {
-        setOtpError("We don't have your email on file. Please restart registration so we can send a fresh code.");
+      // The code is checked against the address it was issued to; the sign-up
+      // token tells the server which address that is, without sending it.
+      if (!signupToken && !legacyEmail) {
+        setOtpError("Your sign-up session has expired. Please restart registration so we can send a fresh code.");
         return;
       }
       try {
-        const {payload} = await dispatch(verifyOtpCode({ emailAddress: userEmailAddress, otpCode }));
+        const {payload} = await dispatch(verifyOtpCode({ ...signupRef, otpCode }));
         if(payload?.statusCode === "200") {
           setOtpError(null);
-          // Use the email from the backend response (source of truth) and persist
-          // it so a refresh on the next step keeps the flow working.
-          const verifiedEmail = payload.data?.emailAddress || userEmailAddress;
-          sessionStorage.setItem('signupEmail', verifiedEmail);
-          navigate("/personalDetails", {state : {userEmailAddress: verifiedEmail}});
+          // The server answers with a fresh token; keep it so a refresh on the
+          // next step still works.
+          const nextToken = payload.data?.signupToken || signupToken;
+          saveSignupToken(nextToken);
+          navigate("/personalDetails", {state : nextToken ? {signupToken: nextToken} : {emailAddress: legacyEmail}});
         } else {
           // Clear first: clearUserOTP resets the error too, and React batches
           // these updates in call order, so the message below wins and the
@@ -214,7 +218,7 @@ const userEmailAddress = location.state?.emailAddress || sessionStorage.getItem(
             <CustomerSignupCounter />
             <h1 className="mt-2 text-[22px] font-normal tracking-[-0.01em] text-onSurface">Verify your email address</h1>
             <p className="text-black/60 text-sm mt-1">
-              A verification code was sent to your email address ({userEmailAddress}).
+              A verification code was sent to the email address you entered.
               Please provide the code and click on verify.
             </p>
             <div className="flex justify-between items-center">

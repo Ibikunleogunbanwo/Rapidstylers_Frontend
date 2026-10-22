@@ -9,6 +9,7 @@ import { useFormik } from "formik";
 import * as Yup from "yup";
 import { CustomerSignupCounter, CustomerSignupRail } from "./customerSignupRail";
 import ProvinceSelect from "../../../components/provinceSelect";
+import { getSignupToken } from "./signupSession";
 import {
   CITY_MAX,
   NAME_MAX,
@@ -54,7 +55,8 @@ const PersonalDetails = () => {
 
   const location  = useLocation();
   const navigate = useNavigate();
-  const emailAddress = location.state?.userEmailAddress || sessionStorage.getItem('signupEmail') || '';
+  const signupToken = getSignupToken(location.state);
+  const legacyEmail = signupToken ? undefined : location.state?.emailAddress;
   const country = [{ value: 'Canada', label: 'Canada' }]
   const personalData = useFormik({
     initialValues: {
@@ -90,7 +92,7 @@ const PersonalDetails = () => {
       // Persist the single-line address in Canadian convention — the backend
       // stores address + state (province) + country for user accounts.
       const address = composeCanadianAddress(values);
-      let userProfileData = {firstname,lastname, country, address, state: values.province, phoneNumber: phoneDigits(phoneNumber), emailAddress, agreeToTerms: values.agreeToTerms};
+      let userProfileData = {firstname,lastname, country, address, state: values.province, phoneNumber: phoneDigits(phoneNumber), signupToken, ...(legacyEmail ? { emailAddress: legacyEmail } : {}), agreeToTerms: values.agreeToTerms};
       sessionStorage.setItem('userProfileData', JSON.stringify(userProfileData));
       navigate("/secureAccount")
     }
