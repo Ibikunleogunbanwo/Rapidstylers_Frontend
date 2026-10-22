@@ -21,3 +21,8 @@ test.each([undefined, "", "pk_live_wrong"])("QA builds reject a missing or live 
   expect(() => demoQaBuildEnv({ REACT_APP_STRIPE_TEST_PUBLISHABLE_KEY: key }))
     .toThrow(/pk_test_/);
 });
+
+test("QA builds may use this site's API proxy, which hides the demo API host and key", () => {
+  const env = demoQaBuildEnv({ REACT_APP_API_BASE_URL: "/rapid_stylers", REACT_APP_STRIPE_TEST_PUBLISHABLE_KEY: "pk_test_qa" });
+  expect(env.REACT_APP_API_BASE_URL).toBe("/rapid_stylers");
+});
