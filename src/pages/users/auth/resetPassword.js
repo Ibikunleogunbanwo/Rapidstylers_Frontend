@@ -203,9 +203,9 @@ const ResetPassword = () => {
   const resendLabel = `${Math.floor(resendIn / 60)}:${String(resendIn % 60).padStart(2, "0")}`;
 
   return (
-    <div className="h-screen grid grid-cols-1 lg:grid-cols-12 bg-white">
+    <div className="min-h-screen grid grid-cols-1 lg:grid-cols-12 bg-white">
       {/* Left panel: what this flow is, and how far along the visitor is. */}
-      <div className="col-span-1 lg:col-span-8 h-screen overflow-hidden hidden lg:block relative">
+      <div className="col-span-1 lg:col-span-8 h-screen overflow-hidden hidden lg:block relative lg:sticky lg:top-0">
         <div className="bg-stylerDoodle h-full w-full bg-repeat bg-auto"></div>
         <div className="absolute inset-0 bg-black/60"></div>
         <div className="absolute inset-0 flex items-center justify-center text-white px-10">
