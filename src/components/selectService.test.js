@@ -63,6 +63,9 @@ vi.mock("../utils/constant", () => ({
 }));
 
 beforeEach(() => {
+  // A stored intent from an earlier test would reopen the modal on that test's
+  // (now past) month and day.
+  getBookingIntent.mockReturnValue(null);
   APIService.singleStylerData.mockResolvedValue({
     data: { data: { availability: [], bookedSlots: [], exceptions: [] } },
   });
@@ -101,6 +104,20 @@ const renderOpen = () => {
   fireEvent.click(screen.getByText("Book service"));
   return document.querySelector("div.fixed");
 };
+
+// A bookable day in the month grid (past and closed days are disabled).
+const firstOpenDay = () => {
+  const days = screen.getAllByRole("button", { name: /^[A-Z][a-z]{2}, \d+(st|nd|rd|th)/ });
+  // Prefer a day after today, so a late-afternoon run still finds 4:00 pm open.
+  const open = days.find((button) => !button.disabled && !/today/.test(button.getAttribute("aria-label")))
+    || days.find((button) => !button.disabled);
+  if (!open) throw new Error("no bookable day in the calendar");
+  lastPickedDay = Number(open.textContent.match(/\d+/)[0]);
+  return open;
+};
+// The day number firstOpenDay() last returned, for assertions about the booked date.
+let lastPickedDay = null;
+const ordinalOf = (n) => `${n}${[11, 12, 13].includes(n % 100) ? "th" : ({ 1: "st", 2: "nd", 3: "rd" }[n % 10] || "th")}`;
 
 describe("SelectService booking modal viewport containment", () => {
   test("opens with the overlay anchored by explicit offsets and above app content", () => {
@@ -179,7 +196,7 @@ describe("Booking intent deep-linking for signed-out visitors", () => {
     renderOpen();
 
     // Pick a day and a time; both are needed before the intent is written.
-    fireEvent.click(screen.getAllByText(/15/)[0]);
+    fireEvent.click(firstOpenDay());
     expect(setBookingIntent).not.toHaveBeenCalled();
     fireEvent.click(screen.getByText("4:00 pm"));
     expect(setBookingIntent).toHaveBeenCalledWith(
@@ -321,16 +338,13 @@ describe("SelectService date strip runs on the stylist's calendar", () => {
 
       // The strip's "today" cell is the stylist's 15th (their calendar), even
       // though the visitor's own calendar says the 16th.
-      expect(screen.getByText(/15th · today/)).toBeInTheDocument();
-      expect(screen.queryByText(/16th · today/)).not.toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /15th · today/ })).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /16th · today/ })).not.toBeInTheDocument();
 
       // The stylist's "yesterday by the visitor's clock" (the 15th, a
       // Tuesday they work) must NOT be hidden as a past day.
-      const fifteenth = [...document.querySelectorAll("div")].find(
-        (el) => el.className.includes("rounded-md") && /Tue, 15th/.test(el.textContent)
-      );
-      expect(fifteenth).toBeDefined();
-      expect(fifteenth.className).not.toContain("hidden");
+      const fifteenth = screen.getByRole("button", { name: /Tue, 15th/ });
+      expect(fifteenth).not.toHaveAttribute("title", "This date has passed");
     } finally {
       vi.useRealTimers();
       process.env.TZ = "UTC";
@@ -360,7 +374,7 @@ describe("SelectService date strip runs on the stylist's calendar", () => {
       fireEvent.click(screen.getByText("Book service"));
 
       expect(screen.queryByText(/different calendar day than the stylist/)).not.toBeInTheDocument();
-      expect(screen.getByText(/15th · today/)).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /15th · today/ })).toBeInTheDocument();
     } finally {
       vi.useRealTimers();
       process.env.TZ = "UTC";
@@ -455,8 +469,8 @@ describe("Booking confirmation names the stylist's clock", () => {
       .mockResolvedValueOnce({ data: { data: {} } });
     render(<SelectService serviceName="Braids" servicePrice="80" stylerId="s1" subServiceId="ss1" stylerProvince="Alberta" />);
     fireEvent.click(screen.getByText("Book service"));
+    fireEvent.click(firstOpenDay());
     fireEvent.click(screen.getByText("4:00 pm"));
-    fireEvent.click(screen.getAllByText(/15/)[0]);
     await clickBook();
     expect(await screen.findByText(/could not confirm whether your booking/i)).toBeInTheDocument();
     const key = APIService.bookAppointment.mock.calls[0][1];
@@ -502,15 +516,15 @@ describe("Booking confirmation names the stylist's clock", () => {
       />
     );
     fireEvent.click(screen.getByText("Book service"));
+    fireEvent.click(firstOpenDay());
     fireEvent.click(screen.getByText("4:00 pm"));
-    fireEvent.click(screen.getAllByText(/15/)[0]);
     await clickBook();
 
     await waitFor(() => expect(showSuccessToastMessage).toHaveBeenCalled());
     const toast = showSuccessToastMessage.mock.calls.at(-1)[0];
     expect(toast).toContain(`at 4:00 pm (${zoneDisplayName("America/Edmonton")})`);
     // The day is named in the stylist's calendar, the same words the strip used.
-    expect(toast).toMatch(/Booking request sent for \w{3}, 15th at 4:00 pm/);
+    expect(toast).toMatch(new RegExp(`Booking request sent for \\w{3}, ${ordinalOf(lastPickedDay)} at 4:00 pm`));
   });
 });
 
@@ -616,8 +630,8 @@ describe("Adding a fresh booking to a calendar", () => {
       />
     );
     fireEvent.click(screen.getByText("Book service"));
+    fireEvent.click(firstOpenDay());
     fireEvent.click(screen.getByText("4:00 pm"));
-    fireEvent.click(screen.getAllByText(/15/)[0]);
     await clickBook();
     return screen.findByTestId("booking-placed");
   };
@@ -647,10 +661,10 @@ describe("Adding a fresh booking to a calendar", () => {
     await bookVisit();
 
     const [start] = calendarParams().get("dates").split("/");
-    // The customer picked 4:00 pm on the 15th in the stylist's calendar, so the
+    // The customer picked 4:00 pm on that day in the stylist's calendar, so the
     // instant carried by the link must be that hour in Calgary.
     expect(inStylistZone(start, { hour: "numeric", hour12: false })).toBe("16");
-    expect(inStylistZone(start, { day: "numeric" })).toBe("15");
+    expect(inStylistZone(start, { day: "numeric" })).toBe(String(lastPickedDay));
   });
 
   it("names the professional's zone and the service in the entry", async () => {
@@ -686,8 +700,8 @@ describe("Adding a fresh booking to a calendar", () => {
     fireEvent.click(screen.getByText("Book service"));
     fireEvent.click(screen.getByText("Home service"));
     enterVisitAddress("10 Main St, Calgary");
+    fireEvent.click(firstOpenDay());
     fireEvent.click(screen.getByText("4:00 pm"));
-    fireEvent.click(screen.getAllByText(/15/)[0]);
     await clickBook();
     await screen.findByTestId("booking-placed");
 
@@ -775,8 +789,8 @@ describe("Home visit address", () => {
 
   test("will not book a home visit without an address", () => {
     openHomeVisit();
+    fireEvent.click(firstOpenDay());
     fireEvent.click(screen.getByText("4:00 pm"));
-    fireEvent.click(screen.getAllByText(/15/)[0]);
     fireEvent.click(screen.getByText("Book appointment"));
 
     expect(APIService.bookAppointment).not.toHaveBeenCalled();
@@ -785,8 +799,8 @@ describe("Home visit address", () => {
   test("books the visit with the address the customer gave", async () => {
     openHomeVisit();
     enterVisitAddress("10 Main St, Calgary");
+    fireEvent.click(firstOpenDay());
     fireEvent.click(screen.getByText("4:00 pm"));
-    fireEvent.click(screen.getAllByText(/15/)[0]);
     await clickBook();
     await screen.findByTestId("booking-placed");
 
@@ -830,13 +844,13 @@ describe('Offered appointment locations and promotions',()=>{
   APIService.estimateBooking.mockResolvedValue({data:{data:{totalPrice:'60.00',servicePrice:'60.00',travelFee:'0.00'}}});
   APIService.checkPromoCode.mockResolvedValue({data:{statusCode:'200',data:{code:'WELCOME',discount:'6.00',total:'54.00'}}});
   open();fireEvent.change(await screen.findByLabelText('Promo code (optional)'),{target:{value:'welcome'}});fireEvent.click(screen.getByRole('button',{name:'Apply'}));await screen.findByText('WELCOME: −$6.00 CAD');
-  fireEvent.click(screen.getByText('4:00 pm'));fireEvent.click(screen.getAllByText(/15/)[0]);await clickBook();await screen.findByTestId('booking-placed');
+  fireEvent.click(firstOpenDay());fireEvent.click(screen.getByText('4:00 pm'));await clickBook();await screen.findByTestId('booking-placed');
   expect(APIService.bookAppointment.mock.calls.at(-1)[0]).toEqual(expect.objectContaining({promoCode:'WELCOME'}));expect(APIService.bookAppointment.mock.calls.at(-1)[0]).not.toHaveProperty('discount');
  });
  test('editing a verified promo removes the old code from the booking payload',async()=>{
   getAuthToken.mockReturnValue('token');APIService.bookAppointment.mockResolvedValue({data:{data:{}}});
   APIService.estimateBooking.mockResolvedValue({data:{data:{totalPrice:'60.00',servicePrice:'60.00',travelFee:'0.00'}}});APIService.checkPromoCode.mockResolvedValue({data:{statusCode:'200',data:{code:'WELCOME',discount:'6.00',total:'54.00'}}});
-  open();const field=await screen.findByLabelText('Promo code (optional)');fireEvent.change(field,{target:{value:'welcome'}});fireEvent.click(screen.getByRole('button',{name:'Apply'}));await screen.findByText('WELCOME: −$6.00 CAD');fireEvent.change(field,{target:{value:'OTHER'}});fireEvent.click(screen.getByText('4:00 pm'));fireEvent.click(screen.getAllByText(/15/)[0]);await clickBook();await screen.findByTestId('booking-placed');expect(APIService.bookAppointment.mock.calls.at(-1)[0]).not.toHaveProperty('promoCode');
+  open();const field=await screen.findByLabelText('Promo code (optional)');fireEvent.change(field,{target:{value:'welcome'}});fireEvent.click(screen.getByRole('button',{name:'Apply'}));await screen.findByText('WELCOME: −$6.00 CAD');fireEvent.change(field,{target:{value:'OTHER'}});fireEvent.click(firstOpenDay());fireEvent.click(screen.getByText('4:00 pm'));await clickBook();await screen.findByTestId('booking-placed');expect(APIService.bookAppointment.mock.calls.at(-1)[0]).not.toHaveProperty('promoCode');
  });
 });
 
@@ -852,7 +866,7 @@ describe("Booking waits for a valid price", () => {
     fireEvent.click(screen.getByText("Book service"));
   };
   const pickSlot = () => {
-    fireEvent.click(screen.getAllByText(/15/)[0]);
+    fireEvent.click(firstOpenDay());
     fireEvent.click(screen.getByText("4:00 pm"));
   };
   const deferred = () => {
@@ -914,7 +928,7 @@ describe("Booking waits for a valid price", () => {
     pickSlot();
     await waitFor(() => expect(APIService.estimateBooking).toHaveBeenLastCalledWith(
       expect.objectContaining({ serviceTime: "visitBarber", noOfPeople: "1", arrivalTime: "16:00",
-        appointmentDate: expect.stringMatching(/^\d{4}-\d{2}-15$/) })
+        appointmentDate: expect.stringMatching(new RegExp(`^\\d{4}-\\d{2}-${String(lastPickedDay).padStart(2, "0")}$`)) })
     ));
   });
 

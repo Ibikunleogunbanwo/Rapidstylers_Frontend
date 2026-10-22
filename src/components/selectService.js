@@ -19,6 +19,7 @@ import BookingCardField from "./bookingCardField";
 import AddressAutocomplete from "./AddressAutocomplete";
 import { prepareBookingAttempt, clearBookingAttempt, isUncertainBookingFailure } from "../utils/bookingAttempt";
 import { isAccountAlreadyExists } from "../utils/signupReply";
+import BookingMonthCalendar from "./bookingMonthCalendar";
 import { demoBooking, LIVE_SITE_URL } from "../utils/demo";
 
 // Google Sign-In client id (public). Empty hides the Google option in the quick-account step.
@@ -912,83 +913,20 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
             <div className={`space-y-6 py-6 ${placedBooking ? "hidden" : ""}`}>
             <div className="px-6">
               <p className="font-semibold text-[15px]">Select date:</p>
-              {/* <MonthDropdown /> */}
-              {/* {selectedMonth && (
-                  <div className="flex overflow-x-scroll gap-2 pb-2">
-                    {daysInMonth.map((day) => {
-                      const currentDate = new Date(
-                        currentYear,
-                        months.indexOf(selectedMonth),
-                        day
-                      );
-                      const isPastDay =
-                        currentDate <
-                        new Date(currentYear, currentMonth, currentDay);
-
-                      return (
-                        <div key={day} className={`border rounded-md h-[60px] ${isPastDay ? "hidden" : "block" } ${day === selectedDay ? "bg-brand cursor-default text-white" : "bg-white cursor-pointer"}`} onClick={() => setSelectedDay(day)} >
-                          <div className="w-[80px] text-sm flex items-center justify-center h-full">
-                            {`${currentDate.toLocaleDateString("en-US", {
-                              weekday: "short",
-                            })}, ${getOrdinalSuffix(day)}`}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-              )} */}
               {selectedMonth && (
-                <div className="flex overflow-x-scroll gap-2">
-                  {daysInMonth.map((day) => {
-                    const currentDate = new Date(
-                      stylistYear,
-                      months.indexOf(selectedMonth),
-                      day
-                    );
-                    // Past/present is judged on the stylist's calendar so a
-                    // visitor ahead of the stylist's date can still pick the
-                    // stylist's "today" — it is genuinely in the future for
-                    // the person whose hours are being booked.
-                    const isPastDay =
-                      currentDate <
-                      new Date(stylistYear, stylistMonthIndex, stylistDay);
-                    const dayOpen = isDayAvailable(currentDate.getDay());
-                    const dateKey = `${stylistYear}-${String(months.indexOf(selectedMonth) + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-                    const exceptionBlocked = isDateException(dateKey);
-                    const fullyBlocked = !dayOpen || exceptionBlocked;
-                    const isStylistToday =
-                      months.indexOf(selectedMonth) === stylistMonthIndex && day === stylistDay;
-
-                    return (
-                      <div
-                        key={day}
-                        className={`border h-[60px] rounded-md mb-3 mt-2 text-sm ${
-                          isPastDay ? "hidden" : "block"
-                        } ${
-                          day === selectedDay
-                            ? "bg-brand cursor-default text-white"
-                            : exceptionBlocked
-                            ? "bg-red-50 text-red-300 cursor-not-allowed"
-                            : dayOpen
-                            ? "bg-white cursor-pointer"
-                            : "bg-gray-50 text-gray-300 cursor-not-allowed"
-                        }`}
-                        onClick={() => !fullyBlocked && setSelectedDay(day)}
-                        title={exceptionBlocked ? "Stylist is unavailable on this date" : dayOpen ? "" : "Stylist is not available this day"}
-                      >
-                        <div className="w-[80px] flex items-center justify-center h-full">
-                          {`${currentDate.toLocaleDateString("en-US", {
-                            weekday: "short",
-                          })}, ${getOrdinalSuffix(day)}${isStylistToday ? " \u00b7 today" : ""}`}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                <BookingMonthCalendar
+                  year={stylistYear}
+                  monthIndex={months.indexOf(selectedMonth)}
+                  today={{ year: stylistYear, month: stylistMonthIndex, day: stylistDay }}
+                  selectedDay={selectedDay}
+                  onSelectDay={setSelectedDay}
+                  isWeekdayOpen={isDayAvailable}
+                  isDateBlocked={isDateException}
+                />
               )}
               {calendarsDisagree && (
                 <p className="text-xs text-gray-500 mb-1">
-                  You are in a different calendar day than the stylist. The dates above follow the stylist's calendar, so their “today” may differ from yours.
+                  You are in a different calendar day than the stylist. The calendar above follows the stylist's calendar, so their “today” may differ from yours.
                 </p>
               )}
               <p className="hidden">{selectedMonth}{selectedDay}</p>
