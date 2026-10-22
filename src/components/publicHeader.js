@@ -14,6 +14,11 @@ import LocationPicker from "./locationPicker";
 import { useUserLocation } from "../context/LocationContext";
 import { getAuthToken, getUserRole, setIntendedRoute, showErrorToastMessage } from "../utils/constant";
 import { IS_DEMO, goToLiveSite } from "../utils/demo";
+import GoogleSignInButton from "./googleSignInButton";
+import { useGoogleSignup } from "../hooks/useGoogleSignup";
+
+// Google Sign-In client id (public). When absent, the Google sign-up option is hidden.
+const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || "";
 
 /**
  * The one public site header: logo, location, the sign-in / sign-up / join
@@ -23,7 +28,7 @@ import { IS_DEMO, goToLiveSite } from "../utils/demo";
  * It is fixed to the top of the viewport. Pages whose first section is not a
  * full-bleed dark hero pass `spacer` so their content starts below it.
  */
-const PublicHeader = ({ spacer = false, demo = IS_DEMO }) => {
+const PublicHeader = ({ spacer = false, demo = IS_DEMO, googleClientId = GOOGLE_CLIENT_ID }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -66,6 +71,7 @@ const PublicHeader = ({ spacer = false, demo = IS_DEMO }) => {
   };
 
   const [signUpVisible, setSignUpVisible] = useState(false);
+  const handleGoogleSignup = useGoogleSignup({ onDone: () => setSignUpVisible(false) });
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [signUpRole, setSignUpRole] = useState("customer"); // customer | stylist | admin
@@ -238,6 +244,16 @@ const PublicHeader = ({ spacer = false, demo = IS_DEMO }) => {
             ))}
           </div>
 
+          {signUpRole === "customer" && googleClientId && (
+            <>
+              <GoogleSignInButton onSuccess={handleGoogleSignup} onError={(message) => showErrorToastMessage(message)} text="signup_with" />
+              <div className="flex items-center gap-3 my-4">
+                <span className="flex-1 border-t border-gray-200" />
+                <span className="text-xs text-gray-400 uppercase tracking-wide">or use your email</span>
+                <span className="flex-1 border-t border-gray-200" />
+              </div>
+            </>
+          )}
           {signUpRole === "customer" && (
             <InputWithLabel
               labelName={"Email address"}

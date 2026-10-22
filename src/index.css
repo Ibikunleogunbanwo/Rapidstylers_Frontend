@@ -52,6 +52,11 @@ body {
 }
 
 /* Floating notifications retain their margins on narrow screens. */
+/* Notifications use the app's own typeface, not the library's system font. */
+.Toastify {
+  --toastify-font-family: 'Averta', sans-serif;
+}
+
 .Toastify__toast-container.rapidstylers-toasts {
   width: min(340px, calc(100vw - 32px));
   top: max(16px, env(safe-area-inset-top));
@@ -61,6 +66,7 @@ body {
 }
 
 .rapidstylers-toasts .Toastify__toast {
+  font-family: 'Averta', sans-serif;
   min-height: 56px;
   margin-bottom: 10px;
   padding: 12px;

@@ -109,6 +109,18 @@ const KINDS = {
  * (kind=profile&id=&name= or kind=blog&id=). Never throws: any failure gives
  * the site defaults, still pointing at the requested page.
  */
+/**
+ * The absolute API base for server-side lookups. Once the site uses its API
+ * proxy, REACT_APP_API_BASE_URL is the relative "/rapid_stylers", which a server
+ * cannot fetch; the proxy's own upstream is used instead.
+ */
+export function previewApiBase(env = {}) {
+  const configured = String(env.REACT_APP_API_BASE_URL || '').trim();
+  if (/^https?:\/\//.test(configured)) return configured;
+  const upstream = String(env.API_UPSTREAM_URL || '').trim().replace(/\/+$/, '');
+  return upstream ? `${upstream}/rapid_stylers` : '';
+}
+
 export async function resolvePreview(query, { env = {}, fetchImpl = globalThis.fetch, timeoutMs = API_TIMEOUT_MS } = {}) {
   const noindex = isDemoEnv(env);
   const fbAppId = facebookAppId(env);
@@ -116,9 +128,9 @@ export async function resolvePreview(query, { env = {}, fetchImpl = globalThis.f
   if (!kind) return completeMeta({ noindex, fbAppId });
   const url = kind.url(query);
   try {
-    const apiBase = String(env.REACT_APP_API_BASE_URL || '').trim();
+    const apiBase = previewApiBase(env);
     if (!apiBase || typeof fetchImpl !== 'function') throw new Error('No API configured');
-    const meta = await kind.load(query, { apiBase, apiKey: env.REACT_APP_API_KEY, fetchImpl, timeoutMs });
+    const meta = await kind.load(query, { apiBase, apiKey: env.API_KEY || env.REACT_APP_API_KEY, fetchImpl, timeoutMs });
     return completeMeta({ ...meta, url, noindex, fbAppId });
   } catch {
     return completeMeta({ url, noindex, fbAppId });

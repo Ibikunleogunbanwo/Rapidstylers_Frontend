@@ -9,6 +9,7 @@ import { goToLiveSite } from "../utils/demo";
 vi.mock("../utils/demo", async (original) => ({ ...(await original()), goToLiveSite: vi.fn() }));
 vi.mock("./locationPicker", () => ({ default: () => null }));
 vi.mock("../context/LocationContext", () => ({ useUserLocation: () => ({}) }));
+vi.mock("./googleSignInButton", () => ({ default: () => <button type="button">Sign up with Google</button> }));
 
 const renderHeader = (props, path = "/") => render(
   <Provider store={configureStore({ reducer: { user: userReducer } })}>
@@ -34,5 +35,19 @@ describe("header sign-up on the demo", () => {
     fireEvent.click(screen.getAllByRole("button", { name: "Sign up" })[0]);
     expect(goToLiveSite).not.toHaveBeenCalled();
     expect(screen.getByText("I want to join as a")).toBeInTheDocument();
+  });
+});
+
+describe("header sign-up with Google", () => {
+  it("offers Google on the first sign-up step, before the email form", () => {
+    renderHeader({ demo: false, googleClientId: "client-id" });
+    fireEvent.click(screen.getAllByRole("button", { name: "Sign up" })[0]);
+    expect(screen.getByRole("button", { name: "Sign up with Google" })).toBeInTheDocument();
+    expect(screen.getByText("or use your email")).toBeInTheDocument();
+  });
+  it("hides Google when no client id is configured", () => {
+    renderHeader({ demo: false, googleClientId: "" });
+    fireEvent.click(screen.getAllByRole("button", { name: "Sign up" })[0]);
+    expect(screen.queryByRole("button", { name: "Sign up with Google" })).not.toBeInTheDocument();
   });
 });
