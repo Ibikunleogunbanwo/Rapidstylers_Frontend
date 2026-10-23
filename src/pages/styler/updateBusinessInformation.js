@@ -281,13 +281,12 @@ const BusinessInfoForm = ({ profile, onSaved }) => {
             <fieldset className="grid gap-3">
               <legend className="font-medium text-sm pb-1">Business address</legend>
               <p className="-mt-1 text-xs leading-[1.5] text-black/55">
-                Clients travel here when they book a visit, so this address is on your public profile. Search for it to
-                fill the fields below, or type them in.
+                Clients travel here when they book a visit, so this address is on your public profile. Moved? Search
+                for the new address to fill the fields below, or edit them directly.
               </p>
               <AddressAutocomplete
-                label="Search for your address"
-                placeholder="Start typing your business address…"
-                value={values.businessAddress}
+                label="Find a new address"
+                placeholder="Start typing to search…"
                 onChange={handleAddressChange(setFieldValue)}
               />
               <div className="grid grid-cols-1 gap-3 md:grid-cols-2">

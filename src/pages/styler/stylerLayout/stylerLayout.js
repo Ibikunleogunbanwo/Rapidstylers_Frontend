@@ -112,7 +112,13 @@ const StylerLayout = () => {
           <nav id="styler-dashboard-navigation" aria-label="Stylist dashboard" className="grid gap-1 py-4 lg:pt-8 lg:pb-14 px-4 lg:px-0 text-[13px] font-medium lg:sticky lg:top-[70px] bg-white lg:bg-transparent">
             {NAV_ITEMS.map(({ to, label, group }) => (
               <div key={to}>
-              {group && <p className="px-4 pt-5 pb-2 text-xs text-black/45">{group}</p>}
+              {/* A section label, styled apart from the links so it never reads as a
+                  disabled item: small caps above a hairline, not grey link text. */}
+              {group && (
+                <p className="mt-3 border-t border-black/[0.08] px-4 pb-1.5 pt-4 text-[11px] font-semibold uppercase tracking-[0.16em] text-brand/80">
+                  {group}
+                </p>
+              )}
               <Link
                 key={to}
                 to={to}
