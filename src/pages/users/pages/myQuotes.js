@@ -125,7 +125,7 @@ const MyQuotes = ({ setPageTitle }) => {
                       {quote.status === "QUOTED" && (
                         <Link
                           to={quoteBookingPath(quote)}
-                          className="inline-flex items-center rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand/90"
+                          className="inline-flex items-center rounded-md bg-violet-700 px-4 py-2 text-sm font-medium text-white shadow-lg shadow-violet-700/20 hover:bg-violet-800"
                         >
                           Book this quote
                         </Link>
