@@ -87,6 +87,8 @@ const UpdateCoverPhoto = () => {
       setSaveError(
         error?.code === "UPLOAD_AUTHORIZATION"
           ? "Photo uploads are temporarily unavailable. Please try again later or contact support."
+          : error?.code === "UPLOAD_REFUSED"
+          ? `Could not upload your photo: ${error.message}`
           : "Could not save your photos. Please try again."
       );
     } finally {

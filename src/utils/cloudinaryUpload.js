@@ -103,10 +103,22 @@ export async function uploadToCloudinary(file, folder) {
     if (!getAuthToken() && [401, 403].includes(error?.response?.status)) {
       throw Object.assign(new Error("Signup upload pass expired"), { code: "SIGNUP_PASS_EXPIRED" });
     }
+    // A request the server understood and refused (e.g. a folder it does not
+    // allow) carries its reason; pass that on rather than a bare HTTP error.
+    if (error?.response?.status === 400 && error.response.data?.message) {
+      throw Object.assign(new Error(error.response.data.message), { code: "UPLOAD_REFUSED" });
+    }
     throw error;
   }
   const sig = sigRes.data?.data;
-  if (!sig) throw new Error("Failed to get upload credentials");
+  // The server answers a refused request (folder not allowed, too many
+  // requests) with an error status and no credentials; say so plainly instead
+  // of sending a doomed upload to Cloudinary.
+  if (sigRes.data?.statusCode && sigRes.data.statusCode !== "200" || !sig?.cloudName) {
+    throw Object.assign(new Error(sigRes.data?.message || "Failed to get upload credentials"), {
+      code: "UPLOAD_REFUSED",
+    });
+  }
 
   assertUploadAllowed(file, sig);
 

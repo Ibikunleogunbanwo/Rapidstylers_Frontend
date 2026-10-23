@@ -166,3 +166,17 @@ test('a signed-in stylist whose request fails keeps the original error', async (
   const get=vi.spyOn(ApiClient,'get').mockRejectedValue(failure);
   try {await expect(uploadToCloudinary(jpeg(),'profile')).rejects.toBe(failure);} finally {get.mockRestore();sessionStorage.clear();}
 });
+
+test('a refused signature request says why instead of attempting the upload', async () => {
+  const {ApiClient}=await import('../hooks/remote/apiClient');const {uploadToCloudinary}=await import('./cloudinaryUpload');
+  sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY,'account-token');
+  const fetchSpy=vi.fn();
+  vi.stubGlobal('fetch',fetchSpy);
+  const refused=Object.assign(new Error('Request failed with status code 400'),{response:{status:400,data:{statusCode:'400',message:'Upload folder is not allowed'}}});
+  const get=vi.spyOn(ApiClient,'get').mockRejectedValueOnce(refused).mockResolvedValueOnce({data:{statusCode:'400',message:'Too many upload signature requests.',data:[]}});
+  try {
+    await expect(uploadToCloudinary(jpeg(),'cover')).rejects.toMatchObject({code:'UPLOAD_REFUSED',message:'Upload folder is not allowed'});
+    await expect(uploadToCloudinary(jpeg(),'cover')).rejects.toMatchObject({code:'UPLOAD_REFUSED',message:'Too many upload signature requests.'});
+    expect(fetchSpy).not.toHaveBeenCalled();
+  } finally {get.mockRestore();vi.unstubAllGlobals();sessionStorage.clear();}
+});
