@@ -224,6 +224,22 @@ describe("No-services empty state", () => {
     expect(link.getAttribute("href")).toBe("/search");
   });
 
+  test("a stylist previewing a profile is not asked for a customer's saved list", () => {
+    sessionStorage.setItem("rapidstylers_auth_token", "styler-jwt");
+    sessionStorage.setItem("rapidstylers_user_role", "STYLER");
+    try {
+      renderProfile({
+        stylerInformation: { reviewCount: 0, averageRating: "0", payoutReady: true, serviceTypeName: "Barber" },
+        stylerSubService: [],
+      });
+
+      expect(APIService.listSavedStylists).not.toHaveBeenCalled();
+      expect(screen.queryByRole("button", { name: /Save professional/i })).not.toBeInTheDocument();
+    } finally {
+      sessionStorage.clear();
+    }
+  });
+
   test("a signed-in stylist sees the owner action instead", () => {
     sessionStorage.setItem("rapidstylers_auth_token", "styler-jwt");
     sessionStorage.setItem("rapidstylers_user_role", "STYLER");

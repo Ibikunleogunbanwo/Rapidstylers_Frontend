@@ -327,7 +327,8 @@ const StylistProfile = ({ setPageTitle }) => {
 
   useEffect(() => {
     let mounted = true;
-    if (!getAuthToken()) return undefined;
+    // Saved lists are a customer thing; asking as a stylist (previewing their own page) only earns a 401 toast.
+    if (!getAuthToken() || getUserRole() !== "CUSTOMER") return undefined;
     APIService.listSavedStylists()
       .then((response) => {
         if (mounted) {
@@ -416,7 +417,7 @@ const StylistProfile = ({ setPageTitle }) => {
               <p className="mt-3 text-[14px] text-black/55">{ratingLine}</p>
             </div>
           </div>
-          <button
+          {getUserRole() !== "STYLER" && <button
             type="button"
             onClick={toggleSaved}
             disabled={saveLoading}
@@ -427,7 +428,7 @@ const StylistProfile = ({ setPageTitle }) => {
           >
             <img src={bookmark} alt="" className={`h-4 ${isSaved ? "opacity-100" : "opacity-60"}`} />
             {isSaved ? "Saved" : "Save professional"}
-          </button>
+          </button>}
         </div>
 
         {info.description && (

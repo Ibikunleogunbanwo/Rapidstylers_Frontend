@@ -65,6 +65,18 @@ describe("the stylist sidebar", () => {
     expect(nav.querySelectorAll("a").length).toBe(12);
   });
 
+  it("opens the phone menu as a drawer pinned under the top bar, wherever the page is scrolled", () => {
+    renderLayout();
+    const drawer = document.getElementById("styler-dashboard-navigation").parentElement;
+    expect(drawer.className).toMatch(/(^| )hidden( |$)/);
+
+    fireEvent.click(screen.getByRole("button", { name: "Open dashboard navigation" }));
+
+    expect(drawer.className).toMatch(/(^| )fixed( |$)/);
+    expect(drawer.className).toMatch(/top-\[70px\]/);
+    expect(drawer.className).toMatch(/lg:static/);
+  });
+
   it("marks the active section with a quiet brand pill, never the solid slab", () => {
     renderLayout();
     const active = screen.getByRole("link", { name: "Appointments", exact: true });

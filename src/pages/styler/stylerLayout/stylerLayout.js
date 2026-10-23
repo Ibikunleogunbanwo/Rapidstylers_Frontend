@@ -109,7 +109,10 @@ const StylerLayout = () => {
         <PayoutSetupNotice />
       </div>
       <div className="mx-auto max-w-[1440px] grid grid-cols-1 lg:grid-cols-[200px_minmax(0,1fr)]">
-        <div className={`px-4 relative ${menuOpen ? "block" : "hidden"} lg:block`}>
+        {/* On phones the open menu is a drawer pinned under the top bar, so it
+            shows wherever the page is scrolled to. In the page flow it opened
+            above the fold, and Menu looked dead to anyone scrolled down. */}
+        <div className={`px-4 ${menuOpen ? "fixed inset-x-0 top-[70px] bottom-0 z-40 overflow-y-auto bg-white shadow-lg" : "hidden"} lg:static lg:z-auto lg:block lg:overflow-visible lg:shadow-none`}>
           <nav id="styler-dashboard-navigation" aria-label="Stylist dashboard" className="grid gap-1 py-4 lg:pt-8 lg:pb-14 px-4 lg:px-0 text-[13px] font-medium lg:sticky lg:top-[70px] bg-white lg:bg-transparent">
             {NAV_ITEMS.map(({ to, label, group }) => (
               <div key={to}>
