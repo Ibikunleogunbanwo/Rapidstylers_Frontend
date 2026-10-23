@@ -271,6 +271,14 @@ describe("SearchResults open-now filter", () => {
     window.scrollTo = vi.fn();
     APIService.getStylerType.mockResolvedValue({ data: { data: [] } });
     APIService.singleStylerData.mockReset();
+    // Midday in Calgary, so a run near midnight can't see the window computed
+    // on one day and the page rendered on the next. Only Date is faked; the
+    // async queries keep real timers.
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2030-01-16T19:00:00Z"));
+  });
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   // A window around the professional's own now, so the assertion does not depend
