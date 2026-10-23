@@ -53,6 +53,7 @@ const Reviews = lazy(() => import('./pages/styler/reviews'));
 const StylerChangePassword = lazy(() => import('./pages/styler/stylerChangePassword'));
 const StylerSupport = lazy(() => import('./pages/styler/stylerSupport'));
 const StylerNotifications = lazy(() => import('./pages/styler/stylerNotifications'));
+const StylerQuotes = lazy(() => import('./pages/styler/stylerQuotes'));
 const AdminLogin = lazy(() => import('./pages/admin/adminLogin'));
 const AdminDashboard = lazy(() => import('./pages/admin/dashboard'));
 const ManageCategories = lazy(() => import('./pages/admin/manageCategories'));
@@ -143,6 +144,7 @@ function App() {
         <Route path='/styler-dashboard' element={<CustomerRoleRedirect area="professionals"><StylerLayout /></CustomerRoleRedirect>} >
           <Route index element={<StylerDashboard />} />
           <Route path='appointments' element={<StylerAppointments />} />
+          <Route path='quotes' element={<StylerQuotes />} />
           <Route path='appointment-locations' element={<StylistLocationSettings />} />
           <Route path='calendar' element={<StylerCalendar />} />
           <Route path='availability' element={<StylerAvailability />} />
@@ -177,6 +179,7 @@ function App() {
         <Route path="/accountSettings" element={<UserLayout />} />
         <Route path="/updatePersonalInformation" element={<UserLayout />} />
         <Route path="/savedStylist" element={<UserLayout />} />
+        <Route path="/myQuotes" element={<UserLayout />} />
         <Route path="/changePassword" element={<UserLayout />} />
         <Route path="/notificationSettings" element={<UserLayout />} />
         <Route path="/notifications" element={<UserLayout />} />

@@ -19,6 +19,7 @@ import close from "../../../assets/svg-icons/closeBlack.svg";
 const NAV_ITEMS = [
   { to: "/dashboard", title: "Dashboard", label: "Dashboard" },
   { to: "/bookAppointment", title: "Book Appointment", label: "Book an Appointment" },
+  { to: "/myQuotes", title: "My quotes", label: "My quotes" },
   { to: "/accountSettings", title: "Account Settings", label: "Account Settings" },
   { to: "/notifications", title: "Notifications", label: "Notifications" },
   { to: "/savedStylist", title: "Saved professionals", label: "Saved professionals" },

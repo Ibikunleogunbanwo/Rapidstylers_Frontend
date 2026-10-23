@@ -20,6 +20,7 @@ import AccountSettings from "../pages/accountsettings";
 import Notifications from "../pages/notifications";
 import Support from "../pages/support";
 import Loyalty from "../pages/loyalty";
+import MyQuotes from "../pages/myQuotes";
 import { StylistList } from "../pages/stylist";
 import { useUnreadNotifications } from "./unreadNotifications";
 
@@ -63,6 +64,7 @@ const UserLayout = () => {
             case "/accountSettings": return <AccountSettings setPageTitle={setPageTitle} />;
             case "/updatePersonalInformation": return <UpdateInformation setPageTitle={setPageTitle} />;
             case "/savedStylist": return <SavedStylist setPageTitle={setPageTitle} />;
+            case "/myQuotes": return <MyQuotes setPageTitle={setPageTitle} />;
             case "/changePassword": return <ChangePassword setPageTitle={setPageTitle} />;
             case "/notificationSettings": return <NotificationSettings setPageTitle={setPageTitle} />;
             case "/notifications": return <Notifications setPageTitle={setPageTitle} />;

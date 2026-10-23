@@ -6,6 +6,8 @@ import { APIService } from "../../../hooks/remote/apiService";
 
 vi.mock("react-router-dom", () => ({
   useParams: () => ({ stylerId: btoa("S1"), stylerName: btoa("Pro One") }),
+  useSearchParams: () => [new URLSearchParams()],
+  useNavigate: () => vi.fn(),
   // BackHome and Footer render Links; pageSections and SectionPager stay real.
   Link: ({ to, children }) => <a href={to}>{children}</a>,
 }));

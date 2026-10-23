@@ -14,6 +14,7 @@ const NAV_ITEMS = [
   { to: "/styler-dashboard", label: "Overview" },
   { to: "/styler-dashboard/notifications", label: "Notifications" },
   { to: "/styler-dashboard/appointments", label: "Appointments", group: "Bookings" },
+  { to: "/styler-dashboard/quotes", label: "Quotes" },
   { to: "/styler-dashboard/calendar", label: "Calendar" },
   { to: "/styler-dashboard/availability", label: "Availability" },
   { to: "/styler-dashboard/services", label: "Services", group: "Business" },

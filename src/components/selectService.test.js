@@ -997,3 +997,51 @@ describe("Booking waits for a valid price", () => {
     expect(APIService.bookAppointment).not.toHaveBeenCalled();
   });
 });
+
+// An accepted custom quote: the price, length, visit type and party size were
+// agreed with the professional, so the checkout fixes them and sends the quote
+// along for the server to price from.
+describe("Booking a custom quote", () => {
+  const quote = { quoteRef: "QREADY01", price: "420.00", durationMinutes: 180, serviceTime: "visitBarber", noOfPeople: 3 };
+  const renderQuote = () => {
+    getAuthToken.mockReturnValue("token");
+    APIService.bookAppointment.mockResolvedValue({ data: { data: {} } });
+    render(
+      <SelectService
+        serviceName="Knotless braids"
+        servicePrice={quote.price}
+        durationMinutes={quote.durationMinutes}
+        stylerId="s1"
+        subServiceId="7"
+        stylerProvince="Alberta"
+        stylerTimeZone="America/Edmonton"
+        stylerAddress={{ businessAddress: "700 2 St SW", city: "Calgary" }}
+        quote={quote}
+        defaultOpen
+      />
+    );
+  };
+
+  test("opens straight into checkout with the visit type and party size fixed", () => {
+    renderQuote();
+
+    expect(screen.getByText("Your custom quote")).toBeInTheDocument();
+    expect(screen.getByText("For 3 people, as quoted.")).toBeInTheDocument();
+    expect(screen.getByText("Home service").closest("button")).toBeDisabled();
+    expect(screen.queryByLabelText("Number of people:")).not.toBeInTheDocument();
+  });
+
+  test("prices and books with the quote attached", async () => {
+    renderQuote();
+    await waitFor(() =>
+      expect(APIService.estimateBooking).toHaveBeenCalledWith(expect.objectContaining({ quoteRef: "QREADY01", noOfPeople: "3" }))
+    );
+    fireEvent.click(firstOpenDay());
+    fireEvent.click(screen.getByText("4:00 pm"));
+    await clickBook();
+    await screen.findByTestId("booking-placed");
+
+    const [body] = APIService.bookAppointment.mock.calls.at(-1);
+    expect(body).toEqual(expect.objectContaining({ quoteRef: "QREADY01", subServiceId: "7", serviceTime: "visitBarber", noOfPeople: "3" }));
+  });
+});

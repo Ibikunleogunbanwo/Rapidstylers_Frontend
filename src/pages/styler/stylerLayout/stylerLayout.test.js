@@ -50,6 +50,7 @@ describe("the stylist sidebar", () => {
       "Overview",
       "Notifications",
       "Appointments",
+      "Quotes",
       "Calendar",
       "Availability",
       "Services",
@@ -61,7 +62,7 @@ describe("the stylist sidebar", () => {
     ]) {
       expect(nav.querySelectorAll(`a[href="${label === "Overview" ? "/styler-dashboard" : "/styler-dashboard/" + ({"My work":"my-work","My profile":"profile"}[label] || label.toLowerCase())}"]`).length).toBe(1);
     }
-    expect(nav.querySelectorAll("a").length).toBe(11);
+    expect(nav.querySelectorAll("a").length).toBe(12);
   });
 
   it("marks the active section with a quiet brand pill, never the solid slab", () => {

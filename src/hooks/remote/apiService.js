@@ -529,6 +529,32 @@ export class APIService {
         catch (error) { APIService.extractError(error); throw error; }
     }
 
+    // Custom quotes: the customer asks for a price, the professional answers it.
+    static async requestQuote(data){
+        try { return await ApiClient.post("/quotes/request", data); }
+        catch (error) { APIService.extractError(error); throw error; }
+    }
+    static async customerQuotes(){
+        try { return await ApiClient.get("/quotes"); }
+        catch (error) { APIService.extractError(error); throw error; }
+    }
+    static async declineQuote(quoteRef){
+        try { return await ApiClient.post("/quotes/decline", { quoteRef }); }
+        catch (error) { APIService.extractError(error); throw error; }
+    }
+    static async stylerQuotes(){
+        try { return await ApiClient.get("/styler/quotes"); }
+        catch (error) { APIService.extractError(error); throw error; }
+    }
+    static async offerQuote(data){
+        try { return await ApiClient.post("/styler/quotes/offer", data); }
+        catch (error) { APIService.extractError(error); throw error; }
+    }
+    static async withdrawQuote(quoteRef){
+        try { return await ApiClient.post("/styler/quotes/withdraw", { quoteRef }); }
+        catch (error) { APIService.extractError(error); throw error; }
+    }
+
     static async getNotificationPreferences(){
         try{
             return await ApiClient.get("/notification_preferences");
@@ -766,7 +792,8 @@ export class APIService {
     // ── Marketplace booking (identity comes from the Bearer token) ────────
     static async estimateBooking(data){
         try{
-            return await ApiClient.post("/booking_estimate", data);
+            // A custom quote is priced only for its own (signed-in) customer.
+            return await ApiClient.post(data?.quoteRef ? "/quotes/estimate" : "/booking_estimate", data);
         }
         catch(error){
             APIService.extractError(error);

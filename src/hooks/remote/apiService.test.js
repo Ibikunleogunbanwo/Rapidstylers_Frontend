@@ -65,6 +65,14 @@ describe("RapidStylers API contracts", () => {
     expect(ApiClient.post.mock.calls[0][1]).not.toHaveProperty("price");
   });
 
+  test("a custom quote is priced on the signed-in quote route, never the public one", async () => {
+    const request = { stylerId: "STYLER1", subServiceId: "7", serviceTime: "visitBarber", noOfPeople: "3", quoteRef: "QREADY01" };
+
+    await APIService.estimateBooking(request);
+
+    expect(ApiClient.post).toHaveBeenCalledWith("/quotes/estimate", request);
+  });
+
   test("unified sign-in surfaces invalid credential responses returned with an app-level 400", async () => {
     // The real ApiClient rejects this shape; mirror it through the actual
     // normalizer so this test exercises how the service surfaces the failure.

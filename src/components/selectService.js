@@ -80,7 +80,11 @@ export const bookingConfirmationMessage = (dayLabel, time, zoneLabel) => {
     : "Booking request sent. The stylist will confirm shortly.";
 };
 
-const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerId, subServiceId, stylerLatitude, stylerLongitude, stylerProvince, stylerTimeZone, stylerAddress, stylerName, offersSalonVisits = true, offersHomeVisits = true, demoMode = demoBooking()}) => {
+// `quote` books an accepted custom quote: its price, length, visit type and
+// party size were agreed with the professional, so they are fixed here and the
+// server takes them from the quote, never from this form.
+const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerId, subServiceId, stylerLatitude, stylerLongitude, stylerProvince, stylerTimeZone, stylerAddress, stylerName, offersSalonVisits = true, offersHomeVisits = true, demoMode = demoBooking(), quote = null, defaultOpen = false}) => {
+  const quoteRef = quote?.quoteRef || null;
   const [bookAppointmentForm, setBookAppointmentForm] = useState(false);
   // Set once a booking lands, so the confirmation and its calendar action stay
   // on screen instead of scrolling away with the toast.
@@ -226,6 +230,14 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
     setBookAppointmentForm(false);
     setPlacedBooking(null);
   };
+  // Opened straight away when the customer arrives from "Book this quote".
+  useEffect(() => {
+    if (defaultOpen) {
+      setBookAppointmentForm(true);
+      loadAvailability();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Hands the .ics to the browser. Where that is not possible the Google
   // Calendar link beside it is the action that always works, so no error state
@@ -237,14 +249,19 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
   };
 
   // Function to select service type
-  const [selectedOption, setSelectedOption] = useState(offersSalonVisits ? "visitBarber" : offersHomeVisits ? "homeService" : "");
+  const [selectedOption, setSelectedOption] = useState(
+    quote ? (quote.serviceTime === "homeService" ? "homeService" : "visitBarber")
+      : offersSalonVisits ? "visitBarber" : offersHomeVisits ? "homeService" : "");
   useEffect(() => {
+    if (quote) return;
     if (selectedOption === "visitBarber" && !offersSalonVisits || selectedOption === "homeService" && !offersHomeVisits) {
       setSelectedOption(offersSalonVisits ? "visitBarber" : offersHomeVisits ? "homeService" : "");
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [offersSalonVisits, offersHomeVisits, selectedOption]);
 
   const handleOptionChange = (option) => {
+    if (quote) return;
     setSelectedOption(option);
   };
 
@@ -366,7 +383,7 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [availability, selectedTime, selectedDay]);
 
-  const [numberOfPeople, setNumberOfPeople] = useState(1);
+  const [numberOfPeople, setNumberOfPeople] = useState(quote ? Number(quote.noOfPeople) || 1 : 1);
   // The last price the server gave, and the exact inputs it priced
   // (`estimateKey`). A booking only goes ahead on a quote whose key matches
   // what is about to be sent: see `quoteFor` and `ensureCurrentQuote` below.
@@ -413,6 +430,7 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
     subServiceId,
     serviceTime: option,
     noOfPeople: String(people),
+    ...(quoteRef ? { quoteRef } : {}),
     ...(option === "homeService" ? { serviceAddress: address.trim() } : {}),
     ...(day && time ? { appointmentDate: appointmentDateFor(month, day), arrivalTime: to24(time) } : {}),
   });
@@ -546,6 +564,7 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
         serviceTime: selectedOption,
         ...(promoQuote ? { promoCode: promoQuote.code } : {}),
         noOfPeople: String(numberOfPeople),
+        ...(quoteRef ? { quoteRef } : {}),
         ...(selectedOption === "homeService" ? { serviceAddress: homeVisitAddress.trim() } : {}),
       }, collectPaymentMethodId);
       await APIService.bookAppointment(attempt.payload, attempt.key);
@@ -816,6 +835,7 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
         <div className="grid gap-3 pb-4 border-b">
           <div className="grid grid-cols-12 gap-1">
             <div className="col-span-8 md:col-span-10 text-black/50">
+              {quote && <div className="mb-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-brand">Your custom quote</div>}
               <div>{serviceName}</div>
               <div className="text-xs text-gray-400 mt-1">{durationMinutes} min appointment</div>
             </div>
@@ -828,7 +848,7 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
               className="px-4 py-2 rounded-md bg-brand text-white text-sm"
               onClick={toggleBookingForm}
             >
-              Book service
+              {quote ? "Book this quote" : "Book service"}
             </button>
           </div>
         </div>
@@ -987,7 +1007,7 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
             <div className="px-6">
               <p id="appointment-location-label" className="font-semibold mb-2 text-[15px]">Appointment location</p>
               <div role="group" aria-labelledby="appointment-location-label" className="grid grid-cols-2 gap-3 text-sm">
-                <button type="button" disabled={!offersSalonVisits} aria-pressed={selectedOption === "visitBarber"}
+                <button type="button" disabled={!offersSalonVisits || (quote && selectedOption !== "visitBarber")} aria-pressed={selectedOption === "visitBarber"}
                   className={`py-4 rounded-md text-center cursor-pointer ${
                     selectedOption === "visitBarber" ? "bg-brand text-white" : "border"
                   }`}
@@ -995,7 +1015,7 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
                 >
                   Visit the stylist
                 </button>
-                <button type="button" disabled={!offersHomeVisits} aria-pressed={selectedOption === "homeService"}
+                <button type="button" disabled={!offersHomeVisits || (quote && selectedOption !== "homeService")} aria-pressed={selectedOption === "homeService"}
                   className={`py-4 rounded-md text-center cursor-pointer ${
                     selectedOption === "homeService" ? "bg-brand text-white" : "border"
                   }`}
@@ -1066,7 +1086,13 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
             <div className="px-6">
               <p className="font-semibold mb-2 text-[15px]">Additional information</p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <Input label={"Number of people:"} value={numberOfPeople} type={"number"} onChange={(e)=>setNumberOfPeople(e.target.value)}/>
+                {quote ? (
+                  <p className="text-sm text-gray-600">
+                    {numberOfPeople > 1 ? `For ${numberOfPeople} people, as quoted.` : "For one person, as quoted."}
+                  </p>
+                ) : (
+                  <Input label={"Number of people:"} value={numberOfPeople} type={"number"} onChange={(e)=>setNumberOfPeople(e.target.value)}/>
+                )}
               </div>
             </div>
             <div className="px-6">

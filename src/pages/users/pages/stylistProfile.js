@@ -2,7 +2,8 @@ import RemoteLoadStatus from "../../../components/remoteLoadStatus";
 import bookmark from "../../../assets/svg-icons/bookmark.svg";
 import SelectService from "../../../components/selectService";
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
+import RequestQuote from "../../../components/requestQuote";
 import { useSingleStylerProfile } from "../userLayout/functionalEffects";
 import Spinner from "../../../components/spinner";
 import { useSelector } from "react-redux";
@@ -277,6 +278,25 @@ const StylistProfile = ({ setPageTitle }) => {
     { label: "Average rating", value: hasReviews ? info.averageRating ?? "-" : "-" },
   ];
 
+  // ?quote=REF arrives from "Book this quote": open that quote's checkout here.
+  const [searchParams] = useSearchParams();
+  const quoteParam = searchParams.get("quote");
+  const [bookingQuote, setBookingQuote] = useState(null);
+  useEffect(() => {
+    if (!quoteParam || !getAuthToken() || getUserRole() !== "CUSTOMER") return undefined;
+    let active = true;
+    APIService.customerQuotes()
+      .then((response) => {
+        const items = Array.isArray(response.data?.data) ? response.data.data : [];
+        const match = items.find((item) => item.quoteRef === quoteParam && String(item.stylerId) === String(stylerId));
+        if (!active) return;
+        if (match?.status === "QUOTED") setBookingQuote(match);
+        else if (match) showErrorToastMessage("This quote can no longer be booked.");
+      })
+      .catch(() => {});
+    return () => { active = false; };
+  }, [quoteParam, stylerId]);
+
   const [isSaved, setIsSaved] = useState(false);
   const [saveLoading, setSaveLoading] = useState(false);
   const [portfolioPage, setPortfolioPage] = useState(1);
@@ -459,6 +479,28 @@ const StylistProfile = ({ setPageTitle }) => {
         <Statement>What you can book</Statement>
         <div className="mt-10 grid gap-10 lg:grid-cols-5 lg:items-start">
           <div className="lg:col-span-3">
+            {bookingQuote && (
+              <div className="mb-6 rounded-lg border border-brand/30 bg-brand/[0.04] px-4 pb-3">
+                <SelectService
+                  key={`quote-${bookingQuote.quoteRef}`}
+                  serviceName={bookingQuote.serviceName}
+                  servicePrice={bookingQuote.price}
+                  durationMinutes={bookingQuote.durationMinutes}
+                  subServiceId={Number(bookingQuote.subServiceId)}
+                  stylerId={stylerId}
+                  stylerLatitude={info.latitude}
+                  stylerLongitude={info.longitude}
+                  stylerProvince={info.province}
+                  stylerTimeZone={info.timeZone}
+                  stylerAddress={info}
+                  stylerName={displayName}
+                  offersSalonVisits={info.offersSalonVisits ?? true}
+                  offersHomeVisits={info.offersHomeVisits ?? true}
+                  quote={bookingQuote}
+                  defaultOpen
+                />
+              </div>
+            )}
             {stylerProfile.stylerSubService && stylerProfile.stylerSubService.length > 0 ? (
               stylerProfile.stylerSubService.map((val, key) => (
                 <div key={key}>
@@ -481,6 +523,15 @@ const StylistProfile = ({ setPageTitle }) => {
               ))
             ) : (
               <NoServicesCard categoryName={categoryName} serviceTypeId={info.serviceTypeId} />
+            )}
+            {info.payoutReady !== false && getUserRole() !== "STYLER" && (
+              <RequestQuote
+                stylerId={stylerId}
+                stylerName={displayName}
+                services={stylerProfile.stylerSubService || []}
+                offersSalonVisits={info.offersSalonVisits ?? true}
+                offersHomeVisits={info.offersHomeVisits ?? true}
+              />
             )}
           </div>
           <div className="lg:col-span-2">
