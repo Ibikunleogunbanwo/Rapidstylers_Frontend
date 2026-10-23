@@ -86,6 +86,27 @@ export const vendorCalendarToday = (stylist, now = new Date()) => {
 };
 
 /**
+ * Minutes past midnight on the professional's own clock, or null when Intl
+ * cannot resolve their zone. Pairs with vendorCalendarToday: together they say
+ * which of today's times have already gone for that professional.
+ */
+export const vendorMinutesNow = (stylist, now = new Date()) => {
+  try {
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone: vendorTimeZone(stylist),
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    }).formatToParts(now);
+    const get = (type) => Number((parts.find((p) => p.type === type) || {}).value);
+    const minutes = (get("hour") % 24) * 60 + get("minute");
+    return Number.isNaN(minutes) ? null : minutes;
+  } catch {
+    return null;
+  }
+};
+
+/**
  * The plain-language name Intl gives an IANA zone id ("Eastern Time"), or ""
  * when it cannot name it. Every zone label on the site comes from here, never
  * from a fixed string or abbreviation: the name and offsets are the visitor's

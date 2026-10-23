@@ -11,7 +11,7 @@ import { STRIPE_PUBLISHABLE_KEY, getAuthToken, setAuthToken, setRefreshToken, sh
 import { buildAppointmentEvent, googleCalendarUrl, downloadIcs } from "../utils/appointmentCalendar";
 import { useUserLocation } from "../context/LocationContext";
 import { straightLineKm, travelLine } from "../utils/travelEstimate";
-import { vendorTimeZoneLabel, vendorCalendarToday } from "../utils/vendorTimeZone";
+import { vendorTimeZoneLabel, vendorCalendarToday, vendorMinutesNow } from "../utils/vendorTimeZone";
 import OtpInputs from "./otpInputs";
 import GoogleSignInButton from "./googleSignInButton";
 import TurnstileWidget from "./turnstileWidget";
@@ -157,6 +157,12 @@ const SelectService = ({serviceName, servicePrice, durationMinutes = 60, stylerI
   };
 
   const isTimeAvailable = (timeLabel) => {
+    // Today's times that have already gone on the professional's clock are never
+    // offered, whatever their hours say (the server refuses them too).
+    if (selectedDay && months.indexOf(selectedMonth) === stylistMonthIndex && selectedDay === stylistDay) {
+      const nowMinutes = vendorMinutesNow({ timeZone: stylerTimeZone, province: stylerProvince });
+      if (nowMinutes !== null && toMinutes(timeLabel) <= nowMinutes) return false;
+    }
     if (availability === null) return true;
     const slots = availability || [];
     // No hours on file: the amber note in the picker promises the visitor can

@@ -1045,3 +1045,31 @@ describe("Booking a custom quote", () => {
     expect(body).toEqual(expect.objectContaining({ quoteRef: "QREADY01", subServiceId: "7", serviceTime: "visitBarber", noOfPeople: "3" }));
   });
 });
+
+// Times are on the professional's clock, so "already gone today" is judged there:
+// at 10:00 AM in Calgary, 9:00 am today is gone and 4:00 pm is not, even for a
+// visitor in Toronto, where it is already noon.
+describe("Times already gone today", () => {
+  test("today's earlier times are not offered; later ones are", () => {
+    vi.useFakeTimers({ now: new Date("2026-09-15T16:00:00Z"), toFake: ["Date"] });
+    process.env.TZ = "America/Toronto";
+    try {
+      APIService.singleStylerData.mockResolvedValue({
+        data: { data: { availability: [], bookedSlots: [], exceptions: [] } },
+      });
+      render(
+        <SelectService serviceName="Haircut" servicePrice="60" stylerId="s1" subServiceId="ss1"
+          stylerProvince="Alberta" stylerTimeZone="America/Edmonton" />
+      );
+      fireEvent.click(screen.getByText("Book service"));
+      fireEvent.click(screen.getByRole("button", { name: /15th · today/ }));
+
+      expect(screen.queryByText("9:00 am")).not.toBeInTheDocument();
+      expect(screen.queryByText("10:00 am")).not.toBeInTheDocument();
+      expect(screen.getByText("4:00 pm")).toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+      process.env.TZ = "UTC";
+    }
+  });
+});
