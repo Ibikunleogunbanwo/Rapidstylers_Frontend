@@ -38,3 +38,33 @@ export const useUnreadNotifications = (refreshKey, path = "/notifications") => {
   }, []);
   return count;
 };
+
+// The Quotes page announces its waiting count with this event after a change.
+export const QUOTES_WAITING_EVENT = "rapidstylers:quotes-waiting";
+export const announceQuotesWaiting = (count) =>
+  window.dispatchEvent(new CustomEvent(QUOTES_WAITING_EVENT, { detail: { count } }));
+
+/**
+ * How many quote requests wait on the stylist: unpriced, or with a client
+ * message unanswered. Read like the unread count, and silent on failure.
+ */
+export const useQuotesWaiting = (refreshKey, enabled) => {
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    if (!getAuthToken() || !enabled) return undefined;
+    let current = true;
+    ApiClient.get("/styler/quotes")
+      .then((response) => {
+        const waiting = Number(response?.data?.data?.waiting);
+        if (current) setCount(Number.isFinite(waiting) ? waiting : 0);
+      })
+      .catch(() => {});
+    return () => { current = false; };
+  }, [refreshKey, enabled]);
+  useEffect(() => {
+    const onChange = (event) => setCount(Number(event.detail?.count) || 0);
+    window.addEventListener(QUOTES_WAITING_EVENT, onChange);
+    return () => window.removeEventListener(QUOTES_WAITING_EVENT, onChange);
+  }, []);
+  return count;
+};

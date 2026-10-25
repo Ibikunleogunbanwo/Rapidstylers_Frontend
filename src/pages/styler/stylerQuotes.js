@@ -4,10 +4,12 @@ import { APIService } from "../../hooks/remote/apiService";
 import { showSuccessToastMessage } from "../../utils/constant";
 import { DURATION_OPTIONS, QUOTE_STATUS, durationText, expiresText, isOpenQuote, visitText } from "../../utils/quotes";
 import { StylerField, StylerSelect } from "./stylerComponents/stylerField";
+import QuoteThread, { QuotePhotos } from "../../components/quoteThread";
+import { announceQuotesWaiting } from "../users/userLayout/unreadNotifications";
 
 const TABS = [
-  { id: "waiting", label: "Waiting for you", match: (quote) => quote.status === "REQUESTED" },
-  { id: "sent", label: "Price sent", match: (quote) => quote.status === "QUOTED" },
+  { id: "waiting", label: "Waiting for you", match: (quote) => quote.status === "REQUESTED" || Boolean(quote.needsReply) },
+  { id: "sent", label: "Price sent", match: (quote) => quote.status === "QUOTED" && !quote.needsReply },
   { id: "closed", label: "Closed", match: (quote) => !isOpenQuote(quote) },
 ];
 const VALID_DAY_OPTIONS = [1, 2, 3, 5, 7, 14].map((days) => ({ value: String(days), label: days === 1 ? "1 day" : `${days} days` }));
@@ -39,6 +41,10 @@ const StylerQuotes = () => {
   useEffect(() => {
     load();
   }, []);
+  // Keeps the menu badge in step as requests are priced or answered here.
+  useEffect(() => {
+    if (!loading && !loadError) announceQuotesWaiting(quotes.filter(TABS[0].match).length);
+  }, [quotes, loading, loadError]);
 
   const replace = (updated) => setQuotes((current) => current.map((quote) => (quote.quoteRef === updated.quoteRef ? updated : quote)));
   const active = TABS.find((entry) => entry.id === tab) || TABS[0];
@@ -127,10 +133,13 @@ const QuoteCard = ({ quote, onChanged }) => {
             {people > 1 ? ` · ${people} people` : ""}
           </p>
         </div>
-        <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${status.tone}`}>{status.label}</span>
+        <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${status.tone}`}>
+          {quote.needsReply ? "Client replied" : status.label}
+        </span>
       </div>
 
       <p className="mt-3 whitespace-pre-line text-sm leading-6 text-black/80">{quote.description}</p>
+      <QuotePhotos photos={quote.photos} />
       {quote.preferredDates && (
         <p className="mt-2 text-xs text-black/55">
           <span className="font-medium text-black/70">Preferred:</span> {quote.preferredDates}
@@ -149,6 +158,21 @@ const QuoteCard = ({ quote, onChanged }) => {
       {quote.status === "ACCEPTED" && (
         <p className="mt-2 text-xs text-emerald-700">Booked. Find it in Appointments to confirm the time.</p>
       )}
+      <QuoteThread
+        messages={quote.messages}
+        me="STYLIST"
+        otherName={quote.clientName}
+        open={isOpenQuote(quote)}
+        onSend={async (body) => {
+          try {
+            const response = await APIService.stylerMessageQuote(quote.quoteRef, body);
+            onChanged(response.data?.data || quote);
+            return true;
+          } catch {
+            return false;
+          }
+        }}
+      />
 
       {pricing ? (
         <OfferForm quote={quote} onCancel={() => setPricing(false)} onSent={(updated) => { setPricing(false); onChanged(updated); }} />

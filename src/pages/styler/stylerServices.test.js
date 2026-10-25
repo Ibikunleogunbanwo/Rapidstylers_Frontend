@@ -61,6 +61,18 @@ describe("the add service dialog", () => {
     expect(APIService.createSubService).not.toHaveBeenCalled();
   });
 
+  it("can mark a service as price on quote, and lists it as a starting price", async () => {
+    APIService.createSubService.mockResolvedValue({ data: { statusCode: "200" } });
+    mount();
+    fireEvent.click(screen.getByRole("button", { name: "+ Add a new service" }));
+    fireEvent.change(screen.getByLabelText("Service name:"), { target: { value: "Bridal party" } });
+    fireEvent.change(screen.getByLabelText("Amount ($):"), { target: { value: "300" } });
+    fireEvent.click(screen.getByRole("checkbox", { name: /Price on quote/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Add service" }));
+    await waitFor(() => expect(APIService.createSubService).toHaveBeenCalledWith(
+      { name: "Bridal party", price: "300.00", durationMinutes: "60", priceOnQuote: true }));
+  });
+
   it("sends a valid amount with two decimals", async () => {
     APIService.createSubService.mockResolvedValue({ data: { statusCode: "200" } });
     mount();
@@ -68,7 +80,7 @@ describe("the add service dialog", () => {
     fireEvent.change(screen.getByLabelText("Service name:"), { target: { value: " Braids " } });
     fireEvent.change(screen.getByLabelText("Amount ($):"), { target: { value: "45.5" } });
     fireEvent.click(screen.getByRole("button", { name: "Add service" }));
-    await waitFor(() => expect(APIService.createSubService).toHaveBeenCalledWith({ name: "Braids", price: "45.50", durationMinutes: "60" }));
+    await waitFor(() => expect(APIService.createSubService).toHaveBeenCalledWith({ name: "Braids", price: "45.50", durationMinutes: "60", priceOnQuote: false }));
   });
 });
 

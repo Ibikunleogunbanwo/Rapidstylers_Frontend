@@ -26,6 +26,11 @@ const formatDuration = (minutes) => {
   return remainder ? `${hours} hr ${remainder} min` : `${hours} hr`;
 };
 
+// A quote-priced service reads as a starting price, so the list says so.
+const PriceText = ({ service }) => (
+  service.priceOnQuote ? <span>From ${service.price} <span className="text-xs text-brand">· on quote</span></span> : <span>${service.price}</span>
+);
+
 const Services = () => {
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -34,6 +39,7 @@ const Services = () => {
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
   const [durationMinutes, setDurationMinutes] = useState("60");
+  const [priceOnQuote, setPriceOnQuote] = useState(false);
   const [editingService, setEditingService] = useState(null);
   const [saving, setSaving] = useState(false);
   const [modalError, setModalError] = useState("");
@@ -65,6 +71,7 @@ const Services = () => {
     setName("");
     setPrice("");
     setDurationMinutes("60");
+    setPriceOnQuote(false);
     setModalError("");
     setFieldErrors({});
   };
@@ -74,6 +81,7 @@ const Services = () => {
     setName(service.name || "");
     setPrice(String(service.price || "").replace(/[$,\s]/g, ""));
     setDurationMinutes(String(service.durationMinutes || 60));
+    setPriceOnQuote(Boolean(service.priceOnQuote));
     setAddServiceModal(true);
   };
 
@@ -100,6 +108,7 @@ const Services = () => {
           name: name.trim(),
           price: Number(price).toFixed(2),
           durationMinutes: duration,
+          priceOnQuote,
         });
         showSuccessToastMessage("Service updated");
       } else {
@@ -107,6 +116,7 @@ const Services = () => {
           name: name.trim(),
           price: Number(price).toFixed(2),
           durationMinutes: String(duration),
+          priceOnQuote,
         });
         showSuccessToastMessage("Service added");
       }
@@ -148,7 +158,7 @@ const Services = () => {
                   <button type="button" onClick={() => openEditModal(service)} aria-label={`Edit ${service.name}`} className="shrink-0 text-xs font-semibold text-brand hover:underline">Edit</button>
                 </div>
                 <dl className="mt-2 grid grid-cols-3 gap-2 text-black/70">
-                  <div><dt className="text-[11px] text-black/45">Amount</dt><dd>${service.price}</dd></div>
+                  <div><dt className="text-[11px] text-black/45">Amount</dt><dd><PriceText service={service} /></dd></div>
                   <div><dt className="text-[11px] text-black/45">Duration</dt><dd>{formatDuration(service.durationMinutes)}</dd></div>
                   <div><dt className="text-[11px] text-black/45">Status</dt><dd>{service.status || "Active"}</dd></div>
                 </dl>
@@ -172,7 +182,7 @@ const Services = () => {
                   <tr className="hover:bg-black/[0.04]" key={service.id || index}>
                     <td className="text-start py-5 ps-4">{index + 1}</td>
                     <td className="text-start py-5 ps-4 truncate max-w-48 md:max-w-80">{service.name}</td>
-                    <td className="text-start py-5 ps-4">${service.price}</td>
+                    <td className="text-start py-5 ps-4"><PriceText service={service} /></td>
                     <td className="text-start py-5 ps-4">{formatDuration(service.durationMinutes)}</td>
                     <td className="text-start py-5 ps-4">{service.status || "Active"}</td>
                     <td className="text-start py-5 ps-4"><button type="button" onClick={() => openEditModal(service)} aria-label={`Edit ${service.name}`} className="text-xs font-semibold text-brand hover:underline">Edit</button></td>
@@ -223,6 +233,20 @@ const Services = () => {
           onChange={(e) => setPrice(e.target.value)}
           error={fieldErrors.price}
         />
+        <label className="flex items-start gap-3 rounded-md border border-black/10 p-3 text-sm">
+          <input
+            type="checkbox"
+            className="mt-0.5 h-4 w-4 accent-brand"
+            checked={priceOnQuote}
+            onChange={(e) => setPriceOnQuote(e.target.checked)}
+          />
+          <span>
+            <span className="font-medium">Price on quote</span>
+            <span className="block text-xs text-black/55">
+              The amount shows as a starting price. Clients request a quote and you send the exact price before they book.
+            </span>
+          </span>
+        </label>
         <div>
           <label className="font-medium text-sm" htmlFor="service-duration">Duration:</label>
           <select

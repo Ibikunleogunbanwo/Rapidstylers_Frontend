@@ -5,6 +5,7 @@ import StylerQuotes from "./stylerQuotes";
 vi.mock("../../hooks/remote/apiService", () => ({
   APIService: {
     stylerQuotes: vi.fn(),
+    stylerMessageQuote: vi.fn(),
     offerQuote: vi.fn(),
     withdrawQuote: vi.fn(),
   },
@@ -90,5 +91,30 @@ describe("StylerQuotes", () => {
     render(<StylerQuotes />);
 
     expect(await screen.findByRole("alert")).toHaveTextContent("Could not load your quotes.");
+  });
+
+  test("a client message moves the quote to Waiting, shows their photos, and can be answered", async () => {
+    const replied = {
+      ...sent,
+      needsReply: true,
+      photos: ["https://res.cloudinary.com/demo/image/upload/v1/rapid_stylers/quote/acct_1/a.jpg"],
+      messages: [{ from: "CUSTOMER", body: "Can the ends be curly?", createdAt: "2030-05-01T12:00:00Z" }],
+    };
+    APIService.stylerQuotes.mockResolvedValue({ data: { data: { items: [replied], waiting: 1 } } });
+    APIService.stylerMessageQuote.mockResolvedValue({ data: { data: { ...replied, needsReply: false,
+      messages: [...replied.messages, { from: "STYLIST", body: "Yes, curly ends included", createdAt: "2030-05-01T12:05:00Z" }] } } });
+    const announced = vi.fn();
+    window.addEventListener("rapidstylers:quotes-waiting", (event) => announced(event.detail.count));
+    render(<StylerQuotes />);
+
+    const card = (await screen.findByText("Client replied")).closest("article");
+    expect(within(card).getByRole("img", { name: "Reference photo 1" })).toBeInTheDocument();
+    expect(within(card).getByText("Can the ends be curly?")).toBeInTheDocument();
+    await userEvent.type(within(card).getByLabelText("Message"), "Yes, curly ends included");
+    await userEvent.click(within(card).getByRole("button", { name: "Send" }));
+
+    expect(APIService.stylerMessageQuote).toHaveBeenCalledWith("QSENT001", "Yes, curly ends included");
+    expect(await screen.findByText(/No quote requests waiting/)).toBeInTheDocument();
+    expect(announced).toHaveBeenLastCalledWith(0);
   });
 });

@@ -222,3 +222,14 @@ test("the Notifications item carries the stylist's unread count and follows the 
   act(() => announceUnreadNotifications(0));
   await waitFor(() => expect(screen.getByRole("link", { name: "Notifications" })).toBeInTheDocument());
 });
+
+test("the Quotes item counts requests waiting on the stylist and follows the Quotes page", async () => {
+  ApiClient.get.mockImplementation((path) => Promise.resolve(path === "/styler/quotes"
+    ? { data: { data: { items: [], waiting: 2 } } }
+    : { data: { data: { items: [], unreadCount: 0 } } }));
+  renderLayout("/styler-dashboard/appointments");
+  expect(await screen.findByRole("link", { name: "Quotes, 2 waiting" })).toBeInTheDocument();
+  const { announceQuotesWaiting } = await import("../../users/userLayout/unreadNotifications");
+  act(() => announceQuotesWaiting(0));
+  await waitFor(() => expect(screen.getByRole("link", { name: "Quotes" })).toBeInTheDocument());
+});

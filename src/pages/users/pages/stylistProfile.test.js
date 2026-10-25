@@ -22,6 +22,7 @@ vi.mock("../../../components/spinner", () => ({ default: () => null }));
 vi.mock("../../../components/footer", () => ({ default: () => <footer data-testid="footer" /> }));
 vi.mock("../../../components/goBack", () => ({ default: () => <div data-testid="back" /> }));
 vi.mock("../../../components/selectService", () => ({ default: () => null }));
+vi.mock("../../../utils/cloudinaryUpload", () => ({ uploadToCloudinary: vi.fn() }));
 vi.mock("../../../utils/constant", () => ({
   // Mirror the real implementations' sessionStorage behavior so tests can
   // drive signed-in/role state by seeding storage directly.

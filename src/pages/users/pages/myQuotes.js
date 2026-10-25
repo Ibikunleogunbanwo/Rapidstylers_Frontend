@@ -5,6 +5,7 @@ import Button from "../../../components/button";
 import { APIService } from "../../../hooks/remote/apiService";
 import { showSuccessToastMessage } from "../../../utils/constant";
 import { QUOTE_STATUS, durationText, expiresText, isOpenQuote, visitText } from "../../../utils/quotes";
+import QuoteThread, { QuotePhotos } from "../../../components/quoteThread";
 
 /** Where "Book this quote" goes: the professional's profile with the quote's checkout open. */
 export const quoteBookingPath = (quote) =>
@@ -98,10 +99,11 @@ const MyQuotes = ({ setPageTitle }) => {
                       </p>
                     </div>
                     <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${status.tone}`}>
-                      {quote.status === "REQUESTED" ? "Waiting for a price" : quote.status === "QUOTED" ? "Price ready" : status.label}
+                      {quote.needsReply ? "New message" : quote.status === "REQUESTED" ? "Waiting for a price" : quote.status === "QUOTED" ? "Price ready" : status.label}
                     </span>
                   </div>
                   <p className="mt-3 line-clamp-3 whitespace-pre-line text-sm leading-6 text-black/70">{quote.description}</p>
+                  <QuotePhotos photos={quote.photos} />
                   {quote.price && (
                     <div className="mt-3 rounded-md bg-brand/[0.06] px-3 py-2 text-sm">
                       <span className="text-lg font-semibold text-onSurface">${quote.price}</span>
@@ -120,6 +122,22 @@ const MyQuotes = ({ setPageTitle }) => {
                       Booked. See it on your <Link to="/dashboard" className="underline">dashboard</Link>.
                     </p>
                   )}
+                  <QuoteThread
+                    messages={quote.messages}
+                    me="CUSTOMER"
+                    otherName={quote.stylistName}
+                    open={isOpenQuote(quote)}
+                    onSend={async (body) => {
+                      try {
+                        const response = await APIService.messageQuote(quote.quoteRef, body);
+                        const updated = response.data?.data || quote;
+                        setQuotes((current) => current.map((item) => (item.quoteRef === quote.quoteRef ? updated : item)));
+                        return true;
+                      } catch {
+                        return false;
+                      }
+                    }}
+                  />
                   {isOpenQuote(quote) && (
                     <div className="mt-4 flex flex-wrap gap-2">
                       {quote.status === "QUOTED" && (

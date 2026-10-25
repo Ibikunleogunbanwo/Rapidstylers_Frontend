@@ -542,6 +542,14 @@ export class APIService {
         try { return await ApiClient.post("/quotes/decline", { quoteRef }); }
         catch (error) { APIService.extractError(error); throw error; }
     }
+    static async messageQuote(quoteRef, body){
+        try { return await ApiClient.post("/quotes/message", { quoteRef, body }); }
+        catch (error) { APIService.extractError(error); throw error; }
+    }
+    static async stylerMessageQuote(quoteRef, body){
+        try { return await ApiClient.post("/styler/quotes/message", { quoteRef, body }); }
+        catch (error) { APIService.extractError(error); throw error; }
+    }
     static async stylerQuotes(){
         try { return await ApiClient.get("/styler/quotes"); }
         catch (error) { APIService.extractError(error); throw error; }

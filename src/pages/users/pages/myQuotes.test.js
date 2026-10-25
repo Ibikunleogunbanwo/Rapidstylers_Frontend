@@ -6,6 +6,7 @@ import MyQuotes, { quoteBookingPath } from "./myQuotes";
 vi.mock("../../../hooks/remote/apiService", () => ({
   APIService: {
     customerQuotes: vi.fn(),
+    messageQuote: vi.fn(),
     declineQuote: vi.fn(),
   },
 }));
@@ -68,5 +69,19 @@ describe("MyQuotes", () => {
     renderPage();
 
     expect(await screen.findByText(/No quotes yet/)).toBeInTheDocument();
+  });
+
+  test("the customer can ask the professional a question on an open quote", async () => {
+    APIService.messageQuote.mockResolvedValue({ data: { data: { ...waiting,
+      messages: [{ from: "CUSTOMER", body: "Is gel removal included?", createdAt: "2030-03-01T12:00:00Z" }] } } });
+    APIService.customerQuotes.mockResolvedValue({ data: { data: [waiting] } });
+    renderPage();
+
+    await userEvent.click(await screen.findByRole("button", { name: "Ask Nia Nails a question" }));
+    await userEvent.type(screen.getByLabelText("Message"), "Is gel removal included?");
+    await userEvent.click(screen.getByRole("button", { name: "Send" }));
+
+    expect(APIService.messageQuote).toHaveBeenCalledWith("QWAIT001", "Is gel removal included?");
+    expect(await screen.findByText("Is gel removal included?")).toBeInTheDocument();
   });
 });

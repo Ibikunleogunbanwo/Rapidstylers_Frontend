@@ -228,6 +228,31 @@ const NoServicesCard = ({ categoryName, serviceTypeId }) => {
   );
 };
 
+// A "Price on quote" service: the listed amount is where prices start, and the
+// way to book it is to ask for the exact price first.
+const QuoteOnlyService = ({ service, stylerId, stylerName, services, info }) => (
+  <div className="mt-3 grid gap-3 border-b pb-4">
+    <div className="grid grid-cols-12 gap-1">
+      <div className="col-span-8 text-black/50 md:col-span-10">
+        <div>{service.name}</div>
+        <div className="mt-1 text-xs text-gray-400">Price on quote · about {service.durationMinutes || 60} min</div>
+      </div>
+      <div className="col-span-4 text-end text-brand md:col-span-2">From ${service.price}</div>
+    </div>
+    {getUserRole() !== "STYLER" && info.payoutReady !== false && (
+      <RequestQuote
+        compact
+        serviceId={service.id}
+        stylerId={stylerId}
+        stylerName={stylerName}
+        services={services}
+        offersSalonVisits={info.offersSalonVisits ?? true}
+        offersHomeVisits={info.offersHomeVisits ?? true}
+      />
+    )}
+  </div>
+);
+
 const StylistProfile = ({ setPageTitle }) => {
   useEffect(() => {
     setPageTitle?.("Book Appointment");
@@ -504,7 +529,16 @@ const StylistProfile = ({ setPageTitle }) => {
             )}
             {stylerProfile.stylerSubService && stylerProfile.stylerSubService.length > 0 ? (
               stylerProfile.stylerSubService.map((val, key) => (
-                <div key={key}>
+                val.priceOnQuote ? (
+                  <QuoteOnlyService
+                    key={key}
+                    service={val}
+                    stylerId={stylerId}
+                    stylerName={displayName}
+                    services={stylerProfile.stylerSubService}
+                    info={info}
+                  />
+                ) : <div key={key}>
                   <SelectService
                     serviceName={val.name}
                     servicePrice={val.price}
